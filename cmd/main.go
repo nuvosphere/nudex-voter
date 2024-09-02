@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/http"
@@ -21,6 +22,7 @@ func main() {
 	}
 	go http.StartHTTPServer()
 	go p2p.StartLibp2p()
+	go btc.StartBTCListener()
 
 	// Blocking the main thread
 	select {}
