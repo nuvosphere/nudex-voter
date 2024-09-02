@@ -1,17 +1,21 @@
 package btc
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"path/filepath"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 func StartBTCListener() {
@@ -165,57 +169,87 @@ func purgeOldData(db *leveldb.DB) {
 	}
 }
 
-func iterateCachedBlocks(db *leveldb.DB) {
-	iter := db.NewIterator(util.BytesPrefix([]byte("blockhash:")), nil)
+func GenerateSPVProof(msgTx *wire.MsgTx) (string, error) {
+	// Open or create the local storage
+	dbPath := filepath.Join(config.AppConfig.DbDir, "btc_cache.db")
+	db, err := leveldb.OpenFile(dbPath, nil)
+	if err != nil {
+		log.Fatalf("Failed to open local storage: %v", err)
+	}
+	defer db.Close()
+
+	txHash := msgTx.TxHash()
+
+	// Get block hash
+	var blockHashBytes []byte
+	iter := db.NewIterator(nil, nil)
 	defer iter.Release()
 
 	for iter.Next() {
-		blockHash := string(iter.Value())
-
-		header, _ := db.Get([]byte("header:"+blockHash), nil)
-		difficultyBytes, _ := db.Get([]byte("difficulty:"+blockHash), nil)
-		randomBytes, _ := db.Get([]byte("random:"+blockHash), nil)
-		merkleRoot, _ := db.Get([]byte("merkleroot:"+blockHash), nil)
-		blockTimeBytes, _ := db.Get([]byte("blocktime:"+blockHash), nil)
-
-		difficulty := binary.LittleEndian.Uint32(difficultyBytes)
-		randomNumber := binary.LittleEndian.Uint32(randomBytes)
-		blockTime := binary.LittleEndian.Uint64(blockTimeBytes)
-
-		log.Printf("Block Hash: %s", blockHash)
-		log.Printf("Header: %s", string(header))
-		log.Printf("Difficulty: %d", difficulty)
-		log.Printf("Random Number: %d", randomNumber)
-		log.Printf("Merkle Root: %s", string(merkleRoot))
-		log.Printf("Block Time: %d", blockTime)
-	}
-	if err := iter.Error(); err != nil {
-		log.Printf("Error during iteration: %v", err)
-	}
-}
-
-func findBlocksByMerkleRoots(db *leveldb.DB, merkleRoots []string) map[string][]string {
-	merkleRootSet := make(map[string]struct{})
-	for _, root := range merkleRoots {
-		merkleRootSet[root] = struct{}{}
-	}
-
-	blockHashes := make(map[string][]string)
-	iter := db.NewIterator(util.BytesPrefix([]byte("merkleroot:")), nil)
-	defer iter.Release()
-
-	for iter.Next() {
-		storedMerkleRoot := string(iter.Value())
-		if _, exists := merkleRootSet[storedMerkleRoot]; exists {
-			// Extract the block hash from the key
-			key := string(iter.Key())
-			blockHash := key[len("merkleroot:"):]
-			blockHashes[storedMerkleRoot] = append(blockHashes[storedMerkleRoot], blockHash)
+		key := iter.Key()
+		if bytes.HasPrefix(key, []byte("utxo:")) {
+			value := iter.Value()
+			if bytes.Equal(value, txHash[:]) {
+				blockHashBytes = key[len("utxo:") : len("utxo:")+64]
+				break
+			}
 		}
 	}
-	if err := iter.Error(); err != nil {
-		log.Printf("Error during Merkle root search: %v", err)
+	if blockHashBytes == nil {
+		return "", fmt.Errorf("failed to find block hash for tx: %v", txHash)
 	}
 
-	return blockHashes
+	blockHash, err := chainhash.NewHash(blockHashBytes)
+	if err != nil {
+		return "", fmt.Errorf("invalid block hash: %v", err)
+	}
+
+	// Get block header
+	headerBytes, err := db.Get([]byte("header:"+blockHash.String()), nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get block header from db: %v", err)
+	}
+	var header wire.BlockHeader
+	err = header.Deserialize(bytes.NewReader(headerBytes))
+	if err != nil {
+		return "", fmt.Errorf("failed to deserialize block header: %v", err)
+	}
+
+	// Get transaction hash list
+	txHashesBytes, err := db.Get([]byte("txhashes:"+blockHash.String()), nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get tx hashes from db: %v", err)
+	}
+	var txHashes []chainhash.Hash
+	err = json.Unmarshal(txHashesBytes, &txHashes)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal tx hashes: %v", err)
+	}
+
+	// Find the transaction's position in the block
+	var txIndex int
+	for i, hash := range txHashes {
+		if hash == txHash {
+			txIndex = i
+			break
+		}
+	}
+
+	// Generate Merkle proof
+	txHashesPtrs := make([]*chainhash.Hash, len(txHashes))
+	for i := range txHashes {
+		txHashesPtrs[i] = &txHashes[i]
+	}
+	var proof []*chainhash.Hash
+	merkleRoot := ComputeMerkleRootAndProof(txHashesPtrs, txIndex, &proof)
+
+	// Serialize Merkle proof
+	var buf bytes.Buffer
+	buf.Write(txHash[:])
+	for _, p := range proof {
+		buf.Write(p[:])
+	}
+	buf.Write(merkleRoot[:])
+
+	return hex.EncodeToString(buf.Bytes()), nil
 }
