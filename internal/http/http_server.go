@@ -16,10 +16,10 @@ func StartHTTPServer() {
 	r.GET("/api/v1/helloworld", handleHelloWorld)
 
 	if config.AppConfig.EnableWebhook {
-		r.POST("/api/v1/fireblocks/webhook", handleFireblocksWebhook)
+		r.POST("/api/fireblocks/webhook", handleFireblocksWebhook)
 	}
 	if config.AppConfig.EnableRelayer {
-		r.POST("/api/v1/fireblocks/cosigner", handleFireblocksCosigner)
+		r.POST("/api/fireblocks/cosigner/v2/tx_sign_request", handleFireblocksCosignerTxSign)
 	}
 
 	// Use configuration port

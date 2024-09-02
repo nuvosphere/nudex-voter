@@ -26,7 +26,7 @@ type Config struct {
 	L2MaxBlockRange   int
 	L2RequestInterval time.Duration
 	FireblocksPubKey  string
-	FireblocksSecret  string
+	FireblocksPrivKey string
 	EnableWebhook     bool
 	EnableRelayer     bool
 	DbDir             string
@@ -62,6 +62,8 @@ func InitConfig() {
 	viper.SetDefault("DB_DIR", "/app/db")
 	viper.SetDefault("VOTING_CONTRACT", "")
 	viper.SetDefault("WITHDRAW_CONTRACT", "")
+	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
+	viper.SetDefault("FIREBLOCKS_PRIVKEY", "")
 
 	logLevel, err := logrus.ParseLevel(strings.ToLower(viper.GetString("LOG_LEVEL")))
 	if err != nil {
@@ -91,7 +93,7 @@ func InitConfig() {
 		L2MaxBlockRange:   viper.GetInt("L2_MAX_BLOCK_RANGE"),
 		L2RequestInterval: viper.GetDuration("L2_REQUEST_INTERVAL"),
 		FireblocksPubKey:  viper.GetString("FIREBLOCKS_PUBKEY"),
-		FireblocksSecret:  viper.GetString("FIREBLOCKS_SECRET"),
+		FireblocksPrivKey: viper.GetString("FIREBLOCKS_PRIVKEY"),
 		EnableWebhook:     viper.GetBool("ENABLE_WEBHOOK"),
 		EnableRelayer:     viper.GetBool("ENABLE_RELAYER"),
 		DbDir:             viper.GetString("DB_DIR"),
