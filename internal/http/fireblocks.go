@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 
 	log "github.com/sirupsen/logrus"
@@ -200,6 +200,9 @@ func handleFireblocksCosignerTxSign(c *gin.Context) {
 
 	// Parse and verify JWT
 	tx, err := jwt.Parse(rawBody, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, jwt.ErrInvalidKey
+		}
 		return config.AppConfig.FireblocksPubKey, nil
 	})
 	if err != nil || !tx.Valid {
@@ -209,7 +212,13 @@ func handleFireblocksCosignerTxSign(c *gin.Context) {
 	}
 
 	// Extract requestId from the JWT claims
-	claims := tx.Claims.(jwt.MapClaims)
+	claims, ok := tx.Claims.(jwt.MapClaims)
+	if !ok || !tx.Valid {
+		log.Error("Cosigner callback JWT claims parsing failed")
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
 	requestId := claims["requestId"].(string)
 	txId := claims["txId"].(string)
 
@@ -221,12 +230,12 @@ func handleFireblocksCosignerTxSign(c *gin.Context) {
 	action := "APPROVE"
 	rejectionReason := ""
 
-	signedRes, err := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"action":          action,
 		"requestId":       requestId,
 		"rejectionReason": rejectionReason,
-	}).SignedString(config.AppConfig.FireblocksPrivKey)
-
+	})
+	signedRes, err := token.SignedString(config.AppConfig.FireblocksPrivKey)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return
