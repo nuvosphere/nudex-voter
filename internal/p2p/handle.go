@@ -3,8 +3,14 @@ package p2p
 import (
 	"context"
 	"encoding/json"
+	"math/big"
+	"strconv"
 	"time"
 
+	"github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	"github.com/bnb-chain/tss-lib/v2/tss"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -35,7 +41,7 @@ func publishMessage(ctx context.Context, msg Message) {
 	}
 
 	if messageTopic == nil {
-		log.Error("Message topic is nil, can not publish message")
+		log.Error("Message topic is nil, cannot publish message")
 		return
 	}
 
@@ -63,10 +69,86 @@ func handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node ho
 			continue
 		}
 
-		log.Infof("Received message via pubsub: ID=%s, Content=%s", receivedMsg.ID, receivedMsg.Content)
+		log.Infof("Received message via pubsub: ID=%d, Content=%s", receivedMsg.MessageType, receivedMsg.Content)
 
-		// TODO logic action
+		// Implement key processes for keygen and signing in tsslib/v2
+		switch receivedMsg.MessageType {
+		case MessageTypeKeygen:
+			handleKeygenMessage(ctx)
+		case MessageTypeSigning:
+			handleSigningMessage(ctx)
+		default:
+			log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
+		}
 	}
+}
+
+func handleKeygenMessage(ctx context.Context) {
+	outCh := make(chan tss.Message, 3)
+	endCh := make(chan *keygen.LocalPartySaveData, 1)
+
+	party := setupTSSParty(keygen.NewLocalParty, outCh, endCh)
+	startTSSProcess(ctx, party, outCh, endCh, MessageTypeKeygen, saveTSSData)
+}
+
+func handleSigningMessage(ctx context.Context) {
+	outCh := make(chan tss.Message, 3)
+	endCh := make(chan *common.SignatureData, 1)
+
+	msgToSign := big.NewInt(123456)
+	savedData, err := loadTSSData()
+	if err != nil {
+		log.Errorf("Failed to load TSS data: %v", err)
+		return
+	}
+
+	party := setupTSSParty(func(params *tss.Parameters, outCh chan<- tss.Message, endCh chan<- *common.SignatureData) tss.Party {
+		return signing.NewLocalParty(msgToSign, params, *savedData, outCh, endCh)
+	}, outCh, endCh)
+
+	startTSSProcess(ctx, party, outCh, endCh, MessageTypeSigning, handleSignature)
+}
+
+func setupTSSParty(createParty interface{}, outCh, endCh interface{}) tss.Party {
+	parties := 3
+	threshold := 2
+	partyIDs := createPartyIDs(parties)
+	peerCtx := tss.NewPeerContext(partyIDs)
+	params := tss.NewParameters(tss.S256(), peerCtx, partyIDs[0], parties, threshold)
+
+	return createParty.(func(*tss.Parameters, interface{}, interface{}) tss.Party)(params, outCh, endCh)
+}
+
+func startTSSProcess(ctx context.Context, party tss.Party, outCh <-chan tss.Message, endCh interface{}, msgType MessageType, endHandler interface{}) {
+	go func() {
+		if err := party.Start(); err != nil {
+			log.Errorf("TSS process failed to start: %v", err)
+		}
+	}()
+
+	handleTSSProcess(ctx, outCh, endCh, msgType, endHandler)
+}
+
+func handleTSSProcess(ctx context.Context, outCh <-chan tss.Message, endCh interface{}, msgType MessageType, endHandler interface{}) {
+	for {
+		select {
+		case msg := <-outCh:
+			publishTSSMessage(ctx, msg, msgType)
+		case data := <-endCh.(chan interface{}):
+			log.Infof("TSS process completed, data: %v", data)
+			endHandler.(func(interface{}))(data)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func createPartyIDs(parties int) tss.SortedPartyIDs {
+	partyIDs := make(tss.SortedPartyIDs, parties)
+	for i := 0; i < parties; i++ {
+		partyIDs[i] = tss.NewPartyID(strconv.Itoa(i), "", new(big.Int).SetInt64(int64(i)))
+	}
+	return partyIDs
 }
 
 func handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
@@ -121,4 +203,16 @@ func startHeartbeat(ctx context.Context, node host.Host, topic *pubsub.Topic) {
 			return
 		}
 	}
+}
+
+func handleSignature(signatureData *common.SignatureData) {
+	// Implement logic to handle generated signature data
+	log.Infof("Received signature data: %+v", signatureData)
+
+	// TODO: Send signature data to other systems or perform further processing
+	// For example:
+	// - Verify signature
+	// - Store signature in database
+	// - Broadcast signature to other nodes
+	// - Trigger subsequent business logic
 }

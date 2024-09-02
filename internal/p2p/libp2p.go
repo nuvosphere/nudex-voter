@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io/ioutil"
-	mr "math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,7 +73,6 @@ func StartLibp2p() {
 		log.Fatalf("Failed to subscribe to message topic: %v", err)
 	}
 
-
 	hbTopic, err := ps.Join(heartbeatTopicName)
 	if err != nil {
 		log.Fatalf("Failed to join heartbeat topic: %v", err)
@@ -84,7 +82,7 @@ func StartLibp2p() {
 	if err != nil {
 		log.Fatalf("Failed to subscribe to heartbeat topic: %v", err)
 	}
-	
+
 	go handlePubSubMessages(ctx, sub, node)
 	go handleHeartbeatMessages(ctx, hbSub, node)
 	go startHeartbeat(ctx, node, hbTopic)
@@ -92,8 +90,8 @@ func StartLibp2p() {
 	go func() {
 		time.Sleep(5 * time.Second)
 		msg := Message{
-			ID:      generateMessageID(),
-			Content: "Hello, nudex voter libp2p PubSub network with handshake!",
+			MessageType: MessageTypeKeygen,
+			Content:     "Hello, nudex voter libp2p PubSub network with handshake!",
 		}
 		publishMessage(ctx, msg)
 	}()
@@ -121,10 +119,6 @@ func createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error
 	}
 
 	return node, ps, nil
-}
-
-func generateMessageID() string {
-	return fmt.Sprintf("%d-%d", time.Now().UnixNano(), mr.Int63())
 }
 
 func connectToBootNode(ctx context.Context, node host.Host, bootNodeAddr string) {
