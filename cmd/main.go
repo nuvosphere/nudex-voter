@@ -12,6 +12,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/http"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
+	"github.com/nuvosphere/nudex-voter/internal/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 )
 
@@ -40,6 +41,7 @@ func main() {
 	go tss.HandleKeygenMessages(ctx, tssKeyInCh, tssKeyOutCh, tssKeyEndCh)
 	go tss.HandleSigningMessages(ctx, tssSignInCh, tssSignOutCh, tssSignEndCh)
 	go btc.StartBTCListener()
+	go rpc.StartUTXOService()
 
 	// Blocking the main thread
 	select {}

@@ -4,30 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	log "github.com/sirupsen/logrus"
 )
 
-type UTXOService struct {
-	client *rpcclient.Client
-}
+type UTXOService struct{}
 
-func NewUTXOService() (*UTXOService, error) {
-	connConfig := &rpcclient.ConnConfig{
-		Host:         config.AppConfig.BTCRPC,
-		HTTPPostMode: true,
-		DisableTLS:   true,
-	}
-
-	client, err := rpcclient.New(connConfig, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &UTXOService{client: client}, nil
+func NewUTXOService() *UTXOService {
+	return &UTXOService{}
 }
 
 func (s *UTXOService) HandleSubmitTransaction(w http.ResponseWriter, r *http.Request) {
@@ -52,10 +38,7 @@ func (s *UTXOService) HandleSubmitTransaction(w http.ResponseWriter, r *http.Req
 }
 
 func StartUTXOService() {
-	service, err := NewUTXOService()
-	if err != nil {
-		log.Fatalf("Failed to create UTXO service: %v", err)
-	}
+	service := NewUTXOService()
 
 	http.HandleFunc("/submit_transaction", service.HandleSubmitTransaction)
 	// Use configuration port
