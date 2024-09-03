@@ -23,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/tss"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 
 var messageTopic *pubsub.Topic
 
-func StartLibp2p() {
+func StartLibp2p(tssKeyCh chan tss.KeygenMessage, tssSignCh chan tss.SigningMessage) {
 	// Start libp2p node
 	ctx := context.Background()
 	node, ps, err := createNodeWithPubSub(ctx)
@@ -83,7 +84,7 @@ func StartLibp2p() {
 		log.Fatalf("Failed to subscribe to heartbeat topic: %v", err)
 	}
 
-	go handlePubSubMessages(ctx, sub, node)
+	go handlePubSubMessages(ctx, sub, node, tssKeyCh, tssSignCh)
 	go handleHeartbeatMessages(ctx, hbSub, node)
 	go startHeartbeat(ctx, node, hbTopic)
 
