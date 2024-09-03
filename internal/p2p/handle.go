@@ -8,6 +8,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/nuvosphere/nudex-voter/internal/tss"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,7 +36,7 @@ func publishMessage(ctx context.Context, msg Message) {
 	}
 
 	if messageTopic == nil {
-		log.Error("Message topic is nil, can not publish message")
+		log.Error("Message topic is nil, cannot publish message")
 		return
 	}
 
@@ -44,7 +45,7 @@ func publishMessage(ctx context.Context, msg Message) {
 	}
 }
 
-func handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
+func handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host, tssKeyCh chan<- tss.KeygenMessage, tssSignCh chan<- tss.SigningMessage) {
 	for {
 		msg, err := sub.Next(ctx)
 		if err != nil {
@@ -63,9 +64,16 @@ func handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node ho
 			continue
 		}
 
-		log.Infof("Received message via pubsub: ID=%s, Content=%s", receivedMsg.ID, receivedMsg.Content)
+		log.Infof("Received message via pubsub: ID=%d, Content=%s", receivedMsg.MessageType, receivedMsg.Content)
 
-		// TODO logic action
+		switch receivedMsg.MessageType {
+		case MessageTypeKeygen:
+			tssKeyCh <- tss.KeygenMessage{Content: receivedMsg.Content}
+		case MessageTypeSigning:
+			tssSignCh <- tss.SigningMessage{Content: receivedMsg.Content}
+		default:
+			log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
+		}
 	}
 }
 

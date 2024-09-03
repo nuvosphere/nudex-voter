@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io/ioutil"
-	mr "math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/tss"
 )
 
 const (
@@ -37,7 +37,7 @@ const (
 
 var messageTopic *pubsub.Topic
 
-func StartLibp2p() {
+func StartLibp2p(tssKeyCh chan tss.KeygenMessage, tssSignCh chan tss.SigningMessage) {
 	// Start libp2p node
 	ctx := context.Background()
 	node, ps, err := createNodeWithPubSub(ctx)
@@ -74,7 +74,6 @@ func StartLibp2p() {
 		log.Fatalf("Failed to subscribe to message topic: %v", err)
 	}
 
-
 	hbTopic, err := ps.Join(heartbeatTopicName)
 	if err != nil {
 		log.Fatalf("Failed to join heartbeat topic: %v", err)
@@ -84,16 +83,16 @@ func StartLibp2p() {
 	if err != nil {
 		log.Fatalf("Failed to subscribe to heartbeat topic: %v", err)
 	}
-	
-	go handlePubSubMessages(ctx, sub, node)
+
+	go handlePubSubMessages(ctx, sub, node, tssKeyCh, tssSignCh)
 	go handleHeartbeatMessages(ctx, hbSub, node)
 	go startHeartbeat(ctx, node, hbTopic)
 
 	go func() {
 		time.Sleep(5 * time.Second)
 		msg := Message{
-			ID:      generateMessageID(),
-			Content: "Hello, nudex voter libp2p PubSub network with handshake!",
+			MessageType: MessageTypeKeygen,
+			Content:     "Hello, nudex voter libp2p PubSub network with handshake!",
 		}
 		publishMessage(ctx, msg)
 	}()
@@ -121,10 +120,6 @@ func createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error
 	}
 
 	return node, ps, nil
-}
-
-func generateMessageID() string {
-	return fmt.Sprintf("%d-%d", time.Now().UnixNano(), mr.Int63())
 }
 
 func connectToBootNode(ctx context.Context, node host.Host, bootNodeAddr string) {
