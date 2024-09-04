@@ -1,0 +1,20 @@
+// bitcoin.proto
+syntax = "proto3";
+
+option go_package = "github.com/nuvosphere/nudex-voter/internal/proto";
+
+package proto;
+
+service BitcoinLightWallet {
+  rpc NewTransaction (NewTransactionRequest) returns (NewTransactionResponse);
+}
+
+message NewTransactionRequest {
+  string transaction_id = 1;
+  bytes raw_transaction = 2;
+}
+
+message NewTransactionResponse {
+  string transaction_id = 1;
+  string error_message = 2;
+}

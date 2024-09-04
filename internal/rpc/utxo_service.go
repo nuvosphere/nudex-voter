@@ -1,48 +1,63 @@
 package rpc
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
-	"net/http"
+	"net"
 
 	"github.com/btcsuite/btcd/wire"
 	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	pb "github.com/nuvosphere/nudex-voter/internal/proto"
+	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+
 	log "github.com/sirupsen/logrus"
 )
 
-type UTXOService struct{}
-
-func NewUTXOService() *UTXOService {
-	return &UTXOService{}
+type UtxoServer struct {
+	pb.UnimplementedBitcoinLightWalletServer
 }
 
-func (s *UTXOService) HandleSubmitTransaction(w http.ResponseWriter, r *http.Request) {
+func NewUtxoServer() *UtxoServer {
+	return &UtxoServer{}
+}
+
+func (s *UtxoServer) NewTransaction(ctx context.Context, req *pb.NewTransactionRequest) (*pb.NewTransactionResponse, error) {
 	var tx wire.MsgTx
-	if err := json.NewDecoder(r.Body).Decode(&tx); err != nil {
-		http.Error(w, "Invalid transaction format", http.StatusBadRequest)
-		return
+	if err := json.NewDecoder(bytes.NewReader(req.RawTransaction)).Decode(&tx); err != nil {
+		log.Errorf("Failed to decode transaction: %v", err)
+		return nil, err
 	}
 
-	spvProof, err := btc.GenerateSPVProof(&tx)
+	_, err := btc.GenerateSPVProof(&tx)
 	if err != nil {
-		http.Error(w, "Failed to generate SPV proof", http.StatusInternalServerError)
-		return
+		log.Errorf("Failed to generate SPV proof: %v", err)
+		return nil, err
 	}
 
-	response := map[string]string{
-		"spv_proof": spvProof,
+	response := &pb.NewTransactionResponse{
+		TransactionId: req.TransactionId,
+		ErrorMessage:  "",
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	return response, nil
 }
 
 func StartUTXOService() {
-	service := NewUTXOService()
-
-	http.HandleFunc("/submit_transaction", service.HandleSubmitTransaction)
-	// Use configuration port
 	addr := ":" + config.AppConfig.HTTPPort
-	log.Infof("RPC server is running on port %s", config.AppConfig.HTTPPort)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterBitcoinLightWalletServer(s, &UtxoServer{})
+	reflection.Register(s)
+
+	log.Infof("gRPC server is running on port %s", config.AppConfig.HTTPPort)
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
