@@ -70,7 +70,8 @@ func listenAndCacheBTCBlocks(client *rpcclient.Client, db *leveldb.DB) {
 		block := btcutil.NewBlock(msgBlock)
 
 		// Cache block data
-		cacheBlockData(db, block)
+		CacheBlockData(db, block)
+		SendBlockData(block)
 
 		log.Printf("Cached block height: %d", currentHeight)
 
@@ -93,7 +94,7 @@ func listenAndCacheBTCBlocks(client *rpcclient.Client, db *leveldb.DB) {
 	}
 }
 
-func cacheBlockData(db *leveldb.DB, block *btcutil.Block) {
+func CacheBlockData(db *leveldb.DB, block *btcutil.Block) {
 	blockHash := block.Hash().String()
 	header := block.MsgBlock().Header
 	difficulty := header.Bits

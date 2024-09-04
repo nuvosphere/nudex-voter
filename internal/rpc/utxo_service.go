@@ -7,6 +7,8 @@ import (
 	"net"
 
 	"github.com/btcsuite/btcd/wire"
+	bitcointypes "github.com/goatnetwork/goat/x/bitcoin/types"
+	relayertypes "github.com/goatnetwork/goat/x/relayer/types"
 	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	pb "github.com/nuvosphere/nudex-voter/internal/proto"
@@ -37,12 +39,20 @@ func (s *UtxoServer) NewTransaction(ctx context.Context, req *pb.NewTransactionR
 		return nil, err
 	}
 
-	response := &pb.NewTransactionResponse{
-		TransactionId: req.TransactionId,
-		ErrorMessage:  "",
+	deposit := &bitcointypes.Deposit{
+		EvmAddress:    req.EvmAddress,
+		NoWitnessTx:   req.RawTransaction,
+		RelayerPubkey: &relayertypes.PublicKey{}, // Need to fill in the correct RelayerPubkey
+		OutputIndex:   uint32(0),                 // Assuming output index is 0, adjust according to actual situation
+		Version:       uint32(0),                 // Assuming version is 0, adjust according to actual situation
 	}
 
-	return response, nil
+	btc.SendDepositData(deposit)
+
+	return &pb.NewTransactionResponse{
+		TransactionId: "txhash",
+		ErrorMessage:  "",
+	}, nil
 }
 
 func StartUTXOService() {
