@@ -147,14 +147,15 @@ type BlockInfo struct {
 
 // handleFireblocksWebhook process webhook callback of Fireblocks, should validate request data first
 func handleFireblocksWebhook(c *gin.Context) {
-	if err := verifyWebhookSig(c); err != nil {
+	bodyBytes, err := verifyWebhookSig(c)
+	if err != nil {
 		log.Errorf("Fireblocks webhook sig verify error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Sig error"})
 		return
 	}
-	var req FireblocksWebhookRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var req FireblocksWebhookRequest
+	if err := json.Unmarshal(bodyBytes, &req); err != nil {
 		log.Errorf("Fireblocks webhook json bind error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
@@ -199,15 +200,20 @@ func handleFireblocksCosignerTxSign(c *gin.Context) {
 	rsaPubKey, err := parseRSAPublicKeyFromPEM(config.AppConfig.FireblocksPubKey)
 	if err != nil {
 		log.Errorf("Cosigner error parsing RSA public key: %v", err)
+		c.String(http.StatusInternalServerError, "Public key parsing error")
+		return
 	}
 
 	rsaPrivKey, err := parseRSAPrivateKeyFromPEM(config.AppConfig.FireblocksPrivKey)
 	if err != nil {
 		log.Errorf("Cosigner error parsing RSA private key: %v", err)
+		c.String(http.StatusInternalServerError, "Private key parsing error")
+		return
 	}
 
 	bodyBytes, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
+		log.Errorf("Cosigner error read body: %v", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -260,27 +266,27 @@ func handleFireblocksCosignerTxSign(c *gin.Context) {
 }
 
 // verifyWebhookSig verify sig from webhook request
-func verifyWebhookSig(c *gin.Context) error {
+func verifyWebhookSig(c *gin.Context) ([]byte, error) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// Get sig
 	signature := c.GetHeader("fireblocks-signature")
 	if signature == "" {
-		return errors.New("signature missing")
+		return nil, errors.New("signature missing")
 	}
 
 	// Decode from base64
 	sig, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
-		return errors.New("invalid signature encoding")
+		return nil, errors.New("invalid signature encoding")
 	}
 
 	// Extract pk
 	rsaPub, err := parseRSAPublicKeyFromPEM(webhookPkProduction)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create SHA-512 hash
@@ -292,9 +298,9 @@ func verifyWebhookSig(c *gin.Context) error {
 	err = rsa.VerifyPKCS1v15(rsaPub, crypto.SHA512, hashed, sig)
 	if err != nil {
 		log.Errorf("Fireblocks webhook verification failed: %v", err)
-		return errors.New("invalid signature")
+		return nil, errors.New("invalid signature")
 	}
-	return nil
+	return body, nil
 }
 
 func parseRSAPublicKeyFromPEM(pubKeyPEM string) (*rsa.PublicKey, error) {
