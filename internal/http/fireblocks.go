@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -48,10 +49,10 @@ IwIDAQAB
 
 // UNCHECKED
 type FireblocksWebhookRequest struct {
-	Type      string      `json:"type"`
-	TenantId  string      `json:"tenantId"`
-	Timestamp int64       `json:"timestamp"`
-	Data      interface{} `json:"data"`
+	Type      string          `json:"type"`
+	TenantId  string          `json:"tenantId"`
+	Timestamp int64           `json:"timestamp"`
+	Data      json.RawMessage `json:"data"`
 }
 
 // TRANSACTION_CREATED, TRANSACTION_STATUS_UPDATED, TRANSACTION_APPROVAL_STATUS_UPDATED
@@ -154,6 +155,7 @@ func handleFireblocksWebhook(c *gin.Context) {
 	var req FireblocksWebhookRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Errorf("Fireblocks webhook json bind error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
@@ -163,14 +165,16 @@ func handleFireblocksWebhook(c *gin.Context) {
 
 	// TODO: record
 	if req.Type == "TRANSACTION_CREATED" {
-		if trans, ok := req.Data.(TransactionDetails); ok {
+		var trans TransactionDetails
+		if err := json.Unmarshal(req.Data, &trans); err == nil {
 			log.Infof("Fireblocks webhook transaction created detect, txId %s, txHash %s, status %s", trans.ExternalTxID, trans.TxHash, trans.Status)
 		} else {
 			log.Error("Fireblocks webhook failed to convert data to TransactionDetails")
 		}
 	}
 	if req.Type == "TRANSACTION_STATUS_UPDATED" {
-		if trans, ok := req.Data.(TransactionDetails); ok {
+		var trans TransactionDetails
+		if err := json.Unmarshal(req.Data, &trans); err == nil {
 			log.Infof("Transaction status updated detect, txId %s, txHash %s, status %s, subStatus %s, assetType %s, amount %s", trans.ExternalTxID, trans.TxHash, trans.Status, trans.SubStatus, trans.AssetType, trans.AmountInfo.Amount)
 			if trans.Operation == "TRANSFER" && trans.Status == "COMPLETED" && trans.SubStatus == "CONFIRMED" {
 				// TODO: withdraw filter (sourceAddress, destinationAddress, assetType)
