@@ -9,17 +9,12 @@ type EventType int
 const (
 	EventUnkown EventType = iota
 	SigStart
-	SigReceive
-	SigFinish
-	SigFailed
-	SigTimeout
-	DepositReceive
-	BlockScanned
-	WithdrawRequest
+	SigKegen
+	SigSigning
 )
 
 func (e EventType) String() string {
-	return [...]string{"EventUnkown", "SigStart", "SigReceive", "SigFinish", "SigFailed", "SigTimeout", "DepositReceive", "BlockScanned", "WithdrawRequest"}[e]
+	return [...]string{"EventUnkown", "SigKegen", "SigSigning"}[e]
 }
 
 type EventBus struct {

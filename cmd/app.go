@@ -2,12 +2,18 @@ package main
 
 import (
 	"context"
+	"github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/http"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
+	"github.com/nuvosphere/nudex-voter/internal/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/tss"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -21,6 +27,12 @@ type Application struct {
 	LibP2PService   *p2p.LibP2PService
 	Layer2Listener  *layer2.Layer2Listener
 	HTTPServer      *http.HTTPServer
+	TssKeyInCh      chan tss.KeygenMessage
+	TssKeyOutCh     chan tsslib.Message
+	TssKeyEndCh     chan *keygen.LocalPartySaveData
+	TssSignInCh     chan tss.SigningMessage
+	TssSignOutCh    chan tsslib.Message
+	TssSignEndCh    chan *common.SignatureData
 }
 
 func NewApplication() *Application {
@@ -38,6 +50,12 @@ func NewApplication() *Application {
 		Layer2Listener:  layer2Listener,
 		LibP2PService:   libP2PService,
 		HTTPServer:      httpServer,
+		TssKeyInCh:      make(chan tss.KeygenMessage),
+		TssKeyOutCh:     make(chan tsslib.Message),
+		TssKeyEndCh:     make(chan *keygen.LocalPartySaveData),
+		TssSignInCh:     make(chan tss.SigningMessage),
+		TssSignOutCh:    make(chan tsslib.Message),
+		TssSignEndCh:    make(chan *common.SignatureData),
 	}
 }
 
@@ -53,13 +71,24 @@ func (app *Application) Run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		app.Layer2Listener.Start(ctx)
+		if config.AppConfig.EnableRelayer {
+			app.Layer2Listener.Start(ctx)
+		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		app.LibP2PService.Start(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		go tss.HandleKeygenMessages(ctx, app.TssKeyInCh, app.TssKeyOutCh, app.TssKeyEndCh)
+		go tss.HandleSigningMessages(ctx, app.TssSignInCh, app.TssSignOutCh, app.TssSignEndCh)
+		go btc.StartBTCListener()
+		go rpc.StartUTXOService()
 	}()
 
 	wg.Add(1)
