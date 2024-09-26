@@ -2,6 +2,7 @@ package layer2
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
 	"strings"
 	"sync"
@@ -104,4 +105,20 @@ func submitDepositInfo(targetAddress common.Address, amount *big.Int, txInfo, ex
 
 	log.Infof("Transaction sent: %s", signedTx.Hash().Hex())
 	return nil
+}
+
+func getClientAndAbi() (*ethclient.Client, abi.ABI, common.Address) {
+	client, err := ethclient.Dial(config.AppConfig.L2RPC)
+	if err != nil {
+		log.Fatalf("Error creating Layer2 EVM RPC client: %v", err)
+	}
+
+	// Decode ABI
+	parsedVotingManagerABI, err := abi.JSON(strings.NewReader(votingManagerABI))
+	if err != nil {
+		log.Fatalf("Error parsing VotingManager ABI: %v", err)
+	}
+
+	votingManagerAddress := common.HexToAddress(config.AppConfig.VotingContract)
+	return client, parsedVotingManagerABI, votingManagerAddress
 }

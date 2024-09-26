@@ -9,24 +9,39 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
-var DB *gorm.DB
+type DatabaseManager struct {
+	relayerDb *gorm.DB
+}
 
-func InitDB() {
+func NewDatabaseManager() *DatabaseManager {
+	dm := &DatabaseManager{}
+	dm.initDB()
+	return dm
+}
+
+func (dm *DatabaseManager) initDB() {
 	dbDir := config.AppConfig.DbDir
 	if err := os.MkdirAll(dbDir, os.ModePerm); err != nil {
 		log.Fatalf("Failed to create database directory: %v", err)
 	}
 
-	dbPath := filepath.Join(dbDir, "relayer_data.db")
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	relayerPath := filepath.Join(dbDir, "relayer_data.db")
+	relayerDb, err := gorm.Open(sqlite.Open(relayerPath), &gorm.Config{
+		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+	})
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to connect to database 1: %v", err)
 	}
-	DB = db
-	log.Debugf("Database connected successfully, path: %s", dbPath)
+	dm.relayerDb = relayerDb
+	log.Debugf("Database 1 connected successfully, path: %s", relayerPath)
 
-	MigrateDB(DB)
+	dm.autoMigrate()
 	log.Debugf("Database migration completed successfully")
+}
+
+func (dm *DatabaseManager) GetRelayerDB() *gorm.DB {
+	return dm.relayerDb
 }

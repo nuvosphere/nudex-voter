@@ -21,6 +21,7 @@ type Config struct {
 	BTCRPC            string
 	BTCStartHeight    int
 	L2RPC             string
+	L2JwtSecret       string
 	L2StartHeight     int
 	L2Confirmations   int
 	L2MaxBlockRange   int
@@ -50,6 +51,7 @@ func InitConfig() {
 	viper.SetDefault("BTC_RPC", "http://localhost:8332")
 	viper.SetDefault("BTC_START_HEIGHT", 0)
 	viper.SetDefault("L2_RPC", "http://localhost:8545")
+	viper.SetDefault("L2_JWT_SECRET", "")
 	viper.SetDefault("L2_START_HEIGHT", 0)
 	viper.SetDefault("L2_CONFIRMATIONS", 3)
 	viper.SetDefault("L2_MAX_BLOCK_RANGE", 500)
@@ -88,6 +90,7 @@ func InitConfig() {
 		BTCRPC:            viper.GetString("BTC_RPC"),
 		BTCStartHeight:    viper.GetInt("BTC_START_HEIGHT"),
 		L2RPC:             viper.GetString("L2_RPC"),
+		L2JwtSecret:       viper.GetString("L2_JWT_SECRET"),
 		L2StartHeight:     viper.GetInt("L2_START_HEIGHT"),
 		L2Confirmations:   viper.GetInt("L2_CONFIRMATIONS"),
 		L2MaxBlockRange:   viper.GetInt("L2_MAX_BLOCK_RANGE"),
