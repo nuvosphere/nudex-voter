@@ -42,7 +42,7 @@ func StartUTXOService() {
 
 	http.HandleFunc("/submit_transaction", service.HandleSubmitTransaction)
 	// Use configuration port
-	addr := ":" + config.AppConfig.HTTPPort
+	addr := ":" + config.AppConfig.RPCPort
 	log.Infof("RPC server is running on port %s", config.AppConfig.HTTPPort)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
