@@ -26,6 +26,7 @@ type Application struct {
 	State           *state.State
 	LibP2PService   *p2p.LibP2PService
 	Layer2Listener  *layer2.Layer2Listener
+	BTCListener     *btc.BTCListener
 	HTTPServer      *http.HTTPServer
 	TssKeyInCh      chan tss.KeygenMessage
 	TssKeyOutCh     chan tsslib.Message
@@ -42,13 +43,15 @@ func NewApplication() *Application {
 	state := state.InitializeState(dbm)
 	libP2PService := p2p.NewLibP2PService(state)
 	layer2Listener := layer2.NewLayer2Listener(libP2PService, state, dbm)
+	btcListener := btc.NewBTCListener(libP2PService, state, dbm)
 	httpServer := http.NewHTTPServer(libP2PService, state, dbm)
 
 	return &Application{
 		DatabaseManager: dbm,
 		State:           state,
-		Layer2Listener:  layer2Listener,
 		LibP2PService:   libP2PService,
+		Layer2Listener:  layer2Listener,
+		BTCListener:     btcListener,
 		HTTPServer:      httpServer,
 		TssKeyInCh:      make(chan tss.KeygenMessage),
 		TssKeyOutCh:     make(chan tsslib.Message),
@@ -85,9 +88,14 @@ func (app *Application) Run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		app.BTCListener.Start(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 		go tss.HandleKeygenMessages(ctx, app.TssKeyInCh, app.TssKeyOutCh, app.TssKeyEndCh)
 		go tss.HandleSigningMessages(ctx, app.TssSignInCh, app.TssSignOutCh, app.TssSignEndCh)
-		go btc.StartBTCListener()
 		go rpc.StartUTXOService()
 	}()
 

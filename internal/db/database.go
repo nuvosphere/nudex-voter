@@ -13,7 +13,9 @@ import (
 )
 
 type DatabaseManager struct {
-	relayerDb *gorm.DB
+	relayerDb  *gorm.DB
+	btcLightDb *gorm.DB
+	btcCacheDb *gorm.DB
 }
 
 func NewDatabaseManager() *DatabaseManager {
@@ -38,10 +40,38 @@ func (dm *DatabaseManager) initDB() {
 	dm.relayerDb = relayerDb
 	log.Debugf("Database 1 connected successfully, path: %s", relayerPath)
 
+	btcLightPath := filepath.Join(dbDir, "btc_light.db")
+	btcLightDb, err := gorm.Open(sqlite.Open(btcLightPath), &gorm.Config{
+		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+	})
+	if err != nil {
+		log.Fatalf("Failed to connect to database 2: %v", err)
+	}
+	dm.btcLightDb = btcLightDb
+	log.Debugf("Database 2 connected successfully, path: %s", btcLightPath)
+
+	btcCachePath := filepath.Join(dbDir, "btc_cache.db")
+	btcCacheDb, err := gorm.Open(sqlite.Open(btcCachePath), &gorm.Config{
+		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+	})
+	if err != nil {
+		log.Fatalf("Failed to connect to database 3: %v", err)
+	}
+	dm.btcCacheDb = btcCacheDb
+	log.Debugf("Database 3 connected successfully, path: %s", btcCachePath)
+
 	dm.autoMigrate()
 	log.Debugf("Database migration completed successfully")
 }
 
 func (dm *DatabaseManager) GetRelayerDB() *gorm.DB {
 	return dm.relayerDb
+}
+
+func (dm *DatabaseManager) GetBtcLightDB() *gorm.DB {
+	return dm.btcLightDb
+}
+
+func (dm *DatabaseManager) GetBtcCacheDB() *gorm.DB {
+	return dm.btcCacheDb
 }

@@ -2,10 +2,10 @@ package rpc
 
 import (
 	"encoding/json"
+	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"net/http"
 
 	"github.com/btcsuite/btcd/wire"
-	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	log "github.com/sirupsen/logrus"
 )
@@ -23,7 +23,7 @@ func (s *UTXOService) HandleSubmitTransaction(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	spvProof, err := btc.GenerateSPVProof(&tx)
+	spvProof, err := btc.GenerateSPVProofByTx(&tx)
 	if err != nil {
 		http.Error(w, "Failed to generate SPV proof", http.StatusInternalServerError)
 		return
