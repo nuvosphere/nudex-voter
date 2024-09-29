@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/node"
@@ -43,12 +42,12 @@ func NewLayer2Listener(libp2p *p2p.LibP2PService, state *state.State, db *db.Dat
 		log.Fatalf("Error creating Layer2 EVM RPC client: %v", err)
 	}
 
-	contractVotingManager, err := abis.NewVotingManagerContract(common.HexToAddress(config.AppConfig.VotingContract), ethClient)
+	contractVotingManager, err := abis.NewVotingManagerContract(abis.VotingAddress, ethClient)
 	if err != nil {
 		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
 	}
 
-	contractAccountManager, err := abis.NewAccountManagerContract(common.HexToAddress(config.AppConfig.AccountContract), ethClient)
+	contractAccountManager, err := abis.NewAccountManagerContract(abis.AccountAddress, ethClient)
 	if err != nil {
 		log.Fatalf("Failed to instantiate contract AccountManager: %v", err)
 	}
@@ -122,7 +121,7 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 			filterQuery := ethereum.FilterQuery{
 				FromBlock: big.NewInt(int64(fromBlock)),
 				ToBlock:   big.NewInt(int64(toBlock)),
-				Addresses: []common.Address{common.HexToAddress(config.AppConfig.VotingContract)},
+				Addresses: []common.Address{abis.VotingAddress, abis.AccountAddress},
 			}
 
 			logs, err := lis.ethClient.FilterLogs(context.Background(), filterQuery)
@@ -134,8 +133,7 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 			}
 
 			for _, vLog := range logs {
-				parsedVotingManagerABI, _ := abi.JSON(strings.NewReader(votingManagerABI))
-				processVotingLog(lis, vLog, parsedVotingManagerABI)
+				lis.processLogs(vLog)
 				if syncStatus.LastSyncBlock < vLog.BlockNumber {
 					syncStatus.LastSyncBlock = vLog.BlockNumber
 					syncStatus.UpdatedAt = time.Now()
