@@ -90,5 +90,21 @@ func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
 }
 
 func (lis *Layer2Listener) processAccountLog(vLog types.Log) error {
+	addressRegistered, err := lis.contractAccountManager.ParseAddressRegistered(vLog)
+	if err == nil {
+		account := db.Account{
+			User:    addressRegistered.User.Hex(),
+			Account: addressRegistered.Account.Uint64(),
+			ChainId: addressRegistered.ChainId,
+			Index:   addressRegistered.Index.Uint64(),
+			Address: addressRegistered.NewAddress.Hex(),
+		}
+		err = lis.db.GetRelayerDB().Create(&account).Error
+		if err != nil {
+			log.Fatalf("Error adding address: %v", err)
+		} else {
+			log.Infof("Address %s registered for user: %s, chain:%s", account.Address, account.User, account.ChainId)
+		}
+	}
 	return nil
 }

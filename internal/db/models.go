@@ -46,6 +46,16 @@ type Participant struct {
 	Address string `gorm:"uniqueIndex;not null"`
 }
 
+// Account save all accounts
+type Account struct {
+	ID      uint64 `gorm:"primaryKey"`
+	User    string `gorm:"not null"`
+	Account uint64 `gorm:"not null"`
+	ChainId uint8  `gorm:"not null"`
+	Index   uint64 `gorm:"not null"`
+	Address string `gorm:"not null"`
+}
+
 type BtcBlock struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Height    uint64    `gorm:"not null;uniqueIndex" json:"height"`
@@ -82,7 +92,7 @@ type BtcTXOutput struct {
 }
 
 func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterRotation{}, &Participant{}); err != nil {
+	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterRotation{}, &Participant{}, &Account{}); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}
 	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {
