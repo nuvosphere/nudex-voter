@@ -19,8 +19,11 @@ type Config struct {
 	Libp2pPort        int
 	Libp2pBootNodes   string
 	BTCRPC            string
+	BTCRPC_USER       string
+	BTCRPC_PASS       string
 	BTCStartHeight    int
 	L2RPC             string
+	L2JwtSecret       string
 	L2StartHeight     int
 	L2Confirmations   int
 	L2MaxBlockRange   int
@@ -32,6 +35,7 @@ type Config struct {
 	DbDir             string
 	LogLevel          logrus.Level
 	VotingContract    string
+	AccountContract   string
 	WithdrawContract  string
 	L2PrivateKey      *ecdsa.PrivateKey
 	L2ChainId         *big.Int
@@ -48,8 +52,11 @@ func InitConfig() {
 	viper.SetDefault("LIBP2P_PORT", 4001)
 	viper.SetDefault("LIBP2P_BOOT_NODES", "")
 	viper.SetDefault("BTC_RPC", "http://localhost:8332")
+	viper.SetDefault("BTC_RPC_USER", "")
+	viper.SetDefault("BTC_RPC_PASS", "")
 	viper.SetDefault("BTC_START_HEIGHT", 0)
 	viper.SetDefault("L2_RPC", "http://localhost:8545")
+	viper.SetDefault("L2_JWT_SECRET", "")
 	viper.SetDefault("L2_START_HEIGHT", 0)
 	viper.SetDefault("L2_CONFIRMATIONS", 3)
 	viper.SetDefault("L2_MAX_BLOCK_RANGE", 500)
@@ -61,6 +68,7 @@ func InitConfig() {
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("DB_DIR", "/app/db")
 	viper.SetDefault("VOTING_CONTRACT", "")
+	viper.SetDefault("ACCOUNT_CONTRACT", "")
 	viper.SetDefault("WITHDRAW_CONTRACT", "")
 	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
 	viper.SetDefault("FIREBLOCKS_PRIVKEY", "")
@@ -86,8 +94,11 @@ func InitConfig() {
 		Libp2pPort:        viper.GetInt("LIBP2P_PORT"),
 		Libp2pBootNodes:   viper.GetString("LIBP2P_BOOT_NODES"),
 		BTCRPC:            viper.GetString("BTC_RPC"),
+		BTCRPC_USER:       viper.GetString("BTC_RPC_USER"),
+		BTCRPC_PASS:       viper.GetString("BTC_RPC_PASS"),
 		BTCStartHeight:    viper.GetInt("BTC_START_HEIGHT"),
 		L2RPC:             viper.GetString("L2_RPC"),
+		L2JwtSecret:       viper.GetString("L2_JWT_SECRET"),
 		L2StartHeight:     viper.GetInt("L2_START_HEIGHT"),
 		L2Confirmations:   viper.GetInt("L2_CONFIRMATIONS"),
 		L2MaxBlockRange:   viper.GetInt("L2_MAX_BLOCK_RANGE"),
@@ -99,6 +110,7 @@ func InitConfig() {
 		DbDir:             viper.GetString("DB_DIR"),
 		LogLevel:          logLevel,
 		VotingContract:    viper.GetString("VOTING_CONTRACT"),
+		AccountContract:   viper.GetString("ACCOUNT_CONTRACT"),
 		WithdrawContract:  viper.GetString("WITHDRAW_CONTRACT"),
 		L2PrivateKey:      l2PrivateKey,
 		L2ChainId:         big.NewInt(l2ChainId),

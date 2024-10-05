@@ -4,8 +4,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-
-	"gorm.io/gorm"
 )
 
 type BTCTransaction struct {
@@ -48,8 +46,59 @@ type Participant struct {
 	Address string `gorm:"uniqueIndex;not null"`
 }
 
-func MigrateDB(db *gorm.DB) {
-	if err := db.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterRotation{}, &Participant{}); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
+// Account save all accounts
+type Account struct {
+	ID      uint64 `gorm:"primaryKey"`
+	User    string `gorm:"not null"`
+	Account uint64 `gorm:"not null"`
+	ChainId uint8  `gorm:"not null"`
+	Index   uint64 `gorm:"not null"`
+	Address string `gorm:"not null"`
+}
+
+type BtcBlock struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Height    uint64    `gorm:"not null;uniqueIndex" json:"height"`
+	Hash      string    `gorm:"not null" json:"hash"`
+	Status    string    `gorm:"not null" json:"status"` // "unconfirm", "confirmed", "signing", "pending", "processed"
+	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
+}
+
+type BtcSyncStatus struct {
+	ID              uint      `gorm:"primaryKey" json:"id"`
+	UnconfirmHeight int64     `gorm:"not null" json:"unconfirm_height"`
+	ConfirmedHeight int64     `gorm:"not null" json:"confirmed_height"`
+	UpdatedAt       time.Time `gorm:"not null" json:"updated_at"`
+}
+
+type BtcBlockData struct {
+	ID           uint   `gorm:"primaryKey" json:"id"`
+	BlockHeight  uint64 `gorm:"unique;not null" json:"block_height"`
+	BlockHash    string `gorm:"unique;not null" json:"block_hash"`
+	Header       []byte `json:"header"`
+	Difficulty   uint32 `json:"difficulty"`
+	RandomNumber uint32 `json:"random_number"`
+	MerkleRoot   string `json:"merkle_root"`
+	BlockTime    int64  `json:"block_time"`
+	TxHashes     string `json:"tx_hashes"`
+}
+
+type BtcTXOutput struct {
+	ID       uint   `gorm:"primaryKey" json:"id"`
+	BlockID  uint   `json:"block_data_id"`
+	TxHash   string `json:"tx_hash"`
+	Value    uint64 `json:"value"`
+	PkScript []byte `json:"pk_script"`
+}
+
+func (dm *DatabaseManager) autoMigrate() {
+	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterRotation{}, &Participant{}, &Account{}); err != nil {
+		log.Fatalf("Failed to migrate database 1: %v", err)
+	}
+	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {
+		log.Fatalf("Failed to migrate database 3: %v", err)
+	}
+	if err := dm.btcCacheDb.AutoMigrate(&BtcSyncStatus{}, &BtcBlockData{}, &BtcTXOutput{}); err != nil {
+		log.Fatalf("Failed to migrate database 2: %v", err)
 	}
 }
