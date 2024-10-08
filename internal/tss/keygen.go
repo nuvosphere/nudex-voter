@@ -3,13 +3,14 @@ package tss
 import (
 	"context"
 	"encoding/json"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	log "github.com/sirupsen/logrus"
 )
 
-func HandleKeygenMessages(ctx context.Context, inCh <-chan KeygenMessage, outCh chan<- tss.Message, endCh chan<- *keygen.LocalPartySaveData) {
+func HandleKeygenMessages(ctx context.Context, inCh <-chan types.KeygenMessage, outCh chan<- tss.Message, endCh chan<- *keygen.LocalPartySaveData) {
 	parties := 3
 	threshold := 2
 	partyIDs := createPartyIDs(parties)

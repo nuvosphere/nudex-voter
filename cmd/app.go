@@ -14,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -29,10 +30,10 @@ type Application struct {
 	BTCListener     *btc.BTCListener
 	TssService      *tss.TSSService
 	HTTPServer      *http.HTTPServer
-	TssKeyInCh      chan tss.KeygenMessage
+	TssKeyInCh      chan types.KeygenMessage
 	TssKeyOutCh     chan tsslib.Message
 	TssKeyEndCh     chan *keygen.LocalPartySaveData
-	TssSignInCh     chan tss.SigningMessage
+	TssSignInCh     chan types.SigningMessage
 	TssSignOutCh    chan tsslib.Message
 	TssSignEndCh    chan *common.SignatureData
 }
@@ -56,10 +57,10 @@ func NewApplication() *Application {
 		BTCListener:     btcListener,
 		TssService:      tssService,
 		HTTPServer:      httpServer,
-		TssKeyInCh:      make(chan tss.KeygenMessage),
+		TssKeyInCh:      make(chan types.KeygenMessage),
 		TssKeyOutCh:     make(chan tsslib.Message),
 		TssKeyEndCh:     make(chan *keygen.LocalPartySaveData),
-		TssSignInCh:     make(chan tss.SigningMessage),
+		TssSignInCh:     make(chan types.SigningMessage),
 		TssSignOutCh:    make(chan tsslib.Message),
 		TssSignEndCh:    make(chan *common.SignatureData),
 	}

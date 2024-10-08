@@ -3,6 +3,7 @@ package tss
 import (
 	"context"
 	"encoding/json"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"math/big"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -11,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func HandleSigningMessages(ctx context.Context, inCh <-chan SigningMessage, outCh chan<- tss.Message, endCh chan<- *common.SignatureData) {
+func HandleSigningMessages(ctx context.Context, inCh <-chan types.SigningMessage, outCh chan<- tss.Message, endCh chan<- *common.SignatureData) {
 	parties := 3
 	threshold := 2
 	partyIDs := createPartyIDs(parties)

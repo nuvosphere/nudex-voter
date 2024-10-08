@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -89,14 +90,28 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 		log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, receivedMsg.Data)
 
 		switch receivedMsg.MessageType {
-		case MessageTypeKeygen:
-			libp2p.state.EventBus.Publish(state.SigKegen, receivedMsg)
-		case MessageTypeSigning:
-			libp2p.state.EventBus.Publish(state.SigSigning, receivedMsg)
+		case MessageTypeSigReq:
+			libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
+		case MessageTypeSigResp:
+			libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
+		case MessageTypeDepositReceive:
+			libp2p.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
 		default:
 			log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
 		}
 	}
+}
+
+// convertMsgData converts the message data to the corresponding struct
+// TODO: use reflector to optimize this function
+func convertMsgData(msg Message) interface{} {
+	if msg.DataType == DataTypeKeygenPrepare {
+		jsonBytes, _ := json.Marshal(msg.Data)
+		var rawData types.KeyGenPrepareMessage
+		_ = json.Unmarshal(jsonBytes, &rawData)
+		return rawData
+	}
+	return msg.Data
 }
 
 func (libp2p *LibP2PService) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
