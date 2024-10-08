@@ -44,19 +44,25 @@ func handleHandshake(s network.Stream, node host.Host) {
 
 	log.Info("Handshake successful")
 }
-func PublishMessage(ctx context.Context, msg Message) {
+func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		log.Errorf("Failed to marshal message: %v", err)
 		return
 	}
 
-	if messageTopic == nil {
-		log.Error("Message topic is nil, cannot publish message")
-		return
+	if libp2p.MessageTopic == nil {
+		startTime := time.Now()
+		if time.Since(startTime) >= 10*time.Second {
+			log.Error("Message topic is nil, cannot publish message")
+			return
+		}
+		if libp2p.MessageTopic == nil {
+			time.Sleep(1 * time.Second)
+		}
 	}
 
-	if err := messageTopic.Publish(ctx, msgBytes); err != nil {
+	if err := libp2p.MessageTopic.Publish(ctx, msgBytes); err != nil {
 		log.Errorf("Failed to publish message: %v", err)
 	}
 }
@@ -86,7 +92,7 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 		case MessageTypeKeygen:
 			libp2p.state.EventBus.Publish(state.SigKegen, receivedMsg)
 		case MessageTypeSigning:
-			libp2p.state.EventBus.Publish(state.SigKegen, receivedMsg)
+			libp2p.state.EventBus.Publish(state.SigSigning, receivedMsg)
 		default:
 			log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
 		}

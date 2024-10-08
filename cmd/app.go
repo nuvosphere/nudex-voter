@@ -27,6 +27,7 @@ type Application struct {
 	LibP2PService   *p2p.LibP2PService
 	Layer2Listener  *layer2.Layer2Listener
 	BTCListener     *btc.BTCListener
+	TssService      *tss.TSSService
 	HTTPServer      *http.HTTPServer
 	TssKeyInCh      chan tss.KeygenMessage
 	TssKeyOutCh     chan tsslib.Message
@@ -44,6 +45,7 @@ func NewApplication() *Application {
 	libP2PService := p2p.NewLibP2PService(state)
 	layer2Listener := layer2.NewLayer2Listener(libP2PService, state, dbm)
 	btcListener := btc.NewBTCListener(libP2PService, state, dbm)
+	tssService := tss.NewTssService(libP2PService, state)
 	httpServer := http.NewHTTPServer(libP2PService, state, dbm)
 
 	return &Application{
@@ -52,6 +54,7 @@ func NewApplication() *Application {
 		LibP2PService:   libP2PService,
 		Layer2Listener:  layer2Listener,
 		BTCListener:     btcListener,
+		TssService:      tssService,
 		HTTPServer:      httpServer,
 		TssKeyInCh:      make(chan tss.KeygenMessage),
 		TssKeyOutCh:     make(chan tsslib.Message),
@@ -89,6 +92,12 @@ func (app *Application) Run() {
 	go func() {
 		defer wg.Done()
 		app.BTCListener.Start(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		app.TssService.Start(ctx)
 	}()
 
 	wg.Add(1)

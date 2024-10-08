@@ -20,3 +20,7 @@ const (
 	MessageTypeKeygen
 	MessageTypeSigning
 )
+
+const (
+	DataTypeKeygenPrepare = "KeygenPrepare"
+)
