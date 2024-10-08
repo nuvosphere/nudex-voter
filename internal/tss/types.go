@@ -19,8 +19,14 @@ type TSSService struct {
 	sigStartCh   chan interface{}
 	sigReceiveCh chan interface{}
 
+	sigFailChan    chan interface{}
+	sigFinishChan  chan interface{}
+	sigTimeoutChan chan interface{}
+
 	// [request_id][vote_address]MsgSign
 	sigMap        map[string]map[string]interface{}
 	sigTimeoutMap map[string]time.Time
 	sigMu         sync.RWMutex
+
+	once sync.Once
 }

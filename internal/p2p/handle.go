@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"time"
@@ -45,27 +46,23 @@ func handleHandshake(s network.Stream, node host.Host) {
 
 	log.Info("Handshake successful")
 }
-func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) {
+func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) error {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
-		log.Errorf("Failed to marshal message: %v", err)
-		return
+		return errors.New("failed to marshal message")
 	}
 
 	if libp2p.messageTopic == nil {
 		startTime := time.Now()
 		if time.Since(startTime) >= 10*time.Second {
-			log.Error("Message topic is nil, cannot publish message")
-			return
+			return errors.New("message topic is nil, cannot publish message")
 		}
 		if libp2p.messageTopic == nil {
 			time.Sleep(1 * time.Second)
 		}
 	}
 
-	if err := libp2p.messageTopic.Publish(ctx, msgBytes); err != nil {
-		log.Errorf("Failed to publish message: %v", err)
-	}
+	return libp2p.messageTopic.Publish(ctx, msgBytes)
 }
 
 func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
@@ -91,7 +88,7 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 
 		switch receivedMsg.MessageType {
 		case MessageTypeSigReq:
-			libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
+			libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
 		case MessageTypeSigResp:
 			libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
 		case MessageTypeDepositReceive:
@@ -107,7 +104,7 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 func convertMsgData(msg Message) interface{} {
 	if msg.DataType == DataTypeKeygenPrepare {
 		jsonBytes, _ := json.Marshal(msg.Data)
-		var rawData types.KeyGenPrepareMessage
+		var rawData types.MsgSignKeyPrepareMessage
 		_ = json.Unmarshal(jsonBytes, &rawData)
 		return rawData
 	}
