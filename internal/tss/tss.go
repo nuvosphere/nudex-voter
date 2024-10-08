@@ -19,7 +19,7 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 
 func (tss *TSSService) Start(ctx context.Context) {
 	keygenPrepareMessage := KeyGenPrepareMessage{
-		PublicKeys: config.AppConfig.TssPublicKeys,
+		PublicKeys: PublicKeysToHex(config.AppConfig.TssPublicKeys),
 		Threshold:  config.AppConfig.TssThreshold,
 		Timestamp:  time.Now().Unix(),
 	}

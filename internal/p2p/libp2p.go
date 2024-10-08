@@ -35,7 +35,7 @@ const (
 )
 
 type LibP2PService struct {
-	MessageTopic *pubsub.Topic
+	messageTopic *pubsub.Topic
 
 	state *state.State
 }
@@ -61,12 +61,12 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 
 	go lp.connectToBootNodes(ctx, node)
 
-	lp.MessageTopic, err = ps.Join(messageTopicName)
+	lp.messageTopic, err = ps.Join(messageTopicName)
 	if err != nil {
 		log.Fatalf("Failed to join message topic: %v", err)
 	}
 
-	sub, err := lp.MessageTopic.Subscribe()
+	sub, err := lp.messageTopic.Subscribe()
 	if err != nil {
 		log.Fatalf("Failed to subscribe to message topic: %v", err)
 	}

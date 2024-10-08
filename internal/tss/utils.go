@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -59,4 +61,21 @@ func loadTSSData() (*keygen.LocalPartySaveData, error) {
 
 	log.Infof("Successfully loaded TSS data from %s", filePath)
 	return &data, nil
+}
+
+func PublicKeysToHex(pubKeys []*ecdsa.PublicKey) []string {
+	hexStrings := make([]string, len(pubKeys))
+	for i, pubKey := range pubKeys {
+		var prefix byte
+		if pubKey.Y.Bit(0) == 0 {
+			prefix = 0x02
+		} else {
+			prefix = 0x03
+		}
+
+		pubKeyBytes := append([]byte{prefix}, pubKey.X.Bytes()...)
+
+		hexStrings[i] = hex.EncodeToString(pubKeyBytes)
+	}
+	return hexStrings
 }

@@ -51,18 +51,18 @@ func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) {
 		return
 	}
 
-	if libp2p.MessageTopic == nil {
+	if libp2p.messageTopic == nil {
 		startTime := time.Now()
 		if time.Since(startTime) >= 10*time.Second {
 			log.Error("Message topic is nil, cannot publish message")
 			return
 		}
-		if libp2p.MessageTopic == nil {
+		if libp2p.messageTopic == nil {
 			time.Sleep(1 * time.Second)
 		}
 	}
 
-	if err := libp2p.MessageTopic.Publish(ctx, msgBytes); err != nil {
+	if err := libp2p.messageTopic.Publish(ctx, msgBytes); err != nil {
 		log.Errorf("Failed to publish message: %v", err)
 	}
 }

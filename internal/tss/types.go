@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"crypto/ecdsa"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 )
@@ -12,9 +11,9 @@ type TSSService struct {
 }
 
 type KeyGenPrepareMessage struct {
-	PublicKeys []*ecdsa.PublicKey `json:"public_keys"`
-	Threshold  int                `json:"threshold"`
-	Timestamp  int64              `json:"ts"`
+	PublicKeys []string `json:"public_keys"`
+	Threshold  int      `json:"threshold"`
+	Timestamp  int64    `json:"ts"`
 }
 
 type KeygenMessage struct {
