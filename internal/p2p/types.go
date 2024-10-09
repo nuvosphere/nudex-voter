@@ -16,12 +16,14 @@ type HeartbeatMessage struct {
 type MessageType int
 
 const (
-	MessageTypeUnknown MessageType = iota
+	MessageTypeUnknown = iota
+	MessageTypeKeygen
 	MessageTypeSigReq
 	MessageTypeSigResp
 	MessageTypeDepositReceive
 )
 
 const (
-	DataTypeKeygenPrepare = "KeygenPrepare"
+	DataTypeKeygenReq      = "KeygenReq"
+	DataTypeKeygenResponse = "KeygenResponse"
 )

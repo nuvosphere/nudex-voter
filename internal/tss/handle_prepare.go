@@ -27,7 +27,7 @@ func (tss *TSSService) handleSigStartKeyPrepare(ctx context.Context, e types.Msg
 			RequestId:    e.RequestId,
 			IsProposer:   true,
 			VoterAddress: tss.address.Hex(),
-			SigData:      s.makeSigNewBlock(e.PublicKeys, e.Threshold),
+			SigData:      nil,
 			CreateTime:   time.Now().Unix(),
 		},
 		PublicKeys: e.PublicKeys,

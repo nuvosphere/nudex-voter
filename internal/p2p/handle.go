@@ -87,6 +87,8 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 		log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, receivedMsg.Data)
 
 		switch receivedMsg.MessageType {
+		case MessageTypeKeygen:
+			libp2p.state.EventBus.Publish(state.Keygen, convertMsgData(receivedMsg))
 		case MessageTypeSigReq:
 			libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
 		case MessageTypeSigResp:
@@ -102,9 +104,9 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 // convertMsgData converts the message data to the corresponding struct
 // TODO: use reflector to optimize this function
 func convertMsgData(msg Message) interface{} {
-	if msg.DataType == DataTypeKeygenPrepare {
+	if msg.DataType == DataTypeKeygenReq {
 		jsonBytes, _ := json.Marshal(msg.Data)
-		var rawData types.MsgSignKeyPrepareMessage
+		var rawData types.KeygenReqMessage
 		_ = json.Unmarshal(jsonBytes, &rawData)
 		return rawData
 	}

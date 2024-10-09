@@ -46,33 +46,30 @@ func (tss *TSSService) initSig(ctx context.Context) {
 	defer tss.sigMu.Unlock()
 
 	requestId := fmt.Sprintf("KEYGEN:%s", crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey).Hex())
-	keygenPrepareMessage := types.MsgSignKeyPrepareMessage{
-		MsgSign: types.MsgSign{
-			RequestId:    requestId,
-			IsProposer:   true,
-			VoterAddress: tss.address.Hex(),
-			SigData:      nil,
-			CreateTime:   time.Now().Unix(),
-		},
-		PublicKeys: PublicKeysToHex(config.AppConfig.TssPublicKeys),
-		Threshold:  config.AppConfig.TssThreshold,
+	keygenReqMessage := types.KeygenReqMessage{
+		RequestId:    requestId,
+		IsProposer:   true,
+		VoterAddress: tss.address.Hex(),
+		CreateTime:   time.Now().Unix(),
+		PublicKeys:   PublicKeysToHex(config.AppConfig.TssPublicKeys),
+		Threshold:    config.AppConfig.TssThreshold,
 	}
 
 	p2pMsg := p2p.Message{
-		MessageType: p2p.MessageTypeSigReq,
+		MessageType: p2p.MessageTypeKeygen,
 		RequestId:   requestId,
-		DataType:    p2p.DataTypeKeygenPrepare,
-		Data:        keygenPrepareMessage,
+		DataType:    p2p.DataTypeKeygenReq,
+		Data:        keygenReqMessage,
 	}
 
 	err := tss.libp2p.PublishMessage(ctx, p2pMsg)
 	if err != nil {
-		log.Errorf("Error publishing keygenPrepare message: %v", err)
+		log.Errorf("Error publishing keygenReqMessage message: %v", err)
 		return
 	}
-	log.Debugf("Publish p2p message keygenPrepare: RequestId=%s, Key Length=%d, Threshold=%d, Keys=%v",
-		requestId, len(keygenPrepareMessage.PublicKeys), keygenPrepareMessage.Threshold,
-		keygenPrepareMessage.PublicKeys)
+	log.Debugf("Publish p2p message keygenReqMessage: RequestId=%s, Key Length=%d, Threshold=%d, Keys=%v",
+		requestId, len(keygenReqMessage.PublicKeys), keygenReqMessage.Threshold,
+		keygenReqMessage.PublicKeys)
 }
 
 func (tss *TSSService) signLoop(ctx context.Context) {

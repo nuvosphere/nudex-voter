@@ -8,6 +8,7 @@ type EventType int
 
 const (
 	EventUnkown EventType = iota
+	Keygen
 	SigStart
 	SigReceive
 	SigFinish
