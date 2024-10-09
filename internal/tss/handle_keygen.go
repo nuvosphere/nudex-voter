@@ -81,7 +81,7 @@ func (tss *TSSService) handleKeygenReceive(ctx context.Context, event interface{
 
 	tss.removeSigMap(message.RequestId, false)
 
-	tss.setup(ctx)
+	tss.setup()
 	tss.sigMu.Unlock()
 
 	return nil

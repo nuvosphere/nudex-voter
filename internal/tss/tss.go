@@ -54,7 +54,7 @@ func (tss *TSSService) keygen(ctx context.Context) {
 	defer tss.sigMu.Unlock()
 
 	if config.AppConfig.TssThreshold == 1 {
-		tss.setup(ctx)
+		tss.setup()
 		return
 	}
 
@@ -90,7 +90,7 @@ func (tss *TSSService) keygen(ctx context.Context) {
 	log.Infof("KeygenReq broadcast ok, request id: %s", requestId)
 }
 
-func (tss *TSSService) setup(ctx context.Context) {
+func (tss *TSSService) setup() {
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
@@ -117,37 +117,43 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 	tss.state.EventBus.Subscribe(state.SigFinish, tss.sigFinishChan)
 	tss.state.EventBus.Subscribe(state.SigTimeout, tss.sigTimeoutChan)
 
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("Signer stoping...")
-			return
-		case event := <-tss.keygenReqCh:
-			log.Debugf("Received keygenReq event: %v", event)
-			tss.handleKeygenReq(ctx, event)
-		case event := <-tss.keygenReceiveCh:
-			log.Debugf("Received keygenReveive event: %v", event)
-			tss.handleKeygenReceive(ctx, event)
-		case event := <-tss.keyOutCh:
-			log.Debugf("Received keyOut event: %v", event)
-		case event := <-tss.keyEndCh:
-			log.Debugf("Received keyEnd event: %v", event)
-		case event := <-tss.sigStartCh:
-			log.Debugf("Received sigStart event: %v", event)
-			tss.handleSigStart(ctx, event)
-		case event := <-tss.sigReceiveCh:
-			log.Debugf("Received sigReceive event: %v", event)
-			tss.handleSigReceive(ctx, event)
-		case sigFail := <-tss.sigFailChan:
-			tss.handleSigFailed(ctx, sigFail, "failed")
-		case sigTimeout := <-tss.sigTimeoutChan:
-			tss.handleSigFailed(ctx, sigTimeout, "timeout")
-		case sigFinish := <-tss.sigFinishChan:
-			tss.handleSigFinish(ctx, sigFinish)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("Signer stopping...")
+				return
+			case event := <-tss.keygenReqCh:
+				log.Debugf("Received keygenReq event: %v", event)
+				err := tss.handleKeygenReq(ctx, event)
+				if err != nil {
+					log.Warnf("handle keygenReq error event: %v, %v", event, err)
+				}
+			case event := <-tss.keygenReceiveCh:
+				log.Debugf("Received keygenReveive event: %v", event)
+				err := tss.handleKeygenReceive(ctx, event)
+				if err != nil {
+					log.Warnf("handle keygenReveive error event: %v, %v", event, err)
+				}
+			case event := <-tss.keyOutCh:
+				log.Debugf("Received keyOut event: %v", event)
+			case event := <-tss.keyEndCh:
+				log.Debugf("Received keyEnd event: %v", event)
+			case event := <-tss.sigStartCh:
+				log.Debugf("Received sigStart event: %v", event)
+				tss.handleSigStart(ctx, event)
+			case event := <-tss.sigReceiveCh:
+				log.Debugf("Received sigReceive event: %v", event)
+				tss.handleSigReceive(ctx, event)
+			case sigFail := <-tss.sigFailChan:
+				tss.handleSigFailed(ctx, sigFail, "failed")
+			case sigTimeout := <-tss.sigTimeoutChan:
+				tss.handleSigFailed(ctx, sigTimeout, "timeout")
+			case sigFinish := <-tss.sigFinishChan:
+				tss.handleSigFinish(ctx, sigFinish)
+			}
 		}
-	}
+	}()
 
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
