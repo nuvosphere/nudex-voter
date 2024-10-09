@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -78,4 +79,20 @@ func PublicKeysToHex(pubKeys []*ecdsa.PublicKey) []string {
 		hexStrings[i] = hex.EncodeToString(pubKeyBytes)
 	}
 	return hexStrings
+}
+
+func CompareStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	sort.Strings(a)
+	sort.Strings(b)
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

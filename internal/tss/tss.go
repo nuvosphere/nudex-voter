@@ -19,6 +19,9 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 		libp2p:     libp2p,
 		state:      state,
 
+		keygenReqCh:     make(chan interface{}, 10),
+		keygenReceiveCh: make(chan interface{}, 10),
+
 		sigStartCh:   make(chan interface{}, 256),
 		sigReceiveCh: make(chan interface{}, 1024),
 
@@ -32,7 +35,7 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 }
 
 func (tss *TSSService) Start(ctx context.Context) {
-	tss.initSig(ctx)
+	tss.keygen(ctx)
 
 	go tss.signLoop(ctx)
 
@@ -41,14 +44,13 @@ func (tss *TSSService) Start(ctx context.Context) {
 	tss.Stop()
 }
 
-func (tss *TSSService) initSig(ctx context.Context) {
+func (tss *TSSService) keygen(ctx context.Context) {
 	tss.sigMu.Lock()
 	defer tss.sigMu.Unlock()
 
 	requestId := fmt.Sprintf("KEYGEN:%s", crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey).Hex())
 	keygenReqMessage := types.KeygenReqMessage{
 		RequestId:    requestId,
-		IsProposer:   true,
 		VoterAddress: tss.address.Hex(),
 		CreateTime:   time.Now().Unix(),
 		PublicKeys:   PublicKeysToHex(config.AppConfig.TssPublicKeys),
@@ -56,7 +58,7 @@ func (tss *TSSService) initSig(ctx context.Context) {
 	}
 
 	p2pMsg := p2p.Message{
-		MessageType: p2p.MessageTypeKeygen,
+		MessageType: p2p.MessageTypeKeygenReq,
 		RequestId:   requestId,
 		DataType:    p2p.DataTypeKeygenReq,
 		Data:        keygenReqMessage,
@@ -70,9 +72,22 @@ func (tss *TSSService) initSig(ctx context.Context) {
 	log.Debugf("Publish p2p message keygenReqMessage: RequestId=%s, Key Length=%d, Threshold=%d, Keys=%v",
 		requestId, len(keygenReqMessage.PublicKeys), keygenReqMessage.Threshold,
 		keygenReqMessage.PublicKeys)
+
+	tss.sigMap[requestId] = make(map[string]interface{})
+	tss.sigMap[requestId][tss.address.Hex()] = true
+	timeoutDuration := config.AppConfig.TssSigTimeout
+	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
+	log.Infof("KeygenReq broadcast ok, request id: %s", requestId)
+}
+
+func (tss *TSSService) setup(ctx context.Context) {
+
 }
 
 func (tss *TSSService) signLoop(ctx context.Context) {
+	tss.state.EventBus.Subscribe(state.KeygenStart, tss.keygenReqCh)
+	tss.state.EventBus.Subscribe(state.KeygenReceive, tss.keygenReceiveCh)
+
 	tss.state.EventBus.Subscribe(state.SigStart, tss.sigStartCh)
 	tss.state.EventBus.Subscribe(state.SigReceive, tss.sigReceiveCh)
 
@@ -87,6 +102,12 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 		case <-ctx.Done():
 			log.Info("Signer stoping...")
 			return
+		case event := <-tss.keygenReqCh:
+			log.Debugf("Received keygenReq event: %v", event)
+			tss.handleKeygenReq(ctx, event)
+		case event := <-tss.keygenReceiveCh:
+			log.Debugf("Received keygenReveive event: %v", event)
+			tss.handleKeygenReceive(ctx, event)
 		case event := <-tss.sigStartCh:
 			log.Debugf("Received sigStart event: %v", event)
 			tss.handleSigStart(ctx, event)
@@ -120,6 +141,9 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 
 func (tss *TSSService) Stop() {
 	tss.once.Do(func() {
+		close(tss.keygenReqCh)
+		close(tss.keygenReceiveCh)
+
 		close(tss.sigStartCh)
 		close(tss.sigReceiveCh)
 

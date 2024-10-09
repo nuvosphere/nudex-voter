@@ -17,7 +17,8 @@ type MessageType int
 
 const (
 	MessageTypeUnknown = iota
-	MessageTypeKeygen
+	MessageTypeKeygenReq
+	MessageTypeKeygenResp
 	MessageTypeSigReq
 	MessageTypeSigResp
 	MessageTypeDepositReceive

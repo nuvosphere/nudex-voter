@@ -16,6 +16,9 @@ type TSSService struct {
 	libp2p *p2p.LibP2PService
 	state  *state.State
 
+	keygenReqCh     chan interface{}
+	keygenReceiveCh chan interface{}
+
 	sigStartCh   chan interface{}
 	sigReceiveCh chan interface{}
 

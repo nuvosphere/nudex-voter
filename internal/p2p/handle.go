@@ -87,8 +87,10 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 		log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, receivedMsg.Data)
 
 		switch receivedMsg.MessageType {
-		case MessageTypeKeygen:
-			libp2p.state.EventBus.Publish(state.Keygen, convertMsgData(receivedMsg))
+		case MessageTypeKeygenReq:
+			libp2p.state.EventBus.Publish(state.KeygenStart, convertMsgData(receivedMsg))
+		case MessageTypeKeygenResp:
+			libp2p.state.EventBus.Publish(state.KeygenReceive, convertMsgData(receivedMsg))
 		case MessageTypeSigReq:
 			libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
 		case MessageTypeSigResp:
@@ -107,6 +109,12 @@ func convertMsgData(msg Message) interface{} {
 	if msg.DataType == DataTypeKeygenReq {
 		jsonBytes, _ := json.Marshal(msg.Data)
 		var rawData types.KeygenReqMessage
+		_ = json.Unmarshal(jsonBytes, &rawData)
+		return rawData
+	}
+	if msg.DataType == DataTypeKeygenResponse {
+		jsonBytes, _ := json.Marshal(msg.Data)
+		var rawData types.KeygenReceiveMessage
 		_ = json.Unmarshal(jsonBytes, &rawData)
 		return rawData
 	}
