@@ -2,6 +2,8 @@ package tss
 
 import (
 	"crypto/ecdsa"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
@@ -18,6 +20,9 @@ type TSSService struct {
 
 	keygenReqCh     chan interface{}
 	keygenReceiveCh chan interface{}
+
+	keyOutCh chan tsslib.Message
+	keyEndCh chan *keygen.LocalPartySaveData
 
 	sigStartCh   chan interface{}
 	sigReceiveCh chan interface{}

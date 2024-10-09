@@ -104,7 +104,6 @@ func (app *Application) Run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		go tss.HandleKeygenMessages(ctx, app.TssKeyInCh, app.TssKeyOutCh, app.TssKeyEndCh)
 		go tss.HandleSigningMessages(ctx, app.TssSignInCh, app.TssSignOutCh, app.TssSignEndCh)
 		go rpc.StartUTXOService()
 	}()

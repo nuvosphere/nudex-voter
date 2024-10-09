@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math/big"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -144,6 +145,8 @@ func ParseECDSAPublicKeys(publicKeyStr string) ([]*ecdsa.PublicKey, error) {
 	for i := range publicKeyHexArray {
 		publicKeyHexArray[i] = strings.TrimPrefix(publicKeyHexArray[i], "0x")
 	}
+
+	sort.Strings(publicKeyHexArray)
 
 	var publicKeys []*ecdsa.PublicKey
 

@@ -3,6 +3,8 @@ package tss
 import (
 	"context"
 	"fmt"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
@@ -21,6 +23,9 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 
 		keygenReqCh:     make(chan interface{}, 10),
 		keygenReceiveCh: make(chan interface{}, 10),
+
+		keyOutCh: make(chan tsslib.Message),
+		keyEndCh: make(chan *keygen.LocalPartySaveData),
 
 		sigStartCh:   make(chan interface{}, 256),
 		sigReceiveCh: make(chan interface{}, 1024),
@@ -47,6 +52,11 @@ func (tss *TSSService) Start(ctx context.Context) {
 func (tss *TSSService) keygen(ctx context.Context) {
 	tss.sigMu.Lock()
 	defer tss.sigMu.Unlock()
+
+	if config.AppConfig.TssThreshold == 1 {
+		tss.setup(ctx)
+		return
+	}
 
 	requestId := fmt.Sprintf("KEYGEN:%s", crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey).Hex())
 	keygenReqMessage := types.KeygenReqMessage{
@@ -81,6 +91,18 @@ func (tss *TSSService) keygen(ctx context.Context) {
 }
 
 func (tss *TSSService) setup(ctx context.Context) {
+	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
+	peerCtx := tsslib.NewPeerContext(partyIDs)
+
+	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.address.Hex())
+	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
+
+	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh)
+
+	if err := party.Start(); err != nil {
+		log.Errorf("TSS keygen process failed to start: %v", err)
+		return
+	}
 
 }
 
@@ -108,6 +130,10 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 		case event := <-tss.keygenReceiveCh:
 			log.Debugf("Received keygenReveive event: %v", event)
 			tss.handleKeygenReceive(ctx, event)
+		case event := <-tss.keyOutCh:
+			log.Debugf("Received keyOut event: %v", event)
+		case event := <-tss.keyEndCh:
+			log.Debugf("Received keyEnd event: %v", event)
 		case event := <-tss.sigStartCh:
 			log.Debugf("Received sigStart event: %v", event)
 			tss.handleSigStart(ctx, event)
@@ -143,6 +169,9 @@ func (tss *TSSService) Stop() {
 	tss.once.Do(func() {
 		close(tss.keygenReqCh)
 		close(tss.keygenReceiveCh)
+
+		close(tss.keyOutCh)
+		close(tss.keyEndCh)
 
 		close(tss.sigStartCh)
 		close(tss.sigReceiveCh)

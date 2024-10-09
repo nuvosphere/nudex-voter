@@ -5,23 +5,28 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/crypto"
+	log "github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
-
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	"github.com/bnb-chain/tss-lib/v2/tss"
-	log "github.com/sirupsen/logrus"
 )
 
-func createPartyIDs(parties int) tss.SortedPartyIDs {
-	partyIDs := make(tss.SortedPartyIDs, parties)
-	for i := 0; i < parties; i++ {
-		partyIDs[i] = tss.NewPartyID(strconv.Itoa(i), "", new(big.Int).SetInt64(int64(i)))
+func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
+	var tssAllPartyIDs = make(tss.UnSortedPartyIDs, len(publicKeys))
+	for i, publicKey := range publicKeys {
+		key, _ := new(big.Int).SetString(ConvertPubKeyToHex(publicKey), 16)
+		tssAllPartyIDs[i] = tss.NewPartyID(
+			strconv.Itoa(i),
+			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
+			key,
+		)
 	}
-	return partyIDs
+	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
 func saveTSSData(data *keygen.LocalPartySaveData) {
@@ -67,18 +72,28 @@ func loadTSSData() (*keygen.LocalPartySaveData, error) {
 func PublicKeysToHex(pubKeys []*ecdsa.PublicKey) []string {
 	hexStrings := make([]string, len(pubKeys))
 	for i, pubKey := range pubKeys {
-		var prefix byte
-		if pubKey.Y.Bit(0) == 0 {
-			prefix = 0x02
-		} else {
-			prefix = 0x03
-		}
-
-		pubKeyBytes := append([]byte{prefix}, pubKey.X.Bytes()...)
-
-		hexStrings[i] = hex.EncodeToString(pubKeyBytes)
+		hexStrings[i] = ConvertPubKeyToHex(pubKey)
 	}
 	return hexStrings
+}
+
+func ConvertPubKeyToHex(pubKey *ecdsa.PublicKey) string {
+	if pubKey == nil {
+		return ""
+	}
+
+	var prefix byte
+	if pubKey.Y.Bit(0) == 0 {
+		prefix = 0x02 // Even Y-coordinate
+	} else {
+		prefix = 0x03 // Odd Y-coordinate
+	}
+
+	// Create the public key byte slice with the prefix
+	pubKeyBytes := append([]byte{prefix}, pubKey.X.Bytes()...)
+
+	// Convert to hex string
+	return hex.EncodeToString(pubKeyBytes)
 }
 
 func CompareStrings(a, b []string) bool {
@@ -95,4 +110,14 @@ func CompareStrings(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func AddressIndex(publicKeys []*ecdsa.PublicKey, tssAddress string) int {
+	for i, pubKey := range publicKeys {
+		address := crypto.PubkeyToAddress(*pubKey).Hex()
+		if address == tssAddress {
+			return i // Return the index if a match is found
+		}
+	}
+	return -1 // Return -1 if not found
 }
