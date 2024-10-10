@@ -40,9 +40,9 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 }
 
 func (tss *TSSService) Start(ctx context.Context) {
-	tss.keygen(ctx)
-
 	go tss.signLoop(ctx)
+
+	tss.keygen(ctx)
 
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
@@ -91,13 +91,15 @@ func (tss *TSSService) keygen(ctx context.Context) {
 }
 
 func (tss *TSSService) setup() {
+	preParams, _ := keygen.GeneratePreParams(1 * time.Minute)
+
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
 	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.address.Hex())
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh)
+	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams)
 
 	if err := party.Start(); err != nil {
 		log.Errorf("TSS keygen process failed to start: %v", err)
