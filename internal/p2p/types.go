@@ -17,6 +17,7 @@ type MessageType int
 
 const (
 	MessageTypeUnknown = iota
+	MessageTypeTssUpdate
 	MessageTypeKeygenReq
 	MessageTypeKeygenResp
 	MessageTypeSigReq
@@ -25,6 +26,7 @@ const (
 )
 
 const (
-	DataTypeKeygenReq      = "KeygenReq"
-	DataTypeKeygenResponse = "KeygenResponse"
+	DataTypeTssUpdateMessage = "TssUpdateMessage"
+	DataTypeKeygenReq        = "KeygenReq"
+	DataTypeKeygenResponse   = "KeygenResponse"
 )

@@ -21,6 +21,8 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 		libp2p:     libp2p,
 		state:      state,
 
+		tssUpdateCh: make(chan interface{}, 10),
+
 		keygenReqCh:     make(chan interface{}, 10),
 		keygenReceiveCh: make(chan interface{}, 10),
 
@@ -105,10 +107,16 @@ func (tss *TSSService) setup() {
 		log.Errorf("TSS keygen process failed to start: %v", err)
 		return
 	}
-
+	tss.party = party
+	tss.partyIdMap = make(map[string]*tsslib.PartyID)
+	for _, partyId := range partyIDs {
+		tss.partyIdMap[partyId.Id] = partyId
+	}
 }
 
 func (tss *TSSService) signLoop(ctx context.Context) {
+	tss.state.EventBus.Subscribe(state.TssUpdate, tss.tssUpdateCh)
+
 	tss.state.EventBus.Subscribe(state.KeygenStart, tss.keygenReqCh)
 	tss.state.EventBus.Subscribe(state.KeygenReceive, tss.keygenReceiveCh)
 
@@ -125,6 +133,12 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 			case <-ctx.Done():
 				log.Info("Signer stopping...")
 				return
+			case event := <-tss.tssUpdateCh:
+				log.Debugf("Received tssUpdate event: %v", event)
+				err := tss.handleTssUpdate(event)
+				if err != nil {
+					log.Warnf("handle tssUpdate error event: %v, %v", event, err)
+				}
 			case event := <-tss.keygenReqCh:
 				log.Debugf("Received keygenReq event: %v", event)
 				err := tss.handleKeygenReq(ctx, event)
@@ -139,6 +153,10 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				}
 			case event := <-tss.keyOutCh:
 				log.Debugf("Received keyOut event: %v", event)
+				err := tss.handleTssKeyOut(ctx, event)
+				if err != nil {
+					log.Warnf("handle tssKeyOut error event: %v, %v", event, err)
+				}
 			case event := <-tss.keyEndCh:
 				log.Debugf("Received keyEnd event: %v", event)
 			case event := <-tss.sigStartCh:
@@ -175,6 +193,8 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 
 func (tss *TSSService) Stop() {
 	tss.once.Do(func() {
+		close(tss.tssUpdateCh)
+
 		close(tss.keygenReqCh)
 		close(tss.keygenReceiveCh)
 

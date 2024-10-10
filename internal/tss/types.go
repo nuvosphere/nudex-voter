@@ -18,6 +18,11 @@ type TSSService struct {
 	libp2p *p2p.LibP2PService
 	state  *state.State
 
+	party      tsslib.Party
+	partyIdMap map[string]*tsslib.PartyID
+
+	tssUpdateCh chan interface{}
+
 	keygenReqCh     chan interface{}
 	keygenReceiveCh chan interface{}
 

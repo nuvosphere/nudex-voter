@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 )
 
 func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
@@ -21,7 +20,7 @@ func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 	for i, publicKey := range publicKeys {
 		key, _ := new(big.Int).SetString(ConvertPubKeyToHex(publicKey), 16)
 		tssAllPartyIDs[i] = tss.NewPartyID(
-			strconv.Itoa(i),
+			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
 			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
 			key,
 		)

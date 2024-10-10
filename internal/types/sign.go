@@ -32,3 +32,9 @@ type KeygenReceiveMessage struct {
 	ThresholdMatched  bool     `json:"threshold_matched"`
 	CreateTime        int64    `json:"create_time"`
 }
+
+type TssUpdateMessage struct {
+	FromPartyId  string `json:"from_party_id"`
+	IsBroadcast  bool   `json:"is_broadcast"`
+	MsgWireBytes []byte `json:"msg_wire_bytes"`
+}
