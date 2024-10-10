@@ -79,7 +79,7 @@ func InitConfig() {
 	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
 	viper.SetDefault("FIREBLOCKS_PRIVKEY", "")
 	viper.SetDefault("TSS_PUBLIC_KEYS", "")
-	viper.SetDefault("TSS_THRESHOLD", "2")
+	viper.SetDefault("TSS_THRESHOLD", "1")
 	viper.SetDefault("TSS_SIG_TIMEOUT", "300s")
 
 	logLevel, err := logrus.ParseLevel(strings.ToLower(viper.GetString("LOG_LEVEL")))

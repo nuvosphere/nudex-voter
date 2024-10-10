@@ -44,7 +44,7 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 func (tss *TSSService) Start(ctx context.Context) {
 	go tss.signLoop(ctx)
 
-	tss.keygen(ctx)
+	tss.setup()
 
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
@@ -134,7 +134,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Info("Signer stopping...")
 				return
 			case event := <-tss.tssUpdateCh:
-				log.Debugf("Received tssUpdate event: %v", event)
+				log.Debugf("Received tssUpdate event")
 				err := tss.handleTssUpdate(event)
 				if err != nil {
 					log.Warnf("handle tssUpdate error event: %v, %v", event, err)

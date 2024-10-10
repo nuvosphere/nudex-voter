@@ -62,22 +62,14 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 
 	tss.sigMu.Lock()
 
-	wireMessage, err := tsslib.ParseWireMessage(
-		message.MsgWireBytes,
-		fromPartyID,
-		message.IsBroadcast)
-	if err != nil {
+	ok, err := tss.party.UpdateFromBytes(message.MsgWireBytes, fromPartyID, message.IsBroadcast)
+	if err != nil && !ok {
 		tss.sigMu.Unlock()
 		return err
 	}
 
-	ok, err = tss.party.Update(wireMessage)
-	if err != nil {
-		tss.sigMu.Unlock()
-		return err
-	}
+	log.Infof("party updated: FromPartyID=%v", message.FromPartyId)
 
 	tss.sigMu.Unlock()
-
 	return nil
 }
