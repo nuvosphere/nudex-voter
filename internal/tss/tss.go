@@ -107,6 +107,7 @@ func (tss *TSSService) setup() {
 		log.Errorf("TSS keygen process failed to start: %v", err)
 		return
 	}
+	
 	tss.party = party
 	tss.partyIdMap = make(map[string]*tsslib.PartyID)
 	for _, partyId := range partyIDs {

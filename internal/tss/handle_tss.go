@@ -7,6 +7,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
+	"slices"
 )
 
 func (tss *TSSService) handleTssKeyOut(ctx context.Context, event interface{}) error {
@@ -28,6 +29,7 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event interface{}) e
 
 	tssUpdateMessage := types.TssUpdateMessage{
 		FromPartyId:  message.GetFrom().GetId(),
+		ToPartyIds:   extractToIds(message),
 		IsBroadcast:  message.IsBroadcast(),
 		MsgWireBytes: msgWireBytes,
 	}
@@ -60,6 +62,11 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 		return fmt.Errorf("fromPartyID %s not found", message.FromPartyId)
 	}
 
+	if !message.IsBroadcast && slices.Contains(message.ToPartyIds, tss.party.PartyID().Id) {
+		log.Debugf("PartyId not one of p2p message receiver: %v", message.ToPartyIds)
+		return nil
+	}
+
 	tss.sigMu.Lock()
 
 	ok, err := tss.party.UpdateFromBytes(message.MsgWireBytes, fromPartyID, message.IsBroadcast)
@@ -72,4 +79,16 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 
 	tss.sigMu.Unlock()
 	return nil
+}
+
+func extractToIds(message tsslib.Message) []string {
+	recipients := message.GetTo()
+
+	ids := make([]string, len(recipients))
+
+	for i, recipient := range recipients {
+		ids[i] = recipient.GetId()
+	}
+
+	return ids
 }

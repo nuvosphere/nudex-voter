@@ -34,7 +34,8 @@ type KeygenReceiveMessage struct {
 }
 
 type TssUpdateMessage struct {
-	FromPartyId  string `json:"from_party_id"`
-	IsBroadcast  bool   `json:"is_broadcast"`
-	MsgWireBytes []byte `json:"msg_wire_bytes"`
+	FromPartyId  string   `json:"from_party_id"`
+	ToPartyIds   []string `json:"to_party_ids"`
+	IsBroadcast  bool     `json:"is_broadcast"`
+	MsgWireBytes []byte   `json:"msg_wire_bytes"`
 }
