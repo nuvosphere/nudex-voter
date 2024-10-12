@@ -44,8 +44,6 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 func (tss *TSSService) Start(ctx context.Context) {
 	go tss.signLoop(ctx)
 
-	tss.setup()
-
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
 	tss.Stop()
@@ -54,11 +52,6 @@ func (tss *TSSService) Start(ctx context.Context) {
 func (tss *TSSService) keygen(ctx context.Context) {
 	tss.sigMu.Lock()
 	defer tss.sigMu.Unlock()
-
-	if config.AppConfig.TssThreshold == 1 {
-		tss.setup()
-		return
-	}
 
 	requestId := fmt.Sprintf("KEYGEN:%s", crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey).Hex())
 	keygenReqMessage := types.KeygenReqMessage{
@@ -93,7 +86,19 @@ func (tss *TSSService) keygen(ctx context.Context) {
 }
 
 func (tss *TSSService) setup() {
-	preParams, _ := keygen.GeneratePreParams(1 * time.Minute)
+	tss.sigMu.Lock()
+	defer tss.sigMu.Unlock()
+
+	tss.party = nil
+	tss.setupTime = time.Time{}
+
+	var preParams *keygen.LocalPreParams
+	localParty, err := loadTSSData()
+	if err != nil {
+		preParams, _ = keygen.GeneratePreParams(1 * time.Minute)
+	} else {
+		preParams = &localParty.LocalPreParams
+	}
 
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
@@ -101,13 +106,14 @@ func (tss *TSSService) setup() {
 	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.address.Hex())
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams)
+	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)
 
 	if err := party.Start(); err != nil {
 		log.Errorf("TSS keygen process failed to start: %v", err)
 		return
 	}
-	
+
+	tss.setupTime = time.Now()
 	tss.party = party
 	tss.partyIdMap = make(map[string]*tsslib.PartyID)
 	for _, partyId := range partyIDs {
@@ -187,6 +193,21 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				return
 			case <-ticker.C:
 				tss.checkTimeouts()
+			}
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("Tss keygen checker stopping...")
+				return
+			case <-ticker.C:
+				tss.checkKeygen()
 			}
 		}
 	}()

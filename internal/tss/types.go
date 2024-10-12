@@ -21,6 +21,8 @@ type TSSService struct {
 	party      tsslib.Party
 	partyIdMap map[string]*tsslib.PartyID
 
+	setupTime time.Time
+
 	tssUpdateCh chan interface{}
 
 	keygenReqCh     chan interface{}

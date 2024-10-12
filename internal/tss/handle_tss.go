@@ -10,31 +10,27 @@ import (
 	"slices"
 )
 
-func (tss *TSSService) handleTssKeyOut(ctx context.Context, event interface{}) error {
-	message, ok := event.(tsslib.Message)
-	if !ok {
-		return fmt.Errorf("handleTssKeyOut error, event %v, is not tss lib message", event)
-	}
-	if message.GetFrom().Id != tss.party.PartyID().Id {
+func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message) error {
+	if event.GetFrom().Id != tss.party.PartyID().Id {
 		return fmt.Errorf("handleTssKeyOut error, event %v, not self", event)
 	}
 
 	tss.sigMu.Lock()
 	defer tss.sigMu.Unlock()
 
-	msgWireBytes, _, err := message.WireBytes()
+	msgWireBytes, _, err := event.WireBytes()
 	if err != nil {
 		return fmt.Errorf("handleTssKeyOut parse wire bytes error, event %v", event)
 	}
 
 	tssUpdateMessage := types.TssUpdateMessage{
-		FromPartyId:  message.GetFrom().GetId(),
-		ToPartyIds:   extractToIds(message),
-		IsBroadcast:  message.IsBroadcast(),
+		FromPartyId:  event.GetFrom().GetId(),
+		ToPartyIds:   extractToIds(event),
+		IsBroadcast:  event.IsBroadcast(),
 		MsgWireBytes: msgWireBytes,
 	}
 
-	requestId := fmt.Sprintf("TSS_UPDATE:%s", message.GetFrom().GetId())
+	requestId := fmt.Sprintf("TSS_UPDATE:%s", event.GetFrom().GetId())
 
 	p2pMsg := p2p.Message{
 		MessageType: p2p.MessageTypeTssUpdate,
@@ -62,7 +58,7 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 		return fmt.Errorf("fromPartyID %s not found", message.FromPartyId)
 	}
 
-	if !message.IsBroadcast && slices.Contains(message.ToPartyIds, tss.party.PartyID().Id) {
+	if !message.IsBroadcast && !slices.Contains(message.ToPartyIds, tss.party.PartyID().Id) {
 		log.Debugf("PartyId not one of p2p message receiver: %v", message.ToPartyIds)
 		return nil
 	}

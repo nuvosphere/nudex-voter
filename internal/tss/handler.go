@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
@@ -45,6 +46,33 @@ func (tss *TSSService) checkTimeouts() {
 
 	for _, requestId := range expiredRequests {
 		tss.removeSigMap(requestId, true)
+	}
+}
+
+func (tss *TSSService) checkKeygen() {
+	tss.sigMu.Lock()
+	tss.sigMu.Unlock()
+
+	if tss.party == nil {
+		log.Debug("Party not init, start to setup")
+		tss.setup()
+		return
+	}
+
+	_, err := loadTSSData()
+	if err == nil {
+		return
+	}
+
+	if tss.setupTime.IsZero() {
+		tss.setup()
+		return
+	}
+
+	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
+		log.Debug("Party set up timeout, start to setup again")
+		tss.setup()
+		return
 	}
 }
 
