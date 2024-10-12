@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"time"
@@ -84,7 +85,12 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 			continue
 		}
 
-		log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, receivedMsg.Data)
+		var dataStr = fmt.Sprintf("%v", receivedMsg.Data)
+		if len(dataStr) > 200 {
+			dataStr = dataStr[:200] + "..."
+		}
+
+		log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, dataStr)
 
 		switch receivedMsg.MessageType {
 		case MessageTypeTssUpdate:

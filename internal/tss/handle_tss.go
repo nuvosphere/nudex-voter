@@ -11,6 +11,10 @@ import (
 )
 
 func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message) error {
+	if tss.party == nil {
+		return fmt.Errorf("handleTssKeyOut error, event %v, self not init, event", event)
+	}
+
 	if event.GetFrom().Id != tss.party.PartyID().Id {
 		return fmt.Errorf("handleTssKeyOut error, event %v, not self", event)
 	}

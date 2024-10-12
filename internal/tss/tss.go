@@ -141,7 +141,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Info("Signer stopping...")
 				return
 			case event := <-tss.tssUpdateCh:
-				log.Debugf("Received tssUpdate event")
+				log.Debugf("Received tssUpdated event")
 				err := tss.handleTssUpdate(event)
 				if err != nil {
 					log.Warnf("handle tssUpdate error event: %v, %v", event, err)
@@ -159,7 +159,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 					log.Warnf("handle keygenReveive error event: %v, %v", event, err)
 				}
 			case event := <-tss.keyOutCh:
-				log.Debugf("Received keyOut event: %v", event)
+				log.Debugf("Received keyOut event")
 				err := tss.handleTssKeyOut(ctx, event)
 				if err != nil {
 					log.Warnf("handle tssKeyOut error event: %v, %v", event, err)
