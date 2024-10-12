@@ -40,9 +40,9 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message
 	}
 
 	err = tss.libp2p.PublishMessage(ctx, p2pMsg)
-	if err != nil {
-		log.Debugf("Publish p2p message tssUpdateMessage: RequestId=%s, Data=%v",
-			requestId, tssUpdateMessage)
+	if err == nil {
+		log.Debugf("Publish p2p message tssUpdateMessage: RequestId=%s, IsBroadcast=%v, ToPartyIds=%v",
+			requestId, tssUpdateMessage.IsBroadcast, tssUpdateMessage.ToPartyIds)
 	}
 	return err
 }
@@ -65,13 +65,22 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 
 	tss.sigMu.Lock()
 
-	ok, err := tss.party.UpdateFromBytes(message.MsgWireBytes, fromPartyID, message.IsBroadcast)
+	msg, err := tsslib.ParseWireMessage(
+		message.MsgWireBytes,
+		fromPartyID,
+		message.IsBroadcast)
+	if err != nil {
+		tss.sigMu.Unlock()
+		return err
+	}
+
+	ok, err = tss.party.Update(msg)
 	if err != nil && !ok {
 		tss.sigMu.Unlock()
 		return err
 	}
 
-	log.Infof("party updated: FromPartyID=%v", message.FromPartyId)
+	log.Infof("party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
 
 	tss.sigMu.Unlock()
 	return nil

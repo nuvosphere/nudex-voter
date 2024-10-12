@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	golog "github.com/ipfs/go-log/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -135,6 +136,9 @@ func InitConfig() {
 
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(AppConfig.LogLevel)
+
+	logLvl, err := golog.LevelFromString(AppConfig.LogLevel.String())
+	golog.SetAllLoggers(logLvl)
 }
 
 // ParseECDSAPublicKeys parses a comma-separated string of 132-character public keys with '0x' prefix
