@@ -5,14 +5,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	"github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/ethereum/go-ethereum/crypto"
-	log "github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"path/filepath"
 	"sort"
+
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/config"
+	log "github.com/sirupsen/logrus"
 )
 
 func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
@@ -28,30 +30,31 @@ func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func saveTSSData(data *keygen.LocalPartySaveData) {
+func saveTSSData(data *keygen.LocalPartySaveData) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Errorf("Unable to serialize TSS data: %v", err)
-		return
+		return err
 	}
 
-	dataDir := "tss_data"
+	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data")
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		log.Errorf("Failed to create TSS data directory: %v", err)
-		return
+		return err
 	}
 
 	filePath := filepath.Join(dataDir, "tss_key_data.json")
 	if err := os.WriteFile(filePath, dataBytes, 0644); err != nil {
 		log.Errorf("Failed to save TSS data to file: %v", err)
-		return
+		return err
 	}
 
 	log.Infof("TSS data successfully saved to: %s", filePath)
+	return nil
 }
 
 func loadTSSData() (*keygen.LocalPartySaveData, error) {
-	dataDir := "tss_data"
+	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data")
 	filePath := filepath.Join(dataDir, "tss_key_data.json")
 
 	dataBytes, err := os.ReadFile(filePath)
