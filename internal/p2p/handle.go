@@ -1,34 +1,50 @@
 package p2p
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
-	"github.com/nuvosphere/nudex-voter/internal/tss"
 	log "github.com/sirupsen/logrus"
 )
 
-func handleHandshake(s network.Stream) {
-	buffer := make([]byte, len(expectedHandshake))
-	_, err := s.Read(buffer)
+func handleHandshake(s network.Stream, node host.Host) {
+	buf := make([]byte, 1024)
+	n, err := s.Read(buf)
 	if err != nil {
-		log.Errorf("Failed to read handshake data: %v", err)
+		log.Errorf("Error reading handshake message: %v", err)
 		return
 	}
 
-	if string(buffer) == expectedHandshake {
-		log.Info("Handshake successful")
-	} else {
-		log.Warn("Handshake failed")
-		s.Reset()
-	}
-}
+	handshakeMsg := buf[:n]
+	log.Infof("Received handshake message: %s", string(handshakeMsg))
 
-func publishMessage(ctx context.Context, msg Message) {
+	expectedMsg := []byte(expectedHandshake)
+	if !bytes.Equal(handshakeMsg, expectedMsg) {
+		log.Warn("Invalid handshake message received, closing connection")
+		s.Reset()
+
+		// disconnect peer
+		peerID := s.Conn().RemotePeer()
+		// s.Conn().Close()
+		node.Network().ClosePeer(peerID)
+		return
+	}
+
+	_, err = s.Write(handshakeMsg)
+	if err != nil {
+		log.Errorf("Error writing handshake response: %v", err)
+		return
+	}
+
+	log.Info("Handshake successful")
+}
+func PublishMessage(ctx context.Context, msg Message) {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		log.Errorf("Failed to marshal message: %v", err)
@@ -45,7 +61,7 @@ func publishMessage(ctx context.Context, msg Message) {
 	}
 }
 
-func handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host, tssKeyCh chan<- tss.KeygenMessage, tssSignCh chan<- tss.SigningMessage) {
+func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
 	for {
 		msg, err := sub.Next(ctx)
 		if err != nil {
@@ -64,20 +80,20 @@ func handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node ho
 			continue
 		}
 
-		log.Infof("Received message via pubsub: ID=%d, Content=%s", receivedMsg.MessageType, receivedMsg.Content)
+		log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, receivedMsg.Data)
 
 		switch receivedMsg.MessageType {
 		case MessageTypeKeygen:
-			tssKeyCh <- tss.KeygenMessage{Content: receivedMsg.Content}
+			libp2p.state.EventBus.Publish(state.SigKegen, receivedMsg)
 		case MessageTypeSigning:
-			tssSignCh <- tss.SigningMessage{Content: receivedMsg.Content}
+			libp2p.state.EventBus.Publish(state.SigKegen, receivedMsg)
 		default:
 			log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
 		}
 	}
 }
 
-func handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
+func (libp2p *LibP2PService) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
 	for {
 		msg, err := sub.Next(ctx)
 		if err != nil {
