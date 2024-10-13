@@ -3,16 +3,17 @@ package tss
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func (tss *TSSService) handleSigStartKeyPrepare(ctx context.Context, e types.MsgSignKeyPrepareMessage) error {
 	if tss.address.Hex() != e.MsgSign.VoterAddress {
-		log.Debugf("Ignore SigStart request id %s, not proposer: %v", e.RequestId)
-		return fmt.Errorf("cannot start sig %s, not proposer: %v", e.RequestId)
+		log.Debugf("Ignore SigStart request id %s, not proposer: %s", e.RequestId, tss.address.Hex())
+		return fmt.Errorf("cannot start sig %s, not proposer: %s", e.RequestId, tss.address.Hex())
 	}
 
 	// check map

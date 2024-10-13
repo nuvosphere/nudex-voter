@@ -103,7 +103,7 @@ func (lis *Layer2Listener) processAccountLog(vLog types.Log) error {
 		if err != nil {
 			log.Fatalf("Error adding address: %v", err)
 		} else {
-			log.Infof("Address %s registered for user: %s, chain:%s", account.Address, account.User, account.ChainId)
+			log.Infof("Address %s registered for user: %s, chain: %d", account.Address, account.User, account.ChainId)
 		}
 	}
 	return nil

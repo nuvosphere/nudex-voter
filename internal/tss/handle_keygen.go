@@ -3,11 +3,12 @@ package tss
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func (tss *TSSService) handleKeygenReq(ctx context.Context, event interface{}) error {
@@ -17,8 +18,8 @@ func (tss *TSSService) handleKeygenReq(ctx context.Context, event interface{}) e
 	}
 
 	if tss.address.Hex() == message.VoterAddress {
-		log.Debugf("Ignore handleKeygenReq request id %s, is proposer: %v", message.RequestId)
-		return fmt.Errorf("cannot handleKeygenReq %s, is proposer: %v", message.RequestId)
+		log.Debugf("Ignore handleKeygenReq request id %s, is proposer: %s", message.RequestId, tss.address.Hex())
+		return fmt.Errorf("cannot handleKeygenReq %s, is proposer: %s", message.RequestId, tss.address.Hex())
 	}
 
 	tss.sigMu.Lock()
