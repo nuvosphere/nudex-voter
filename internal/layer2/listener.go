@@ -104,7 +104,7 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 	for {
 		latestBlock, err := lis.ethClient.BlockNumber(context.Background())
 		if err != nil {
-			log.Fatalf("Error getting latest block number: %v", err)
+			log.Warnf("Error getting latest block number: %v", err)
 		}
 
 		targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)

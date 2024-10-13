@@ -34,9 +34,9 @@ const (
 	privKeyFile        = "node_private_key.pem"
 )
 
-var messageTopic *pubsub.Topic
-
 type LibP2PService struct {
+	messageTopic *pubsub.Topic
+
 	state *state.State
 }
 
@@ -61,12 +61,12 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 
 	go lp.connectToBootNodes(ctx, node)
 
-	messageTopic, err = ps.Join(messageTopicName)
+	lp.messageTopic, err = ps.Join(messageTopicName)
 	if err != nil {
 		log.Fatalf("Failed to join message topic: %v", err)
 	}
 
-	sub, err := messageTopic.Subscribe()
+	sub, err := lp.messageTopic.Subscribe()
 	if err != nil {
 		log.Fatalf("Failed to subscribe to message topic: %v", err)
 	}
@@ -86,13 +86,12 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 	go startHeartbeat(ctx, node, hbTopic)
 
 	go func() {
-		time.Sleep(5 * time.Second)
 		msg := Message{
 			RequestId:   "1",
 			MessageType: MessageTypeUnknown,
 			Data:        "Hello, nudex voter libp2p PubSub network with handshake!",
 		}
-		PublishMessage(ctx, msg)
+		lp.PublishMessage(ctx, msg)
 	}()
 
 	<-ctx.Done()

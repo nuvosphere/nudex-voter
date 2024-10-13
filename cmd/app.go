@@ -14,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -27,11 +28,12 @@ type Application struct {
 	LibP2PService   *p2p.LibP2PService
 	Layer2Listener  *layer2.Layer2Listener
 	BTCListener     *btc.BTCListener
+	TssService      *tss.TSSService
 	HTTPServer      *http.HTTPServer
-	TssKeyInCh      chan tss.KeygenMessage
+	TssKeyInCh      chan types.KeygenMessage
 	TssKeyOutCh     chan tsslib.Message
 	TssKeyEndCh     chan *keygen.LocalPartySaveData
-	TssSignInCh     chan tss.SigningMessage
+	TssSignInCh     chan types.SigningMessage
 	TssSignOutCh    chan tsslib.Message
 	TssSignEndCh    chan *common.SignatureData
 }
@@ -44,6 +46,7 @@ func NewApplication() *Application {
 	libP2PService := p2p.NewLibP2PService(state)
 	layer2Listener := layer2.NewLayer2Listener(libP2PService, state, dbm)
 	btcListener := btc.NewBTCListener(libP2PService, state, dbm)
+	tssService := tss.NewTssService(libP2PService, state)
 	httpServer := http.NewHTTPServer(libP2PService, state, dbm)
 
 	return &Application{
@@ -52,11 +55,12 @@ func NewApplication() *Application {
 		LibP2PService:   libP2PService,
 		Layer2Listener:  layer2Listener,
 		BTCListener:     btcListener,
+		TssService:      tssService,
 		HTTPServer:      httpServer,
-		TssKeyInCh:      make(chan tss.KeygenMessage),
+		TssKeyInCh:      make(chan types.KeygenMessage),
 		TssKeyOutCh:     make(chan tsslib.Message),
 		TssKeyEndCh:     make(chan *keygen.LocalPartySaveData),
-		TssSignInCh:     make(chan tss.SigningMessage),
+		TssSignInCh:     make(chan types.SigningMessage),
 		TssSignOutCh:    make(chan tsslib.Message),
 		TssSignEndCh:    make(chan *common.SignatureData),
 	}
@@ -94,7 +98,12 @@ func (app *Application) Run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		go tss.HandleKeygenMessages(ctx, app.TssKeyInCh, app.TssKeyOutCh, app.TssKeyEndCh)
+		app.TssService.Start(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 		go tss.HandleSigningMessages(ctx, app.TssSignInCh, app.TssSignOutCh, app.TssSignEndCh)
 		go rpc.StartUTXOService()
 	}()

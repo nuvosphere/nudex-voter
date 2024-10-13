@@ -2,13 +2,17 @@ package config
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
+	"errors"
 	"math/big"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	golog "github.com/ipfs/go-log/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -30,6 +34,9 @@ type Config struct {
 	L2RequestInterval time.Duration
 	FireblocksPubKey  string
 	FireblocksPrivKey string
+	TssPublicKeys     []*ecdsa.PublicKey
+	TssThreshold      int
+	TssSigTimeout     time.Duration
 	EnableWebhook     bool
 	EnableRelayer     bool
 	DbDir             string
@@ -72,6 +79,9 @@ func InitConfig() {
 	viper.SetDefault("WITHDRAW_CONTRACT", "")
 	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
 	viper.SetDefault("FIREBLOCKS_PRIVKEY", "")
+	viper.SetDefault("TSS_PUBLIC_KEYS", "")
+	viper.SetDefault("TSS_THRESHOLD", "1")
+	viper.SetDefault("TSS_SIG_TIMEOUT", "300s")
 
 	logLevel, err := logrus.ParseLevel(strings.ToLower(viper.GetString("LOG_LEVEL")))
 	if err != nil {
@@ -86,6 +96,11 @@ func InitConfig() {
 	l2ChainId, err := strconv.ParseInt(viper.GetString("L2_CHAIN_ID"), 10, 64)
 	if err != nil {
 		logrus.Fatalf("Failed to parse l2 chain id: %v", err)
+	}
+
+	tssPublicKeys, err := ParseECDSAPublicKeys(viper.GetString("TSS_PUBLIC_KEYS"))
+	if err != nil {
+		logrus.Fatalf("Failed to parse tss public keys: %v", err)
 	}
 
 	AppConfig = Config{
@@ -105,6 +120,9 @@ func InitConfig() {
 		L2RequestInterval: viper.GetDuration("L2_REQUEST_INTERVAL"),
 		FireblocksPubKey:  viper.GetString("FIREBLOCKS_PUBKEY"),
 		FireblocksPrivKey: viper.GetString("FIREBLOCKS_PRIVKEY"),
+		TssPublicKeys:     tssPublicKeys,
+		TssThreshold:      viper.GetInt("TSS_THRESHOLD"),
+		TssSigTimeout:     viper.GetDuration("TSS_SIG_TIMEOUT"),
 		EnableWebhook:     viper.GetBool("ENABLE_WEBHOOK"),
 		EnableRelayer:     viper.GetBool("ENABLE_RELAYER"),
 		DbDir:             viper.GetString("DB_DIR"),
@@ -118,4 +136,39 @@ func InitConfig() {
 
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(AppConfig.LogLevel)
+
+	logLvl, err := golog.LevelFromString(AppConfig.LogLevel.String())
+	golog.SetAllLoggers(logLvl)
+}
+
+// ParseECDSAPublicKeys parses a comma-separated string of 132-character public keys with '0x' prefix
+// into an array of *ecdsa.PublicKey. It uses the secp256k1 elliptic curve.
+func ParseECDSAPublicKeys(publicKeyStr string) ([]*ecdsa.PublicKey, error) {
+	// Remove '0x' prefix and split the string by commas
+	publicKeyHexArray := strings.Split(publicKeyStr, ",")
+	for i := range publicKeyHexArray {
+		publicKeyHexArray[i] = strings.TrimPrefix(publicKeyHexArray[i], "0x")
+	}
+
+	sort.Strings(publicKeyHexArray)
+
+	var publicKeys []*ecdsa.PublicKey
+
+	for _, keyHex := range publicKeyHexArray {
+		if len(keyHex) != 66 {
+			return nil, errors.New("invalid compressed public key length, expected 33 bytes")
+		}
+		pubBytes, err := hex.DecodeString(keyHex)
+		if err != nil {
+			return nil, errors.New("failed to decode public key hex: " + err.Error())
+		}
+
+		pubKey, err := crypto.DecompressPubkey(pubBytes)
+		if err != nil {
+			return nil, errors.New("failed to decompress public key: " + err.Error())
+		}
+
+		publicKeys = append(publicKeys, pubKey)
+	}
+	return publicKeys, nil
 }

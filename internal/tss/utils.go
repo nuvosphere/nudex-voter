@@ -1,24 +1,31 @@
 package tss
 
 import (
+	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/crypto"
+	log "github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"path/filepath"
-	"strconv"
-
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	"github.com/bnb-chain/tss-lib/v2/tss"
-	log "github.com/sirupsen/logrus"
+	"sort"
 )
 
-func createPartyIDs(parties int) tss.SortedPartyIDs {
-	partyIDs := make(tss.SortedPartyIDs, parties)
-	for i := 0; i < parties; i++ {
-		partyIDs[i] = tss.NewPartyID(strconv.Itoa(i), "", new(big.Int).SetInt64(int64(i)))
+func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
+	var tssAllPartyIDs = make(tss.UnSortedPartyIDs, len(publicKeys))
+	for i, publicKey := range publicKeys {
+		key, _ := new(big.Int).SetString(ConvertPubKeyToHex(publicKey), 16)
+		tssAllPartyIDs[i] = tss.NewPartyID(
+			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
+			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
+			key,
+		)
 	}
-	return partyIDs
+	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
 func saveTSSData(data *keygen.LocalPartySaveData) {
@@ -59,4 +66,57 @@ func loadTSSData() (*keygen.LocalPartySaveData, error) {
 
 	log.Infof("Successfully loaded TSS data from %s", filePath)
 	return &data, nil
+}
+
+func PublicKeysToHex(pubKeys []*ecdsa.PublicKey) []string {
+	hexStrings := make([]string, len(pubKeys))
+	for i, pubKey := range pubKeys {
+		hexStrings[i] = ConvertPubKeyToHex(pubKey)
+	}
+	return hexStrings
+}
+
+func ConvertPubKeyToHex(pubKey *ecdsa.PublicKey) string {
+	if pubKey == nil {
+		return ""
+	}
+
+	var prefix byte
+	if pubKey.Y.Bit(0) == 0 {
+		prefix = 0x02 // Even Y-coordinate
+	} else {
+		prefix = 0x03 // Odd Y-coordinate
+	}
+
+	// Create the public key byte slice with the prefix
+	pubKeyBytes := append([]byte{prefix}, pubKey.X.Bytes()...)
+
+	// Convert to hex string
+	return hex.EncodeToString(pubKeyBytes)
+}
+
+func CompareStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	sort.Strings(a)
+	sort.Strings(b)
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func AddressIndex(publicKeys []*ecdsa.PublicKey, tssAddress string) int {
+	for i, pubKey := range publicKeys {
+		address := crypto.PubkeyToAddress(*pubKey).Hex()
+		if address == tssAddress {
+			return i // Return the index if a match is found
+		}
+	}
+	return -1 // Return -1 if not found
 }
