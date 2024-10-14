@@ -3,6 +3,8 @@ package tss
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -11,7 +13,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
@@ -86,18 +87,26 @@ func (tss *TSSService) keygen(ctx context.Context) {
 }
 
 func (tss *TSSService) setup() {
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
-
 	tss.party = nil
 	tss.setupTime = time.Time{}
 
 	var preParams *keygen.LocalPreParams
 	localParty, err := loadTSSData()
 	if err != nil {
-		preParams, _ = keygen.GeneratePreParams(1 * time.Minute)
+		log.Errorf("Failed to load TSS data: %v", err)
+		preParams, err = keygen.GeneratePreParams(1 * time.Minute)
+		if err != nil {
+			log.Fatalf("Failed to generate TSS preParams: %v", err)
+		}
+		log.Debugf("Generated TSS preParams: %+v", preParams)
+		err = saveTSSData(preParams)
+		if err != nil {
+			log.Fatalf("Failed to save TSS data: %v", err)
+		}
 	} else {
+		log.Infof("Loaded TSS data")
 		preParams = &localParty.LocalPreParams
+		log.Debugf("Loaded TSS preParams: %+v", preParams)
 	}
 
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)

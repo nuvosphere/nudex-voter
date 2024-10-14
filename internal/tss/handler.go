@@ -2,11 +2,12 @@ package tss
 
 import (
 	"context"
+	"time"
+
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
@@ -51,7 +52,7 @@ func (tss *TSSService) checkTimeouts() {
 
 func (tss *TSSService) checkKeygen() {
 	tss.sigMu.Lock()
-	tss.sigMu.Unlock()
+	defer tss.sigMu.Unlock()
 
 	if tss.party == nil {
 		log.Debug("Party not init, start to setup")
@@ -59,9 +60,11 @@ func (tss *TSSService) checkKeygen() {
 		return
 	}
 
-	_, err := loadTSSData()
+	localPartySaveData, err := loadTSSData()
 	if err == nil {
-		return
+		if localPartySaveData.ECDSAPub != nil {
+			return
+		}
 	}
 
 	if tss.setupTime.IsZero() {

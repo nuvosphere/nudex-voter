@@ -3,11 +3,12 @@ package tss
 import (
 	"context"
 	"fmt"
+	"slices"
+
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"slices"
 )
 
 func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message) error {
@@ -81,9 +82,10 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 		return err
 	}
 
-	ok, err = tss.party.Update(msg)
-	if err != nil && !ok {
-		return err
+	ok, tssErr := tss.party.Update(msg)
+	if !ok {
+		tss.sigMu.Unlock()
+		return tssErr.Cause()
 	}
 
 	log.Infof("party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())

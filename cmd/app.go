@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/btc"
@@ -33,9 +32,6 @@ type Application struct {
 	TssKeyInCh      chan types.KeygenMessage
 	TssKeyOutCh     chan tsslib.Message
 	TssKeyEndCh     chan *keygen.LocalPartySaveData
-	TssSignInCh     chan types.SigningMessage
-	TssSignOutCh    chan tsslib.Message
-	TssSignEndCh    chan *common.SignatureData
 }
 
 func NewApplication() *Application {
@@ -58,11 +54,6 @@ func NewApplication() *Application {
 		TssService:      tssService,
 		HTTPServer:      httpServer,
 		TssKeyInCh:      make(chan types.KeygenMessage),
-		TssKeyOutCh:     make(chan tsslib.Message),
-		TssKeyEndCh:     make(chan *keygen.LocalPartySaveData),
-		TssSignInCh:     make(chan types.SigningMessage),
-		TssSignOutCh:    make(chan tsslib.Message),
-		TssSignEndCh:    make(chan *common.SignatureData),
 	}
 }
 
@@ -104,7 +95,6 @@ func (app *Application) Run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		go tss.HandleSigningMessages(ctx, app.TssSignInCh, app.TssSignOutCh, app.TssSignEndCh)
 		go rpc.StartUTXOService()
 	}()
 
