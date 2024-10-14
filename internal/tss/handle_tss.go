@@ -52,6 +52,9 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message
 }
 
 func (tss *TSSService) handleTssUpdate(event interface{}) error {
+	if tss.party == nil {
+		return fmt.Errorf("handleTssUpdate error, tss local party not int")
+	}
 	message, ok := event.(types.TssUpdateMessage)
 	if !ok {
 		return fmt.Errorf("handleTssUpdate error, event %v, is not tss update message", event)
@@ -68,25 +71,23 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 	}
 
 	tss.sigMu.Lock()
+	defer tss.sigMu.Unlock()
 
 	msg, err := tsslib.ParseWireMessage(
 		message.MsgWireBytes,
 		fromPartyID,
 		message.IsBroadcast)
 	if err != nil {
-		tss.sigMu.Unlock()
 		return err
 	}
 
 	ok, err = tss.party.Update(msg)
 	if err != nil && !ok {
-		tss.sigMu.Unlock()
 		return err
 	}
 
 	log.Infof("party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
 
-	tss.sigMu.Unlock()
 	return nil
 }
 

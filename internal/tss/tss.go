@@ -144,7 +144,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Debugf("Received tssUpdated event")
 				err := tss.handleTssUpdate(event)
 				if err != nil {
-					log.Warnf("handle tssUpdate error event: %v, %v", event, err)
+					log.Warnf("handle tssUpdate error, %v", err)
 				}
 			case event := <-tss.keygenReqCh:
 				log.Debugf("Received keygenReq event: %v", event)

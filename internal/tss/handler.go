@@ -70,8 +70,13 @@ func (tss *TSSService) checkKeygen() {
 	}
 
 	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
-		log.Debug("Party set up timeout, start to setup again")
-		tss.setup()
+		log.Debug("Party set up timeout, start local party first round again")
+		if err := tss.party.FirstRound().Start(); err != nil {
+			log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
+			tss.setup()
+			return
+		}
+		tss.setupTime = time.Now()
 		return
 	}
 }

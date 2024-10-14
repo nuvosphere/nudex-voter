@@ -18,7 +18,7 @@ type TSSService struct {
 	libp2p *p2p.LibP2PService
 	state  *state.State
 
-	party      tsslib.Party
+	party      *keygen.LocalParty
 	partyIdMap map[string]*tsslib.PartyID
 
 	setupTime time.Time
