@@ -104,9 +104,8 @@ func (tss *TSSService) setup() {
 			log.Fatalf("Failed to save TSS data: %v", err)
 		}
 	} else {
-		log.Infof("Loaded TSS data")
 		preParams = &localParty.LocalPreParams
-		log.Debugf("Loaded TSS preParams: %+v", preParams)
+		log.Infof("Loaded TSS data as prePrams")
 	}
 
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
@@ -171,7 +170,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Debugf("Received keyOut event")
 				err := tss.handleTssKeyOut(ctx, event)
 				if err != nil {
-					log.Warnf("handle tssKeyOut error event: %v, %v", event, err)
+					log.Warnf("handle tssKeyOut error, event: %v, %v", event, err)
 				}
 			case event := <-tss.keyEndCh:
 				log.Debugf("Received keyEnd event: %v", event)

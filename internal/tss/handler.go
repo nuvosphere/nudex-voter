@@ -2,9 +2,12 @@ package tss
 
 import (
 	"context"
-	"time"
-
+	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"reflect"
+	"time"
+	"unsafe"
+
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
@@ -51,9 +54,6 @@ func (tss *TSSService) checkTimeouts() {
 }
 
 func (tss *TSSService) checkKeygen() {
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
-
 	if tss.party == nil {
 		log.Debug("Party not init, start to setup")
 		tss.setup()
@@ -73,13 +73,23 @@ func (tss *TSSService) checkKeygen() {
 	}
 
 	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
-		log.Debug("Party set up timeout, start local party first round again")
-		if err := tss.party.FirstRound().Start(); err != nil {
-			log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
-			tss.setup()
-			return
+		party := reflect.ValueOf(tss.party.BaseParty).Elem()
+		round := party.FieldByName("rnd")
+		if !round.CanInterface() {
+			round = reflect.NewAt(round.Type(), unsafe.Pointer(round.UnsafeAddr())).Elem()
 		}
-		tss.setupTime = time.Now()
+		rnd, ok := round.Interface().(tsslib.Round)
+		if ok {
+			if rnd.RoundNumber() == 1 {
+				log.Debug("Party set up timeout, start local party first round again")
+				if err := tss.party.FirstRound().Start(); err != nil {
+					log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
+					tss.setup()
+					return
+				}
+				tss.setupTime = time.Now()
+			}
+		}
 		return
 	}
 }

@@ -13,15 +13,12 @@ import (
 
 func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message) error {
 	if tss.party == nil {
-		return fmt.Errorf("handleTssKeyOut error, event %v, self not init, event", event)
+		return fmt.Errorf("handleTssKeyOut error, event %v, self not init", event)
 	}
 
 	if event.GetFrom().Id != tss.party.PartyID().Id {
 		return fmt.Errorf("handleTssKeyOut error, event %v, not self", event)
 	}
-
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
 
 	msgWireBytes, _, err := event.WireBytes()
 	if err != nil {
@@ -71,9 +68,6 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 		return nil
 	}
 
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
-
 	msg, err := tsslib.ParseWireMessage(
 		message.MsgWireBytes,
 		fromPartyID,
@@ -83,8 +77,7 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 	}
 
 	ok, tssErr := tss.party.Update(msg)
-	if !ok {
-		tss.sigMu.Unlock()
+	if !ok && tssErr != nil {
 		return tssErr.Cause()
 	}
 
