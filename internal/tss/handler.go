@@ -53,7 +53,7 @@ func (tss *TSSService) checkTimeouts() {
 	}
 }
 
-func (tss *TSSService) checkKeygen() {
+func (tss *TSSService) checkKeygen(ctx context.Context) {
 	if tss.party == nil {
 		log.Debug("Party not init, start to setup")
 		tss.setup()
@@ -81,11 +81,19 @@ func (tss *TSSService) checkKeygen() {
 		rnd, ok := round.Interface().(tsslib.Round)
 		if ok {
 			if rnd.RoundNumber() == 1 {
-				log.Debug("Party set up timeout, start local party first round again")
-				if err := tss.party.FirstRound().Start(); err != nil {
-					log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
-					tss.setup()
-					return
+				if tss.round1P2pMessage != nil {
+					log.Debug("Party set up timeout, send first round p2p message again")
+					err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
+					if err == nil {
+						log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
+					}
+				} else {
+					if err := tss.party.FirstRound().Start(); err != nil {
+						log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
+						tss.setup()
+						return
+					}
+					log.Debug("Party set up timeout, start local party first round again")
 				}
 				tss.setupTime = time.Now()
 			}

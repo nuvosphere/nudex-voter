@@ -21,7 +21,8 @@ type TSSService struct {
 	party      *keygen.LocalParty
 	partyIdMap map[string]*tsslib.PartyID
 
-	setupTime time.Time
+	setupTime        time.Time
+	round1P2pMessage *p2p.Message
 
 	tssUpdateCh chan interface{}
 

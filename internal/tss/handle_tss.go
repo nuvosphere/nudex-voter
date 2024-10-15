@@ -15,7 +15,6 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message
 	if tss.party == nil {
 		return fmt.Errorf("handleTssKeyOut error, event %v, self not init", event)
 	}
-
 	if event.GetFrom().Id != tss.party.PartyID().Id {
 		return fmt.Errorf("handleTssKeyOut error, event %v, not self", event)
 	}
@@ -46,12 +45,16 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message
 		log.Debugf("Publish p2p message tssUpdateMessage: RequestId=%s, IsBroadcast=%v, ToPartyIds=%v",
 			requestId, tssUpdateMessage.IsBroadcast, tssUpdateMessage.ToPartyIds)
 	}
+	if event.Type() == "binance.tsslib.ecdsa.keygen.KGRound1Message" {
+		tss.round1P2pMessage = &p2pMsg
+	}
+
 	return err
 }
 
 func (tss *TSSService) handleTssUpdate(event interface{}) error {
 	if tss.party == nil {
-		return fmt.Errorf("handleTssUpdate error, tss local party not int")
+		return fmt.Errorf("handleTssUpdate error, tss local party not init")
 	}
 	message, ok := event.(types.TssUpdateMessage)
 	if !ok {

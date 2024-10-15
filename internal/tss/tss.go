@@ -116,16 +116,16 @@ func (tss *TSSService) setup() {
 
 	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)
 
-	if err := party.Start(); err != nil {
-		log.Errorf("TSS keygen process failed to start: %v", err)
-		return
-	}
-
 	tss.setupTime = time.Now()
 	tss.party = party
 	tss.partyIdMap = make(map[string]*tsslib.PartyID)
 	for _, partyId := range partyIDs {
 		tss.partyIdMap[partyId.Id] = partyId
+	}
+
+	if err := party.Start(); err != nil {
+		log.Errorf("TSS keygen process failed to start: %v", err)
+		return
 	}
 }
 
@@ -215,7 +215,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Info("Tss keygen checker stopping...")
 				return
 			case <-ticker.C:
-				tss.checkKeygen()
+				tss.checkKeygen(ctx)
 			}
 		}
 	}()
