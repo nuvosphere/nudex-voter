@@ -79,12 +79,14 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 		return err
 	}
 
-	ok, tssErr := tss.party.Update(msg)
-	if !ok && tssErr != nil {
-		return tssErr.Cause()
-	}
-
-	log.Infof("party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+	go func() {
+		if _, err := tss.party.Update(msg); err != nil {
+			log.Errorf("Failed to update party: FromPartyID=%v, error=%v", message.FromPartyId, err)
+			return
+		} else {
+			log.Infof("Party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+		}
+	}()
 
 	return nil
 }

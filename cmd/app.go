@@ -89,7 +89,7 @@ func (app *Application) Run() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		app.TssService.Start(ctx)
+		go app.TssService.Start(ctx)
 	}()
 
 	wg.Add(1)
