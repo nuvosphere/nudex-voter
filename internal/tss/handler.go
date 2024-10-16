@@ -72,42 +72,41 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 		return
 	}
 
-	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
-		party := reflect.ValueOf(tss.party.BaseParty).Elem()
-		round := party.FieldByName("rnd")
-		if !round.CanInterface() {
-			round = reflect.NewAt(round.Type(), unsafe.Pointer(round.UnsafeAddr())).Elem()
-		}
-		rnd, ok := round.Interface().(tsslib.Round)
-		if ok {
-			if rnd.RoundNumber() == 1 {
-				if tss.round1P2pMessage != nil {
-					log.Debug("Party set up timeout, send first round p2p message again")
-					err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
-					if err == nil {
-						log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
-					}
-				} else {
-					if err := tss.party.FirstRound().Start(); err != nil {
-						log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
-						tss.setup()
-						return
-					}
-					log.Debug("Party set up timeout, start local party first round again")
+	party := reflect.ValueOf(tss.party.BaseParty).Elem()
+	round := party.FieldByName("rnd")
+	if !round.CanInterface() {
+		round = reflect.NewAt(round.Type(), unsafe.Pointer(round.UnsafeAddr())).Elem()
+	}
+	rnd, ok := round.Interface().(tsslib.Round)
+	if ok {
+		if rnd.RoundNumber() == 1 {
+			if tss.round1P2pMessage != nil {
+				log.Debug("Party set up timeout, send first round p2p message again")
+				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
+				if err == nil {
+					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
 				}
-				tss.setupTime = time.Now()
-			} else if rnd.RoundNumber() == 2 {
-				if tss.round1P2pMessage != nil && tss.round1MessageSendTimes < 3 {
-					tss.round1MessageSendTimes++
-					log.Debugf("Reached round2, send first round p2p message the %d time", tss.round1MessageSendTimes)
-					err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
-					if err == nil {
-						log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
-					}
+			}
+		} else if rnd.RoundNumber() == 2 {
+			if tss.round1P2pMessage != nil && tss.round1MessageSendTimes < 3 {
+				tss.round1MessageSendTimes++
+				log.Debugf("Reached round2, send first round p2p message the %d time", tss.round1MessageSendTimes)
+				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
+				if err == nil {
+					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
 				}
 			}
 		}
-		return
+	}
+
+	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
+		if err := tss.party.FirstRound().Start(); err != nil {
+			log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
+			tss.setup()
+			return
+		}
+		log.Debug("Party set up timeout, start local party first round again")
+		tss.setupTime = time.Now()
 	}
 }
 
