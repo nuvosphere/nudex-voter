@@ -123,9 +123,11 @@ func (tss *TSSService) setup() {
 		tss.partyIdMap[partyId.Id] = partyId
 	}
 
-	if err := party.Start(); err != nil {
-		log.Errorf("TSS keygen process failed to start: %v", err)
-		return
+	if localParty.ECDSAPub == nil {
+		if err := party.Start(); err != nil {
+			log.Errorf("TSS keygen process failed to start: %v", err)
+			return
+		}
 	}
 }
 
