@@ -9,6 +9,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"slices"
 	"time"
 )
 
@@ -42,6 +43,10 @@ func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
 				submitterRotation.BlockNumber = vLog.BlockNumber
 				submitterRotation.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
 				err = lis.db.GetRelayerDB().Create(&submitterRotation).Error
+				if err != nil {
+					lis.state.TssState.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
+					lis.state.TssState.BlockNumber = vLog.BlockNumber
+				}
 			} else {
 				log.Fatalf("Error query db: %v", result.Error)
 			}
@@ -49,6 +54,10 @@ func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
 			submitterRotation.BlockNumber = vLog.BlockNumber
 			submitterRotation.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
 			err = lis.db.GetRelayerDB().Save(&submitterRotation).Error
+			if err != nil {
+				lis.state.TssState.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
+				lis.state.TssState.BlockNumber = vLog.BlockNumber
+			}
 		}
 
 		if err != nil {
@@ -66,27 +75,36 @@ func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
 
 	eventParticipantAdded, err := lis.contractVotingManager.ParseParticipantAdded(vLog)
 	if err == nil {
+		newParticipant := eventParticipantAdded.NewParticipant.Hex()
 		// save locked relayer member from db
 		participant := db.Participant{
-			Address: eventParticipantAdded.NewParticipant.Hex(),
+			Address: newParticipant,
 		}
 		err = lis.db.GetRelayerDB().FirstOrCreate(&participant, "address = ?", participant.Address).Error
 		if err != nil {
 			log.Fatalf("Error adding Participant: %v", err)
 		} else {
-			log.Infof("Participant added: %s", eventParticipantAdded.NewParticipant.Hex())
+			log.Infof("Participant added: %s", newParticipant)
+			if !slices.Contains(lis.state.TssState.Participants, newParticipant) {
+				lis.state.TssState.Participants = append(lis.state.TssState.Participants, newParticipant)
+			}
 		}
 		return nil
 	}
 
 	eventParticipantRemoved, err := lis.contractVotingManager.ParseParticipantRemoved(vLog)
 	if err == nil {
+		removedParticipant := eventParticipantRemoved.Participant.Hex()
 		err = lis.db.GetRelayerDB().Where("address = ?",
-			eventParticipantRemoved.Participant.Hex()).Delete(&db.Participant{}).Error
+			removedParticipant).Delete(&db.Participant{}).Error
 		if err != nil {
 			log.Fatalf("Error removing Participant: %v", err)
 		} else {
-			log.Infof("Participant removed: %s", eventParticipantRemoved.Participant.Hex())
+			log.Infof("Participant removed: %s", removedParticipant)
+			index := slices.Index(lis.state.TssState.Participants, removedParticipant)
+			if index != -1 {
+				lis.state.TssState.Participants = append(lis.state.TssState.Participants[:index], lis.state.TssState.Participants[index+1:]...)
+			}
 		}
 		return nil
 	}

@@ -17,7 +17,7 @@ type State struct {
 
 	btcHeadState BtcHeadState
 
-	tssState TssState
+	TssState TssState
 }
 
 // InitializeState initializes the state by reading from the DB
@@ -98,7 +98,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 			UnconfirmQueue: unconfirmBtcQueue,
 			SigQueue:       sigBtcQueue,
 		},
-		tssState: TssState{
+		TssState: TssState{
 			CurrentSubmitter: currentSubmitter,
 			Participants:     participantAddresses,
 			BlockNumber:      L2BlockNumber,
