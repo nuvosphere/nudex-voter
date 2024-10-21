@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -89,6 +91,13 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 	}()
 
 	return nil
+}
+
+func (tss *TSSService) handleTssKeyEnd(event *keygen.LocalPartySaveData) error {
+	if tss.party == nil {
+		return fmt.Errorf("handleTssEnd error, event %v, self not init", event)
+	}
+	return saveTSSData(event)
 }
 
 func extractToIds(message tsslib.Message) []string {

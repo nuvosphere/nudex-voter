@@ -167,13 +167,17 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 					log.Warnf("handle keygenReveive error event: %v, %v", event, err)
 				}
 			case event := <-tss.keyOutCh:
-				log.Debugf("Received keyOut event")
+				log.Debugf("Received tss keyOut event")
 				err := tss.handleTssKeyOut(ctx, event)
 				if err != nil {
-					log.Warnf("handle tssKeyOut error, event: %v, %v", event, err)
+					log.Warnf("handle tss keyOut error, event: %v, %v", event, err)
 				}
 			case event := <-tss.keyEndCh:
-				log.Debugf("Received keyEnd event: %v", event)
+				log.Debugf("Received tss keyEnd event")
+				err := tss.handleTssKeyEnd(event)
+				if err != nil {
+					log.Warnf("handle tss keyEnd error, event: %v, %v", event, err)
+				}
 			case event := <-tss.sigStartCh:
 				log.Debugf("Received sigStart event: %v", event)
 				tss.handleSigStart(ctx, event)
