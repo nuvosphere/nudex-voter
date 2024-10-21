@@ -2,11 +2,15 @@ package tss
 
 import (
 	"context"
+	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"reflect"
+	"time"
+	"unsafe"
+
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
@@ -49,19 +53,18 @@ func (tss *TSSService) checkTimeouts() {
 	}
 }
 
-func (tss *TSSService) checkKeygen() {
-	tss.sigMu.Lock()
-	tss.sigMu.Unlock()
-
+func (tss *TSSService) checkKeygen(ctx context.Context) {
 	if tss.party == nil {
 		log.Debug("Party not init, start to setup")
 		tss.setup()
 		return
 	}
 
-	_, err := loadTSSData()
+	localPartySaveData, err := loadTSSData()
 	if err == nil {
-		return
+		if localPartySaveData.ECDSAPub != nil {
+			return
+		}
 	}
 
 	if tss.setupTime.IsZero() {
@@ -69,10 +72,41 @@ func (tss *TSSService) checkKeygen() {
 		return
 	}
 
+	party := reflect.ValueOf(tss.party.BaseParty).Elem()
+	round := party.FieldByName("rnd")
+	if !round.CanInterface() {
+		round = reflect.NewAt(round.Type(), unsafe.Pointer(round.UnsafeAddr())).Elem()
+	}
+	rnd, ok := round.Interface().(tsslib.Round)
+	if ok {
+		if rnd.RoundNumber() == 1 {
+			if tss.round1P2pMessage != nil {
+				log.Debug("Party set up timeout, send first round p2p message again")
+				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
+				if err == nil {
+					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
+				}
+			}
+		} else if rnd.RoundNumber() == 2 {
+			if tss.round1P2pMessage != nil && tss.round1MessageSendTimes < 3 {
+				tss.round1MessageSendTimes++
+				log.Debugf("Reached round2, send first round p2p message the %d time", tss.round1MessageSendTimes)
+				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
+				if err == nil {
+					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
+				}
+			}
+		}
+	}
+
 	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
-		log.Debug("Party set up timeout, start to setup again")
-		tss.setup()
-		return
+		if err := tss.party.FirstRound().Start(); err != nil {
+			log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
+			tss.setup()
+			return
+		}
+		log.Debug("Party set up timeout, start local party first round again")
+		tss.setupTime = time.Now()
 	}
 }
 

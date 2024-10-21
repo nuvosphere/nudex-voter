@@ -47,6 +47,7 @@ func handleHandshake(s network.Stream, node host.Host) {
 
 	log.Info("Handshake successful")
 }
+
 func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) error {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
@@ -68,45 +69,51 @@ func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) er
 
 func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
 	for {
-		msg, err := sub.Next(ctx)
-		if err != nil {
-			log.Errorf("Error reading message from pubsub: %v", err)
-			continue
-		}
-
-		if msg.ReceivedFrom == node.ID() {
-			log.Debug("Received message from self, ignore")
-			continue
-		}
-
-		var receivedMsg Message
-		if err := json.Unmarshal(msg.Data, &receivedMsg); err != nil {
-			log.Errorf("Error unmarshaling pubsub message: %v", err)
-			continue
-		}
-
-		var dataStr = fmt.Sprintf("%v", receivedMsg.Data)
-		if len(dataStr) > 200 {
-			dataStr = dataStr[:200] + "..."
-		}
-
-		log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, dataStr)
-
-		switch receivedMsg.MessageType {
-		case MessageTypeTssUpdate:
-			libp2p.state.EventBus.Publish(state.TssUpdate, convertMsgData(receivedMsg))
-		case MessageTypeKeygenReq:
-			libp2p.state.EventBus.Publish(state.KeygenStart, convertMsgData(receivedMsg))
-		case MessageTypeKeygenResp:
-			libp2p.state.EventBus.Publish(state.KeygenReceive, convertMsgData(receivedMsg))
-		case MessageTypeSigReq:
-			libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
-		case MessageTypeSigResp:
-			libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
-		case MessageTypeDepositReceive:
-			libp2p.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
+		select {
+		case <-ctx.Done():
+			log.Info("Context cancelled, exiting handlePubSubMessages")
+			return
 		default:
-			log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
+			msg, err := sub.Next(ctx)
+			if err != nil {
+				log.Errorf("Error reading message from pubsub: %v", err)
+				continue
+			}
+
+			if msg.ReceivedFrom == node.ID() {
+				log.Debug("Received message from self, ignore")
+				continue
+			}
+
+			var receivedMsg Message
+			if err := json.Unmarshal(msg.Data, &receivedMsg); err != nil {
+				log.Errorf("Error unmarshaling pubsub message: %v", err)
+				continue
+			}
+
+			var dataStr = fmt.Sprintf("%v", receivedMsg.Data)
+			if len(dataStr) > 200 {
+				dataStr = dataStr[:200] + "..."
+			}
+
+			log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, dataStr)
+
+			switch receivedMsg.MessageType {
+			case MessageTypeTssUpdate:
+				libp2p.state.EventBus.Publish(state.TssUpdate, convertMsgData(receivedMsg))
+			case MessageTypeKeygenReq:
+				libp2p.state.EventBus.Publish(state.KeygenStart, convertMsgData(receivedMsg))
+			case MessageTypeKeygenResp:
+				libp2p.state.EventBus.Publish(state.KeygenReceive, convertMsgData(receivedMsg))
+			case MessageTypeSigReq:
+				libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
+			case MessageTypeSigResp:
+				libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
+			case MessageTypeDepositReceive:
+				libp2p.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
+			default:
+				log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
+			}
 		}
 	}
 }
@@ -137,24 +144,30 @@ func convertMsgData(msg Message) interface{} {
 
 func (libp2p *LibP2PService) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
 	for {
-		msg, err := sub.Next(ctx)
-		if err != nil {
-			log.Errorf("Error reading heartbeat message from pubsub: %v", err)
-			continue
-		}
+		select {
+		case <-ctx.Done():
+			log.Info("Context cancelled, exiting handleHeartbeatMessages")
+			return
+		default:
+			msg, err := sub.Next(ctx)
+			if err != nil {
+				log.Errorf("Error reading heartbeat message from pubsub: %v", err)
+				continue
+			}
 
-		if msg.ReceivedFrom == node.ID() {
-			log.Debug("Received heartbeat from self, ignore")
-			continue
-		}
+			if msg.ReceivedFrom == node.ID() {
+				log.Debug("Received heartbeat from self, ignore")
+				continue
+			}
 
-		var hbMsg HeartbeatMessage
-		if err := json.Unmarshal(msg.Data, &hbMsg); err != nil {
-			log.Errorf("Error unmarshaling heartbeat message: %v", err)
-			continue
-		}
+			var hbMsg HeartbeatMessage
+			if err := json.Unmarshal(msg.Data, &hbMsg); err != nil {
+				log.Errorf("Error unmarshaling heartbeat message: %v", err)
+				continue
+			}
 
-		log.Infof("Received heartbeat from %d-%s: %s", hbMsg.Timestamp, hbMsg.PeerID, hbMsg.Message)
+			log.Infof("Received heartbeat from %d-%s: %s", hbMsg.Timestamp, hbMsg.PeerID, hbMsg.Message)
+		}
 	}
 }
 

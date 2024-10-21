@@ -18,10 +18,12 @@ type TSSService struct {
 	libp2p *p2p.LibP2PService
 	state  *state.State
 
-	party      tsslib.Party
+	party      *keygen.LocalParty
 	partyIdMap map[string]*tsslib.PartyID
 
-	setupTime time.Time
+	setupTime              time.Time
+	round1P2pMessage       *p2p.Message
+	round1MessageSendTimes int
 
 	tssUpdateCh chan interface{}
 
