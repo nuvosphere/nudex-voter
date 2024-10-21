@@ -100,7 +100,7 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 	var syncStatus db.EVMSyncStatus
 	relayerDB := lis.db.GetRelayerDB()
 	result := relayerDB.First(&syncStatus)
-	if result.Error == gorm.ErrRecordNotFound {
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		syncStatus.LastSyncBlock = uint64(config.AppConfig.L2StartHeight)
 		syncStatus.UpdatedAt = time.Now()
 		relayerDB.Create(&syncStatus)

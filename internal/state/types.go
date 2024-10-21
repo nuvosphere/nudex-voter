@@ -8,3 +8,9 @@ type BtcHeadState struct {
 	UnconfirmQueue []*db.BtcBlock // status in 'unconfirm', 'confirmed'
 	SigQueue       []*db.BtcBlock // status in 'signing', 'pending'
 }
+
+type TssState struct {
+	BlockNumber      uint64
+	CurrentSubmitter string
+	Participants     []string
+}

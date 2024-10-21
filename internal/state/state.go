@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -15,6 +16,8 @@ type State struct {
 	btcHeadMu sync.RWMutex
 
 	btcHeadState BtcHeadState
+
+	tssState TssState
 }
 
 // InitializeState initializes the state by reading from the DB
@@ -24,8 +27,13 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 		latestBtcBlock    db.BtcBlock
 		unconfirmBtcQueue []*db.BtcBlock
 		sigBtcQueue       []*db.BtcBlock
+
+		currentSubmitter     string
+		participantAddresses []string
+		L2BlockNumber        uint64
 	)
 	btcLightDb := dbm.GetBtcLightDB()
+	relayerDb := dbm.GetRelayerDB()
 
 	loadData := func(db *gorm.DB, dest interface{}, query string, args ...interface{}) {
 		if err := db.Where(query, args...).Find(dest).Error; err != nil {
@@ -53,6 +61,34 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 		loadData(btcLightDb, &sigBtcQueue, "status in (?)", []string{"signing", "pending"})
 	}()
 
+	go func() {
+		defer wg.Done()
+
+		var submitterRotation db.SubmitterRotation
+		err := relayerDb.Order("block_number DESC").First(&submitterRotation).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				log.Warnf("Failed to load latest submitter rotation: %v", err)
+			} else {
+				L2BlockNumber = submitterRotation.BlockNumber
+				currentSubmitter = submitterRotation.CurrentSubmitter
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		var participants []db.Participant
+
+		err := relayerDb.Find(&participants).Error
+		if err != nil {
+			for _, participant := range participants {
+				participantAddresses = append(participantAddresses, participant.Address)
+			}
+		}
+	}()
+
 	return &State{
 		EventBus: NewEventBus(),
 		dbm:      dbm,
@@ -61,6 +97,11 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 			Latest:         latestBtcBlock,
 			UnconfirmQueue: unconfirmBtcQueue,
 			SigQueue:       sigBtcQueue,
+		},
+		tssState: TssState{
+			CurrentSubmitter: currentSubmitter,
+			Participants:     participantAddresses,
+			BlockNumber:      L2BlockNumber,
 		},
 	}
 }
