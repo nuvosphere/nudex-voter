@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -37,7 +38,7 @@ func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
 		var submitterRotation db.SubmitterRotation
 		result := lis.db.GetRelayerDB().First(&submitterRotation)
 		if result.Error != nil {
-			if result.Error == gorm.ErrRecordNotFound {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				submitterRotation.BlockNumber = vLog.BlockNumber
 				submitterRotation.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
 				err = lis.db.GetRelayerDB().Create(&submitterRotation).Error
@@ -95,18 +96,42 @@ func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
 func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
 	taskSubmitted, err := lis.contractOperations.ParseTaskSubmitted(vLog)
 	if err == nil {
-		task := db.Task{
-			TaskId:      taskSubmitted.TaskId.Uint64(),
-			Description: taskSubmitted.Description,
-			Submitter:   taskSubmitted.Submitter.Hex(),
-			IsCompleted: false,
-			CreatedAt:   time.Now(),
-		}
-		err = lis.db.GetRelayerDB().Create(&task).Error
-		if err != nil {
-			log.Fatalf("Error adding task: %v", err)
+		var existingTask db.Task
+		result := lis.db.GetRelayerDB().Where("task_id = ?", taskSubmitted.TaskId.Uint64()).First(&existingTask)
+
+		if result.Error == nil {
+			return nil
+		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			task := db.Task{
+				TaskId:      taskSubmitted.TaskId.Uint64(),
+				Description: taskSubmitted.Description,
+				Submitter:   taskSubmitted.Submitter.Hex(),
+				IsCompleted: false,
+				CreatedAt:   time.Now(),
+			}
+			err = lis.db.GetRelayerDB().Create(&task).Error
+			if err != nil {
+				return err
+			}
+			return nil
 		} else {
-			log.Infof("Save task %v ", task)
+			return result.Error
+		}
+	}
+
+	taskCompleted, err := lis.contractOperations.ParseTaskCompleted(vLog)
+	if err == nil {
+		var existingTask db.Task
+		result := lis.db.GetRelayerDB().Where("task_id = ?", taskCompleted.TaskId.Uint64()).First(&existingTask)
+		if result.Error == nil {
+			existingTask.IsCompleted = true
+			existingTask.CompletedAt = time.Unix(taskCompleted.CompletedAt.Int64(), 0)
+			err := lis.db.GetRelayerDB().Save(&existingTask).Error
+			if err != nil {
+				return err
+			}
+		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			log.Fatalf("Task %d not found for event TaskCompleted: %v", taskCompleted.TaskId.Uint64(), taskCompleted)
 		}
 	}
 	return nil
