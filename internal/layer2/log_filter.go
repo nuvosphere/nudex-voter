@@ -8,6 +8,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"time"
 )
 
 func (lis *Layer2Listener) processLogs(vLog types.Log) {
@@ -21,6 +22,8 @@ func (lis *Layer2Listener) processLogs(vLog types.Log) {
 		err = lis.processVotingLog(vLog)
 	case abis.AccountAddress:
 		err = lis.processAccountLog(vLog)
+	case abis.OperationsAddress:
+		err = lis.processOperationsLog(vLog)
 	}
 	if err != nil {
 		log.Errorf("Error processing log: %v", err)
@@ -85,6 +88,26 @@ func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
 			log.Infof("Participant removed: %s", eventParticipantRemoved.Participant.Hex())
 		}
 		return nil
+	}
+	return nil
+}
+
+func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
+	taskSubmitted, err := lis.contractOperations.ParseTaskSubmitted(vLog)
+	if err == nil {
+		task := db.Task{
+			TaskId:      taskSubmitted.TaskId.Uint64(),
+			Description: taskSubmitted.Description,
+			Submitter:   taskSubmitted.Submitter.Hex(),
+			IsCompleted: false,
+			CreatedAt:   time.Now(),
+		}
+		err = lis.db.GetRelayerDB().Create(&task).Error
+		if err != nil {
+			log.Fatalf("Error adding task: %v", err)
+		} else {
+			log.Infof("Save task %v ", task)
+		}
 	}
 	return nil
 }

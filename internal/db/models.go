@@ -7,63 +7,64 @@ import (
 )
 
 type BTCTransaction struct {
-	ID          uint      `gorm:"primaryKey"`
-	TxID        string    `gorm:"uniqueIndex;not null"`
-	RawTxData   string    `gorm:"type:text;not null"`
-	ReceivedAt  time.Time `gorm:"not null"`
-	Processed   bool      `gorm:"default:false"`
-	ProcessedAt time.Time
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	TxID        string    `gorm:"uniqueIndex;not null" json:"tx_id"`
+	RawTxData   string    `gorm:"type:text;not null" json:"raw_tx_data"`
+	ReceivedAt  time.Time `gorm:"not null" json:"received_at"`
+	Processed   bool      `gorm:"default:false" json:"processed"`
+	ProcessedAt time.Time `json:"processed_at"`
 }
 
 type EVMSyncStatus struct {
-	ID            uint      `gorm:"primaryKey"`
-	LastSyncBlock uint64    `gorm:"not null"`
-	UpdatedAt     time.Time `gorm:"not null"`
+	ID            uint      `gorm:"primaryKey" json:"id"`
+	LastSyncBlock uint64    `gorm:"not null" json:"last_sync_block"`
+	UpdatedAt     time.Time `gorm:"not null" json:"updated_at"`
 }
 
 type WithdrawalRecord struct {
-	ID           uint      `gorm:"primaryKey"`
-	WithdrawalID string    `gorm:"uniqueIndex;not null"`
-	UserAddress  string    `gorm:"not null"`
-	Amount       string    `gorm:"not null"`
-	DetectedAt   time.Time `gorm:"not null"`
-	OnChain      bool      `gorm:"default:false"`
-	OnChainTxID  string
-	Processed    bool `gorm:"default:false"`
-	ProcessedAt  time.Time
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	WithdrawalID string    `gorm:"uniqueIndex;not null" json:"withdrawal_id"`
+	UserAddress  string    `gorm:"not null" json:"user_address"`
+	Amount       string    `gorm:"not null" json:"amount"`
+	DetectedAt   time.Time `gorm:"not null" json:"detected_at"`
+	OnChain      bool      `gorm:"default:false" json:"on_chain"`
+	OnChainTxID  string    `json:"on_chain_tx_id"`
+	Processed    bool      `gorm:"default:false" json:"processed"`
+	ProcessedAt  time.Time `json:"processed_at"`
 }
 
 // SubmitterRotation contains block number and current submitter
 type SubmitterRotation struct {
-	ID               uint64 `gorm:"primaryKey"`
-	BlockNumber      uint64 `gorm:"not null"`
-	CurrentSubmitter string `gorm:"not null"`
+	ID               uint64 `gorm:"primaryKey" json:"id"`
+	BlockNumber      uint64 `gorm:"not null" json:"block_number"`
+	CurrentSubmitter string `gorm:"not null" json:"current_submitter"`
 }
 
 // Participant save all participants
 type Participant struct {
-	ID      uint64 `gorm:"primaryKey"`
-	Address string `gorm:"uniqueIndex;not null"`
+	ID      uint64 `gorm:"primaryKey" json:"id"`
+	Address string `gorm:"uniqueIndex;not null" json:"address"`
 }
 
 // Account save all accounts
 type Account struct {
-	ID      uint64 `gorm:"primaryKey"`
-	User    string `gorm:"not null"`
-	Account uint64 `gorm:"not null"`
-	ChainId uint8  `gorm:"not null"`
-	Index   uint64 `gorm:"not null"`
-	Address string `gorm:"not null"`
+	ID      uint64 `gorm:"primaryKey" json:"id"`
+	User    string `gorm:"not null" json:"user"`
+	Account uint64 `gorm:"not null" json:"account"`
+	ChainId uint8  `gorm:"not null" json:"chain_id"`
+	Index   uint64 `gorm:"not null" json:"index"`
+	Address string `gorm:"not null" json:"address"`
 }
 
 type Task struct {
-	ID          uint64    `gorm:"primaryKey"`
-	Description string    `gorm:"not null"`
-	Submitter   string    `gorm:"not null"`
-	IsCompleted bool      `gorm:"not null"`
-	CreatedAt   time.Time `gorm:"not null"`
-	CompletedAt time.Time
-	Result      []byte
+	ID          uint64    `gorm:"primaryKey" json:"id"`
+	TaskId      uint64    `gorm:"unique;not null" json:"task_id"`
+	Description string    `gorm:"not null" json:"description"`
+	Submitter   string    `gorm:"not null" json:"submitter"`
+	IsCompleted bool      `gorm:"not null" json:"is_completed"`
+	CreatedAt   time.Time `gorm:"not null" json:"created_at"`
+	CompletedAt time.Time `json:"completed_at"`
+	Result      []byte    `json:"result"`
 }
 
 type BtcBlock struct {

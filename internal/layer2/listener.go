@@ -32,6 +32,7 @@ type Layer2Listener struct {
 
 	contractVotingManager  *abis.VotingManagerContract
 	contractAccountManager *abis.AccountManagerContract
+	contractOperations     *abis.NuDexOperationsContract
 
 	sigFinishChan chan interface{}
 }
@@ -52,6 +53,11 @@ func NewLayer2Listener(libp2p *p2p.LibP2PService, state *state.State, db *db.Dat
 		log.Fatalf("Failed to instantiate contract AccountManager: %v", err)
 	}
 
+	contractOperations, err := abis.NewNuDexOperationsContract(abis.OperationsAddress, ethClient)
+	if err != nil {
+		log.Fatalf("Failed to instantiate contract AccountManager: %v", err)
+	}
+
 	return &Layer2Listener{
 		libp2p:    libp2p,
 		db:        db,
@@ -60,6 +66,7 @@ func NewLayer2Listener(libp2p *p2p.LibP2PService, state *state.State, db *db.Dat
 
 		contractVotingManager:  contractVotingManager,
 		contractAccountManager: contractAccountManager,
+		contractOperations:     contractOperations,
 
 		sigFinishChan: make(chan interface{}, 256),
 	}

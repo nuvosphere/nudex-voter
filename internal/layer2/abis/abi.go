@@ -6,6 +6,7 @@ import (
 )
 
 var (
-	VotingAddress  = common.HexToAddress(config.AppConfig.VotingContract)
-	AccountAddress = common.HexToAddress(config.AppConfig.AccountContract)
+	VotingAddress     = common.HexToAddress(config.AppConfig.VotingContract)
+	AccountAddress    = common.HexToAddress(config.AppConfig.AccountContract)
+	OperationsAddress = common.HexToAddress(config.AppConfig.OperationsContract)
 )
