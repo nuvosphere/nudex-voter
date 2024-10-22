@@ -22,6 +22,11 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		return
 	}
 
+	if ts.currentTask != nil {
+		log.Debugf("Current task %d is already running", ts.currentTask.TaskId)
+		return
+	}
+
 	var dbTask db.Task
 	err := ts.dbm.GetRelayerDB().Order("block_number DESC").First(&dbTask).Error
 	if err != nil {
@@ -49,22 +54,27 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		log.Warnf("Parse task  %d type error, not know task type, description: %s", dbTask.TaskId, dbTask.Description)
 		return
 	case TaskTypeCreateWallet:
+		ts.currentTask = &dbTask
 		err := ts.handleCreateWalletTask(dbTask)
 		if err != nil {
 			log.Errorf("Handle create wallet task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
+			ts.currentTask = nil
 		}
 	case TaskTypeDeposit:
 		err := ts.handleDepositTask(dbTask)
 		if err != nil {
 			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
+			ts.currentTask = nil
 		}
 	case TaskTypeWithdraw:
 		err := ts.handleWithdrawTask(dbTask)
 		if err != nil {
 			log.Errorf("Handle withdraw task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
+			ts.currentTask = nil
 		}
 	default:
 		log.Warnf("Parse task  %d error, not know task type, description: %s", dbTask.TaskId, dbTask.Description)
+		ts.currentTask = nil
 	}
 
 }
