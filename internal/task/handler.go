@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -69,7 +70,22 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 }
 
 func (ts *TaskService) handleCreateWalletTask(dbTask db.Task) error {
-
+	parts := strings.Split(dbTask.Description, ":")
+	if len(parts) < 4 {
+		return fmt.Errorf("parse task %d to create wallet task error, description: %s", dbTask.TaskId, dbTask.Description)
+	}
+	account, err := strconv.ParseUint(parts[2], 10, 64)
+	if err != nil {
+		return fmt.Errorf("parse task %d to create wallet task error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
+	}
+	createWalletTask := CreateWalletTask{
+		taskId:  dbTask.TaskId,
+		user:    parts[1],
+		account: account,
+		chain:   parts[3],
+		index:   parts[4],
+	}
+	log.Debugf("Parse create task: %v", createWalletTask)
 	return nil
 }
 
