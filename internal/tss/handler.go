@@ -54,7 +54,7 @@ func (tss *TSSService) checkTimeouts() {
 }
 
 func (tss *TSSService) checkKeygen(ctx context.Context) {
-	if tss.party == nil {
+	if tss.Party == nil {
 		log.Debug("Party not init, start to setup")
 		tss.setup()
 		return
@@ -72,7 +72,7 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 		return
 	}
 
-	party := reflect.ValueOf(tss.party.BaseParty).Elem()
+	party := reflect.ValueOf(tss.Party.BaseParty).Elem()
 	round := party.FieldByName("rnd")
 	if !round.CanInterface() {
 		round = reflect.NewAt(round.Type(), unsafe.Pointer(round.UnsafeAddr())).Elem()
@@ -100,7 +100,7 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 	}
 
 	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
-		if err := tss.party.FirstRound().Start(); err != nil {
+		if err := tss.Party.FirstRound().Start(); err != nil {
 			log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
 			tss.setup()
 			return
@@ -122,9 +122,9 @@ func (tss *TSSService) removeSigMap(requestId string, reportTimeout bool) {
 	defer tss.sigMu.Unlock()
 	if reportTimeout {
 		if voteMap, ok := tss.sigMap[requestId]; ok {
-			if voteMsg, ok := voteMap[tss.address.Hex()]; ok {
+			if voteMsg, ok := voteMap[tss.Address.Hex()]; ok {
 				log.Debugf("Report timeout when remove sig map, found msg, request id %s, proposer %s",
-					requestId, tss.address.Hex())
+					requestId, tss.Address.Hex())
 				tss.state.EventBus.Publish(state.SigTimeout, voteMsg)
 			}
 		}

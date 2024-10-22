@@ -12,6 +12,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/task"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
@@ -28,6 +29,7 @@ type Application struct {
 	Layer2Listener  *layer2.Layer2Listener
 	BTCListener     *btc.BTCListener
 	TssService      *tss.TSSService
+	TaskService     *task.TaskService
 	HTTPServer      *http.HTTPServer
 	TssKeyInCh      chan types.KeygenMessage
 	TssKeyOutCh     chan tsslib.Message
@@ -43,6 +45,7 @@ func NewApplication() *Application {
 	layer2Listener := layer2.NewLayer2Listener(libP2PService, state, dbm)
 	btcListener := btc.NewBTCListener(libP2PService, state, dbm)
 	tssService := tss.NewTssService(libP2PService, state)
+	taskService := task.NewTaskService(state, dbm, tssService)
 	httpServer := http.NewHTTPServer(libP2PService, state, dbm)
 
 	return &Application{
@@ -52,6 +55,7 @@ func NewApplication() *Application {
 		Layer2Listener:  layer2Listener,
 		BTCListener:     btcListener,
 		TssService:      tssService,
+		TaskService:     taskService,
 		HTTPServer:      httpServer,
 		TssKeyInCh:      make(chan types.KeygenMessage),
 	}
@@ -90,6 +94,12 @@ func (app *Application) Run() {
 	go func() {
 		defer wg.Done()
 		go app.TssService.Start(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		go app.TaskService.Start(ctx)
 	}()
 
 	wg.Add(1)

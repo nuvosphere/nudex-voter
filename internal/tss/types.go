@@ -13,13 +13,14 @@ import (
 
 type TSSService struct {
 	privateKey *ecdsa.PrivateKey
-	address    common.Address
+	Address    common.Address
 
 	libp2p *p2p.LibP2PService
 	state  *state.State
 
-	party      *keygen.LocalParty
-	partyIdMap map[string]*tsslib.PartyID
+	Party              *keygen.LocalParty
+	LocalPartySaveData *keygen.LocalPartySaveData
+	partyIdMap         map[string]*tsslib.PartyID
 
 	setupTime              time.Time
 	round1P2pMessage       *p2p.Message

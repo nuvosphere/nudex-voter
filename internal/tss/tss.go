@@ -18,7 +18,7 @@ import (
 func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 	return &TSSService{
 		privateKey: config.AppConfig.L2PrivateKey,
-		address:    crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
+		Address:    crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
 		libp2p:     libp2p,
 		state:      state,
 
@@ -57,7 +57,7 @@ func (tss *TSSService) keygen(ctx context.Context) {
 	requestId := fmt.Sprintf("KEYGEN:%s", crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey).Hex())
 	keygenReqMessage := types.KeygenReqMessage{
 		RequestId:    requestId,
-		VoterAddress: tss.address.Hex(),
+		VoterAddress: tss.Address.Hex(),
 		CreateTime:   time.Now().Unix(),
 		PublicKeys:   PublicKeysToHex(config.AppConfig.TssPublicKeys),
 		Threshold:    config.AppConfig.TssThreshold,
@@ -80,18 +80,18 @@ func (tss *TSSService) keygen(ctx context.Context) {
 		keygenReqMessage.PublicKeys)
 
 	tss.sigMap[requestId] = make(map[string]interface{})
-	tss.sigMap[requestId][tss.address.Hex()] = true
+	tss.sigMap[requestId][tss.Address.Hex()] = true
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
 	log.Infof("KeygenReq broadcast ok, request id: %s", requestId)
 }
 
 func (tss *TSSService) setup() {
-	tss.party = nil
+	tss.Party = nil
 	tss.setupTime = time.Time{}
 
 	var preParams *keygen.LocalPreParams
-	localParty, err := loadTSSData()
+	localPartySaveData, err := loadTSSData()
 	if err != nil {
 		log.Errorf("Failed to load TSS data: %v", err)
 		preParams, err = keygen.GeneratePreParams(1 * time.Minute)
@@ -104,26 +104,27 @@ func (tss *TSSService) setup() {
 			log.Fatalf("Failed to save TSS data: %v", err)
 		}
 	} else {
-		preParams = &localParty.LocalPreParams
+		preParams = &localPartySaveData.LocalPreParams
 		log.Infof("Loaded TSS data as prePrams")
 	}
 
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
-	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.address.Hex())
+	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
 	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)
 
 	tss.setupTime = time.Now()
-	tss.party = party
+	tss.Party = party
 	tss.partyIdMap = make(map[string]*tsslib.PartyID)
 	for _, partyId := range partyIDs {
 		tss.partyIdMap[partyId.Id] = partyId
 	}
+	tss.LocalPartySaveData = localPartySaveData
 
-	if localParty.ECDSAPub == nil {
+	if localPartySaveData.ECDSAPub == nil {
 		if err := party.Start(); err != nil {
 			log.Errorf("TSS keygen process failed to start: %v", err)
 			return

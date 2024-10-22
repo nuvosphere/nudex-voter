@@ -14,10 +14,10 @@ import (
 )
 
 func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message) error {
-	if tss.party == nil {
+	if tss.Party == nil {
 		return fmt.Errorf("handleTssKeyOut error, event %v, self not init", event)
 	}
-	if event.GetFrom().Id != tss.party.PartyID().Id {
+	if event.GetFrom().Id != tss.Party.PartyID().Id {
 		return fmt.Errorf("handleTssKeyOut error, event %v, not self", event)
 	}
 
@@ -55,7 +55,7 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message
 }
 
 func (tss *TSSService) handleTssUpdate(event interface{}) error {
-	if tss.party == nil {
+	if tss.Party == nil {
 		return fmt.Errorf("handleTssUpdate error, tss local party not init")
 	}
 	message, ok := event.(types.TssUpdateMessage)
@@ -68,7 +68,7 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 		return fmt.Errorf("fromPartyID %s not found", message.FromPartyId)
 	}
 
-	if !message.IsBroadcast && !slices.Contains(message.ToPartyIds, tss.party.PartyID().Id) {
+	if !message.IsBroadcast && !slices.Contains(message.ToPartyIds, tss.Party.PartyID().Id) {
 		log.Debugf("PartyId not one of p2p message receiver: %v", message.ToPartyIds)
 		return nil
 	}
@@ -82,7 +82,7 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 	}
 
 	go func() {
-		if _, err := tss.party.Update(msg); err != nil {
+		if _, err := tss.Party.Update(msg); err != nil {
 			log.Errorf("Failed to update party: FromPartyID=%v, error=%v", message.FromPartyId, err)
 			return
 		} else {
@@ -94,7 +94,7 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 }
 
 func (tss *TSSService) handleTssKeyEnd(event *keygen.LocalPartySaveData) error {
-	if tss.party == nil {
+	if tss.Party == nil {
 		return fmt.Errorf("handleTssEnd error, event %v, self not init", event)
 	}
 	return saveTSSData(event)

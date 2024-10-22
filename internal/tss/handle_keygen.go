@@ -17,9 +17,9 @@ func (tss *TSSService) handleKeygenReq(ctx context.Context, event interface{}) e
 		return fmt.Errorf("handleKeygenReq error, event %v, is not keygen req", event)
 	}
 
-	if tss.address.Hex() == message.VoterAddress {
-		log.Debugf("Ignore handleKeygenReq request id %s, is proposer: %s", message.RequestId, tss.address.Hex())
-		return fmt.Errorf("cannot handleKeygenReq %s, is proposer: %s", message.RequestId, tss.address.Hex())
+	if tss.Address.Hex() == message.VoterAddress {
+		log.Debugf("Ignore handleKeygenReq request id %s, is proposer: %s", message.RequestId, tss.Address.Hex())
+		return fmt.Errorf("cannot handleKeygenReq %s, is proposer: %s", message.RequestId, tss.Address.Hex())
 	}
 
 	tss.sigMu.Lock()
@@ -27,7 +27,7 @@ func (tss *TSSService) handleKeygenReq(ctx context.Context, event interface{}) e
 
 	keygenReqMessage := types.KeygenReceiveMessage{
 		RequestId:         message.RequestId,
-		VoterAddress:      tss.address.Hex(),
+		VoterAddress:      tss.Address.Hex(),
 		CreateTime:        time.Now().Unix(),
 		PublicKeys:        PublicKeysToHex(config.AppConfig.TssPublicKeys),
 		Threshold:         config.AppConfig.TssThreshold,

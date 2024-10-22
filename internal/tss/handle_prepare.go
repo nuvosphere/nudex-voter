@@ -11,9 +11,9 @@ import (
 )
 
 func (tss *TSSService) handleSigStartKeyPrepare(ctx context.Context, e types.MsgSignKeyPrepareMessage) error {
-	if tss.address.Hex() != e.MsgSign.VoterAddress {
-		log.Debugf("Ignore SigStart request id %s, not proposer: %s", e.RequestId, tss.address.Hex())
-		return fmt.Errorf("cannot start sig %s, not proposer: %s", e.RequestId, tss.address.Hex())
+	if tss.Address.Hex() != e.MsgSign.VoterAddress {
+		log.Debugf("Ignore SigStart request id %s, not proposer: %s", e.RequestId, tss.Address.Hex())
+		return fmt.Errorf("cannot start sig %s, not proposer: %s", e.RequestId, tss.Address.Hex())
 	}
 
 	// check map
@@ -27,7 +27,7 @@ func (tss *TSSService) handleSigStartKeyPrepare(ctx context.Context, e types.Msg
 		MsgSign: types.MsgSign{
 			RequestId:    e.RequestId,
 			IsProposer:   true,
-			VoterAddress: tss.address.Hex(),
+			VoterAddress: tss.Address.Hex(),
 			SigData:      nil,
 			CreateTime:   time.Now().Unix(),
 		},
