@@ -39,7 +39,19 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 		return err
 	}
 	log.Debugf("Publish p2p message SignReq: RequestId=%s, task=%v", requestId, task)
-	return nil
+
+	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
+	peerCtx := tsslib.NewPeerContext(partyIDs)
+
+	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
+	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
+	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(task)
+	if err != nil {
+		return err
+	}
+
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh)
+	return party.Start()
 }
 
 func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.MsgSignCreateWalletMessage) error {
@@ -59,12 +71,13 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 
 	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
-
-	party := signing.NewLocalParty(big.NewInt(42), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh)
-	if err := party.Start(); err != nil {
-		log.Errorf("TSS sign create wallect start process failed to start: %v", err)
+	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(e.Task)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh)
+	return party.Start()
 }
 
 func (tss *TSSService) handleKeygenReq(ctx context.Context, event interface{}) error {

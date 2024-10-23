@@ -1,10 +1,13 @@
 package tss
 
 import (
+	"bytes"
 	"crypto/ecdsa"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -121,4 +124,34 @@ func AddressIndex(publicKeys []*ecdsa.PublicKey, tssAddress string) int {
 		}
 	}
 	return -1 // Return -1 if not found
+}
+
+func serializeMsgSignCreateWalletMessageToBytes(task types.CreateWalletTask) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	if err := binary.Write(buf, binary.BigEndian, task.TaskId); err != nil {
+		return nil, err
+	}
+	if err := binary.Write(buf, binary.BigEndian, task.Account); err != nil {
+		return nil, err
+	}
+
+	userBytes := []byte(task.User)
+	chainBytes := []byte(task.Chain)
+
+	if err := binary.Write(buf, binary.BigEndian, uint64(len(userBytes))); err != nil {
+		return nil, err
+	}
+	if _, err := buf.Write(userBytes); err != nil {
+		return nil, err
+	}
+
+	if err := binary.Write(buf, binary.BigEndian, uint64(len(chainBytes))); err != nil {
+		return nil, err
+	}
+	if _, err := buf.Write(chainBytes); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
