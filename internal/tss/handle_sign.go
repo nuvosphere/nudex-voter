@@ -3,6 +3,9 @@ package tss
 import (
 	"context"
 	"fmt"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
+	"math/big"
 	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -14,13 +17,20 @@ import (
 func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.CreateWalletTask) error {
 	requestId := fmt.Sprintf("CREATE_WALLET:%s", task.TaskId)
 	reqMessage := types.MsgSignCreateWalletMessage{
+		MsgSign: types.MsgSign{
+			RequestId:    requestId,
+			IsProposer:   true,
+			VoterAddress: tss.Address.Hex(),
+			SigData:      nil,
+			CreateTime:   time.Now().Unix(),
+		},
 		Task: task,
 	}
 
 	p2pMsg := p2p.Message{
 		MessageType: p2p.MessageTypeSigReq,
 		RequestId:   requestId,
-		DataType:    p2p.DataTypeSignReq,
+		DataType:    p2p.DataTypeSignCreateWallet,
 		Data:        reqMessage,
 	}
 
@@ -29,6 +39,31 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 		return err
 	}
 	log.Debugf("Publish p2p message SignReq: RequestId=%s, task=%v", requestId, task)
+	return nil
+}
+
+func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.MsgSignCreateWalletMessage) error {
+	if tss.Address.Hex() == e.MsgSign.VoterAddress {
+		log.Debugf("ignoring sign create wallet start, proposer self")
+		return nil
+	}
+
+	// check map
+	_, ok := tss.sigExists(e.RequestId)
+	if ok {
+		return fmt.Errorf("sig exists: %s", e.RequestId)
+	}
+
+	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
+	peerCtx := tsslib.NewPeerContext(partyIDs)
+
+	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
+	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
+
+	party := signing.NewLocalParty(big.NewInt(42), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh)
+	if err := party.Start(); err != nil {
+		log.Errorf("TSS sign create wallect start process failed to start: %v", err)
+	}
 	return nil
 }
 

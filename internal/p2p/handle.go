@@ -133,6 +133,12 @@ func convertMsgData(msg Message) interface{} {
 		_ = json.Unmarshal(jsonBytes, &rawData)
 		return rawData
 	}
+	if msg.DataType == DataTypeSignCreateWallet {
+		jsonBytes, _ := json.Marshal(msg.Data)
+		var rawData types.MsgSignCreateWalletMessage
+		_ = json.Unmarshal(jsonBytes, &rawData)
+		return rawData
+	}
 	if msg.DataType == DataTypeTssUpdateMessage {
 		jsonBytes, _ := json.Marshal(msg.Data)
 		var rawData types.TssUpdateMessage

@@ -3,6 +3,7 @@ package tss
 import (
 	"context"
 	"fmt"
+	"github.com/bnb-chain/tss-lib/v2/common"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -27,8 +28,9 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 		keygenReqCh:     make(chan interface{}, 10),
 		keygenReceiveCh: make(chan interface{}, 10),
 
-		keyOutCh: make(chan tsslib.Message),
-		keyEndCh: make(chan *keygen.LocalPartySaveData),
+		keyOutCh:    make(chan tsslib.Message),
+		keygenEndCh: make(chan *keygen.LocalPartySaveData),
+		signEndCh:   make(chan *common.SignatureData),
 
 		sigStartCh:   make(chan interface{}, 256),
 		sigReceiveCh: make(chan interface{}, 1024),
@@ -114,7 +116,7 @@ func (tss *TSSService) setup() {
 	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)
+	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keygenEndCh, *preParams).(*keygen.LocalParty)
 
 	tss.setupTime = time.Now()
 	tss.Party = party
@@ -175,11 +177,11 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle tss keyOut error, event: %v, %v", event, err)
 				}
-			case event := <-tss.keyEndCh:
-				log.Debugf("Received tss keyEnd event")
+			case event := <-tss.keygenEndCh:
+				log.Debugf("Received tss keygenEnd event")
 				err := tss.handleTssKeyEnd(event)
 				if err != nil {
-					log.Warnf("handle tss keyEnd error, event: %v, %v", event, err)
+					log.Warnf("handle tss keygenEnd error, event: %v, %v", event, err)
 				}
 			case event := <-tss.sigStartCh:
 				log.Debugf("Received sigStart event: %v", event)
@@ -236,7 +238,8 @@ func (tss *TSSService) Stop() {
 		close(tss.keygenReceiveCh)
 
 		close(tss.keyOutCh)
-		close(tss.keyEndCh)
+		close(tss.keygenEndCh)
+		close(tss.signEndCh)
 
 		close(tss.sigStartCh)
 		close(tss.sigReceiveCh)

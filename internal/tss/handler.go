@@ -15,6 +15,12 @@ import (
 
 func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 	switch e := event.(type) {
+	case types.MsgSignCreateWalletMessage:
+		log.Debugf("Event handleSigStart is of type MsgSignCreateWalletMessage, request id %s", e.RequestId)
+		if err := tss.handleSignCreateWalletStart(ctx, e); err != nil {
+			log.Errorf("Error handleSigStart MsgSignCreateWalletMessage, %v", err)
+			tss.state.EventBus.Publish(state.SigFailed, e)
+		}
 	case types.MsgSignKeyPrepareMessage:
 		log.Debugf("Event handleSigStart is of type MsgSignKeyPrepareMessage, request id %s", e.RequestId)
 		if err := tss.handleSigStartKeyPrepare(ctx, e); err != nil {
