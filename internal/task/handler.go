@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"strconv"
@@ -55,7 +56,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		return
 	case TaskTypeCreateWallet:
 		ts.currentTask = &dbTask
-		err := ts.handleCreateWalletTask(dbTask)
+		err := ts.handleCreateWalletTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle create wallet task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
 			ts.currentTask = nil
@@ -79,7 +80,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 
 }
 
-func (ts *TaskService) handleCreateWalletTask(dbTask db.Task) error {
+func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Task) error {
 	parts := strings.Split(dbTask.Description, ":")
 	if len(parts) < 4 {
 		return fmt.Errorf("parse task %d to create wallet task error, description: %s", dbTask.TaskId, dbTask.Description)
@@ -88,15 +89,13 @@ func (ts *TaskService) handleCreateWalletTask(dbTask db.Task) error {
 	if err != nil {
 		return fmt.Errorf("parse task %d to create wallet task error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
 	}
-	createWalletTask := CreateWalletTask{
-		taskId:  dbTask.TaskId,
-		user:    parts[1],
-		account: account,
-		chain:   parts[3],
-		index:   parts[4],
+	createWalletTask := types.CreateWalletTask{
+		TaskId:  dbTask.TaskId,
+		User:    parts[1],
+		Account: account,
+		Chain:   parts[3],
 	}
-	log.Debugf("Parse create task: %v", createWalletTask)
-	return nil
+	return ts.Tss.HandleSignCreateAccount(ctx, createWalletTask)
 }
 
 func (ts *TaskService) handleDepositTask(dbTask db.Task) error {

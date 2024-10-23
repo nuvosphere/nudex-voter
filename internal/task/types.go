@@ -19,11 +19,3 @@ const (
 	TaskTypeDeposit
 	TaskTypeWithdraw
 )
-
-type CreateWalletTask struct {
-	taskId  uint64
-	user    string
-	account uint64
-	chain   string
-	index   string
-}

@@ -27,6 +27,7 @@ const (
 
 const (
 	DataTypeTssUpdateMessage = "TssUpdateMessage"
+	DataTypeSignReq          = "SignReq"
 	DataTypeKeygenReq        = "KeygenReq"
 	DataTypeKeygenResponse   = "KeygenResponse"
 )

@@ -9,6 +9,11 @@ type MsgSign struct {
 	CreateTime int64 `json:"create_time"`
 }
 
+type MsgSignCreateWalletMessage struct {
+	MsgSign
+	Task CreateWalletTask `json:"task"`
+}
+
 type MsgSignKeyPrepareMessage struct {
 	MsgSign
 	PublicKeys []string `json:"public_keys"`
