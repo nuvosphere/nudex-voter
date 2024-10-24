@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"reflect"
@@ -19,12 +20,6 @@ func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 		log.Debugf("Event handleSigStart is of type MsgSignCreateWalletMessage, request id %s", e.RequestId)
 		if err := tss.handleSignCreateWalletStart(ctx, e); err != nil {
 			log.Errorf("Error handleSigStart MsgSignCreateWalletMessage, %v", err)
-			tss.state.EventBus.Publish(state.SigFailed, e)
-		}
-	case types.MsgSignKeyPrepareMessage:
-		log.Debugf("Event handleSigStart is of type MsgSignKeyPrepareMessage, request id %s", e.RequestId)
-		if err := tss.handleSigStartKeyPrepare(ctx, e); err != nil {
-			log.Errorf("Error handleSigStart MsgSignKeyPrepareMessage, %v", err)
 			tss.state.EventBus.Publish(state.SigFailed, e)
 		}
 	default:
@@ -116,25 +111,26 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 	}
 }
 
-func (tss *TSSService) sigExists(requestId string) (map[string]interface{}, bool) {
+func (tss *TSSService) sigExists(requestId string) (*signing.LocalParty, bool) {
 	tss.sigMu.RLock()
 	defer tss.sigMu.RUnlock()
-	data, ok := tss.sigMap[requestId]
-	return data, ok
+	party, ok := tss.sigPartyMap[requestId]
+	return party, ok
 }
 
 func (tss *TSSService) removeSigMap(requestId string, reportTimeout bool) {
 	tss.sigMu.Lock()
 	defer tss.sigMu.Unlock()
 	if reportTimeout {
-		if voteMap, ok := tss.sigMap[requestId]; ok {
-			if voteMsg, ok := voteMap[tss.Address.Hex()]; ok {
-				log.Debugf("Report timeout when remove sig map, found msg, request id %s, proposer %s",
-					requestId, tss.Address.Hex())
-				tss.state.EventBus.Publish(state.SigTimeout, voteMsg)
-			}
-		}
+		// todo
+		//if party, ok := tss.sigPartyMap[requestId]; ok {
+		//	if voteMsg, ok := voteMap[tss.Address.Hex()]; ok {
+		//		log.Debugf("Report timeout when remove sig map, found msg, request id %s, proposer %s",
+		//			requestId, tss.Address.Hex())
+		//		tss.state.EventBus.Publish(state.SigTimeout, voteMsg)
+		//	}
+		//}
 	}
-	delete(tss.sigMap, requestId)
+	delete(tss.sigPartyMap, requestId)
 	delete(tss.sigTimeoutMap, requestId)
 }

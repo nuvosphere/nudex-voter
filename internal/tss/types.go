@@ -30,9 +30,6 @@ type TSSService struct {
 
 	tssUpdateCh chan interface{}
 
-	keygenReqCh     chan interface{}
-	keygenReceiveCh chan interface{}
-
 	keyOutCh    chan tsslib.Message
 	keygenEndCh chan *keygen.LocalPartySaveData
 	signEndCh   chan *tssCommon.SignatureData

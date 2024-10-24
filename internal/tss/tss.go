@@ -2,7 +2,6 @@ package tss
 
 import (
 	"context"
-	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,9 +23,6 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 		state:      state,
 
 		tssUpdateCh: make(chan interface{}, 10),
-
-		keygenReqCh:     make(chan interface{}, 10),
-		keygenReceiveCh: make(chan interface{}, 10),
 
 		keyOutCh:    make(chan tsslib.Message),
 		keygenEndCh: make(chan *keygen.LocalPartySaveData),
@@ -51,42 +46,6 @@ func (tss *TSSService) Start(ctx context.Context) {
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
 	tss.Stop()
-}
-
-func (tss *TSSService) keygen(ctx context.Context) {
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
-
-	requestId := fmt.Sprintf("KEYGEN:%s", crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey).Hex())
-	keygenReqMessage := types.KeygenReqMessage{
-		RequestId:    requestId,
-		VoterAddress: tss.Address.Hex(),
-		CreateTime:   time.Now().Unix(),
-		PublicKeys:   PublicKeysToHex(config.AppConfig.TssPublicKeys),
-		Threshold:    config.AppConfig.TssThreshold,
-	}
-
-	p2pMsg := p2p.Message{
-		MessageType: p2p.MessageTypeKeygenReq,
-		RequestId:   requestId,
-		DataType:    p2p.DataTypeKeygenReq,
-		Data:        keygenReqMessage,
-	}
-
-	err := tss.libp2p.PublishMessage(ctx, p2pMsg)
-	if err != nil {
-		log.Errorf("Error publishing keygenReqMessage message: %v", err)
-		return
-	}
-	log.Debugf("Publish p2p message keygenReqMessage: RequestId=%s, Key Length=%d, Threshold=%d, Keys=%v",
-		requestId, len(keygenReqMessage.PublicKeys), keygenReqMessage.Threshold,
-		keygenReqMessage.PublicKeys)
-
-	//tss.sigMap[requestId] = make(map[string]interface{})
-	//tss.sigMap[requestId][tss.Address.Hex()] = true
-	timeoutDuration := config.AppConfig.TssSigTimeout
-	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
-	log.Infof("KeygenReq broadcast ok, request id: %s", requestId)
 }
 
 func (tss *TSSService) setup() {
@@ -138,9 +97,6 @@ func (tss *TSSService) setup() {
 func (tss *TSSService) signLoop(ctx context.Context) {
 	tss.state.EventBus.Subscribe(state.TssUpdate, tss.tssUpdateCh)
 
-	tss.state.EventBus.Subscribe(state.KeygenStart, tss.keygenReqCh)
-	tss.state.EventBus.Subscribe(state.KeygenReceive, tss.keygenReceiveCh)
-
 	tss.state.EventBus.Subscribe(state.SigStart, tss.sigStartCh)
 	tss.state.EventBus.Subscribe(state.SigReceive, tss.sigReceiveCh)
 
@@ -159,18 +115,6 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				err := tss.handleTssUpdate(event)
 				if err != nil {
 					log.Warnf("handle tssUpdate error, %v", err)
-				}
-			case event := <-tss.keygenReqCh:
-				log.Debugf("Received keygenReq event: %v", event)
-				err := tss.handleKeygenReq(ctx, event)
-				if err != nil {
-					log.Warnf("handle keygenReq error event: %v, %v", event, err)
-				}
-			case event := <-tss.keygenReceiveCh:
-				log.Debugf("Received keygenReveive event: %v", event)
-				err := tss.handleKeygenReceive(ctx, event)
-				if err != nil {
-					log.Warnf("handle keygenReveive error event: %v, %v", event, err)
 				}
 			case event := <-tss.keyOutCh:
 				log.Debugf("Received tss keyOut event")
@@ -234,9 +178,6 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 func (tss *TSSService) Stop() {
 	tss.once.Do(func() {
 		close(tss.tssUpdateCh)
-
-		close(tss.keygenReqCh)
-		close(tss.keygenReceiveCh)
 
 		close(tss.keyOutCh)
 		close(tss.keygenEndCh)

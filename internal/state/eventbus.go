@@ -9,8 +9,6 @@ type EventType int
 const (
 	EventUnkown EventType = iota
 	TssUpdate
-	KeygenStart
-	KeygenReceive
 	SigStart
 	SigReceive
 	SigFinish
