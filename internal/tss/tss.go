@@ -35,7 +35,7 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 		sigFinishChan:  make(chan interface{}, 10),
 		sigTimeoutChan: make(chan interface{}, 10),
 
-		sigPartyMap:   make(map[string]*signing.LocalParty),
+		sigMap:        make(map[string]map[uint64]*signing.LocalParty),
 		sigTimeoutMap: make(map[string]time.Time),
 	}
 }

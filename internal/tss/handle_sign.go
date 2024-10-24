@@ -56,7 +56,8 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	}
 
 	tss.sigMu.Lock()
-	tss.sigPartyMap[requestId] = party
+	tss.sigMap[requestId] = make(map[uint64]*signing.LocalParty)
+	tss.sigMap[requestId][task.TaskId] = party
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
 	tss.sigMu.Unlock()
@@ -92,7 +93,8 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 	}
 
 	tss.sigMu.Lock()
-	tss.sigPartyMap[e.RequestId] = party
+	tss.sigMap[e.RequestId] = make(map[uint64]*signing.LocalParty)
+	tss.sigMap[e.RequestId][e.Task.TaskId] = party
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[e.RequestId] = time.Now().Add(timeoutDuration)
 	tss.sigMu.Unlock()

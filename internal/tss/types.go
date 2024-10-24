@@ -41,7 +41,7 @@ type TSSService struct {
 	sigFinishChan  chan interface{}
 	sigTimeoutChan chan interface{}
 
-	sigPartyMap   map[string]*signing.LocalParty
+	sigMap        map[string]map[uint64]*signing.LocalParty
 	sigTimeoutMap map[string]time.Time
 	sigMu         sync.RWMutex
 

@@ -111,26 +111,20 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 	}
 }
 
-func (tss *TSSService) sigExists(requestId string) (*signing.LocalParty, bool) {
+func (tss *TSSService) sigExists(requestId string) (map[uint64]*signing.LocalParty, bool) {
 	tss.sigMu.RLock()
 	defer tss.sigMu.RUnlock()
-	party, ok := tss.sigPartyMap[requestId]
-	return party, ok
+	data, ok := tss.sigMap[requestId]
+	return data, ok
 }
 
 func (tss *TSSService) removeSigMap(requestId string, reportTimeout bool) {
 	tss.sigMu.Lock()
 	defer tss.sigMu.Unlock()
 	if reportTimeout {
-		// todo
-		//if party, ok := tss.sigPartyMap[requestId]; ok {
-		//	if voteMsg, ok := voteMap[tss.Address.Hex()]; ok {
-		//		log.Debugf("Report timeout when remove sig map, found msg, request id %s, proposer %s",
-		//			requestId, tss.Address.Hex())
-		//		tss.state.EventBus.Publish(state.SigTimeout, voteMsg)
-		//	}
-		//}
+		taskPartyMap := tss.sigMap[requestId]
+		tss.state.EventBus.Publish(state.SigTimeout, taskPartyMap)
 	}
-	delete(tss.sigPartyMap, requestId)
+	delete(tss.sigMap, requestId)
 	delete(tss.sigTimeoutMap, requestId)
 }
