@@ -50,9 +50,9 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	}
 
 	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
-	err = party.Start()
-	if err != nil {
-		return err
+	tssErr := party.Start()
+	if tssErr != nil && tssErr.Cause() != nil {
+		return tssErr.Cause()
 	}
 
 	tss.sigMu.Lock()
@@ -87,9 +87,9 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 	}
 
 	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
-	err = party.Start()
-	if err != nil {
-		return err
+	tssErr := party.Start()
+	if tssErr != nil && tssErr.Cause() != nil {
+		return tssErr.Cause()
 	}
 
 	tss.sigMu.Lock()
