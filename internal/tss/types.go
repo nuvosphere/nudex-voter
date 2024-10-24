@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
@@ -43,8 +44,7 @@ type TSSService struct {
 	sigFinishChan  chan interface{}
 	sigTimeoutChan chan interface{}
 
-	// [request_id][vote_address]MsgSign
-	sigMap        map[string]map[string]interface{}
+	sigPartyMap   map[string]*signing.LocalParty
 	sigTimeoutMap map[string]time.Time
 	sigMu         sync.RWMutex
 

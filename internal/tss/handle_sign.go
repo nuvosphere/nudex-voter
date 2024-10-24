@@ -50,8 +50,18 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh)
-	return party.Start()
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
+	err = party.Start()
+	if err != nil {
+		return err
+	}
+
+	tss.sigMu.Lock()
+	tss.sigPartyMap[requestId] = party
+	timeoutDuration := config.AppConfig.TssSigTimeout
+	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
+	tss.sigMu.Unlock()
+	return nil
 }
 
 func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.MsgSignCreateWalletMessage) error {
@@ -76,8 +86,18 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh)
-	return party.Start()
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
+	err = party.Start()
+	if err != nil {
+		return err
+	}
+
+	tss.sigMu.Lock()
+	tss.sigPartyMap[e.RequestId] = party
+	timeoutDuration := config.AppConfig.TssSigTimeout
+	tss.sigTimeoutMap[e.RequestId] = time.Now().Add(timeoutDuration)
+	tss.sigMu.Unlock()
+	return nil
 }
 
 func (tss *TSSService) handleKeygenReq(ctx context.Context, event interface{}) error {

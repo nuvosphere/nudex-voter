@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -39,7 +40,7 @@ func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
 		sigFinishChan:  make(chan interface{}, 10),
 		sigTimeoutChan: make(chan interface{}, 10),
 
-		sigMap:        make(map[string]map[string]interface{}),
+		sigPartyMap:   make(map[string]*signing.LocalParty),
 		sigTimeoutMap: make(map[string]time.Time),
 	}
 }
@@ -81,8 +82,8 @@ func (tss *TSSService) keygen(ctx context.Context) {
 		requestId, len(keygenReqMessage.PublicKeys), keygenReqMessage.Threshold,
 		keygenReqMessage.PublicKeys)
 
-	tss.sigMap[requestId] = make(map[string]interface{})
-	tss.sigMap[requestId][tss.Address.Hex()] = true
+	//tss.sigMap[requestId] = make(map[string]interface{})
+	//tss.sigMap[requestId][tss.Address.Hex()] = true
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
 	log.Infof("KeygenReq broadcast ok, request id: %s", requestId)
