@@ -42,7 +42,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(11)
+	wg.Add(5)
 
 	go func() {
 		defer wg.Done()
@@ -69,10 +69,10 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				log.Warnf("Failed to load latest submitter rotation: %v", err)
-			} else {
-				L2BlockNumber = submitterRotation.BlockNumber
-				currentSubmitter = submitterRotation.CurrentSubmitter
 			}
+		} else {
+			L2BlockNumber = submitterRotation.BlockNumber
+			currentSubmitter = submitterRotation.CurrentSubmitter
 		}
 	}()
 
@@ -88,6 +88,8 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 			}
 		}
 	}()
+
+	wg.Wait()
 
 	return &State{
 		EventBus: NewEventBus(),

@@ -15,7 +15,7 @@ import (
 )
 
 func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.CreateWalletTask) error {
-	requestId := fmt.Sprintf("CREATE_WALLET:%s", task.TaskId)
+	requestId := fmt.Sprintf("CREATE_WALLET:%d", task.TaskId)
 	reqMessage := types.MsgSignCreateWalletMessage{
 		MsgSign: types.MsgSign{
 			RequestId:    requestId,
