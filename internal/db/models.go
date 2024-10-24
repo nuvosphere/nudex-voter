@@ -61,6 +61,7 @@ type Task struct {
 	TaskId      uint64    `gorm:"unique;not null" json:"task_id"`
 	Description string    `gorm:"not null" json:"description"`
 	Submitter   string    `gorm:"not null" json:"submitter"`
+	BlockHeight uint64    `gorm:"not null" json:"block_height"`
 	IsCompleted bool      `gorm:"not null" json:"is_completed"`
 	CreatedAt   time.Time `gorm:"not null" json:"created_at"`
 	CompletedAt time.Time `json:"completed_at"`

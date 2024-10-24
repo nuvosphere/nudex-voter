@@ -125,6 +125,7 @@ func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
 				Description: taskSubmitted.Description,
 				Submitter:   taskSubmitted.Submitter.Hex(),
 				IsCompleted: false,
+				BlockHeight: vLog.BlockNumber,
 				CreatedAt:   time.Now(),
 			}
 			err = lis.db.GetRelayerDB().Create(&task).Error

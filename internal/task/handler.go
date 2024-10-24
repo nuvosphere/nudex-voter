@@ -29,7 +29,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 	}
 
 	var dbTask db.Task
-	err := ts.dbm.GetRelayerDB().Order("block_number DESC").First(&dbTask).Error
+	err := ts.dbm.GetRelayerDB().Order("created_at DESC").First(&dbTask).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Debug("No local task found")
