@@ -31,6 +31,18 @@ func (tss *TSSService) handleSigReceive(ctx context.Context, event interface{}) 
 }
 
 func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
+	if e, ok := event.(map[uint64]*signing.LocalParty); ok {
+		taskId := tss.state.TssState.CurrentTask.TaskId
+		if _, exists := e[taskId]; exists {
+			tss.state.TssState.CurrentTask = nil
+		}
+		for key := range e {
+			log.Infof("handle sig failed, taskId:%d, reason:%s", key, reason)
+			break
+		}
+	} else {
+		log.Warnf("event is not sign type, actual type: %T", event)
+	}
 }
 
 func (tss *TSSService) handleSigFinish(ctx context.Context, event interface{}) {

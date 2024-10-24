@@ -7,10 +7,9 @@ import (
 )
 
 type TaskService struct {
-	state       *state.State
-	dbm         *db.DatabaseManager
-	Tss         *tss.TSSService
-	currentTask *db.Task
+	state *state.State
+	dbm   *db.DatabaseManager
+	Tss   *tss.TSSService
 }
 
 const (

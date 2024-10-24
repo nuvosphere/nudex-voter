@@ -23,8 +23,8 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		return
 	}
 
-	if ts.currentTask != nil {
-		log.Debugf("Current task %d is already running", ts.currentTask.TaskId)
+	if ts.state.TssState.CurrentTask != nil {
+		log.Debugf("Current task %d is already running", ts.state.TssState.CurrentTask.TaskId)
 		return
 	}
 
@@ -55,27 +55,23 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		log.Warnf("Parse task  %d type error, not know task type, description: %s", dbTask.TaskId, dbTask.Description)
 		return
 	case TaskTypeCreateWallet:
-		ts.currentTask = &dbTask
+		ts.state.TssState.CurrentTask = &dbTask
 		err := ts.handleCreateWalletTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle create wallet task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
-			ts.currentTask = nil
 		}
 	case TaskTypeDeposit:
 		err := ts.handleDepositTask(dbTask)
 		if err != nil {
 			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
-			ts.currentTask = nil
 		}
 	case TaskTypeWithdraw:
 		err := ts.handleWithdrawTask(dbTask)
 		if err != nil {
 			log.Errorf("Handle withdraw task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
-			ts.currentTask = nil
 		}
 	default:
 		log.Warnf("Parse task  %d error, not know task type, description: %s", dbTask.TaskId, dbTask.Description)
-		ts.currentTask = nil
 	}
 
 }

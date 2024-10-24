@@ -13,4 +13,6 @@ type TssState struct {
 	BlockNumber      uint64
 	CurrentSubmitter string
 	Participants     []string
+
+	CurrentTask *db.Task
 }
