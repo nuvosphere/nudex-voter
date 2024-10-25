@@ -56,7 +56,7 @@ func saveTSSData(data interface{}) error {
 	return nil
 }
 
-func loadTSSData() (*keygen.LocalPartySaveData, error) {
+func LoadTSSData() (*keygen.LocalPartySaveData, error) {
 	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data")
 	filePath := filepath.Join(dataDir, "tss_key_data.json")
 

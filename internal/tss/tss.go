@@ -55,7 +55,7 @@ func (tss *TSSService) setup() {
 	tss.setupTime = time.Time{}
 
 	var preParams *keygen.LocalPreParams
-	localPartySaveData, err := loadTSSData()
+	localPartySaveData, err := LoadTSSData()
 	if err != nil {
 		log.Errorf("Failed to load TSS data: %v", err)
 		preParams, err = keygen.GeneratePreParams(1 * time.Minute)

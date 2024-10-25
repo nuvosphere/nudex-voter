@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -14,6 +15,10 @@ import (
 
 func (ts *TaskService) checkTasks(ctx context.Context) {
 	if ts.Tss.Party == nil || ts.Tss.LocalPartySaveData == nil || ts.Tss.LocalPartySaveData.ECDSAPub == nil {
+		localPartySaveData, err := tss.LoadTSSData()
+		if err != nil && localPartySaveData != nil {
+			ts.Tss.LocalPartySaveData = localPartySaveData
+		}
 		log.Debug("Party not init, skip task check")
 		return
 	}

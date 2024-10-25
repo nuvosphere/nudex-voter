@@ -9,6 +9,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"reflect"
 	"slices"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -45,11 +46,15 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 	}
 
 	go func() {
-		if _, err := tss.Party.Update(msg); err != nil {
-			log.Errorf("Failed to update party: FromPartyID=%v, error=%v", message.FromPartyId, err)
-			return
-		} else {
-			log.Infof("Party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+		if strings.HasPrefix(msg.Type(), "binance.tsslib.ecdsa.keygen.") {
+			if _, err := tss.Party.Update(msg); err != nil {
+				log.Errorf("Failed to update keygen party: FromPartyID=%v, error=%v", message.FromPartyId, err)
+				return
+			} else {
+				log.Infof("Keygen party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+			}
+		} else if strings.HasPrefix(msg.Type(), "binance.tsslib.ecdsa.signing.") {
+			log.Infof("Sign party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
 		}
 	}()
 
@@ -124,7 +129,7 @@ func (tss *TSSService) check(ctx context.Context) {
 		return
 	}
 
-	localPartySaveData, err := loadTSSData()
+	localPartySaveData, err := LoadTSSData()
 	if err == nil {
 		if localPartySaveData.ECDSAPub != nil {
 			tss.checkSign(ctx)
