@@ -169,7 +169,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Info("Tss keygen checker stopping...")
 				return
 			case <-ticker.C:
-				tss.checkKeygen(ctx)
+				tss.check(ctx)
 			}
 		}
 	}()

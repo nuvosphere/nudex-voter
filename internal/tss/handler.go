@@ -66,7 +66,7 @@ func (tss *TSSService) checkTimeouts() {
 	}
 }
 
-func (tss *TSSService) checkKeygen(ctx context.Context) {
+func (tss *TSSService) check(ctx context.Context) {
 	if tss.Party == nil {
 		log.Debug("Party not init, start to setup")
 		tss.setup()
@@ -76,6 +76,7 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 	localPartySaveData, err := loadTSSData()
 	if err == nil {
 		if localPartySaveData.ECDSAPub != nil {
+			tss.checkSign(ctx)
 			return
 		}
 	}
@@ -93,20 +94,20 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 	rnd, ok := round.Interface().(tsslib.Round)
 	if ok {
 		if rnd.RoundNumber() == 1 {
-			if tss.round1P2pMessage != nil {
+			if tss.keygenRound1P2pMessage != nil {
 				log.Debug("Party set up timeout, send first round p2p message again")
-				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
+				err = tss.libp2p.PublishMessage(ctx, *tss.keygenRound1P2pMessage)
 				if err == nil {
-					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
+					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.keygenRound1P2pMessage.RequestId)
 				}
 			}
 		} else if rnd.RoundNumber() == 2 {
-			if tss.round1P2pMessage != nil && tss.round1MessageSendTimes < 3 {
+			if tss.keygenRound1P2pMessage != nil && tss.round1MessageSendTimes < 3 {
 				tss.round1MessageSendTimes++
 				log.Debugf("Reached round2, send first round p2p message the %d time", tss.round1MessageSendTimes)
-				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
+				err = tss.libp2p.PublishMessage(ctx, *tss.keygenRound1P2pMessage)
 				if err == nil {
-					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
+					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.keygenRound1P2pMessage.RequestId)
 				}
 			}
 		}
@@ -121,6 +122,56 @@ func (tss *TSSService) checkKeygen(ctx context.Context) {
 		log.Debug("Party set up timeout, start local party first round again")
 		tss.setupTime = time.Now()
 	}
+}
+
+func (tss *TSSService) checkSign(ctx context.Context) {
+	tss.sigMu.Lock()
+	now := time.Now()
+	expiredRequests := make([]string, 0)
+
+	for requestId, partyMap := range tss.sigMap {
+		for taskId, localParty := range partyMap {
+			party := reflect.ValueOf(localParty.BaseParty).Elem()
+			round := party.FieldByName("rnd")
+			if !round.CanInterface() {
+				round = reflect.NewAt(round.Type(), unsafe.Pointer(round.UnsafeAddr())).Elem()
+			}
+			rnd, ok := round.Interface().(tsslib.Round)
+			if ok {
+				if rnd.RoundNumber() == 1 {
+					if tss.sigRound1P2pMessageMap[requestId] != nil {
+						log.Debug("Party sign timeout, send first round p2p message again")
+						err := tss.libp2p.PublishMessage(ctx, *(tss.sigRound1P2pMessageMap[requestId]))
+						if err == nil {
+							log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s, TaskId:%d", requestId, taskId)
+						}
+					}
+				} else if rnd.RoundNumber() == 2 {
+					if tss.sigRound1P2pMessageMap[requestId] != nil && tss.sigRound1MessageSendTimesMap[requestId] < 3 {
+						tss.sigRound1MessageSendTimesMap[requestId]++
+						log.Debugf("Tss sign reached round2, send first round p2p message the %d time", tss.sigRound1MessageSendTimesMap[requestId])
+						err := tss.libp2p.PublishMessage(ctx, *(tss.sigRound1P2pMessageMap[requestId]))
+						if err == nil {
+							log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s, TaskId:%d", requestId, taskId)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	for requestId, expireTime := range tss.sigTimeoutMap {
+		if now.After(expireTime) {
+			log.Debugf("Request %s has timed out, removing from sigMap", requestId)
+			expiredRequests = append(expiredRequests, requestId)
+		}
+	}
+	tss.sigMu.Unlock()
+
+	for _, requestId := range expiredRequests {
+		tss.removeSigMap(requestId, true)
+	}
+
 }
 
 func (tss *TSSService) sigExists(requestId string) (map[uint64]*signing.LocalParty, bool) {

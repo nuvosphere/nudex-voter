@@ -48,7 +48,9 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message
 			requestId, tssUpdateMessage.IsBroadcast, tssUpdateMessage.ToPartyIds)
 	}
 	if event.Type() == "binance.tsslib.ecdsa.keygen.KGRound1Message" {
-		tss.round1P2pMessage = &p2pMsg
+		tss.keygenRound1P2pMessage = &p2pMsg
+	} else if event.Type() == "binance.tsslib.ecdsa.signing.SignRound1Message1" {
+		tss.sigRound1P2pMessageMap[requestId] = &p2pMsg
 	}
 
 	return err

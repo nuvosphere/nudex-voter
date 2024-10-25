@@ -25,7 +25,7 @@ type TSSService struct {
 	partyIdMap         map[string]*tsslib.PartyID
 
 	setupTime              time.Time
-	round1P2pMessage       *p2p.Message
+	keygenRound1P2pMessage *p2p.Message
 	round1MessageSendTimes int
 
 	tssUpdateCh chan interface{}
@@ -41,9 +41,11 @@ type TSSService struct {
 	sigFinishChan  chan interface{}
 	sigTimeoutChan chan interface{}
 
-	sigMap        map[string]map[uint64]*signing.LocalParty
-	sigTimeoutMap map[string]time.Time
-	sigMu         sync.RWMutex
+	sigMap                       map[string]map[uint64]*signing.LocalParty
+	sigRound1P2pMessageMap       map[string]*p2p.Message
+	sigRound1MessageSendTimesMap map[string]int
+	sigTimeoutMap                map[string]time.Time
+	sigMu                        sync.RWMutex
 
 	once sync.Once
 }
