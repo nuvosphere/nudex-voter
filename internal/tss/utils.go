@@ -126,6 +126,18 @@ func AddressIndex(publicKeys []*ecdsa.PublicKey, tssAddress string) int {
 	return -1 // Return -1 if not found
 }
 
+func extractToIds(message tss.Message) []string {
+	recipients := message.GetTo()
+
+	ids := make([]string, len(recipients))
+
+	for i, recipient := range recipients {
+		ids[i] = recipient.GetId()
+	}
+
+	return ids
+}
+
 func serializeMsgSignCreateWalletMessageToBytes(task types.CreateWalletTask) ([]byte, error) {
 	buf := new(bytes.Buffer)
 

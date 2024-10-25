@@ -2,10 +2,13 @@ package tss
 
 import (
 	"context"
+	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"reflect"
+	"slices"
 	"time"
 	"unsafe"
 
@@ -14,38 +17,86 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
-	switch e := event.(type) {
-	case types.MsgSignCreateWalletMessage:
-		log.Debugf("Event handleSigStart is of type MsgSignCreateWalletMessage, request id %s", e.RequestId)
-		if err := tss.handleSignCreateWalletStart(ctx, e); err != nil {
-			log.Errorf("Error handleSigStart MsgSignCreateWalletMessage, %v", err)
-			tss.state.EventBus.Publish(state.SigFailed, e)
-		}
-	default:
-		log.Debug("Unknown event handleSigStart type")
+func (tss *TSSService) handleTssUpdate(event interface{}) error {
+	if tss.Party == nil {
+		return fmt.Errorf("handleTssUpdate error, tss local party not init")
 	}
-}
-
-func (tss *TSSService) handleSigReceive(ctx context.Context, event interface{}) {
-}
-
-func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
-	if e, ok := event.(map[uint64]*signing.LocalParty); ok {
-		taskId := tss.state.TssState.CurrentTask.TaskId
-		if _, exists := e[taskId]; exists {
-			tss.state.TssState.CurrentTask = nil
-		}
-		for key := range e {
-			log.Infof("handle sig failed, taskId:%d, reason:%s", key, reason)
-			break
-		}
-	} else {
-		log.Warnf("event is not sign type, actual type: %T", event)
+	message, ok := event.(types.TssUpdateMessage)
+	if !ok {
+		return fmt.Errorf("handleTssUpdate error, event %v, is not tss update message", event)
 	}
+
+	fromPartyID := tss.partyIdMap[message.FromPartyId]
+	if fromPartyID == nil {
+		return fmt.Errorf("fromPartyID %s not found", message.FromPartyId)
+	}
+
+	if !message.IsBroadcast && !slices.Contains(message.ToPartyIds, tss.Party.PartyID().Id) {
+		log.Debugf("PartyId not one of p2p message receiver: %v", message.ToPartyIds)
+		return nil
+	}
+
+	msg, err := tsslib.ParseWireMessage(
+		message.MsgWireBytes,
+		fromPartyID,
+		message.IsBroadcast)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		if _, err := tss.Party.Update(msg); err != nil {
+			log.Errorf("Failed to update party: FromPartyID=%v, error=%v", message.FromPartyId, err)
+			return
+		} else {
+			log.Infof("Party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+		}
+	}()
+
+	return nil
 }
 
-func (tss *TSSService) handleSigFinish(ctx context.Context, event interface{}) {
+func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message) error {
+	if tss.Party == nil {
+		return fmt.Errorf("handleTssKeyOut error, event %v, self not init", event)
+	}
+	if event.GetFrom().Id != tss.Party.PartyID().Id {
+		return fmt.Errorf("handleTssKeyOut error, event %v, not self", event)
+	}
+
+	msgWireBytes, _, err := event.WireBytes()
+	if err != nil {
+		return fmt.Errorf("handleTssKeyOut parse wire bytes error, event %v", event)
+	}
+
+	tssUpdateMessage := types.TssUpdateMessage{
+		FromPartyId:  event.GetFrom().GetId(),
+		ToPartyIds:   extractToIds(event),
+		IsBroadcast:  event.IsBroadcast(),
+		MsgWireBytes: msgWireBytes,
+	}
+
+	requestId := fmt.Sprintf("TSS_UPDATE:%s", event.GetFrom().GetId())
+
+	p2pMsg := p2p.Message{
+		MessageType: p2p.MessageTypeTssUpdate,
+		RequestId:   requestId,
+		DataType:    p2p.DataTypeTssUpdateMessage,
+		Data:        tssUpdateMessage,
+	}
+
+	err = tss.libp2p.PublishMessage(ctx, p2pMsg)
+	if err == nil {
+		log.Debugf("Publish p2p message tssUpdateMessage: RequestId=%s, IsBroadcast=%v, ToPartyIds=%v",
+			requestId, tssUpdateMessage.IsBroadcast, tssUpdateMessage.ToPartyIds)
+	}
+	if event.Type() == "binance.tsslib.ecdsa.keygen.KGRound1Message" {
+		tss.keygenRound1P2pMessage = &p2pMsg
+	} else if event.Type() == "binance.tsslib.ecdsa.signing.SignRound1Message1" {
+		tss.sigRound1P2pMessageMap[requestId] = &p2pMsg
+	}
+
+	return err
 }
 
 func (tss *TSSService) checkTimeouts() {

@@ -45,7 +45,8 @@ type TSSService struct {
 	sigRound1P2pMessageMap       map[string]*p2p.Message
 	sigRound1MessageSendTimesMap map[string]int
 	sigTimeoutMap                map[string]time.Time
-	sigMu                        sync.RWMutex
+
+	sigMu sync.RWMutex
 
 	once sync.Once
 }
