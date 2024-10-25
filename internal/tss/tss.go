@@ -88,7 +88,7 @@ func (tss *TSSService) setup() {
 	}
 	tss.LocalPartySaveData = localPartySaveData
 
-	if localPartySaveData.ECDSAPub == nil {
+	if localPartySaveData == nil || localPartySaveData.ECDSAPub == nil {
 		if err := party.Start(); err != nil {
 			log.Errorf("TSS keygen process failed to start: %v", err)
 			return
