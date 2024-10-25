@@ -11,10 +11,3 @@ type TaskService struct {
 	dbm   *db.DatabaseManager
 	Tss   *tss.TSSService
 }
-
-const (
-	TaskTypeUnknown = iota
-	TaskTypeCreateWallet
-	TaskTypeDeposit
-	TaskTypeWithdraw
-)

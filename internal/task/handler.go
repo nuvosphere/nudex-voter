@@ -56,21 +56,21 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 	}
 
 	switch taskType {
-	case TaskTypeUnknown:
+	case types.TaskTypeUnknown:
 		log.Warnf("Parse task  %d type error, not know task type, description: %s", dbTask.TaskId, dbTask.Description)
 		return
-	case TaskTypeCreateWallet:
+	case types.TaskTypeCreateWallet:
 		ts.state.TssState.CurrentTask = &dbTask
 		err := ts.handleCreateWalletTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle create wallet task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
 		}
-	case TaskTypeDeposit:
+	case types.TaskTypeDeposit:
 		err := ts.handleDepositTask(dbTask)
 		if err != nil {
 			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)
 		}
-	case TaskTypeWithdraw:
+	case types.TaskTypeWithdraw:
 		err := ts.handleWithdrawTask(dbTask)
 		if err != nil {
 			log.Errorf("Handle withdraw task %d error, description: %s, %v", dbTask.TaskId, dbTask.Description, err)

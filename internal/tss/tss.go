@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -15,11 +16,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
+func NewTssService(libp2p *p2p.LibP2PService, dbm *db.DatabaseManager, state *state.State) *TSSService {
 	return &TSSService{
 		privateKey: config.AppConfig.L2PrivateKey,
 		Address:    crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
 		libp2p:     libp2p,
+		dbm:        dbm,
 		state:      state,
 
 		tssUpdateCh: make(chan interface{}, 10),

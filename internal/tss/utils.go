@@ -7,11 +7,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"math/big"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
@@ -166,4 +169,21 @@ func serializeMsgSignCreateWalletMessageToBytes(task types.CreateWalletTask) ([]
 	}
 
 	return buf.Bytes(), nil
+}
+
+func getRequestId(task *db.Task) string {
+	parts := strings.Split(task.Description, ":")
+	taskType, _ := strconv.Atoi(parts[0])
+	switch taskType {
+	case types.TaskTypeUnknown:
+		return ""
+	case types.TaskTypeCreateWallet:
+		return fmt.Sprintf("TSS_SIGN:CREATE_WALLET:%d", task.TaskId)
+	case types.TaskTypeDeposit:
+		return fmt.Sprintf("TSS_SIGN:DEPOSIT:%d", task.TaskId)
+	case types.TaskTypeWithdraw:
+		return fmt.Sprintf("TSS_SIGN:WITHDRAW:%d", task.TaskId)
+	default:
+	}
+	return ""
 }

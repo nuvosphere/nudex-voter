@@ -1,5 +1,12 @@
 package types
 
+const (
+	TaskTypeUnknown = iota
+	TaskTypeCreateWallet
+	TaskTypeDeposit
+	TaskTypeWithdraw
+)
+
 type CreateWalletTask struct {
 	TaskId  uint64 `json:"task_id"`
 	User    string `json:"user"`

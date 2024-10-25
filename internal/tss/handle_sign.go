@@ -2,10 +2,13 @@ package tss
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"gorm.io/gorm"
 	"math/big"
 	"time"
 
@@ -79,6 +82,27 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 	_, ok := tss.sigExists(e.RequestId)
 	if ok {
 		return fmt.Errorf("sig exists: %s", e.RequestId)
+	}
+
+	if tss.state.TssState.CurrentTask == nil {
+		var existingTask db.Task
+		result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.TaskId).First(&existingTask)
+
+		if result.Error == nil {
+			tss.state.TssState.CurrentTask = &existingTask
+		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
+		}
+	} else {
+		if tss.state.TssState.CurrentTask.TaskId > e.Task.TaskId {
+			var existingTask db.Task
+			result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.TaskId).First(&existingTask)
+			if result.Error == nil {
+				tss.state.TssState.CurrentTask = &existingTask
+			} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
+			}
+		}
 	}
 
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)

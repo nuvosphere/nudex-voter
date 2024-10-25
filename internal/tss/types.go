@@ -7,6 +7,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"sync"
@@ -19,6 +20,7 @@ type TSSService struct {
 
 	libp2p *p2p.LibP2PService
 	state  *state.State
+	dbm    *db.DatabaseManager
 
 	Party              *keygen.LocalParty
 	LocalPartySaveData *keygen.LocalPartySaveData

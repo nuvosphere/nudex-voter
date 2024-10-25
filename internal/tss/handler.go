@@ -54,7 +54,23 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 				log.Infof("Keygen party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
 			}
 		} else if strings.HasPrefix(msg.Type(), "binance.tsslib.ecdsa.signing.") {
-			log.Infof("Sign party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+			if tss.state.TssState.CurrentTask != nil {
+				requestId := getRequestId(tss.state.TssState.CurrentTask)
+				partyMap := tss.sigMap[requestId]
+				if partyMap == nil {
+					party := partyMap[tss.state.TssState.CurrentTask.TaskId]
+					if party != nil {
+						if _, err := party.Update(msg); err != nil {
+							log.Errorf("Failed to update sign party: FromPartyID=%v, error=%v", message.FromPartyId, err)
+							return
+						} else {
+							log.Infof("Sign party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+						}
+					}
+				}
+			} else {
+				log.Errorf("Failed to update sign party: FromPartyID=%v, current task not found", message.FromPartyId)
+			}
 		}
 	}()
 
