@@ -126,8 +126,6 @@ func (tss *TSSService) check(ctx context.Context) {
 
 func (tss *TSSService) checkSign(ctx context.Context) {
 	tss.sigMu.Lock()
-	now := time.Now()
-	expiredRequests := make([]string, 0)
 
 	for requestId, partyMap := range tss.sigMap {
 		for taskId, localParty := range partyMap {
@@ -160,18 +158,7 @@ func (tss *TSSService) checkSign(ctx context.Context) {
 		}
 	}
 
-	for requestId, expireTime := range tss.sigTimeoutMap {
-		if now.After(expireTime) {
-			log.Debugf("Request %s has timed out, removing from sigMap", requestId)
-			expiredRequests = append(expiredRequests, requestId)
-		}
-	}
 	tss.sigMu.Unlock()
-
-	for _, requestId := range expiredRequests {
-		tss.removeSigMap(requestId, true)
-	}
-
 }
 
 func (tss *TSSService) sigExists(requestId string) (map[uint64]*signing.LocalParty, bool) {
@@ -190,4 +177,6 @@ func (tss *TSSService) removeSigMap(requestId string, reportTimeout bool) {
 	}
 	delete(tss.sigMap, requestId)
 	delete(tss.sigTimeoutMap, requestId)
+	delete(tss.sigRound1P2pMessageMap, requestId)
+	delete(tss.sigRound1MessageSendTimesMap, requestId)
 }
