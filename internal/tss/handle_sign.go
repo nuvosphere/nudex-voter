@@ -51,10 +51,14 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	}
 
 	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
-	tssErr := party.Start()
-	if tssErr != nil && tssErr.Cause() != nil {
-		return tssErr.Cause()
-	}
+	go func() {
+		if err := party.Start(); err != nil {
+			log.Errorf("Failed to start sign party: requestId=%s, error=%v", requestId, err)
+			return
+		} else {
+			log.Infof("Sign party started: requestId=%s", requestId)
+		}
+	}()
 
 	tss.sigMu.Lock()
 	tss.sigMap[requestId] = make(map[uint64]*signing.LocalParty)
@@ -88,10 +92,14 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 	}
 
 	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
-	tssErr := party.Start()
-	if tssErr != nil && tssErr.Cause() != nil {
-		return tssErr.Cause()
-	}
+	go func() {
+		if err := party.Start(); err != nil {
+			log.Errorf("Failed to start sign party: requestId=%s, error=%v", e.RequestId, err)
+			return
+		} else {
+			log.Infof("Sign party started: requestId=%s", e.RequestId)
+		}
+	}()
 
 	tss.sigMu.Lock()
 	tss.sigMap[e.RequestId] = make(map[uint64]*signing.LocalParty)
