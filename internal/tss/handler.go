@@ -178,7 +178,7 @@ func (tss *TSSService) check(ctx context.Context) {
 func (tss *TSSService) checkSign(ctx context.Context) {
 	tss.sigMu.Lock()
 
-	for requestId, partyMap := range tss.sigMap {
+	for _, partyMap := range tss.sigMap {
 		for taskId, localParty := range partyMap {
 			party := reflect.ValueOf(localParty.BaseParty).Elem()
 			round := party.FieldByName("rnd")
@@ -187,6 +187,7 @@ func (tss *TSSService) checkSign(ctx context.Context) {
 			}
 			rnd, ok := round.Interface().(tsslib.Round)
 			if ok {
+				requestId := "TSS_UPDATE:" + tss.Address.Hex()
 				if rnd.RoundNumber() == 1 {
 					if tss.sigRound1P2pMessageMap[requestId] != nil {
 						log.Debug("Party sign timeout, send first round p2p message again")
