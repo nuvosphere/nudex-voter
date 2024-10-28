@@ -162,6 +162,11 @@ func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, r
 			log.Infof("handle sig failed, taskId:%d, reason:%s", key, reason)
 			break
 		}
+	} else if e, ok := event.(types.MsgSignCreateWalletMessage); ok {
+		if e.Task.TaskId == tss.state.TssState.CurrentTask.TaskId {
+			tss.state.TssState.CurrentTask = nil
+		}
+		log.Infof("handle sig failed, taskId:%d, reason:%s", e.Task.TaskId, reason)
 	} else {
 		log.Warnf("event is not sign type, actual type: %T", event)
 	}
