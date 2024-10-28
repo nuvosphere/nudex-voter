@@ -102,6 +102,8 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 			} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
 			}
+		} else if tss.state.TssState.CurrentTask.TaskId < e.Task.TaskId {
+			return fmt.Errorf("new task from p2p: %d is greater than current: %d", e.Task.TaskId, tss.state.TssState.CurrentTask.TaskId)
 		}
 	}
 

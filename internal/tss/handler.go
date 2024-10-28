@@ -57,7 +57,7 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 			if tss.state.TssState.CurrentTask != nil {
 				requestId := getRequestId(tss.state.TssState.CurrentTask)
 				partyMap := tss.sigMap[requestId]
-				if partyMap == nil {
+				if partyMap != nil {
 					party := partyMap[tss.state.TssState.CurrentTask.TaskId]
 					if party != nil {
 						if _, err := party.Update(msg); err != nil {
