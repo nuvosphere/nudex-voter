@@ -146,6 +146,13 @@ func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
 			existingTask.IsCompleted = true
 			existingTask.CompletedAt = time.Unix(taskCompleted.CompletedAt.Int64(), 0)
 			err := lis.db.GetRelayerDB().Save(&existingTask).Error
+
+			if lis.state != nil && &lis.state.TssState != nil && lis.state.TssState.CurrentTask != nil {
+				if taskCompleted.TaskId.Uint64() >= lis.state.TssState.CurrentTask.TaskId {
+					lis.state.TssState.CurrentTask = nil
+				}
+			}
+
 			if err != nil {
 				return err
 			}

@@ -195,9 +195,6 @@ func (tss *TSSService) Stop() {
 }
 
 func (tss *TSSService) CleanAll() {
-	if tss.state != nil && &tss.state.TssState != nil && tss.state.TssState.CurrentTask != nil {
-		tss.state.TssState.CurrentTask = nil
-	}
 	for k := range tss.sigMap {
 		delete(tss.sigMap, k)
 	}
