@@ -28,13 +28,13 @@ func NewTssService(libp2p *p2p.LibP2PService, dbm *db.DatabaseManager, state *st
 
 		keyOutCh:    make(chan tsslib.Message),
 		keygenEndCh: make(chan *keygen.LocalPartySaveData),
-		signEndCh:   make(chan *common.SignatureData),
+
+		sigFinishChan: make(chan *common.SignatureData),
 
 		sigStartCh:   make(chan interface{}, 256),
 		sigReceiveCh: make(chan interface{}, 1024),
 
 		sigFailChan:    make(chan interface{}, 10),
-		sigFinishChan:  make(chan interface{}, 10),
 		sigTimeoutChan: make(chan interface{}, 10),
 
 		sigMap:                       make(map[string]map[uint64]*signing.LocalParty),
@@ -105,7 +105,6 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 	tss.state.EventBus.Subscribe(state.SigReceive, tss.sigReceiveCh)
 
 	tss.state.EventBus.Subscribe(state.SigFailed, tss.sigFailChan)
-	tss.state.EventBus.Subscribe(state.SigFinish, tss.sigFinishChan)
 	tss.state.EventBus.Subscribe(state.SigTimeout, tss.sigTimeoutChan)
 
 	go func() {
@@ -185,13 +184,30 @@ func (tss *TSSService) Stop() {
 
 		close(tss.keyOutCh)
 		close(tss.keygenEndCh)
-		close(tss.signEndCh)
+		close(tss.sigFinishChan)
 
 		close(tss.sigStartCh)
 		close(tss.sigReceiveCh)
 
 		close(tss.sigFailChan)
-		close(tss.sigFinishChan)
 		close(tss.sigTimeoutChan)
 	})
+}
+
+func (tss *TSSService) CleanAll() {
+	if tss.state != nil && &tss.state.TssState != nil && tss.state.TssState.CurrentTask != nil {
+		tss.state.TssState.CurrentTask = nil
+	}
+	for k := range tss.sigMap {
+		delete(tss.sigMap, k)
+	}
+	for k := range tss.sigTimeoutMap {
+		delete(tss.sigTimeoutMap, k)
+	}
+	for k := range tss.sigRound1P2pMessageMap {
+		delete(tss.sigRound1P2pMessageMap, k)
+	}
+	for k := range tss.sigRound1MessageSendTimesMap {
+		delete(tss.sigRound1MessageSendTimesMap, k)
+	}
 }

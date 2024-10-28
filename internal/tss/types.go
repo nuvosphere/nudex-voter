@@ -2,7 +2,7 @@ package tss
 
 import (
 	"crypto/ecdsa"
-	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
+	common2 "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
@@ -34,13 +34,13 @@ type TSSService struct {
 
 	keyOutCh    chan tsslib.Message
 	keygenEndCh chan *keygen.LocalPartySaveData
-	signEndCh   chan *tssCommon.SignatureData
+
+	sigFinishChan chan *common2.SignatureData
 
 	sigStartCh   chan interface{}
 	sigReceiveCh chan interface{}
 
 	sigFailChan    chan interface{}
-	sigFinishChan  chan interface{}
 	sigTimeoutChan chan interface{}
 
 	sigMap                       map[string]map[uint64]*signing.LocalParty

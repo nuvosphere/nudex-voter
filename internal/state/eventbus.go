@@ -11,7 +11,6 @@ const (
 	TssUpdate
 	SigStart
 	SigReceive
-	SigFinish
 	SigFailed
 	SigTimeout
 	DepositReceive
@@ -21,7 +20,7 @@ const (
 
 func (e EventType) String() string {
 	return [...]string{"EventUnkown", "TssUpdate", "KeygenStart", "KeygenReceive", "SigStart", "SigReceive",
-		"SigFinish", "SigFailed", "SigTimeout", "DepositReceive", "BlockScanned", "WithdrawRequest"}[e]
+		"SigFailed", "SigTimeout", "DepositReceive", "BlockScanned", "WithdrawRequest"}[e]
 }
 
 type EventBus struct {

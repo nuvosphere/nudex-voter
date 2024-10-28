@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -53,7 +54,7 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.sigFinishChan).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", requestId, err)
@@ -117,7 +118,7 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.signEndCh).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.sigFinishChan).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", e.RequestId, err)
@@ -153,24 +154,19 @@ func (tss *TSSService) handleSigReceive(ctx context.Context, event interface{}) 
 }
 
 func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
-	if e, ok := event.(map[uint64]*signing.LocalParty); ok {
-		taskId := tss.state.TssState.CurrentTask.TaskId
-		if _, exists := e[taskId]; exists {
-			tss.state.TssState.CurrentTask = nil
-		}
-		for key := range e {
-			log.Infof("handle sig failed, taskId:%d, reason:%s", key, reason)
-			break
-		}
-	} else if e, ok := event.(types.MsgSignCreateWalletMessage); ok {
-		if e.Task.TaskId == tss.state.TssState.CurrentTask.TaskId {
-			tss.state.TssState.CurrentTask = nil
-		}
-		log.Infof("handle sig failed, taskId:%d, reason:%s", e.Task.TaskId, reason)
-	} else {
-		log.Warnf("event is not sign type, actual type: %T", event)
-	}
+	log.Infof("sig failed, taskId:%d, reason:%s", tss.state.TssState.CurrentTask.TaskId, reason)
+	tss.CleanAll()
 }
 
-func (tss *TSSService) handleSigFinish(ctx context.Context, event interface{}) {
+func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *common.SignatureData) {
+	tss.sigMu.Lock()
+
+	log.Infof("sig finish, taskId:%d, R:%x, S:%x, V:%x", tss.state.TssState.CurrentTask.TaskId, signatureData.R, signatureData.S, signatureData.SignatureRecovery)
+	if tss.state.TssState.CurrentTask.Submitter == tss.Address.Hex() {
+		// @todo
+		// generate wallet and send to chain
+	}
+	tss.CleanAll()
+
+	tss.sigMu.Unlock()
 }
