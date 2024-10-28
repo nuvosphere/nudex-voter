@@ -187,3 +187,16 @@ func getRequestId(task *db.Task) string {
 	}
 	return ""
 }
+
+func getCoinTypeByChain(chain string) int {
+	if strings.HasPrefix(chain, "evm") {
+		return 60
+	} else if chain == "btc" {
+		return 0
+	} else if chain == "sol" {
+		return 501
+	} else if chain == "sui" {
+		return 784
+	}
+	return -1
+}

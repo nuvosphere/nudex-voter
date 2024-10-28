@@ -11,6 +11,8 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"gorm.io/gorm"
 	"math/big"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -163,8 +165,23 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 
 	log.Infof("sig finish, taskId:%d, R:%x, S:%x, V:%x", tss.state.TssState.CurrentTask.TaskId, signatureData.R, signatureData.S, signatureData.SignatureRecovery)
 	if tss.state.TssState.CurrentTask.Submitter == tss.Address.Hex() {
-		// @todo
-		// generate wallet and send to chain
+		parts := strings.Split(tss.state.TssState.CurrentTask.Description, ":")
+		user, _ := strconv.ParseUint(parts[1], 10, 64)
+		account, _ := strconv.ParseUint(parts[2], 10, 64)
+		taskType, _ := strconv.Atoi(parts[0])
+		if taskType == types.TaskTypeCreateWallet {
+			chain := parts[3]
+			coinType := getCoinTypeByChain(chain)
+			if coinType == -1 {
+				log.Errorf("chain %s not supported", chain)
+			}
+
+			bip44Path := fmt.Sprintf("m/44'/%d'/%d'/0/%d", coinType, user, account)
+			log.Infof("bip44Path: %s", bip44Path)
+			// @todo
+			// generate wallet and send to chain
+		}
+
 	}
 	tss.CleanAll()
 

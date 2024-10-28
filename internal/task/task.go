@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
@@ -40,11 +39,4 @@ func (ts *TaskService) loop(ctx context.Context) {
 			}
 		}
 	}()
-}
-
-func (ts *TaskService) processTask(task db.Task) error {
-	if task.Description == "" {
-		return fmt.Errorf("failed to process task %d, description is empty", task.Description)
-	}
-	return nil
 }
