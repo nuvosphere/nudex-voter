@@ -3,24 +3,23 @@ package tss
 import (
 	"context"
 	"fmt"
+	"slices"
+
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"slices"
 )
 
 func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message) error {
 	if tss.party == nil {
-		return fmt.Errorf("handleTssKeyOut error, event %v, self not init, event", event)
+		return fmt.Errorf("handleTssKeyOut error, event %v, self not init", event)
 	}
-
 	if event.GetFrom().Id != tss.party.PartyID().Id {
 		return fmt.Errorf("handleTssKeyOut error, event %v, not self", event)
 	}
-
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
 
 	msgWireBytes, _, err := event.WireBytes()
 	if err != nil {
@@ -48,10 +47,17 @@ func (tss *TSSService) handleTssKeyOut(ctx context.Context, event tsslib.Message
 		log.Debugf("Publish p2p message tssUpdateMessage: RequestId=%s, IsBroadcast=%v, ToPartyIds=%v",
 			requestId, tssUpdateMessage.IsBroadcast, tssUpdateMessage.ToPartyIds)
 	}
+	if event.Type() == "binance.tsslib.ecdsa.keygen.KGRound1Message" {
+		tss.round1P2pMessage = &p2pMsg
+	}
+
 	return err
 }
 
 func (tss *TSSService) handleTssUpdate(event interface{}) error {
+	if tss.party == nil {
+		return fmt.Errorf("handleTssUpdate error, tss local party not init")
+	}
 	message, ok := event.(types.TssUpdateMessage)
 	if !ok {
 		return fmt.Errorf("handleTssUpdate error, event %v, is not tss update message", event)
@@ -67,27 +73,31 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 		return nil
 	}
 
-	tss.sigMu.Lock()
-
 	msg, err := tsslib.ParseWireMessage(
 		message.MsgWireBytes,
 		fromPartyID,
 		message.IsBroadcast)
 	if err != nil {
-		tss.sigMu.Unlock()
 		return err
 	}
 
-	ok, err = tss.party.Update(msg)
-	if err != nil && !ok {
-		tss.sigMu.Unlock()
-		return err
-	}
+	go func() {
+		if _, err := tss.party.Update(msg); err != nil {
+			log.Errorf("Failed to update party: FromPartyID=%v, error=%v", message.FromPartyId, err)
+			return
+		} else {
+			log.Infof("Party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+		}
+	}()
 
-	log.Infof("party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
-
-	tss.sigMu.Unlock()
 	return nil
+}
+
+func (tss *TSSService) handleTssKeyEnd(event *keygen.LocalPartySaveData) error {
+	if tss.party == nil {
+		return fmt.Errorf("handleTssEnd error, event %v, self not init", event)
+	}
+	return saveTSSData(event)
 }
 
 func extractToIds(message tsslib.Message) []string {

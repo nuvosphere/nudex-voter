@@ -3,6 +3,8 @@ package tss
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -11,7 +13,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func NewTssService(libp2p *p2p.LibP2PService, state *state.State) *TSSService {
@@ -86,18 +87,25 @@ func (tss *TSSService) keygen(ctx context.Context) {
 }
 
 func (tss *TSSService) setup() {
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
-
 	tss.party = nil
 	tss.setupTime = time.Time{}
 
 	var preParams *keygen.LocalPreParams
 	localParty, err := loadTSSData()
 	if err != nil {
-		preParams, _ = keygen.GeneratePreParams(1 * time.Minute)
+		log.Errorf("Failed to load TSS data: %v", err)
+		preParams, err = keygen.GeneratePreParams(1 * time.Minute)
+		if err != nil {
+			log.Fatalf("Failed to generate TSS preParams: %v", err)
+		}
+		log.Debugf("Generated TSS preParams: %+v", preParams)
+		err = saveTSSData(preParams)
+		if err != nil {
+			log.Fatalf("Failed to save TSS data: %v", err)
+		}
 	} else {
 		preParams = &localParty.LocalPreParams
+		log.Infof("Loaded TSS data as prePrams")
 	}
 
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
@@ -108,16 +116,16 @@ func (tss *TSSService) setup() {
 
 	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)
 
-	if err := party.Start(); err != nil {
-		log.Errorf("TSS keygen process failed to start: %v", err)
-		return
-	}
-
 	tss.setupTime = time.Now()
 	tss.party = party
 	tss.partyIdMap = make(map[string]*tsslib.PartyID)
 	for _, partyId := range partyIDs {
 		tss.partyIdMap[partyId.Id] = partyId
+	}
+
+	if err := party.Start(); err != nil {
+		log.Errorf("TSS keygen process failed to start: %v", err)
+		return
 	}
 }
 
@@ -144,7 +152,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Debugf("Received tssUpdated event")
 				err := tss.handleTssUpdate(event)
 				if err != nil {
-					log.Warnf("handle tssUpdate error event: %v, %v", event, err)
+					log.Warnf("handle tssUpdate error, %v", err)
 				}
 			case event := <-tss.keygenReqCh:
 				log.Debugf("Received keygenReq event: %v", event)
@@ -159,13 +167,17 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 					log.Warnf("handle keygenReveive error event: %v, %v", event, err)
 				}
 			case event := <-tss.keyOutCh:
-				log.Debugf("Received keyOut event")
+				log.Debugf("Received tss keyOut event")
 				err := tss.handleTssKeyOut(ctx, event)
 				if err != nil {
-					log.Warnf("handle tssKeyOut error event: %v, %v", event, err)
+					log.Warnf("handle tss keyOut error, event: %v, %v", event, err)
 				}
 			case event := <-tss.keyEndCh:
-				log.Debugf("Received keyEnd event: %v", event)
+				log.Debugf("Received tss keyEnd event")
+				err := tss.handleTssKeyEnd(event)
+				if err != nil {
+					log.Warnf("handle tss keyEnd error, event: %v, %v", event, err)
+				}
 			case event := <-tss.sigStartCh:
 				log.Debugf("Received sigStart event: %v", event)
 				tss.handleSigStart(ctx, event)
@@ -207,7 +219,7 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Info("Tss keygen checker stopping...")
 				return
 			case <-ticker.C:
-				tss.checkKeygen()
+				tss.checkKeygen(ctx)
 			}
 		}
 	}()
