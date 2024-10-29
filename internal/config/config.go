@@ -18,35 +18,36 @@ import (
 )
 
 type Config struct {
-	HTTPPort           string
-	RPCPort            string
-	Libp2pPort         int
-	Libp2pBootNodes    string
-	BTCRPC             string
-	BTCRPC_USER        string
-	BTCRPC_PASS        string
-	BTCStartHeight     int
-	L2RPC              string
-	L2JwtSecret        string
-	L2StartHeight      int
-	L2Confirmations    int
-	L2MaxBlockRange    int
-	L2RequestInterval  time.Duration
-	FireblocksPubKey   string
-	FireblocksPrivKey  string
-	TssPublicKeys      []*ecdsa.PublicKey
-	TssThreshold       int
-	TssSigTimeout      time.Duration
-	EnableWebhook      bool
-	EnableRelayer      bool
-	DbDir              string
-	LogLevel           logrus.Level
-	VotingContract     string
-	AccountContract    string
-	WithdrawContract   string
-	OperationsContract string
-	L2PrivateKey       *ecdsa.PrivateKey
-	L2ChainId          *big.Int
+	HTTPPort            string
+	RPCPort             string
+	Libp2pPort          int
+	Libp2pBootNodes     string
+	BTCRPC              string
+	BTCRPC_USER         string
+	BTCRPC_PASS         string
+	BTCStartHeight      int
+	L2RPC               string
+	L2JwtSecret         string
+	L2StartHeight       int
+	L2Confirmations     int
+	L2MaxBlockRange     int
+	L2RequestInterval   time.Duration
+	FireblocksPubKey    string
+	FireblocksPrivKey   string
+	TssPublicKeys       []*ecdsa.PublicKey
+	TssThreshold        int
+	TssSigTimeout       time.Duration
+	EnableWebhook       bool
+	EnableRelayer       bool
+	DbDir               string
+	LogLevel            logrus.Level
+	VotingContract      string
+	AccountContract     string
+	WithdrawContract    string
+	OperationsContract  string
+	ParticipantContract string
+	L2PrivateKey        *ecdsa.PrivateKey
+	L2ChainId           *big.Int
 }
 
 var AppConfig Config
@@ -79,6 +80,7 @@ func InitConfig() {
 	viper.SetDefault("ACCOUNT_CONTRACT", "")
 	viper.SetDefault("WITHDRAW_CONTRACT", "")
 	viper.SetDefault("OPERATIONS_CONTRACT", "")
+	viper.SetDefault("PARTICIPANT_CONTRACT", "")
 	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
 	viper.SetDefault("FIREBLOCKS_PRIVKEY", "")
 	viper.SetDefault("TSS_PUBLIC_KEYS", "")
@@ -106,35 +108,36 @@ func InitConfig() {
 	}
 
 	AppConfig = Config{
-		HTTPPort:           viper.GetString("HTTP_PORT"),
-		RPCPort:            viper.GetString("RPC_PORT"),
-		Libp2pPort:         viper.GetInt("LIBP2P_PORT"),
-		Libp2pBootNodes:    viper.GetString("LIBP2P_BOOT_NODES"),
-		BTCRPC:             viper.GetString("BTC_RPC"),
-		BTCRPC_USER:        viper.GetString("BTC_RPC_USER"),
-		BTCRPC_PASS:        viper.GetString("BTC_RPC_PASS"),
-		BTCStartHeight:     viper.GetInt("BTC_START_HEIGHT"),
-		L2RPC:              viper.GetString("L2_RPC"),
-		L2JwtSecret:        viper.GetString("L2_JWT_SECRET"),
-		L2StartHeight:      viper.GetInt("L2_START_HEIGHT"),
-		L2Confirmations:    viper.GetInt("L2_CONFIRMATIONS"),
-		L2MaxBlockRange:    viper.GetInt("L2_MAX_BLOCK_RANGE"),
-		L2RequestInterval:  viper.GetDuration("L2_REQUEST_INTERVAL"),
-		FireblocksPubKey:   viper.GetString("FIREBLOCKS_PUBKEY"),
-		FireblocksPrivKey:  viper.GetString("FIREBLOCKS_PRIVKEY"),
-		TssPublicKeys:      tssPublicKeys,
-		TssThreshold:       viper.GetInt("TSS_THRESHOLD"),
-		TssSigTimeout:      viper.GetDuration("TSS_SIG_TIMEOUT"),
-		EnableWebhook:      viper.GetBool("ENABLE_WEBHOOK"),
-		EnableRelayer:      viper.GetBool("ENABLE_RELAYER"),
-		DbDir:              viper.GetString("DB_DIR"),
-		LogLevel:           logLevel,
-		VotingContract:     viper.GetString("VOTING_CONTRACT"),
-		AccountContract:    viper.GetString("ACCOUNT_CONTRACT"),
-		WithdrawContract:   viper.GetString("WITHDRAW_CONTRACT"),
-		OperationsContract: viper.GetString("OPERATIONS_CONTRACT"),
-		L2PrivateKey:       l2PrivateKey,
-		L2ChainId:          big.NewInt(l2ChainId),
+		HTTPPort:            viper.GetString("HTTP_PORT"),
+		RPCPort:             viper.GetString("RPC_PORT"),
+		Libp2pPort:          viper.GetInt("LIBP2P_PORT"),
+		Libp2pBootNodes:     viper.GetString("LIBP2P_BOOT_NODES"),
+		BTCRPC:              viper.GetString("BTC_RPC"),
+		BTCRPC_USER:         viper.GetString("BTC_RPC_USER"),
+		BTCRPC_PASS:         viper.GetString("BTC_RPC_PASS"),
+		BTCStartHeight:      viper.GetInt("BTC_START_HEIGHT"),
+		L2RPC:               viper.GetString("L2_RPC"),
+		L2JwtSecret:         viper.GetString("L2_JWT_SECRET"),
+		L2StartHeight:       viper.GetInt("L2_START_HEIGHT"),
+		L2Confirmations:     viper.GetInt("L2_CONFIRMATIONS"),
+		L2MaxBlockRange:     viper.GetInt("L2_MAX_BLOCK_RANGE"),
+		L2RequestInterval:   viper.GetDuration("L2_REQUEST_INTERVAL"),
+		FireblocksPubKey:    viper.GetString("FIREBLOCKS_PUBKEY"),
+		FireblocksPrivKey:   viper.GetString("FIREBLOCKS_PRIVKEY"),
+		TssPublicKeys:       tssPublicKeys,
+		TssThreshold:        viper.GetInt("TSS_THRESHOLD"),
+		TssSigTimeout:       viper.GetDuration("TSS_SIG_TIMEOUT"),
+		EnableWebhook:       viper.GetBool("ENABLE_WEBHOOK"),
+		EnableRelayer:       viper.GetBool("ENABLE_RELAYER"),
+		DbDir:               viper.GetString("DB_DIR"),
+		LogLevel:            logLevel,
+		VotingContract:      viper.GetString("VOTING_CONTRACT"),
+		AccountContract:     viper.GetString("ACCOUNT_CONTRACT"),
+		WithdrawContract:    viper.GetString("WITHDRAW_CONTRACT"),
+		ParticipantContract: viper.GetString("PARTICIPANT_CONTRACT"),
+		OperationsContract:  viper.GetString("OPERATIONS_CONTRACT"),
+		L2PrivateKey:        l2PrivateKey,
+		L2ChainId:           big.NewInt(l2ChainId),
 	}
 
 	logrus.SetOutput(os.Stdout)

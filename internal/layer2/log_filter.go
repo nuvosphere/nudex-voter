@@ -24,6 +24,8 @@ func (lis *Layer2Listener) processLogs(vLog types.Log) {
 		err = lis.processAccountLog(vLog)
 	case abis.OperationsAddress:
 		err = lis.processOperationsLog(vLog)
+	case abis.ParticipantAddress:
+		err = lis.processParticipantLog(vLog)
 	}
 	if err != nil {
 		log.Errorf("Error processing log: %v", err)
@@ -31,59 +33,23 @@ func (lis *Layer2Listener) processLogs(vLog types.Log) {
 }
 
 func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
-	submitterChosen, err := lis.contractVotingManager.ParseSubmitterChosen(vLog)
+	submitterChosenEvent, err := lis.contractVotingManager.ParseSubmitterChosen(vLog)
 	if err == nil {
 		// save current submitter
-		var dbSubmitterChosen db.SubmitterChosen
+		var submitterChosen db.SubmitterChosen
 		result := lis.db.GetRelayerDB().Where("block_number = ? AND submitter = ?",
-			vLog.BlockNumber, submitterChosen.NewSubmitter).First(&dbSubmitterChosen)
+			vLog.BlockNumber, submitterChosenEvent.NewSubmitter).First(&submitterChosen)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				dbSubmitterChosen.BlockNumber = vLog.BlockNumber
-				dbSubmitterChosen.Submitter = submitterChosen.NewSubmitter.Hex()
-				err = lis.db.GetRelayerDB().Create(&dbSubmitterChosen).Error
+				submitterChosen.BlockNumber = vLog.BlockNumber
+				submitterChosen.Submitter = submitterChosenEvent.NewSubmitter.Hex()
+				err = lis.db.GetRelayerDB().Create(&submitterChosen).Error
 				if err != nil {
-					lis.state.TssState.CurrentSubmitter = submitterChosen.NewSubmitter.Hex()
+					lis.state.TssState.CurrentSubmitter = submitterChosenEvent.NewSubmitter.Hex()
 					lis.state.TssState.BlockNumber = vLog.BlockNumber
 				}
 			} else {
 				return err
-			}
-		}
-		return nil
-	}
-
-	eventParticipantAdded, err := lis.contractVotingManager.ParseParticipantAdded(vLog)
-	if err == nil {
-		newParticipant := eventParticipantAdded.NewParticipant.Hex()
-		// save locked relayer member from db
-		participant := db.Participant{
-			Address: newParticipant,
-		}
-		err = lis.db.GetRelayerDB().FirstOrCreate(&participant, "address = ?", participant.Address).Error
-		if err != nil {
-			log.Fatalf("Error adding Participant: %v", err)
-		} else {
-			log.Infof("Participant added: %s", newParticipant)
-			if !slices.Contains(lis.state.TssState.Participants, newParticipant) {
-				lis.state.TssState.Participants = append(lis.state.TssState.Participants, newParticipant)
-			}
-		}
-		return nil
-	}
-
-	eventParticipantRemoved, err := lis.contractVotingManager.ParseParticipantRemoved(vLog)
-	if err == nil {
-		removedParticipant := eventParticipantRemoved.Participant.Hex()
-		err = lis.db.GetRelayerDB().Where("address = ?",
-			removedParticipant).Delete(&db.Participant{}).Error
-		if err != nil {
-			log.Fatalf("Error removing Participant: %v", err)
-		} else {
-			log.Infof("Participant removed: %s", removedParticipant)
-			index := slices.Index(lis.state.TssState.Participants, removedParticipant)
-			if index != -1 {
-				lis.state.TssState.Participants = append(lis.state.TssState.Participants[:index], lis.state.TssState.Participants[index+1:]...)
 			}
 		}
 		return nil
@@ -159,6 +125,45 @@ func (lis *Layer2Listener) processAccountLog(vLog types.Log) error {
 		} else {
 			log.Infof("Address %s registered for user: %s, chain: %d", account.Address, account.User, account.ChainId)
 		}
+	}
+	return nil
+}
+
+func (lis *Layer2Listener) processParticipantLog(vLog types.Log) error {
+	eventParticipantAdded, err := lis.contractParticipantManager.ParseParticipantAdded(vLog)
+	if err == nil {
+		newParticipant := eventParticipantAdded.Participant.Hex()
+		// save locked relayer member from db
+		participant := db.Participant{
+			Address: newParticipant,
+		}
+		err = lis.db.GetRelayerDB().FirstOrCreate(&participant, "address = ?", participant.Address).Error
+		if err != nil {
+			log.Fatalf("Error adding Participant: %v", err)
+		} else {
+			log.Infof("Participant added: %s", newParticipant)
+			if !slices.Contains(lis.state.TssState.Participants, newParticipant) {
+				lis.state.TssState.Participants = append(lis.state.TssState.Participants, newParticipant)
+			}
+		}
+		return nil
+	}
+
+	participantRemovedEvent, err := lis.contractParticipantManager.ParseParticipantRemoved(vLog)
+	if err == nil {
+		removedParticipant := participantRemovedEvent.Participant.Hex()
+		err = lis.db.GetRelayerDB().Where("address = ?",
+			removedParticipant).Delete(&db.Participant{}).Error
+		if err != nil {
+			log.Fatalf("Error removing Participant: %v", err)
+		} else {
+			log.Infof("Participant removed: %s", removedParticipant)
+			index := slices.Index(lis.state.TssState.Participants, removedParticipant)
+			if index != -1 {
+				lis.state.TssState.Participants = append(lis.state.TssState.Participants[:index], lis.state.TssState.Participants[index+1:]...)
+			}
+		}
+		return nil
 	}
 	return nil
 }

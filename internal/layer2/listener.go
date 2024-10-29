@@ -30,9 +30,10 @@ type Layer2Listener struct {
 	state     *state.State
 	ethClient *ethclient.Client
 
-	contractVotingManager  *abis.VotingManagerContract
-	contractAccountManager *abis.AccountManagerContract
-	contractOperations     *abis.NuDexOperationsContract
+	contractVotingManager      *abis.VotingManagerContract
+	contractAccountManager     *abis.AccountManagerContract
+	contractOperations         *abis.NuDexOperationsContract
+	contractParticipantManager *abis.ParticipantManagerContract
 
 	sigFinishChan chan interface{}
 }
@@ -55,7 +56,12 @@ func NewLayer2Listener(libp2p *p2p.LibP2PService, state *state.State, db *db.Dat
 
 	contractOperations, err := abis.NewNuDexOperationsContract(abis.OperationsAddress, ethClient)
 	if err != nil {
-		log.Fatalf("Failed to instantiate contract AccountManager: %v", err)
+		log.Fatalf("Failed to instantiate contract Operations: %v", err)
+	}
+
+	contractParticipantManager, err := abis.NewParticipantManagerContract(abis.ParticipantAddress, ethClient)
+	if err != nil {
+		log.Fatalf("Failed to instantiate contract ParticipantManager: %v", err)
 	}
 
 	return &Layer2Listener{
@@ -64,9 +70,10 @@ func NewLayer2Listener(libp2p *p2p.LibP2PService, state *state.State, db *db.Dat
 		state:     state,
 		ethClient: ethClient,
 
-		contractVotingManager:  contractVotingManager,
-		contractAccountManager: contractAccountManager,
-		contractOperations:     contractOperations,
+		contractVotingManager:      contractVotingManager,
+		contractAccountManager:     contractAccountManager,
+		contractOperations:         contractOperations,
+		contractParticipantManager: contractParticipantManager,
 
 		sigFinishChan: make(chan interface{}, 256),
 	}
