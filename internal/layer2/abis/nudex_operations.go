@@ -32,7 +32,7 @@ var (
 // INuDexOperationsTask is an auto generated low-level Go binding around an user-defined struct.
 type INuDexOperationsTask struct {
 	Id          *big.Int
-	Description string
+	Context     []byte
 	Submitter   common.Address
 	IsCompleted bool
 	CreatedAt   *big.Int
@@ -42,7 +42,7 @@ type INuDexOperationsTask struct {
 
 // NuDexOperationsContractMetaData contains all meta data concerning the NuDexOperationsContract contract.
 var NuDexOperationsContractMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"InvalidInitialization\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NotInitializing\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"version\",\"type\":\"uint64\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"taskId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"submitter\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"completedAt\",\"type\":\"uint256\"}],\"name\":\"TaskCompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"taskId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"submitter\",\"type\":\"address\"}],\"name\":\"TaskSubmitted\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"getLatestTask\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"submitter\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isCompleted\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"createdAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"completedAt\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"result\",\"type\":\"bytes\"}],\"internalType\":\"structINuDexOperations.Task\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getUncompletedTasks\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"submitter\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isCompleted\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"createdAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"completedAt\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"result\",\"type\":\"bytes\"}],\"internalType\":\"structINuDexOperations.Task[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_participantManager\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_initialOwner\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"taskId\",\"type\":\"uint256\"}],\"name\":\"isTaskCompleted\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"taskId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"result\",\"type\":\"bytes\"}],\"name\":\"markTaskCompleted\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nextTaskId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"participantManager\",\"outputs\":[{\"internalType\":\"contractIParticipantManager\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"}],\"name\":\"submitTask\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"tasks\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"submitter\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isCompleted\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"createdAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"completedAt\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"result\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"confirmAllTasks\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getLatestTask\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structINuDexOperations.Task\",\"components\":[{\"name\":\"id\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"isCompleted\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"completedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getUncompletedTasks\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structINuDexOperations.Task[]\",\"components\":[{\"name\":\"id\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"isCompleted\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"completedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_participantManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isTaskCompleted\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"markTaskCompleted\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"markTaskCompleted_Batch\",\"inputs\":[{\"name\":\"_taskIds\",\"type\":\"uint256[]\",\"internalType\":\"uint256[]\"},{\"name\":\"_results\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nextTaskId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"participantManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIParticipantManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmTask\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"preconfirmedTaskResults\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmedTasks\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitTask\",\"inputs\":[{\"name\":\"_context\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"tasks\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"id\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"isCompleted\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"completedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskCompleted\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"submitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"completedAt\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"result\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskSubmitted\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"submitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"EmptyTask\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
 }
 
 // NuDexOperationsContractABI is the input ABI used to generate the binding from.
@@ -193,7 +193,7 @@ func (_NuDexOperationsContract *NuDexOperationsContractTransactorRaw) Transact(o
 
 // GetLatestTask is a free data retrieval call binding the contract method 0xaccf9a36.
 //
-// Solidity: function getLatestTask() view returns((uint256,string,address,bool,uint256,uint256,bytes))
+// Solidity: function getLatestTask() view returns((uint256,bytes,address,bool,uint256,uint256,bytes))
 func (_NuDexOperationsContract *NuDexOperationsContractCaller) GetLatestTask(opts *bind.CallOpts) (INuDexOperationsTask, error) {
 	var out []interface{}
 	err := _NuDexOperationsContract.contract.Call(opts, &out, "getLatestTask")
@@ -210,21 +210,21 @@ func (_NuDexOperationsContract *NuDexOperationsContractCaller) GetLatestTask(opt
 
 // GetLatestTask is a free data retrieval call binding the contract method 0xaccf9a36.
 //
-// Solidity: function getLatestTask() view returns((uint256,string,address,bool,uint256,uint256,bytes))
+// Solidity: function getLatestTask() view returns((uint256,bytes,address,bool,uint256,uint256,bytes))
 func (_NuDexOperationsContract *NuDexOperationsContractSession) GetLatestTask() (INuDexOperationsTask, error) {
 	return _NuDexOperationsContract.Contract.GetLatestTask(&_NuDexOperationsContract.CallOpts)
 }
 
 // GetLatestTask is a free data retrieval call binding the contract method 0xaccf9a36.
 //
-// Solidity: function getLatestTask() view returns((uint256,string,address,bool,uint256,uint256,bytes))
+// Solidity: function getLatestTask() view returns((uint256,bytes,address,bool,uint256,uint256,bytes))
 func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) GetLatestTask() (INuDexOperationsTask, error) {
 	return _NuDexOperationsContract.Contract.GetLatestTask(&_NuDexOperationsContract.CallOpts)
 }
 
 // GetUncompletedTasks is a free data retrieval call binding the contract method 0x52ee8b0f.
 //
-// Solidity: function getUncompletedTasks() view returns((uint256,string,address,bool,uint256,uint256,bytes)[])
+// Solidity: function getUncompletedTasks() view returns((uint256,bytes,address,bool,uint256,uint256,bytes)[])
 func (_NuDexOperationsContract *NuDexOperationsContractCaller) GetUncompletedTasks(opts *bind.CallOpts) ([]INuDexOperationsTask, error) {
 	var out []interface{}
 	err := _NuDexOperationsContract.contract.Call(opts, &out, "getUncompletedTasks")
@@ -241,24 +241,24 @@ func (_NuDexOperationsContract *NuDexOperationsContractCaller) GetUncompletedTas
 
 // GetUncompletedTasks is a free data retrieval call binding the contract method 0x52ee8b0f.
 //
-// Solidity: function getUncompletedTasks() view returns((uint256,string,address,bool,uint256,uint256,bytes)[])
+// Solidity: function getUncompletedTasks() view returns((uint256,bytes,address,bool,uint256,uint256,bytes)[])
 func (_NuDexOperationsContract *NuDexOperationsContractSession) GetUncompletedTasks() ([]INuDexOperationsTask, error) {
 	return _NuDexOperationsContract.Contract.GetUncompletedTasks(&_NuDexOperationsContract.CallOpts)
 }
 
 // GetUncompletedTasks is a free data retrieval call binding the contract method 0x52ee8b0f.
 //
-// Solidity: function getUncompletedTasks() view returns((uint256,string,address,bool,uint256,uint256,bytes)[])
+// Solidity: function getUncompletedTasks() view returns((uint256,bytes,address,bool,uint256,uint256,bytes)[])
 func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) GetUncompletedTasks() ([]INuDexOperationsTask, error) {
 	return _NuDexOperationsContract.Contract.GetUncompletedTasks(&_NuDexOperationsContract.CallOpts)
 }
 
 // IsTaskCompleted is a free data retrieval call binding the contract method 0xb1dc11cb.
 //
-// Solidity: function isTaskCompleted(uint256 taskId) view returns(bool)
-func (_NuDexOperationsContract *NuDexOperationsContractCaller) IsTaskCompleted(opts *bind.CallOpts, taskId *big.Int) (bool, error) {
+// Solidity: function isTaskCompleted(uint256 _taskId) view returns(bool)
+func (_NuDexOperationsContract *NuDexOperationsContractCaller) IsTaskCompleted(opts *bind.CallOpts, _taskId *big.Int) (bool, error) {
 	var out []interface{}
-	err := _NuDexOperationsContract.contract.Call(opts, &out, "isTaskCompleted", taskId)
+	err := _NuDexOperationsContract.contract.Call(opts, &out, "isTaskCompleted", _taskId)
 
 	if err != nil {
 		return *new(bool), err
@@ -272,16 +272,16 @@ func (_NuDexOperationsContract *NuDexOperationsContractCaller) IsTaskCompleted(o
 
 // IsTaskCompleted is a free data retrieval call binding the contract method 0xb1dc11cb.
 //
-// Solidity: function isTaskCompleted(uint256 taskId) view returns(bool)
-func (_NuDexOperationsContract *NuDexOperationsContractSession) IsTaskCompleted(taskId *big.Int) (bool, error) {
-	return _NuDexOperationsContract.Contract.IsTaskCompleted(&_NuDexOperationsContract.CallOpts, taskId)
+// Solidity: function isTaskCompleted(uint256 _taskId) view returns(bool)
+func (_NuDexOperationsContract *NuDexOperationsContractSession) IsTaskCompleted(_taskId *big.Int) (bool, error) {
+	return _NuDexOperationsContract.Contract.IsTaskCompleted(&_NuDexOperationsContract.CallOpts, _taskId)
 }
 
 // IsTaskCompleted is a free data retrieval call binding the contract method 0xb1dc11cb.
 //
-// Solidity: function isTaskCompleted(uint256 taskId) view returns(bool)
-func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) IsTaskCompleted(taskId *big.Int) (bool, error) {
-	return _NuDexOperationsContract.Contract.IsTaskCompleted(&_NuDexOperationsContract.CallOpts, taskId)
+// Solidity: function isTaskCompleted(uint256 _taskId) view returns(bool)
+func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) IsTaskCompleted(_taskId *big.Int) (bool, error) {
+	return _NuDexOperationsContract.Contract.IsTaskCompleted(&_NuDexOperationsContract.CallOpts, _taskId)
 }
 
 // NextTaskId is a free data retrieval call binding the contract method 0xfdc3d8d7.
@@ -377,12 +377,74 @@ func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) Participan
 	return _NuDexOperationsContract.Contract.ParticipantManager(&_NuDexOperationsContract.CallOpts)
 }
 
+// PreconfirmedTaskResults is a free data retrieval call binding the contract method 0xc1e6dfeb.
+//
+// Solidity: function preconfirmedTaskResults(uint256 ) view returns(bytes)
+func (_NuDexOperationsContract *NuDexOperationsContractCaller) PreconfirmedTaskResults(opts *bind.CallOpts, arg0 *big.Int) ([]byte, error) {
+	var out []interface{}
+	err := _NuDexOperationsContract.contract.Call(opts, &out, "preconfirmedTaskResults", arg0)
+
+	if err != nil {
+		return *new([]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+
+	return out0, err
+
+}
+
+// PreconfirmedTaskResults is a free data retrieval call binding the contract method 0xc1e6dfeb.
+//
+// Solidity: function preconfirmedTaskResults(uint256 ) view returns(bytes)
+func (_NuDexOperationsContract *NuDexOperationsContractSession) PreconfirmedTaskResults(arg0 *big.Int) ([]byte, error) {
+	return _NuDexOperationsContract.Contract.PreconfirmedTaskResults(&_NuDexOperationsContract.CallOpts, arg0)
+}
+
+// PreconfirmedTaskResults is a free data retrieval call binding the contract method 0xc1e6dfeb.
+//
+// Solidity: function preconfirmedTaskResults(uint256 ) view returns(bytes)
+func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) PreconfirmedTaskResults(arg0 *big.Int) ([]byte, error) {
+	return _NuDexOperationsContract.Contract.PreconfirmedTaskResults(&_NuDexOperationsContract.CallOpts, arg0)
+}
+
+// PreconfirmedTasks is a free data retrieval call binding the contract method 0x1f07caa8.
+//
+// Solidity: function preconfirmedTasks(uint256 ) view returns(uint256)
+func (_NuDexOperationsContract *NuDexOperationsContractCaller) PreconfirmedTasks(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _NuDexOperationsContract.contract.Call(opts, &out, "preconfirmedTasks", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// PreconfirmedTasks is a free data retrieval call binding the contract method 0x1f07caa8.
+//
+// Solidity: function preconfirmedTasks(uint256 ) view returns(uint256)
+func (_NuDexOperationsContract *NuDexOperationsContractSession) PreconfirmedTasks(arg0 *big.Int) (*big.Int, error) {
+	return _NuDexOperationsContract.Contract.PreconfirmedTasks(&_NuDexOperationsContract.CallOpts, arg0)
+}
+
+// PreconfirmedTasks is a free data retrieval call binding the contract method 0x1f07caa8.
+//
+// Solidity: function preconfirmedTasks(uint256 ) view returns(uint256)
+func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) PreconfirmedTasks(arg0 *big.Int) (*big.Int, error) {
+	return _NuDexOperationsContract.Contract.PreconfirmedTasks(&_NuDexOperationsContract.CallOpts, arg0)
+}
+
 // Tasks is a free data retrieval call binding the contract method 0x8d977672.
 //
-// Solidity: function tasks(uint256 ) view returns(uint256 id, string description, address submitter, bool isCompleted, uint256 createdAt, uint256 completedAt, bytes result)
+// Solidity: function tasks(uint256 ) view returns(uint256 id, bytes context, address submitter, bool isCompleted, uint256 createdAt, uint256 completedAt, bytes result)
 func (_NuDexOperationsContract *NuDexOperationsContractCaller) Tasks(opts *bind.CallOpts, arg0 *big.Int) (struct {
 	Id          *big.Int
-	Description string
+	Context     []byte
 	Submitter   common.Address
 	IsCompleted bool
 	CreatedAt   *big.Int
@@ -394,7 +456,7 @@ func (_NuDexOperationsContract *NuDexOperationsContractCaller) Tasks(opts *bind.
 
 	outstruct := new(struct {
 		Id          *big.Int
-		Description string
+		Context     []byte
 		Submitter   common.Address
 		IsCompleted bool
 		CreatedAt   *big.Int
@@ -406,7 +468,7 @@ func (_NuDexOperationsContract *NuDexOperationsContractCaller) Tasks(opts *bind.
 	}
 
 	outstruct.Id = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.Description = *abi.ConvertType(out[1], new(string)).(*string)
+	outstruct.Context = *abi.ConvertType(out[1], new([]byte)).(*[]byte)
 	outstruct.Submitter = *abi.ConvertType(out[2], new(common.Address)).(*common.Address)
 	outstruct.IsCompleted = *abi.ConvertType(out[3], new(bool)).(*bool)
 	outstruct.CreatedAt = *abi.ConvertType(out[4], new(*big.Int)).(**big.Int)
@@ -419,10 +481,10 @@ func (_NuDexOperationsContract *NuDexOperationsContractCaller) Tasks(opts *bind.
 
 // Tasks is a free data retrieval call binding the contract method 0x8d977672.
 //
-// Solidity: function tasks(uint256 ) view returns(uint256 id, string description, address submitter, bool isCompleted, uint256 createdAt, uint256 completedAt, bytes result)
+// Solidity: function tasks(uint256 ) view returns(uint256 id, bytes context, address submitter, bool isCompleted, uint256 createdAt, uint256 completedAt, bytes result)
 func (_NuDexOperationsContract *NuDexOperationsContractSession) Tasks(arg0 *big.Int) (struct {
 	Id          *big.Int
-	Description string
+	Context     []byte
 	Submitter   common.Address
 	IsCompleted bool
 	CreatedAt   *big.Int
@@ -434,10 +496,10 @@ func (_NuDexOperationsContract *NuDexOperationsContractSession) Tasks(arg0 *big.
 
 // Tasks is a free data retrieval call binding the contract method 0x8d977672.
 //
-// Solidity: function tasks(uint256 ) view returns(uint256 id, string description, address submitter, bool isCompleted, uint256 createdAt, uint256 completedAt, bytes result)
+// Solidity: function tasks(uint256 ) view returns(uint256 id, bytes context, address submitter, bool isCompleted, uint256 createdAt, uint256 completedAt, bytes result)
 func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) Tasks(arg0 *big.Int) (struct {
 	Id          *big.Int
-	Description string
+	Context     []byte
 	Submitter   common.Address
 	IsCompleted bool
 	CreatedAt   *big.Int
@@ -447,46 +509,109 @@ func (_NuDexOperationsContract *NuDexOperationsContractCallerSession) Tasks(arg0
 	return _NuDexOperationsContract.Contract.Tasks(&_NuDexOperationsContract.CallOpts, arg0)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+// ConfirmAllTasks is a paid mutator transaction binding the contract method 0xa7ec744e.
 //
-// Solidity: function initialize(address _participantManager, address _initialOwner) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractTransactor) Initialize(opts *bind.TransactOpts, _participantManager common.Address, _initialOwner common.Address) (*types.Transaction, error) {
-	return _NuDexOperationsContract.contract.Transact(opts, "initialize", _participantManager, _initialOwner)
+// Solidity: function confirmAllTasks() returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactor) ConfirmAllTasks(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _NuDexOperationsContract.contract.Transact(opts, "confirmAllTasks")
+}
+
+// ConfirmAllTasks is a paid mutator transaction binding the contract method 0xa7ec744e.
+//
+// Solidity: function confirmAllTasks() returns()
+func (_NuDexOperationsContract *NuDexOperationsContractSession) ConfirmAllTasks() (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.ConfirmAllTasks(&_NuDexOperationsContract.TransactOpts)
+}
+
+// ConfirmAllTasks is a paid mutator transaction binding the contract method 0xa7ec744e.
+//
+// Solidity: function confirmAllTasks() returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) ConfirmAllTasks() (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.ConfirmAllTasks(&_NuDexOperationsContract.TransactOpts)
 }
 
 // Initialize is a paid mutator transaction binding the contract method 0x485cc955.
 //
-// Solidity: function initialize(address _participantManager, address _initialOwner) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractSession) Initialize(_participantManager common.Address, _initialOwner common.Address) (*types.Transaction, error) {
-	return _NuDexOperationsContract.Contract.Initialize(&_NuDexOperationsContract.TransactOpts, _participantManager, _initialOwner)
+// Solidity: function initialize(address _participantManager, address _owner) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactor) Initialize(opts *bind.TransactOpts, _participantManager common.Address, _owner common.Address) (*types.Transaction, error) {
+	return _NuDexOperationsContract.contract.Transact(opts, "initialize", _participantManager, _owner)
 }
 
 // Initialize is a paid mutator transaction binding the contract method 0x485cc955.
 //
-// Solidity: function initialize(address _participantManager, address _initialOwner) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) Initialize(_participantManager common.Address, _initialOwner common.Address) (*types.Transaction, error) {
-	return _NuDexOperationsContract.Contract.Initialize(&_NuDexOperationsContract.TransactOpts, _participantManager, _initialOwner)
+// Solidity: function initialize(address _participantManager, address _owner) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractSession) Initialize(_participantManager common.Address, _owner common.Address) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.Initialize(&_NuDexOperationsContract.TransactOpts, _participantManager, _owner)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+//
+// Solidity: function initialize(address _participantManager, address _owner) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) Initialize(_participantManager common.Address, _owner common.Address) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.Initialize(&_NuDexOperationsContract.TransactOpts, _participantManager, _owner)
 }
 
 // MarkTaskCompleted is a paid mutator transaction binding the contract method 0x4d703d9e.
 //
-// Solidity: function markTaskCompleted(uint256 taskId, bytes result) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractTransactor) MarkTaskCompleted(opts *bind.TransactOpts, taskId *big.Int, result []byte) (*types.Transaction, error) {
-	return _NuDexOperationsContract.contract.Transact(opts, "markTaskCompleted", taskId, result)
+// Solidity: function markTaskCompleted(uint256 _taskId, bytes _result) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactor) MarkTaskCompleted(opts *bind.TransactOpts, _taskId *big.Int, _result []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.contract.Transact(opts, "markTaskCompleted", _taskId, _result)
 }
 
 // MarkTaskCompleted is a paid mutator transaction binding the contract method 0x4d703d9e.
 //
-// Solidity: function markTaskCompleted(uint256 taskId, bytes result) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractSession) MarkTaskCompleted(taskId *big.Int, result []byte) (*types.Transaction, error) {
-	return _NuDexOperationsContract.Contract.MarkTaskCompleted(&_NuDexOperationsContract.TransactOpts, taskId, result)
+// Solidity: function markTaskCompleted(uint256 _taskId, bytes _result) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractSession) MarkTaskCompleted(_taskId *big.Int, _result []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.MarkTaskCompleted(&_NuDexOperationsContract.TransactOpts, _taskId, _result)
 }
 
 // MarkTaskCompleted is a paid mutator transaction binding the contract method 0x4d703d9e.
 //
-// Solidity: function markTaskCompleted(uint256 taskId, bytes result) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) MarkTaskCompleted(taskId *big.Int, result []byte) (*types.Transaction, error) {
-	return _NuDexOperationsContract.Contract.MarkTaskCompleted(&_NuDexOperationsContract.TransactOpts, taskId, result)
+// Solidity: function markTaskCompleted(uint256 _taskId, bytes _result) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) MarkTaskCompleted(_taskId *big.Int, _result []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.MarkTaskCompleted(&_NuDexOperationsContract.TransactOpts, _taskId, _result)
+}
+
+// MarkTaskCompletedBatch is a paid mutator transaction binding the contract method 0xdf2f7649.
+//
+// Solidity: function markTaskCompleted_Batch(uint256[] _taskIds, bytes[] _results) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactor) MarkTaskCompletedBatch(opts *bind.TransactOpts, _taskIds []*big.Int, _results [][]byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.contract.Transact(opts, "markTaskCompleted_Batch", _taskIds, _results)
+}
+
+// MarkTaskCompletedBatch is a paid mutator transaction binding the contract method 0xdf2f7649.
+//
+// Solidity: function markTaskCompleted_Batch(uint256[] _taskIds, bytes[] _results) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractSession) MarkTaskCompletedBatch(_taskIds []*big.Int, _results [][]byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.MarkTaskCompletedBatch(&_NuDexOperationsContract.TransactOpts, _taskIds, _results)
+}
+
+// MarkTaskCompletedBatch is a paid mutator transaction binding the contract method 0xdf2f7649.
+//
+// Solidity: function markTaskCompleted_Batch(uint256[] _taskIds, bytes[] _results) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) MarkTaskCompletedBatch(_taskIds []*big.Int, _results [][]byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.MarkTaskCompletedBatch(&_NuDexOperationsContract.TransactOpts, _taskIds, _results)
+}
+
+// PreconfirmTask is a paid mutator transaction binding the contract method 0x84302728.
+//
+// Solidity: function preconfirmTask(uint256 _taskId, bytes _result) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactor) PreconfirmTask(opts *bind.TransactOpts, _taskId *big.Int, _result []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.contract.Transact(opts, "preconfirmTask", _taskId, _result)
+}
+
+// PreconfirmTask is a paid mutator transaction binding the contract method 0x84302728.
+//
+// Solidity: function preconfirmTask(uint256 _taskId, bytes _result) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractSession) PreconfirmTask(_taskId *big.Int, _result []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.PreconfirmTask(&_NuDexOperationsContract.TransactOpts, _taskId, _result)
+}
+
+// PreconfirmTask is a paid mutator transaction binding the contract method 0x84302728.
+//
+// Solidity: function preconfirmTask(uint256 _taskId, bytes _result) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) PreconfirmTask(_taskId *big.Int, _result []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.PreconfirmTask(&_NuDexOperationsContract.TransactOpts, _taskId, _result)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
@@ -510,25 +635,25 @@ func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) Renoun
 	return _NuDexOperationsContract.Contract.RenounceOwnership(&_NuDexOperationsContract.TransactOpts)
 }
 
-// SubmitTask is a paid mutator transaction binding the contract method 0x9a7b22b9.
+// SubmitTask is a paid mutator transaction binding the contract method 0x5e0c6100.
 //
-// Solidity: function submitTask(string description) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractTransactor) SubmitTask(opts *bind.TransactOpts, description string) (*types.Transaction, error) {
-	return _NuDexOperationsContract.contract.Transact(opts, "submitTask", description)
+// Solidity: function submitTask(bytes _context) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactor) SubmitTask(opts *bind.TransactOpts, _context []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.contract.Transact(opts, "submitTask", _context)
 }
 
-// SubmitTask is a paid mutator transaction binding the contract method 0x9a7b22b9.
+// SubmitTask is a paid mutator transaction binding the contract method 0x5e0c6100.
 //
-// Solidity: function submitTask(string description) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractSession) SubmitTask(description string) (*types.Transaction, error) {
-	return _NuDexOperationsContract.Contract.SubmitTask(&_NuDexOperationsContract.TransactOpts, description)
+// Solidity: function submitTask(bytes _context) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractSession) SubmitTask(_context []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.SubmitTask(&_NuDexOperationsContract.TransactOpts, _context)
 }
 
-// SubmitTask is a paid mutator transaction binding the contract method 0x9a7b22b9.
+// SubmitTask is a paid mutator transaction binding the contract method 0x5e0c6100.
 //
-// Solidity: function submitTask(string description) returns()
-func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) SubmitTask(description string) (*types.Transaction, error) {
-	return _NuDexOperationsContract.Contract.SubmitTask(&_NuDexOperationsContract.TransactOpts, description)
+// Solidity: function submitTask(bytes _context) returns()
+func (_NuDexOperationsContract *NuDexOperationsContractTransactorSession) SubmitTask(_context []byte) (*types.Transaction, error) {
+	return _NuDexOperationsContract.Contract.SubmitTask(&_NuDexOperationsContract.TransactOpts, _context)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -911,13 +1036,14 @@ type NuDexOperationsContractTaskCompleted struct {
 	TaskId      *big.Int
 	Submitter   common.Address
 	CompletedAt *big.Int
+	Result      []byte
 	Raw         types.Log // Blockchain specific contextual infos
 }
 
-// FilterTaskCompleted is a free log retrieval operation binding the contract event 0x843af93d40addceac6932508439844b897d4df9e971db326d557e3cdaa9f3ebf.
+// FilterTaskCompleted is a free log retrieval operation binding the contract event 0x8d728f48e16602b5feb9528aa4cbf18ab06ee67918838342dfbd65d218e2a3ee.
 //
-// Solidity: event TaskCompleted(uint256 indexed taskId, address indexed submitter, uint256 completedAt)
-func (_NuDexOperationsContract *NuDexOperationsContractFilterer) FilterTaskCompleted(opts *bind.FilterOpts, taskId []*big.Int, submitter []common.Address) (*NuDexOperationsContractTaskCompletedIterator, error) {
+// Solidity: event TaskCompleted(uint256 indexed taskId, address indexed submitter, uint256 indexed completedAt, bytes result)
+func (_NuDexOperationsContract *NuDexOperationsContractFilterer) FilterTaskCompleted(opts *bind.FilterOpts, taskId []*big.Int, submitter []common.Address, completedAt []*big.Int) (*NuDexOperationsContractTaskCompletedIterator, error) {
 
 	var taskIdRule []interface{}
 	for _, taskIdItem := range taskId {
@@ -927,18 +1053,22 @@ func (_NuDexOperationsContract *NuDexOperationsContractFilterer) FilterTaskCompl
 	for _, submitterItem := range submitter {
 		submitterRule = append(submitterRule, submitterItem)
 	}
+	var completedAtRule []interface{}
+	for _, completedAtItem := range completedAt {
+		completedAtRule = append(completedAtRule, completedAtItem)
+	}
 
-	logs, sub, err := _NuDexOperationsContract.contract.FilterLogs(opts, "TaskCompleted", taskIdRule, submitterRule)
+	logs, sub, err := _NuDexOperationsContract.contract.FilterLogs(opts, "TaskCompleted", taskIdRule, submitterRule, completedAtRule)
 	if err != nil {
 		return nil, err
 	}
 	return &NuDexOperationsContractTaskCompletedIterator{contract: _NuDexOperationsContract.contract, event: "TaskCompleted", logs: logs, sub: sub}, nil
 }
 
-// WatchTaskCompleted is a free log subscription operation binding the contract event 0x843af93d40addceac6932508439844b897d4df9e971db326d557e3cdaa9f3ebf.
+// WatchTaskCompleted is a free log subscription operation binding the contract event 0x8d728f48e16602b5feb9528aa4cbf18ab06ee67918838342dfbd65d218e2a3ee.
 //
-// Solidity: event TaskCompleted(uint256 indexed taskId, address indexed submitter, uint256 completedAt)
-func (_NuDexOperationsContract *NuDexOperationsContractFilterer) WatchTaskCompleted(opts *bind.WatchOpts, sink chan<- *NuDexOperationsContractTaskCompleted, taskId []*big.Int, submitter []common.Address) (event.Subscription, error) {
+// Solidity: event TaskCompleted(uint256 indexed taskId, address indexed submitter, uint256 indexed completedAt, bytes result)
+func (_NuDexOperationsContract *NuDexOperationsContractFilterer) WatchTaskCompleted(opts *bind.WatchOpts, sink chan<- *NuDexOperationsContractTaskCompleted, taskId []*big.Int, submitter []common.Address, completedAt []*big.Int) (event.Subscription, error) {
 
 	var taskIdRule []interface{}
 	for _, taskIdItem := range taskId {
@@ -948,8 +1078,12 @@ func (_NuDexOperationsContract *NuDexOperationsContractFilterer) WatchTaskComple
 	for _, submitterItem := range submitter {
 		submitterRule = append(submitterRule, submitterItem)
 	}
+	var completedAtRule []interface{}
+	for _, completedAtItem := range completedAt {
+		completedAtRule = append(completedAtRule, completedAtItem)
+	}
 
-	logs, sub, err := _NuDexOperationsContract.contract.WatchLogs(opts, "TaskCompleted", taskIdRule, submitterRule)
+	logs, sub, err := _NuDexOperationsContract.contract.WatchLogs(opts, "TaskCompleted", taskIdRule, submitterRule, completedAtRule)
 	if err != nil {
 		return nil, err
 	}
@@ -981,9 +1115,9 @@ func (_NuDexOperationsContract *NuDexOperationsContractFilterer) WatchTaskComple
 	}), nil
 }
 
-// ParseTaskCompleted is a log parse operation binding the contract event 0x843af93d40addceac6932508439844b897d4df9e971db326d557e3cdaa9f3ebf.
+// ParseTaskCompleted is a log parse operation binding the contract event 0x8d728f48e16602b5feb9528aa4cbf18ab06ee67918838342dfbd65d218e2a3ee.
 //
-// Solidity: event TaskCompleted(uint256 indexed taskId, address indexed submitter, uint256 completedAt)
+// Solidity: event TaskCompleted(uint256 indexed taskId, address indexed submitter, uint256 indexed completedAt, bytes result)
 func (_NuDexOperationsContract *NuDexOperationsContractFilterer) ParseTaskCompleted(log types.Log) (*NuDexOperationsContractTaskCompleted, error) {
 	event := new(NuDexOperationsContractTaskCompleted)
 	if err := _NuDexOperationsContract.contract.UnpackLog(event, "TaskCompleted", log); err != nil {
@@ -1062,15 +1196,15 @@ func (it *NuDexOperationsContractTaskSubmittedIterator) Close() error {
 
 // NuDexOperationsContractTaskSubmitted represents a TaskSubmitted event raised by the NuDexOperationsContract contract.
 type NuDexOperationsContractTaskSubmitted struct {
-	TaskId      *big.Int
-	Description string
-	Submitter   common.Address
-	Raw         types.Log // Blockchain specific contextual infos
+	TaskId    *big.Int
+	Context   []byte
+	Submitter common.Address
+	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterTaskSubmitted is a free log retrieval operation binding the contract event 0x475a19c94ceb828d9d7c5bd38d863932bba45ea65488dcb5d1c386b4ec2bb76c.
+// FilterTaskSubmitted is a free log retrieval operation binding the contract event 0x78e6ef797d565365876ecf57b6b91c9f0cb3da890e073ffcc8a3be2c28e145e0.
 //
-// Solidity: event TaskSubmitted(uint256 indexed taskId, string description, address indexed submitter)
+// Solidity: event TaskSubmitted(uint256 indexed taskId, bytes context, address indexed submitter)
 func (_NuDexOperationsContract *NuDexOperationsContractFilterer) FilterTaskSubmitted(opts *bind.FilterOpts, taskId []*big.Int, submitter []common.Address) (*NuDexOperationsContractTaskSubmittedIterator, error) {
 
 	var taskIdRule []interface{}
@@ -1090,9 +1224,9 @@ func (_NuDexOperationsContract *NuDexOperationsContractFilterer) FilterTaskSubmi
 	return &NuDexOperationsContractTaskSubmittedIterator{contract: _NuDexOperationsContract.contract, event: "TaskSubmitted", logs: logs, sub: sub}, nil
 }
 
-// WatchTaskSubmitted is a free log subscription operation binding the contract event 0x475a19c94ceb828d9d7c5bd38d863932bba45ea65488dcb5d1c386b4ec2bb76c.
+// WatchTaskSubmitted is a free log subscription operation binding the contract event 0x78e6ef797d565365876ecf57b6b91c9f0cb3da890e073ffcc8a3be2c28e145e0.
 //
-// Solidity: event TaskSubmitted(uint256 indexed taskId, string description, address indexed submitter)
+// Solidity: event TaskSubmitted(uint256 indexed taskId, bytes context, address indexed submitter)
 func (_NuDexOperationsContract *NuDexOperationsContractFilterer) WatchTaskSubmitted(opts *bind.WatchOpts, sink chan<- *NuDexOperationsContractTaskSubmitted, taskId []*big.Int, submitter []common.Address) (event.Subscription, error) {
 
 	var taskIdRule []interface{}
@@ -1137,9 +1271,9 @@ func (_NuDexOperationsContract *NuDexOperationsContractFilterer) WatchTaskSubmit
 	}), nil
 }
 
-// ParseTaskSubmitted is a log parse operation binding the contract event 0x475a19c94ceb828d9d7c5bd38d863932bba45ea65488dcb5d1c386b4ec2bb76c.
+// ParseTaskSubmitted is a log parse operation binding the contract event 0x78e6ef797d565365876ecf57b6b91c9f0cb3da890e073ffcc8a3be2c28e145e0.
 //
-// Solidity: event TaskSubmitted(uint256 indexed taskId, string description, address indexed submitter)
+// Solidity: event TaskSubmitted(uint256 indexed taskId, bytes context, address indexed submitter)
 func (_NuDexOperationsContract *NuDexOperationsContractFilterer) ParseTaskSubmitted(log types.Log) (*NuDexOperationsContractTaskSubmitted, error) {
 	event := new(NuDexOperationsContractTaskSubmitted)
 	if err := _NuDexOperationsContract.contract.UnpackLog(event, "TaskSubmitted", log); err != nil {
