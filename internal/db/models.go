@@ -33,11 +33,11 @@ type WithdrawalRecord struct {
 	ProcessedAt  time.Time `json:"processed_at"`
 }
 
-// SubmitterRotation contains block number and current submitter
-type SubmitterRotation struct {
-	ID               uint64 `gorm:"primaryKey" json:"id"`
-	BlockNumber      uint64 `gorm:"not null" json:"block_number"`
-	CurrentSubmitter string `gorm:"not null" json:"current_submitter"`
+// SubmitterChosen contains block number and current submitter
+type SubmitterChosen struct {
+	ID          uint64 `gorm:"primaryKey" json:"id"`
+	BlockNumber uint64 `gorm:"not null" json:"block_number"`
+	Submitter   string `gorm:"not null" json:"submitter"`
 }
 
 // Participant save all participants
@@ -103,7 +103,7 @@ type BtcTXOutput struct {
 }
 
 func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterRotation{}, &Participant{}, &Account{}, &Task{}); err != nil {
+	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterChosen{}, &Participant{}, &Account{}, &Task{}); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}
 	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {

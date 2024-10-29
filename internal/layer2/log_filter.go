@@ -3,8 +3,6 @@ package layer2
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 	log "github.com/sirupsen/logrus"
@@ -33,42 +31,24 @@ func (lis *Layer2Listener) processLogs(vLog types.Log) {
 }
 
 func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
-	eventSubmitterRotation, err := lis.contractVotingManager.ParseSubmitterRotationRequested(vLog)
+	submitterChosen, err := lis.contractVotingManager.ParseSubmitterChosen(vLog)
 	if err == nil {
-		// save current rotation
-		var submitterRotation db.SubmitterRotation
-		result := lis.db.GetRelayerDB().First(&submitterRotation)
+		// save current submitter
+		var dbSubmitterChosen db.SubmitterChosen
+		result := lis.db.GetRelayerDB().Where("block_number = ? AND submitter = ?",
+			vLog.BlockNumber, submitterChosen.NewSubmitter).First(&dbSubmitterChosen)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				submitterRotation.BlockNumber = vLog.BlockNumber
-				submitterRotation.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
-				err = lis.db.GetRelayerDB().Create(&submitterRotation).Error
+				dbSubmitterChosen.BlockNumber = vLog.BlockNumber
+				dbSubmitterChosen.Submitter = submitterChosen.NewSubmitter.Hex()
+				err = lis.db.GetRelayerDB().Create(&dbSubmitterChosen).Error
 				if err != nil {
-					lis.state.TssState.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
+					lis.state.TssState.CurrentSubmitter = submitterChosen.NewSubmitter.Hex()
 					lis.state.TssState.BlockNumber = vLog.BlockNumber
 				}
 			} else {
-				log.Fatalf("Error query db: %v", result.Error)
+				return err
 			}
-		} else {
-			submitterRotation.BlockNumber = vLog.BlockNumber
-			submitterRotation.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
-			err = lis.db.GetRelayerDB().Save(&submitterRotation).Error
-			if err != nil {
-				lis.state.TssState.CurrentSubmitter = eventSubmitterRotation.CurrentSubmitter.Hex()
-				lis.state.TssState.BlockNumber = vLog.BlockNumber
-			}
-		}
-
-		if err != nil {
-			log.Fatalf("Error saving SubmitterRotation: %v", err)
-		}
-
-		selfAddress := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
-		if eventSubmitterRotation.CurrentSubmitter == selfAddress {
-			// TODO start submitDeposit call
-		} else {
-			// TODO stop submitDeposit
 		}
 		return nil
 	}

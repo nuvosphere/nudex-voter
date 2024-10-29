@@ -64,15 +64,15 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 	go func() {
 		defer wg.Done()
 
-		var submitterRotation db.SubmitterRotation
-		err := relayerDb.Order("block_number DESC").First(&submitterRotation).Error
+		var submitterChosen db.SubmitterChosen
+		err := relayerDb.Order("block_number DESC").First(&submitterChosen).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				log.Warnf("Failed to load latest submitter rotation: %v", err)
 			}
 		} else {
-			L2BlockNumber = submitterRotation.BlockNumber
-			currentSubmitter = submitterRotation.CurrentSubmitter
+			L2BlockNumber = submitterChosen.BlockNumber
+			currentSubmitter = submitterChosen.Submitter
 		}
 	}()
 
