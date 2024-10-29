@@ -58,7 +58,7 @@ func (tss *TSSService) handleTssUpdate(event interface{}) error {
 				requestId := getRequestId(tss.state.TssState.CurrentTask)
 				partyMap := tss.sigMap[requestId]
 				if partyMap != nil {
-					party := partyMap[tss.state.TssState.CurrentTask.TaskId]
+					party := partyMap[int32(tss.state.TssState.CurrentTask.TaskId)]
 					if party != nil {
 						if _, err := party.Update(msg); err != nil {
 							log.Errorf("Failed to update sign party: FromPartyID=%v, error=%v", message.FromPartyId, err)
@@ -234,7 +234,7 @@ func (tss *TSSService) checkSign(ctx context.Context) {
 	tss.sigMu.Unlock()
 }
 
-func (tss *TSSService) sigExists(requestId string) (map[uint64]*signing.LocalParty, bool) {
+func (tss *TSSService) sigExists(requestId string) (map[int32]*signing.LocalParty, bool) {
 	tss.sigMu.RLock()
 	defer tss.sigMu.RUnlock()
 	data, ok := tss.sigMap[requestId]

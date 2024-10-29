@@ -7,20 +7,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/types"
-	"math/big"
-	"os"
-	"path/filepath"
-	"sort"
-	"strconv"
-	"strings"
-
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
+	"math/big"
+	"os"
+	"path/filepath"
+	"sort"
 )
 
 func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
@@ -147,24 +144,16 @@ func serializeMsgSignCreateWalletMessageToBytes(task types.CreateWalletTask) ([]
 	if err := binary.Write(buf, binary.BigEndian, task.TaskId); err != nil {
 		return nil, err
 	}
+
 	if err := binary.Write(buf, binary.BigEndian, task.Account); err != nil {
 		return nil, err
 	}
 
-	userBytes := []byte(task.User)
-	chainBytes := []byte(task.Chain)
-
-	if err := binary.Write(buf, binary.BigEndian, uint64(len(userBytes))); err != nil {
-		return nil, err
-	}
-	if _, err := buf.Write(userBytes); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, task.User); err != nil {
 		return nil, err
 	}
 
-	if err := binary.Write(buf, binary.BigEndian, uint64(len(chainBytes))); err != nil {
-		return nil, err
-	}
-	if _, err := buf.Write(chainBytes); err != nil {
+	if err := binary.Write(buf, binary.BigEndian, task.Chain); err != nil {
 		return nil, err
 	}
 
@@ -172,8 +161,9 @@ func serializeMsgSignCreateWalletMessageToBytes(task types.CreateWalletTask) ([]
 }
 
 func getRequestId(task *db.Task) string {
-	parts := strings.Split(task.Description, ":")
-	taskType, _ := strconv.Atoi(parts[0])
+	buf := bytes.NewReader(task.Context)
+	var taskType int32
+	_ = binary.Read(buf, binary.LittleEndian, &taskType)
 	switch taskType {
 	case types.TaskTypeUnknown:
 		return ""
@@ -188,15 +178,17 @@ func getRequestId(task *db.Task) string {
 	return ""
 }
 
-func getCoinTypeByChain(chain string) int {
-	if strings.HasPrefix(chain, "evm") {
+func getCoinTypeByChain(chain int32) int {
+	switch chain {
+	case types.WalletTypeEVM:
 		return 60
-	} else if chain == "btc" {
+	case types.WalletTypeBTC:
 		return 0
-	} else if chain == "sol" {
+	case types.WalletTypeSOL:
 		return 501
-	} else if chain == "sui" {
+	case types.WalletTypeSUI:
 		return 784
+	default:
+		return -1
 	}
-	return -1
 }

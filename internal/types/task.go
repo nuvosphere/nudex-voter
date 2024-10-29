@@ -8,8 +8,15 @@ const (
 )
 
 type CreateWalletTask struct {
-	TaskId  uint64 `json:"task_id"`
-	User    string `json:"user"`
-	Account uint64 `json:"account"`
-	Chain   string `json:"chain"` // evm_tss btc solana sui
+	TaskId  int32 `json:"task_id"`
+	User    int32 `json:"user"`
+	Account int32 `json:"account"`
+	Chain   int32 `json:"chain"` // evm_tss btc solana sui
 }
+
+const (
+	WalletTypeEVM = iota
+	WalletTypeBTC = iota
+	WalletTypeSOL = iota
+	WalletTypeSUI = iota
+)

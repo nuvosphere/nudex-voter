@@ -43,7 +43,7 @@ type TSSService struct {
 	sigFailChan    chan interface{}
 	sigTimeoutChan chan interface{}
 
-	sigMap                       map[string]map[uint64]*signing.LocalParty
+	sigMap                       map[string]map[int32]*signing.LocalParty
 	sigRound1P2pMessageMap       map[string]*p2p.Message
 	sigRound1MessageSendTimesMap map[string]int
 	sigTimeoutMap                map[string]time.Time

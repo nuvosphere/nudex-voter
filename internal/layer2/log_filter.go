@@ -122,7 +122,7 @@ func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
 		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			task := db.Task{
 				TaskId:      taskSubmitted.TaskId.Uint64(),
-				Description: taskSubmitted.Description,
+				Context:     taskSubmitted.Context,
 				Submitter:   taskSubmitted.Submitter.Hex(),
 				IsCompleted: false,
 				BlockHeight: vLog.BlockNumber,

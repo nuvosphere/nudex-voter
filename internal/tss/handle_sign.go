@@ -1,7 +1,9 @@
 package tss
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -11,8 +13,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"gorm.io/gorm"
 	"math/big"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -67,7 +67,7 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	}()
 
 	tss.sigMu.Lock()
-	tss.sigMap[requestId] = make(map[uint64]*signing.LocalParty)
+	tss.sigMap[requestId] = make(map[int32]*signing.LocalParty)
 	tss.sigMap[requestId][task.TaskId] = party
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
@@ -97,7 +97,7 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 			return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
 		}
 	} else {
-		if tss.state.TssState.CurrentTask.TaskId > e.Task.TaskId {
+		if tss.state.TssState.CurrentTask.TaskId > uint64(e.Task.TaskId) {
 			var existingTask db.Task
 			result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.TaskId).First(&existingTask)
 			if result.Error == nil {
@@ -105,7 +105,7 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 			} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
 			}
-		} else if tss.state.TssState.CurrentTask.TaskId < e.Task.TaskId {
+		} else if tss.state.TssState.CurrentTask.TaskId < uint64(e.Task.TaskId) {
 			return fmt.Errorf("new task from p2p: %d is greater than current: %d", e.Task.TaskId, tss.state.TssState.CurrentTask.TaskId)
 		}
 	}
@@ -131,7 +131,7 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 	}()
 
 	tss.sigMu.Lock()
-	tss.sigMap[e.RequestId] = make(map[uint64]*signing.LocalParty)
+	tss.sigMap[e.RequestId] = make(map[int32]*signing.LocalParty)
 	tss.sigMap[e.RequestId][e.Task.TaskId] = party
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[e.RequestId] = time.Now().Add(timeoutDuration)
@@ -165,18 +165,23 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 
 	log.Infof("sig finish, taskId:%d, R:%x, S:%x, V:%x", tss.state.TssState.CurrentTask.TaskId, signatureData.R, signatureData.S, signatureData.SignatureRecovery)
 	if tss.state.TssState.CurrentTask.Submitter == tss.Address.Hex() {
-		parts := strings.Split(tss.state.TssState.CurrentTask.Description, ":")
-		user, _ := strconv.ParseUint(parts[1], 10, 64)
-		account, _ := strconv.ParseUint(parts[2], 10, 64)
-		taskType, _ := strconv.Atoi(parts[0])
+		buf := bytes.NewReader(tss.state.TssState.CurrentTask.Context)
+		var taskType int32
+		_ = binary.Read(buf, binary.LittleEndian, &taskType)
+
 		if taskType == types.TaskTypeCreateWallet {
-			chain := parts[3]
-			coinType := getCoinTypeByChain(chain)
+			createWalletTask := types.CreateWalletTask{TaskId: int32(tss.state.TssState.CurrentTask.TaskId)}
+
+			_ = binary.Read(buf, binary.LittleEndian, &createWalletTask.User)
+			_ = binary.Read(buf, binary.LittleEndian, &createWalletTask.Account)
+			_ = binary.Read(buf, binary.LittleEndian, &createWalletTask.Chain)
+
+			coinType := getCoinTypeByChain(createWalletTask.Chain)
 			if coinType == -1 {
-				log.Errorf("chain %s not supported", chain)
+				log.Errorf("chain %s not supported", createWalletTask.Chain)
 			}
 
-			bip44Path := fmt.Sprintf("m/44'/%d'/%d'/0/%d", coinType, user, account)
+			bip44Path := fmt.Sprintf("m/44'/%d'/%d'/0/%d", coinType, createWalletTask.User, createWalletTask.Account)
 			log.Infof("bip44Path: %s", bip44Path)
 			// @todo
 			// generate wallet and send to chain
