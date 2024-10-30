@@ -19,7 +19,6 @@ import (
 
 type Config struct {
 	HTTPPort            string
-	RPCPort             string
 	Libp2pPort          int
 	Libp2pBootNodes     string
 	BTCRPC              string
@@ -109,7 +108,6 @@ func InitConfig() {
 
 	AppConfig = Config{
 		HTTPPort:            viper.GetString("HTTP_PORT"),
-		RPCPort:             viper.GetString("RPC_PORT"),
 		Libp2pPort:          viper.GetInt("LIBP2P_PORT"),
 		Libp2pBootNodes:     viper.GetString("LIBP2P_BOOT_NODES"),
 		BTCRPC:              viper.GetString("BTC_RPC"),

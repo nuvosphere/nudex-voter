@@ -2,19 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/http"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
-	"github.com/nuvosphere/nudex-voter/internal/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/task"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -31,9 +27,6 @@ type Application struct {
 	TssService      *tss.TSSService
 	TaskService     *task.TaskService
 	HTTPServer      *http.HTTPServer
-	TssKeyInCh      chan types.KeygenMessage
-	TssKeyOutCh     chan tsslib.Message
-	TssKeyEndCh     chan *keygen.LocalPartySaveData
 }
 
 func NewApplication() *Application {
@@ -57,7 +50,6 @@ func NewApplication() *Application {
 		TssService:      tssService,
 		TaskService:     taskService,
 		HTTPServer:      httpServer,
-		TssKeyInCh:      make(chan types.KeygenMessage),
 	}
 }
 
@@ -100,12 +92,6 @@ func (app *Application) Run() {
 	go func() {
 		defer wg.Done()
 		go app.TaskService.Start(ctx)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		go rpc.StartUTXOService()
 	}()
 
 	wg.Add(1)
