@@ -77,7 +77,6 @@ func InitConfig() {
 	viper.SetDefault("DB_DIR", "/app/db")
 	viper.SetDefault("VOTING_CONTRACT", "")
 	viper.SetDefault("ACCOUNT_CONTRACT", "")
-	viper.SetDefault("WITHDRAW_CONTRACT", "")
 	viper.SetDefault("OPERATIONS_CONTRACT", "")
 	viper.SetDefault("PARTICIPANT_CONTRACT", "")
 	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
@@ -131,7 +130,6 @@ func InitConfig() {
 		LogLevel:            logLevel,
 		VotingContract:      viper.GetString("VOTING_CONTRACT"),
 		AccountContract:     viper.GetString("ACCOUNT_CONTRACT"),
-		WithdrawContract:    viper.GetString("WITHDRAW_CONTRACT"),
 		ParticipantContract: viper.GetString("PARTICIPANT_CONTRACT"),
 		OperationsContract:  viper.GetString("OPERATIONS_CONTRACT"),
 		L2PrivateKey:        l2PrivateKey,
