@@ -16,7 +16,7 @@ type CreateWalletTask struct {
 
 const (
 	WalletTypeEVM = iota
-	WalletTypeBTC = iota
-	WalletTypeSOL = iota
-	WalletTypeSUI = iota
+	WalletTypeBTC
+	WalletTypeSOL
+	WalletTypeSUI
 )
