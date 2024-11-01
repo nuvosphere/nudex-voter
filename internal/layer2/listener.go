@@ -142,10 +142,12 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 				Topics: [][]common.Hash{
 					{SubmitterChosenTopic},
 					{TaskSubmittedTopic},
+					{TaskCompletedTopic},
 					{AddressRegisteredTopic},
 					{ParticipantRemovedTopic},
 					{ParticipantAddedTopic},
 					{DepositRecordedTopic},
+					{WithdrawalRecordedTopic},
 				},
 			}
 
