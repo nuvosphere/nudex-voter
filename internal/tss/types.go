@@ -3,6 +3,9 @@ package tss
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"sync"
+	"time"
+
 	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
@@ -13,8 +16,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
-	"sync"
-	"time"
 )
 
 type TSSService struct {
@@ -72,21 +73,26 @@ const (
 )
 
 // convertMsgData converts the message data to the corresponding struct
-// TODO: use reflector to optimize this function
+// TODO: use reflector to optimize this function.
 func convertMsgData(msg p2p.Message) any {
 	switch msg.DataType {
 	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
 		jsonBytes, _ := json.Marshal(msg.Data)
+
 		var rawData types.TssMessage
 		err := json.Unmarshal(jsonBytes, &rawData)
 		utils.Assert(err)
+
 		return rawData
 	case DataTypeSignCreateWallet:
 		jsonBytes, _ := json.Marshal(msg.Data)
+
 		var rawData types.MsgSignCreateWalletMessage
 		err := json.Unmarshal(jsonBytes, &rawData)
 		utils.Assert(err)
+
 		return rawData
 	}
+
 	return msg.Data
 }

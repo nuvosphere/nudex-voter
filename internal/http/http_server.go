@@ -2,15 +2,15 @@ package http
 
 import (
 	"context"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type HTTPServer struct {
@@ -27,16 +27,18 @@ func NewHTTPServer(libp2p *p2p.LibP2PService, state *state.State, db *db.Databas
 	}
 }
 
-// Start http server
+// Start http server.
 func (s *HTTPServer) Start(ctx context.Context) {
 	r := gin.Default()
 
 	if gin.IsDebugging() {
 		r.GET("/api/v1/helloworld", s.handleHelloWorld)
 	}
+
 	if config.AppConfig.EnableWebhook {
 		r.POST("/api/fireblocks/webhook", s.handleFireblocksWebhook)
 	}
+
 	if config.AppConfig.EnableRelayer {
 		r.POST("/api/fireblocks/cosigner/v2/tx_sign_request", s.handleFireblocksCosignerTxSign)
 	}
@@ -46,8 +48,9 @@ func (s *HTTPServer) Start(ctx context.Context) {
 	log.Infof("HTTP server is running on port %s", config.AppConfig.HTTPPort)
 
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: r,
+		Addr:              addr,
+		Handler:           r,
+		ReadHeaderTimeout: time.Second * 30,
 	}
 
 	go func() {
@@ -70,7 +73,7 @@ func (s *HTTPServer) Start(ctx context.Context) {
 	log.Info("HTTP server has stopped.")
 }
 
-// a demo handler
+// a demo handler.
 func (s *HTTPServer) handleHelloWorld(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": "hello world."})
 }

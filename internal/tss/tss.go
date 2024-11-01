@@ -2,15 +2,15 @@ package tss
 
 import (
 	"context"
-	"github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
-	"github.com/nuvosphere/nudex-voter/internal/db"
 	"time"
 
+	"github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	log "github.com/sirupsen/logrus"
@@ -33,11 +33,11 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		sigOutCh:       make(chan tsslib.Message),
 		sigEndCh:       make(chan *common.SignatureData),
 
-		//tssMsgCh:       make(chan interface{}, 10),
-		//sigStartCh:     make(chan interface{}, 256),
-		//sigReceiveCh:   make(chan interface{}, 1024),
-		//sigFailChan:    make(chan interface{}, 10),
-		//sigTimeoutChan: make(chan interface{}, 10),
+		// tssMsgCh:       make(chan interface{}, 10),
+		// sigStartCh:     make(chan interface{}, 256),
+		// sigReceiveCh:   make(chan interface{}, 1024),
+		// sigFailChan:    make(chan interface{}, 10),
+		// sigTimeoutChan: make(chan interface{}, 10),
 
 		sigMap:                       make(map[string]map[int32]*signing.LocalParty),
 		sigRound1P2pMessageMap:       make(map[string]*p2p.Message),
@@ -103,24 +103,28 @@ func (tss *TSSService) tssLoop(ctx context.Context) {
 				return
 			case msg := <-tss.keyOutCh:
 				log.Debugf("Received tss keyOut event")
+
 				err := tss.handleTssKeyOut(ctx, msg)
 				if err != nil {
 					log.Warnf("handle tss keyOut error, msg: %v, %v", msg, err)
 				}
 			case event := <-tss.keyEndCh:
 				log.Debugf("Received tss keygenEnd event")
+
 				err := tss.handleTssKeyEnd(event)
 				if err != nil {
 					log.Warnf("handle tss keygenEnd error, event: %v, %v", event, err)
 				}
 			case msg := <-tss.reSharingOutCh:
 				log.Debugf("Received tss re-sharing event")
+
 				err := tss.handleTssReSharingOut(ctx, msg)
 				if err != nil {
 					log.Warnf("handle tss keyOut error, msg: %v, %v", msg, err)
 				}
 			case event := <-tss.reSharingEndCh:
 				log.Debugf("Received tss re-sharing event")
+
 				err := tss.handleTssKeyEnd(event)
 				if err != nil {
 					log.Warnf("handle tss re-sharing error, event: %v, %v", event, err)
@@ -153,13 +157,15 @@ func (tss *TSSService) eventLoop(ctx context.Context) {
 				return
 			case event := <-tss.tssMsgCh: // from p2p network
 				log.Debugf("Received tss msg event")
+
 				err := tss.handleTssMsg(convertMsgData(event.(p2p.Message)))
 				if err != nil {
 					log.Warnf("handle tss msg error, %v", err)
 				}
 			case <-tss.partyAddOrRmCh: // from layer2 log scan
 				log.Debugf("Received tss add or remove participant event")
-				err := tss.startReSharing(tss.state.TssState.Participants, config.AppConfig.TssThreshold) //todo
+
+				err := tss.startReSharing(tss.state.TssState.Participants, config.AppConfig.TssThreshold) // todo
 				if err != nil {
 					log.Warnf("handle tss add or remove participant event error, %v", err)
 				}
@@ -193,12 +199,15 @@ func (tss *TSSService) CleanAllSigInfo() {
 	for k := range tss.sigMap {
 		delete(tss.sigMap, k)
 	}
+
 	for k := range tss.sigTimeoutMap {
 		delete(tss.sigTimeoutMap, k)
 	}
+
 	for k := range tss.sigRound1P2pMessageMap {
 		delete(tss.sigRound1P2pMessageMap, k)
 	}
+
 	for k := range tss.sigRound1MessageSendTimesMap {
 		delete(tss.sigRound1MessageSendTimesMap, k)
 	}

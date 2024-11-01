@@ -3,13 +3,14 @@ package tss
 import (
 	"context"
 	"fmt"
+	"slices"
+
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	log "github.com/sirupsen/logrus"
-	"slices"
 )
 
 func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold int) error {
@@ -66,6 +67,7 @@ func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold
 			log.Infof("Resharing new party started")
 		}
 	}()
+
 	return nil
 }
 
@@ -76,5 +78,6 @@ func (tss *TSSService) handleTssReSharingOut(ctx context.Context, msg tsslib.Mes
 	}
 
 	_, err = tss.sendTssMsg(ctx, DataTypeTssReSharingMsg, msg)
+
 	return err
 }

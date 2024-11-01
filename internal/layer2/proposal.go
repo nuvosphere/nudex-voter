@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -16,11 +14,12 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
 	globalNonce uint64
-	nonceLock   sync.Mutex
+	nonceLock   sync.Mutex //lint:ignore U1000 Ignore unused
 )
 
 func initNonce(client *ethclient.Client, address common.Address) error {
@@ -28,10 +27,13 @@ func initNonce(client *ethclient.Client, address common.Address) error {
 	if err != nil {
 		return err
 	}
+
 	globalNonce = nonce
+
 	return nil
 }
 
+//lint:ignore U1000 Ignore unused function
 func submitDepositInfo(targetAddress common.Address, amount *big.Int, txInfo, extraInfo, signature []byte, chainId *big.Int) error {
 	client, parsedABI, votingManagerAddress := getClientAndAbi()
 
@@ -71,6 +73,7 @@ func submitDepositInfo(targetAddress common.Address, amount *big.Int, txInfo, ex
 			return err
 		}
 	}
+
 	nonce := globalNonce
 	nonceLock.Unlock()
 
@@ -82,10 +85,10 @@ func submitDepositInfo(targetAddress common.Address, amount *big.Int, txInfo, ex
 	}
 
 	err = client.SendTransaction(context.Background(), signedTx)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "nonce too low") {
 			log.Error("Nonce too low error, retrying with updated nonce")
+
 			latestNonce, err := client.PendingNonceAt(context.Background(), auth.From)
 			if err != nil {
 				return err
@@ -97,6 +100,7 @@ func submitDepositInfo(targetAddress common.Address, amount *big.Int, txInfo, ex
 
 			return submitDepositInfo(targetAddress, amount, txInfo, extraInfo, signature, chainId)
 		}
+
 		return err
 	}
 
@@ -105,9 +109,11 @@ func submitDepositInfo(targetAddress common.Address, amount *big.Int, txInfo, ex
 	nonceLock.Unlock()
 
 	log.Infof("Transaction sent: %s", signedTx.Hash().Hex())
+
 	return nil
 }
 
+//lint:ignore U1000 Ignore unused function
 func getClientAndAbi() (*ethclient.Client, *abi.ABI, common.Address) {
 	client, err := ethclient.Dial(config.AppConfig.L2RPC)
 	if err != nil {
@@ -121,5 +127,6 @@ func getClientAndAbi() (*ethclient.Client, *abi.ABI, common.Address) {
 	}
 
 	votingManagerAddress := common.HexToAddress(config.AppConfig.VotingContract)
+
 	return client, parsedVotingManagerABI, votingManagerAddress
 }

@@ -18,8 +18,9 @@ clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 
-test:
-	$(GOTEST) -v ./...
+.PHONY: test
+test: ## go test
+	go test  -short -v ./...
 
 deps:
 	$(GOGET) -u ./...
@@ -39,13 +40,25 @@ docker-build-x:
 .PHONY: fmt
 fmt: ## go fmt
 	go fmt ./...
-#	gofumpt -l -w .
+	gofumpt -l -w .
+	gci write  -s standard -s default .
+
+.PHONY: fix
+fix: fmt ## auto fix code
+	wsl --fix ./...
+	tagalign -fix -sort ./...
+	godot -w ./
 
 .PHONY: dep
 tool: ## Install dep tool
 	go install github.com/ethereum/go-ethereum/cmd/abigen@latest
+	go install github.com/daixiang0/gci@latest
+	go install github.com/bombsimon/wsl/v4/cmd/wsl@latest
+	go install github.com/tetafro/godot/cmd/godot@latest
+	go install github.com/ethereum/go-ethereum/cmd/abigen@latest
 	go install mvdan.cc/gofumpt@latest
 	go install github.com/4meepo/tagalign/cmd/tagalign@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
 
 .PHONY: abi
 abi: ## generate abi go file
@@ -56,7 +69,12 @@ abi: ## generate abi go file
 	abigen --abi internal/layer2/contracts/DepositManager.json --pkg abis --type DepositManagerContract --out internal/layer2/abis/deposit_manager.go
 
 .PHONY: ci
-ci: abi fmt build
+ci: abi fix fmt lint build test 
+	echo $? && echo "success!"
+
+.PHONY: lint
+lint: ## Runs the linter
+	golangci-lint run ./...
 
 .PHONY: help
 help: ## Prints this help

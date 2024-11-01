@@ -5,17 +5,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
-	"path/filepath"
 )
 
 func GenerateSPVProof(txHash string, txHashes []string) ([]byte, []byte, uint32, error) {
 	// Find the transaction's position in the block
 	var txIndex int
+
 	for i, hash := range txHashes {
 		if hash == txHash {
 			txIndex = i
@@ -25,13 +27,16 @@ func GenerateSPVProof(txHash string, txHashes []string) ([]byte, []byte, uint32,
 
 	// Generate merkle root and proof
 	txHashesPtrs := make([]*chainhash.Hash, len(txHashes))
+
 	for i, hashStr := range txHashes {
 		hash, err := chainhash.NewHashFromStr(hashStr)
 		if err != nil {
 			return nil, nil, 0, fmt.Errorf("failed to parse transaction hash: %v", err)
 		}
+
 		txHashesPtrs[i] = hash
 	}
+
 	var proof []*chainhash.Hash
 	merkleRoot := ComputeMerkleRootAndProof(txHashesPtrs, txIndex, &proof)
 
@@ -47,16 +52,19 @@ func GenerateSPVProof(txHash string, txHashes []string) ([]byte, []byte, uint32,
 func GenerateSPVProofByTx(msgTx *wire.MsgTx) (string, error) {
 	// Open or create the local storage
 	dbPath := filepath.Join(config.AppConfig.DbDir, "btc_cache.db")
+
 	db, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {
 		log.Fatalf("Failed to open local storage: %v", err)
 	}
+
 	defer db.Close()
 
 	txHash := msgTx.TxHash()
 
 	// Get block hash
 	var blockHashBytes []byte
+
 	iter := db.NewIterator(nil, nil)
 	defer iter.Release()
 
@@ -70,6 +78,7 @@ func GenerateSPVProofByTx(msgTx *wire.MsgTx) (string, error) {
 			}
 		}
 	}
+
 	if blockHashBytes == nil {
 		return "", fmt.Errorf("failed to find block hash for tx: %v", txHash)
 	}
@@ -84,7 +93,9 @@ func GenerateSPVProofByTx(msgTx *wire.MsgTx) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get block header from db: %v", err)
 	}
+
 	var header wire.BlockHeader
+
 	err = header.Deserialize(bytes.NewReader(headerBytes))
 	if err != nil {
 		return "", fmt.Errorf("failed to deserialize block header: %v", err)
@@ -95,7 +106,9 @@ func GenerateSPVProofByTx(msgTx *wire.MsgTx) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get tx hashes from db: %v", err)
 	}
+
 	var txHashes []chainhash.Hash
+
 	err = json.Unmarshal(txHashesBytes, &txHashes)
 	if err != nil {
 		return "", fmt.Errorf("failed to unmarshal tx hashes: %v", err)
@@ -103,6 +116,7 @@ func GenerateSPVProofByTx(msgTx *wire.MsgTx) (string, error) {
 
 	// Find the transaction's position in the block
 	var txIndex int
+
 	for i, hash := range txHashes {
 		if hash == txHash {
 			txIndex = i
@@ -115,15 +129,19 @@ func GenerateSPVProofByTx(msgTx *wire.MsgTx) (string, error) {
 	for i := range txHashes {
 		txHashesPtrs[i] = &txHashes[i]
 	}
+
 	var proof []*chainhash.Hash
 	merkleRoot := ComputeMerkleRootAndProof(txHashesPtrs, txIndex, &proof)
 
 	// Serialize Merkle proof
 	var buf bytes.Buffer
+
 	buf.Write(txHash[:])
+
 	for _, p := range proof {
 		buf.Write(p[:])
 	}
+
 	buf.Write(merkleRoot[:])
 
 	return hex.EncodeToString(buf.Bytes()), nil

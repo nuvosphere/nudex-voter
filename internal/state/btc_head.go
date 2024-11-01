@@ -1,16 +1,16 @@
 package state
 
 import (
-	"github.com/nuvosphere/nudex-voter/internal/db"
 	"time"
 
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"gorm.io/gorm"
 )
 
 /*
 AddUnconfirmBtcBlock
 when btc scanner detected a new block, save to unconfirmed,
-proposer will start an off-chain signature
+proposer will start an off-chain signature.
 */
 func (s *State) AddUnconfirmBtcBlock(height uint64, hash string) error {
 	s.btcHeadMu.Lock()
@@ -21,6 +21,7 @@ func (s *State) AddUnconfirmBtcBlock(height uint64, hash string) error {
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
+
 	if err == nil {
 		// exist height
 		return nil
@@ -37,6 +38,7 @@ func (s *State) AddUnconfirmBtcBlock(height uint64, hash string) error {
 		Height:    height,
 		Hash:      hash,
 	}
+
 	result := s.dbm.GetBtcLightDB().Save(btcBlock)
 	if result.Error != nil {
 		return result.Error
@@ -50,6 +52,7 @@ func (s *State) SaveConfirmBtcBlock(height uint64, hash string) error {
 	defer s.btcHeadMu.Unlock()
 
 	btcBlock, err := s.queryBtcBlockByHeigh(height)
+
 	status := "confirmed"
 	if height <= s.btcHeadState.Latest.Height {
 		status = "processed"
@@ -72,12 +75,15 @@ func (s *State) SaveConfirmBtcBlock(height uint64, hash string) error {
 			btcBlock.Status = status
 			btcBlock.Hash = hash
 		}
+
 		btcBlock.UpdatedAt = time.Now()
 	}
+
 	result := s.dbm.GetBtcLightDB().Save(btcBlock)
 	if result.Error != nil {
 		return result.Error
 	}
+
 	return nil
 }
 
@@ -94,12 +100,14 @@ func (s *State) UpdateProcessedBtcBlock(block uint64, height uint64, hash string
 			Hash:      hash,
 			UpdatedAt: time.Now(),
 		}
+
 		return err
 	}
 
 	if btcBlock.Status == "processed" {
 		return nil
 	}
+
 	btcBlock.Status = "processed"
 
 	// update height
@@ -116,9 +124,11 @@ func (s *State) UpdateProcessedBtcBlock(block uint64, height uint64, hash string
 			} else {
 				s.btcHeadState.UnconfirmQueue = append(s.btcHeadState.UnconfirmQueue[:i], s.btcHeadState.UnconfirmQueue[i+1:]...)
 			}
+
 			break
 		}
 	}
+
 	for i, bb := range s.btcHeadState.SigQueue {
 		if bb.Height == height {
 			if i == len(s.btcHeadState.SigQueue)-1 {
@@ -126,6 +136,7 @@ func (s *State) UpdateProcessedBtcBlock(block uint64, height uint64, hash string
 			} else {
 				s.btcHeadState.SigQueue = append(s.btcHeadState.SigQueue[:i], s.btcHeadState.SigQueue[i+1:]...)
 			}
+
 			break
 		}
 	}
@@ -133,21 +144,24 @@ func (s *State) UpdateProcessedBtcBlock(block uint64, height uint64, hash string
 	return nil
 }
 
-// GetBtcBlockForSign
+// GetBtcBlockForSign.
 func (s *State) GetBtcBlockForSign(size int) ([]*db.BtcBlock, error) {
 	s.btcHeadMu.RLock()
 	defer s.btcHeadMu.RUnlock()
 
 	from := s.btcHeadState.Latest.Height
+
 	var btcBlocks []*db.BtcBlock
+
 	result := s.dbm.GetBtcLightDB().Where("height > ?", from).Order("height asc").Limit(size).Find(&btcBlocks)
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
 	return btcBlocks, nil
 }
 
-// GetCurrentBtcBlock
+// GetCurrentBtcBlock.
 func (s *State) GetCurrentBtcBlock() (db.BtcBlock, error) {
 	s.btcHeadMu.RLock()
 	defer s.btcHeadMu.RUnlock()
@@ -157,9 +171,11 @@ func (s *State) GetCurrentBtcBlock() (db.BtcBlock, error) {
 
 func (s *State) queryBtcBlockByHeigh(height uint64) (*db.BtcBlock, error) {
 	var btcBlock db.BtcBlock
+
 	result := s.dbm.GetBtcLightDB().Where("height = ?", height).First(&btcBlock)
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
 	return &btcBlock, nil
 }

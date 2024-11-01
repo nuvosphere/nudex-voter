@@ -2,11 +2,12 @@ package task
 
 import (
 	"context"
+	"time"
+
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func NewTaskService(state *state.State, dbm *db.DatabaseManager, tss *tss.TSSService) *TaskService {

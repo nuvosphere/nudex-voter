@@ -2,6 +2,7 @@ package layer2
 
 import (
 	"errors"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -9,14 +10,14 @@ import (
 )
 
 var (
-	SubmitterChosenTopic    = crypto.Keccak256Hash([]byte(`SubmitterChosen(address)`))                                 //VotingManagerUpgradeable
-	TaskSubmittedTopic      = crypto.Keccak256Hash([]byte(`TaskSubmitted(uint256,bytes,address)`))                     //INuDexOperations
-	TaskCompletedTopic      = crypto.Keccak256Hash([]byte(`TaskCompleted(uint256,address,uint256,bytes)`))             //INuDexOperations
-	AddressRegisteredTopic  = crypto.Keccak256Hash([]byte(`AddressRegistered(address,uint256,uint8,uint256,address)`)) //AccountManagerContract
-	ParticipantAddedTopic   = crypto.Keccak256Hash([]byte(`ParticipantAdded(address)`))                                //IParticipantManager
-	ParticipantRemovedTopic = crypto.Keccak256Hash([]byte(`ParticipantRemoved(address)`))                              //IParticipantManager
-	DepositRecordedTopic    = crypto.Keccak256Hash([]byte(`DepositRecorded(address,uint256,uint256,bytes,bytes)`))     //DepositManagerContract
-	WithdrawalRecordedTopic = crypto.Keccak256Hash([]byte(`WithdrawalRecorded(address,uint256,uint256,bytes,bytes)`))  //DepositManagerContract
+	SubmitterChosenTopic    = crypto.Keccak256Hash([]byte(`SubmitterChosen(address)`))                                 // VotingManagerUpgradeable
+	TaskSubmittedTopic      = crypto.Keccak256Hash([]byte(`TaskSubmitted(uint256,bytes,address)`))                     // INuDexOperations
+	TaskCompletedTopic      = crypto.Keccak256Hash([]byte(`TaskCompleted(uint256,address,uint256,bytes)`))             // INuDexOperations
+	AddressRegisteredTopic  = crypto.Keccak256Hash([]byte(`AddressRegistered(address,uint256,uint8,uint256,address)`)) // AccountManagerContract
+	ParticipantAddedTopic   = crypto.Keccak256Hash([]byte(`ParticipantAdded(address)`))                                // IParticipantManager
+	ParticipantRemovedTopic = crypto.Keccak256Hash([]byte(`ParticipantRemoved(address)`))                              // IParticipantManager
+	DepositRecordedTopic    = crypto.Keccak256Hash([]byte(`DepositRecorded(address,uint256,uint256,bytes,bytes)`))     // DepositManagerContract
+	WithdrawalRecordedTopic = crypto.Keccak256Hash([]byte(`WithdrawalRecorded(address,uint256,uint256,bytes,bytes)`))  // DepositManagerContract
 )
 
 var (

@@ -10,15 +10,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-
 	log "github.com/sirupsen/logrus"
-
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -47,12 +45,13 @@ IwIDAQAB
 -----END PUBLIC KEY-----`
 )
 
-// handleFireblocksWebhook process webhook callback of Fireblocks, should validate request data first
+// handleFireblocksWebhook process webhook callback of Fireblocks, should validate request data first.
 func (s *HTTPServer) handleFireblocksWebhook(c *gin.Context) {
 	bodyBytes, err := s.verifyWebhookSig(c)
 	if err != nil {
 		log.Errorf("Fireblocks webhook sig verify error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Sig error"})
+
 		return
 	}
 
@@ -60,6 +59,7 @@ func (s *HTTPServer) handleFireblocksWebhook(c *gin.Context) {
 	if err := json.Unmarshal(bodyBytes, &req); err != nil {
 		log.Errorf("Fireblocks webhook json bind error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+
 		return
 	}
 
@@ -75,10 +75,12 @@ func (s *HTTPServer) handleFireblocksWebhook(c *gin.Context) {
 			log.Error("Fireblocks webhook failed to convert data to TransactionDetails")
 		}
 	}
+
 	if req.Type == "TRANSACTION_STATUS_UPDATED" {
 		var trans TransactionDetails
 		if err := json.Unmarshal(req.Data, &trans); err == nil {
 			log.Infof("Transaction status updated detect, txId %s, txHash %s, status %s, subStatus %s, assetType %s, amount %s", trans.ExternalTxID, trans.TxHash, trans.Status, trans.SubStatus, trans.AssetType, trans.AmountInfo.Amount)
+
 			if trans.Operation == "TRANSFER" && trans.Status == "COMPLETED" && trans.SubStatus == "CONFIRMED" {
 				// TODO: withdraw filter (sourceAddress, destinationAddress, assetType)
 				log.Infof("Fireblocks webhook transaction confirmed, txId %s, txHash %s, sourceAddress %s, destinationAddress %s, assetType %s, amount %s", trans.ExternalTxID, trans.TxHash, trans.SourceAddress, trans.DestinationAddress, trans.AssetType, trans.AmountInfo.Amount)
@@ -91,11 +93,12 @@ func (s *HTTPServer) handleFireblocksWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// handleFireblocksCosignerTxSign process cosigner tx sign callback of Fireblocks, it will check tx and sign
+// handleFireblocksCosignerTxSign process cosigner tx sign callback of Fireblocks, it will check tx and sign.
 func (s *HTTPServer) handleFireblocksCosignerTxSign(c *gin.Context) {
 	if config.AppConfig.FireblocksPrivKey == "" || config.AppConfig.FireblocksPubKey == "" {
 		log.Error("Cosigner callback empty RSA key")
 		c.String(http.StatusInternalServerError, "Private key and public key not exist")
+
 		return
 	}
 
@@ -103,6 +106,7 @@ func (s *HTTPServer) handleFireblocksCosignerTxSign(c *gin.Context) {
 	if err != nil {
 		log.Errorf("Cosigner error parsing RSA public key: %v", err)
 		c.String(http.StatusInternalServerError, "Public key parsing error")
+
 		return
 	}
 
@@ -110,15 +114,18 @@ func (s *HTTPServer) handleFireblocksCosignerTxSign(c *gin.Context) {
 	if err != nil {
 		log.Errorf("Cosigner error parsing RSA private key: %v", err)
 		c.String(http.StatusInternalServerError, "Private key parsing error")
+
 		return
 	}
 
-	bodyBytes, err := ioutil.ReadAll(c.Request.Body)
+	bodyBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Errorf("Cosigner error read body: %v", err)
 		c.Status(http.StatusInternalServerError)
+
 		return
 	}
+
 	rawBody := string(bodyBytes)
 
 	// Parse and verify JWT
@@ -126,11 +133,13 @@ func (s *HTTPServer) handleFireblocksCosignerTxSign(c *gin.Context) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, jwt.ErrInvalidKey
 		}
+
 		return rsaPubKey, nil
 	})
 	if err != nil || !tx.Valid {
 		log.Error("Cosigner callback JWT valid false")
 		c.Status(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -139,6 +148,7 @@ func (s *HTTPServer) handleFireblocksCosignerTxSign(c *gin.Context) {
 	if !ok || !tx.Valid {
 		log.Error("Cosigner callback JWT claims parsing failed")
 		c.Status(http.StatusUnauthorized)
+
 		return
 	}
 
@@ -158,6 +168,7 @@ func (s *HTTPServer) handleFireblocksCosignerTxSign(c *gin.Context) {
 		"requestId":       requestId,
 		"rejectionReason": rejectionReason,
 	})
+
 	signedRes, err := token.SignedString(rsaPrivKey)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -167,9 +178,9 @@ func (s *HTTPServer) handleFireblocksCosignerTxSign(c *gin.Context) {
 	c.String(http.StatusOK, signedRes)
 }
 
-// verifyWebhookSig verify sig from webhook request
+// verifyWebhookSig verify sig from webhook request.
 func (s *HTTPServer) verifyWebhookSig(c *gin.Context) ([]byte, error) {
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +213,7 @@ func (s *HTTPServer) verifyWebhookSig(c *gin.Context) ([]byte, error) {
 		log.Errorf("Fireblocks webhook verification failed: %v", err)
 		return nil, errors.New("invalid signature")
 	}
+
 	return body, nil
 }
 
@@ -231,6 +243,7 @@ func (s *HTTPServer) parseRSAPrivateKeyFromPEM(privKeyPEM string) (*rsa.PrivateK
 	}
 
 	var parsedKey interface{}
+
 	var err error
 
 	if block.Type == "PRIVATE KEY" {
