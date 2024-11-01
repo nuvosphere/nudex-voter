@@ -8,7 +8,6 @@ type (
 	EventUnknown                   struct{}
 	EventTssMsg                    struct{}
 	EventSigStart                  struct{}
-	EventSigReceive                struct{}
 	EventSigFailed                 struct{}
 	EventSigTimeout                struct{}
 	EventSigDepositReceive         struct{}

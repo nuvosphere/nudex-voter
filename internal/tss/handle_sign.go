@@ -156,9 +156,6 @@ func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 	}
 }
 
-func (tss *TSSService) handleSigReceive(ctx context.Context, event interface{}) {
-}
-
 func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
 	log.Infof("sig failed, taskId:%d, reason:%s", tss.state.TssState.CurrentTask.TaskId, reason)
 	tss.CleanAllSigInfo()
