@@ -16,6 +16,7 @@ var (
 	ParticipantAddedTopic   = crypto.Keccak256Hash([]byte(`ParticipantAdded(address)`))                                //IParticipantManager
 	ParticipantRemovedTopic = crypto.Keccak256Hash([]byte(`ParticipantRemoved(address)`))                              //IParticipantManager
 	DepositRecordedTopic    = crypto.Keccak256Hash([]byte(`DepositRecorded(address,uint256,uint256,bytes,bytes)`))     //DepositManagerContract
+	WithdrawalRecordedTopic = crypto.Keccak256Hash([]byte(`WithdrawalRecorded(address,uint256,uint256,bytes,bytes)`))  //DepositManagerContract
 )
 
 var (
