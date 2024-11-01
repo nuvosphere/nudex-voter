@@ -61,7 +61,8 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 			log.Errorf("Handle create wallet task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
 		}
 	case types.TaskTypeDeposit:
-		err := ts.handleDepositTask(dbTask)
+		ts.state.TssState.CurrentTask = &dbTask
+		err := ts.handleDepositTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
 		}
@@ -98,8 +99,38 @@ func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Tas
 	return ts.Tss.HandleSignCreateAccount(ctx, createWalletTask)
 }
 
-func (ts *TaskService) handleDepositTask(dbTask db.Task) error {
-	return nil
+func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) error {
+	buf := bytes.NewReader(dbTask.Context)
+	var taskType int32
+	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
+		return err
+	}
+	depositTask := types.DepositTask{TaskId: int32(dbTask.TaskId)}
+
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Address); err != nil {
+		return err
+	}
+
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Amount); err != nil {
+		return err
+	}
+
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.ChainId); err != nil {
+		return err
+	}
+
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Token); err != nil {
+		return err
+	}
+
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.TxInfo); err != nil {
+		return err
+	}
+
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.ExtraInfo); err != nil {
+		return err
+	}
+	return ts.Tss.HandleSignDeposit(ctx, depositTask)
 }
 
 func (ts *TaskService) handleWithdrawTask(dbTask db.Task) error {
