@@ -26,6 +26,8 @@ func (lis *Layer2Listener) processLogs(vLog types.Log) {
 		err = lis.processOperationsLog(vLog)
 	case abis.ParticipantAddress:
 		err = lis.processParticipantLog(vLog)
+	case abis.DepositAddress:
+		err = lis.processDepositLog(vLog)
 	}
 	if err != nil {
 		log.Errorf("Error processing log: %v", err)
@@ -165,5 +167,27 @@ func (lis *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		}
 		return nil
 	}
+	return nil
+}
+
+func (lis *Layer2Listener) processDepositLog(vLog types.Log) error {
+	depositRecorded, err := lis.contractDepositManager.ParseDepositRecorded(vLog)
+	if err == nil {
+		depositRecord := db.DepositRecord{
+			TargetAddress: depositRecorded.TargetAddress.Hex(),
+			Amount:        depositRecorded.Amount.Uint64(),
+			ChainId:       depositRecorded.ChainId.Uint64(),
+			TxInfo:        depositRecorded.TxInfo,
+			ExtraInfo:     depositRecorded.ExtraInfo,
+		}
+		err = lis.db.GetRelayerDB().FirstOrCreate(&depositRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
+			depositRecorded.TargetAddress.Hex(), depositRecorded.Amount.Uint64(), depositRecorded.ChainId.Uint64(), depositRecorded.TxInfo,
+		).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	return nil
 }

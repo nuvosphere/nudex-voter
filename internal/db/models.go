@@ -56,6 +56,15 @@ type Account struct {
 	Address string `gorm:"not null" json:"address"`
 }
 
+type DepositRecord struct {
+	ID            uint64 `gorm:"primaryKey" json:"id"`
+	TargetAddress string `gorm:"not null" json:"target_address"`
+	Amount        uint64 `gorm:"not null" json:"amount"`
+	ChainId       uint64 `gorm:"not null" json:"chain_id"`
+	TxInfo        []byte `gorm:"not null" json:"tx_info"`
+	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
+}
+
 type Task struct {
 	ID          uint64    `gorm:"primaryKey" json:"id"`
 	TaskId      uint64    `gorm:"unique;not null" json:"task_id"`
@@ -103,7 +112,8 @@ type BtcTXOutput struct {
 }
 
 func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterChosen{}, &Participant{}, &Account{}, &Task{}); err != nil {
+	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterChosen{},
+		&Participant{}, &Account{}, &DepositRecord{}, &Task{}); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}
 	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {
