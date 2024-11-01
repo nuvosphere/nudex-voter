@@ -123,7 +123,7 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 	}
 
 	for {
-		latestBlock, err := lis.ethClient.BlockNumber(context.Background())
+		latestBlock, err := lis.ethClient.BlockNumber(ctx)
 		if err != nil {
 			log.Warnf("Error getting latest block number: %v", err)
 		}
@@ -142,7 +142,19 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 			filterQuery := ethereum.FilterQuery{
 				FromBlock: big.NewInt(int64(fromBlock)),
 				ToBlock:   big.NewInt(int64(toBlock)),
-				Addresses: []common.Address{abis.VotingAddress, abis.AccountAddress},
+				Addresses: []common.Address{
+					abis.VotingAddress,
+					abis.AccountAddress,
+					abis.ParticipantAddress,
+					abis.OperationsAddress,
+				},
+				Topics: [][]common.Hash{
+					{SubmitterChosenTopic},
+					{TaskSubmittedTopic},
+					{AddressRegisteredTopic},
+					{ParticipantRemovedTopic},
+					{ParticipantAddedTopic},
+				},
 			}
 
 			logs, err := lis.ethClient.FilterLogs(context.Background(), filterQuery)
