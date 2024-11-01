@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -13,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -34,7 +36,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		sigEndCh:       make(chan *common.SignatureData),
 
 		sigMap:                       make(map[string]map[int32]*signing.LocalParty),
-		sigRound1P2pMessageMap:       make(map[string]*p2p.Message),
+		sigRound1P2pMessageMap:       make(map[string]*p2p.Message[types.TssMessage]),
 		sigRound1MessageSendTimesMap: make(map[string]int),
 		sigTimeoutMap:                make(map[string]time.Time),
 	}
@@ -151,7 +153,7 @@ func (tss *TSSService) eventLoop(ctx context.Context) {
 			case event := <-tss.tssMsgCh: // from p2p network
 				log.Debugf("Received tss msg event")
 
-				err := tss.handleTssMsg(convertMsgData(event.(p2p.Message)))
+				err := tss.handleTssMsg(convertMsgData(event.(p2p.Message[json.RawMessage])))
 				if err != nil {
 					log.Warnf("handle tss msg error, %v", err)
 				}

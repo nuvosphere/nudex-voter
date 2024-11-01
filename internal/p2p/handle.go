@@ -54,7 +54,7 @@ func (lp *LibP2PService) Bind(msgType MessageType, event state.Event) {
 	lp.typeBindEvent.Store(msgType, event)
 }
 
-func (lp *LibP2PService) PublishMessage(ctx context.Context, msg Message) error {
+func (lp *LibP2PService) PublishMessage(ctx context.Context, msg any) error {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		return errors.New("failed to marshal message")
@@ -92,7 +92,7 @@ func (lp *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.S
 				continue
 			}
 
-			var receivedMsg Message
+			var receivedMsg Message[json.RawMessage]
 			if err := json.Unmarshal(msg.Data, &receivedMsg); err != nil {
 				log.Errorf("Error unmarshaling pubsub message: %v", err)
 				continue

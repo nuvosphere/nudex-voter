@@ -171,12 +171,15 @@ func serializeTaskMessageToBytes(baseTask types.Task) ([]byte, error) {
 		if err := writeField(task.GetTaskID()); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.Account); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.User); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.Chain); err != nil {
 			return nil, err
 		}
@@ -185,21 +188,27 @@ func serializeTaskMessageToBytes(baseTask types.Task) ([]byte, error) {
 		if err := writeField(task.GetTaskID()); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.Address); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.Amount); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.ChainId); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.Token); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.TxInfo); err != nil {
 			return nil, err
 		}
+
 		if err := writeField(task.ExtraInfo); err != nil {
 			return nil, err
 		}

@@ -25,7 +25,7 @@ import (
 func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) error {
 	var requestId string
 
-	var taskPrefix = map[reflect.Type]string{
+	taskPrefix := map[reflect.Type]string{
 		reflect.TypeOf(&types.CreateWalletTask{}): "CREATE_WALLET",
 		reflect.TypeOf(&types.DepositTask{}):      "DEPOSIT",
 	}
@@ -47,7 +47,7 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) e
 		Task: task,
 	}
 
-	p2pMsg := p2p.Message{
+	p2pMsg := p2p.Message[types.SignMessage]{
 		MessageType: p2p.MessageTypeSigReq,
 		RequestId:   requestId,
 		DataType:    DataTypeSignCreateWallet,
@@ -161,10 +161,10 @@ func (tss *TSSService) handleSignStart(ctx context.Context, e types.SignMessage)
 func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 	if signMsg, ok := event.(types.SignMessage); ok {
 		log.Debugf("Event handleSigStart is of type SignMessage, request id %s", signMsg.RequestId)
+
 		if err := tss.handleSignStart(ctx, signMsg); err != nil {
 			log.Errorf("Error handleSigStart handleSignStart, %v", err)
 			tss.state.EventBus.Publish(state.EventSigFailed{}, event)
-
 		}
 	} else {
 		log.Errorf("HandleSigStart error: event is not of type types.SignMessage")

@@ -79,7 +79,7 @@ func (tss *TSSService) handleTssMsg(event interface{}) error {
 	return nil
 }
 
-func (tss *TSSService) sendTssMsg(ctx context.Context, dataType string, event tsslib.Message) (*p2p.Message, error) {
+func (tss *TSSService) sendTssMsg(ctx context.Context, dataType string, event tsslib.Message) (*p2p.Message[types.TssMessage], error) {
 	if tss.LocalParty == nil {
 		return nil, fmt.Errorf("sendTssMsg error, event %v, self not init", event)
 	}
@@ -102,7 +102,7 @@ func (tss *TSSService) sendTssMsg(ctx context.Context, dataType string, event ts
 
 	requestId := fmt.Sprintf("TSS_UPDATE:%s", event.GetFrom().GetId())
 
-	p2pMsg := p2p.Message{
+	p2pMsg := p2p.Message[types.TssMessage]{
 		MessageType: p2p.MessageTypeTssMsg,
 		RequestId:   requestId,
 		DataType:    dataType,

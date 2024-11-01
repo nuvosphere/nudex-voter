@@ -37,7 +37,7 @@ const (
 
 type P2PService interface {
 	Bind(msgType MessageType, event state.Event)
-	PublishMessage(ctx context.Context, msg Message) error
+	PublishMessage(ctx context.Context, msg any) error
 }
 
 type LibP2PService struct {
@@ -94,7 +94,7 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 	go startHeartbeat(ctx, node, hbTopic)
 
 	go func() {
-		msg := Message{
+		msg := Message[string]{
 			RequestId:   "1",
 			MessageType: MessageTypeUnknown,
 			Data:        "Hello, nudex voter libp2p PubSub network with handshake!",

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -69,6 +70,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		}
 	case types.TaskTypeDeposit:
 		ts.state.TssState.CurrentTask = &dbTask
+
 		err := ts.handleDepositTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
@@ -91,6 +93,7 @@ func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Tas
 	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
 		return err
 	}
+
 	createWalletTask := types.CreateWalletTask{
 		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
 	}
@@ -112,10 +115,13 @@ func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Tas
 
 func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) error {
 	buf := bytes.NewReader(dbTask.Context)
+
 	var taskType int32
+
 	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
 		return err
 	}
+
 	depositTask := types.DepositTask{
 		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
 	}
@@ -143,6 +149,7 @@ func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) er
 	if err := binary.Read(buf, binary.LittleEndian, &depositTask.ExtraInfo); err != nil {
 		return err
 	}
+
 	return ts.Tss.HandleSignPrepare(ctx, depositTask)
 }
 

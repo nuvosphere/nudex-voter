@@ -3,6 +3,7 @@ package tss
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
@@ -32,7 +33,7 @@ type TSSService struct {
 	partyIdMap         map[string]*tsslib.PartyID
 
 	setupTime              time.Time
-	keygenRound1P2pMessage *p2p.Message
+	keygenRound1P2pMessage *p2p.Message[types.TssMessage]
 	round1MessageSendTimes int
 
 	// tss keygen
@@ -51,12 +52,12 @@ type TSSService struct {
 	tssMsgCh       <-chan any
 	partyAddOrRmCh <-chan any
 	sigStartCh     <-chan any
-	sigReceiveCh   <-chan any
+	// sigReceiveCh   <-chan any
 	sigFailChan    <-chan any
 	sigTimeoutChan <-chan any
 
 	sigMap                       map[string]map[int32]*signing.LocalParty
-	sigRound1P2pMessageMap       map[string]*p2p.Message
+	sigRound1P2pMessageMap       map[string]*p2p.Message[types.TssMessage]
 	sigRound1MessageSendTimesMap map[string]int
 	sigTimeoutMap                map[string]time.Time
 
@@ -74,27 +75,61 @@ const (
 	DataTypeSignWithdrawal   = "SignWithdrawal"
 )
 
-// convertMsgData converts the message data to the corresponding struct
-// TODO: use reflector to optimize this function.
-func convertMsgData(msg p2p.Message) any {
+//type MsgSign struct {
+//	RequestId    string `json:"request_id"`
+//	VoterAddress string `json:"voter_address"`
+//	IsProposer   bool   `json:"is_proposer"`
+//	CreateTime   int64  `json:"create_time"`
+//}
+//
+//type MsgSignCreateWalletMessage struct {
+//	MsgSign
+//	Task types.CreateWalletTask `json:"task"`
+//}
+//
+//func (m *MsgSignCreateWalletMessage) Unmarshal(msg p2p.Message[json.RawMessage]) error {
+//	if msg.DataType == DataTypeSignCreateWallet {
+//		return json.Unmarshal(msg.Data, m)
+//	}
+//
+//	return ErrDataType
+//}
+//
+//type TssMessage struct {
+//	FromPartyId  string   `json:"from_party_id"`
+//	ToPartyIds   []string `json:"to_party_ids"`
+//	IsBroadcast  bool     `json:"is_broadcast"`
+//	MsgWireBytes []byte   `json:"msg_wire_bytes"`
+//}
+//
+//func (t *TssMessage) Unmarshal(msg p2p.Message[json.RawMessage]) error {
+//	switch msg.DataType {
+//	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
+//		return json.Unmarshal(msg.Data, t)
+//	}
+//
+//	return ErrDataType
+//}
+
+var ErrDataType = errors.New("error data type")
+
+// convertMsgData converts the message data to the corresponding struct.
+func convertMsgData(msg p2p.Message[json.RawMessage]) any {
+	var rawData any
+
 	switch msg.DataType {
-	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg, DataTypeSignDeposit, DataTypeSignWithdrawal:
-		jsonBytes, _ := json.Marshal(msg.Data)
-
-		var rawData types.TssMessage
-		err := json.Unmarshal(jsonBytes, &rawData)
-		utils.Assert(err)
-
-		return rawData
+	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
+		rawData = &types.TssMessage{}
 	case DataTypeSignCreateWallet:
-		jsonBytes, _ := json.Marshal(msg.Data)
-
-		var rawData types.SignMessage
-		err := json.Unmarshal(jsonBytes, &rawData)
-		utils.Assert(err)
-
-		return rawData
+		rawData = &types.SignMessage{}
 	}
 
-	return msg.Data
+	if rawData != nil {
+		err := json.Unmarshal(msg.Data, &rawData)
+		utils.Assert(err)
+	} else {
+		utils.Assert(ErrDataType)
+	}
+
+	return rawData
 }
