@@ -4,51 +4,74 @@ import (
 	"sync"
 )
 
-type EventType int
-
-const (
-	EventUnkown EventType = iota
-	TssMsg
-	SigStart
-	SigReceive
-	SigFailed
-	SigTimeout
-	DepositReceive
-	BlockScanned
-	WithdrawRequest
+type (
+	EventUnknown           struct{}
+	EventTssMsg            struct{}
+	EventSigStart          struct{}
+	EventSigReceive        struct{}
+	EventSigFailed         struct{}
+	EventSigTimeout        struct{}
+	EventSigDepositReceive struct{}
+	EventBlockScanned      struct{}
+	EventWithdrawRequest   struct{}
 )
 
-func (e EventType) String() string {
-	return [...]string{"EventUnkown", "TssMsg", "SigStart", "SigReceive",
-		"SigFailed", "SigTimeout", "DepositReceive", "BlockScanned", "WithdrawRequest"}[e]
+type Event any
+
+type Bus interface {
+	SubscribeWithLen(event Event, channelLen int) <-chan any
+	Subscribe(event Event) <-chan any
+	SubscriberLen(event Event) int
+	Publish(event Event, data any)
+	Unsubscribe(event Event, ch <-chan any)
+	UnsubscribeAll(event Event)
+	Close()
 }
 
-type EventBus struct {
-	subscribers map[string][]chan interface{}
+type defaultBus struct {
+	subscribers map[Event][]chan any
 	mu          sync.RWMutex
 }
 
-func NewEventBus() *EventBus {
-	return &EventBus{
-		subscribers: make(map[string][]chan interface{}),
+func NewBus() Bus {
+	return &defaultBus{
+		subscribers: make(map[Event][]chan any),
+		mu:          sync.RWMutex{},
 	}
 }
 
-// Subscribe enum for eventType
-func (eb *EventBus) Subscribe(eventType EventType, ch chan interface{}) {
-	if ch == nil {
-		panic("channel == nil")
+func (d *defaultBus) SubscriberLen(event Event) int {
+	defer d.mu.Unlock()
+	d.mu.Lock()
+	if origin, ok := d.subscribers[event]; ok {
+		return len(origin)
 	}
-	eb.mu.Lock()
-	defer eb.mu.Unlock()
-	eb.subscribers[eventType.String()] = append(eb.subscribers[eventType.String()], ch)
+
+	return 0
 }
 
-func (eb *EventBus) Publish(eventType EventType, data interface{}) {
-	eb.mu.RLock()
-	subscribers, ok := eb.subscribers[eventType.String()]
+func (d *defaultBus) Subscribe(event Event) <-chan any {
+	return d.SubscribeWithLen(event, 256)
+}
+
+func (d *defaultBus) SubscribeWithLen(event Event, channelLen int) <-chan any {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	ch := make(chan any, channelLen)
+	origin, ok := d.subscribers[event]
+	if ok {
+		d.subscribers[event] = append(origin, ch)
+	} else {
+		d.subscribers[event] = []chan any{ch}
+	}
+	return ch
+}
+
+func (d *defaultBus) Publish(event Event, data any) {
+	d.mu.RLock()
+	subscribers, ok := d.subscribers[event]
 	if !ok {
-		eb.mu.RUnlock()
+		d.mu.RUnlock()
 		return
 	}
 	originLen := len(subscribers)
@@ -63,43 +86,67 @@ func (eb *EventBus) Publish(eventType EventType, data interface{}) {
 			removeIndexes[i] = true
 		}
 	}
-	eb.mu.RUnlock()
+	d.mu.RUnlock()
 
 	if len(removeIndexes) > 0 {
-		eb.mu.Lock()
-		if originLen == len(eb.subscribers[eventType.String()]) {
-			var newSubscribers []chan interface{}
-			for index, ch := range eb.subscribers[eventType.String()] {
+		d.mu.Lock()
+		if originLen == len(d.subscribers[event]) {
+			var newSubscribers []chan any
+			for index, ch := range d.subscribers[event] {
 				if _, is := removeIndexes[index]; !is {
 					newSubscribers = append(newSubscribers, ch)
 				}
 			}
-			eb.subscribers[eventType.String()] = newSubscribers
+			d.subscribers[event] = newSubscribers
 		}
-		eb.mu.Unlock()
+		d.mu.Unlock()
 	}
 }
 
-func (eb *EventBus) Unsubscribe(eventType EventType, ch chan interface{}) {
-	eb.mu.Lock()
-	defer eb.mu.Unlock()
+func (d *defaultBus) Unsubscribe(event Event, ch <-chan any) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	subscribers, ok := eb.subscribers[eventType.String()]
-	if !ok {
-		return
-	}
-
-	for i, subscriber := range subscribers {
-		if subscriber == ch {
-			if i == len(subscribers)-1 {
-				eb.subscribers[eventType.String()] = subscribers[:i]
-			} else {
-				eb.subscribers[eventType.String()] = append(subscribers[:i], subscribers[i+1:]...)
+	if subscribers, ok := d.subscribers[event]; ok {
+		for i, subscriber := range subscribers {
+			if subscriber == ch {
+				if i == len(subscribers)-1 {
+					d.subscribers[event] = subscribers[:i]
+				} else {
+					d.subscribers[event] = append(subscribers[:i], subscribers[i+1:]...)
+				}
+				close(subscriber)
+				break
 			}
-			break
+		}
+		if len(d.subscribers[event]) == 0 {
+			delete(d.subscribers, event)
 		}
 	}
-	if len(eb.subscribers[eventType.String()]) == 0 {
-		delete(eb.subscribers, eventType.String())
+}
+
+func (d *defaultBus) UnsubscribeAll(event Event) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.unsubscribeAll(event)
+}
+
+func (d *defaultBus) unsubscribeAll(event Event) {
+	if subscribers, ok := d.subscribers[event]; ok {
+		for _, subscriber := range subscribers {
+			close(subscriber)
+		}
+		delete(d.subscribers, event)
+	}
+}
+
+func (d *defaultBus) Close() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for topic, subscribers := range d.subscribers {
+		for _, subscriber := range subscribers {
+			close(subscriber)
+		}
+		delete(d.subscribers, topic)
 	}
 }

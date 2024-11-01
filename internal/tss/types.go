@@ -43,11 +43,11 @@ type TSSService struct {
 	sigEndCh chan *tssCommon.SignatureData
 
 	// eventbus channel
-	tssMsgCh       chan interface{}
-	sigStartCh     chan interface{}
-	sigReceiveCh   chan interface{}
-	sigFailChan    chan interface{}
-	sigTimeoutChan chan interface{}
+	tssMsgCh       <-chan interface{}
+	sigStartCh     <-chan interface{}
+	sigReceiveCh   <-chan interface{}
+	sigFailChan    <-chan interface{}
+	sigTimeoutChan <-chan interface{}
 
 	sigMap                       map[string]map[int32]*signing.LocalParty
 	sigRound1P2pMessageMap       map[string]*p2p.Message

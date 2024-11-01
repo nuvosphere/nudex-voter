@@ -250,7 +250,7 @@ func (tss *TSSService) removeSigMap(requestId string, reportTimeout bool) {
 	defer tss.rw.Unlock()
 	if reportTimeout {
 		taskPartyMap := tss.sigMap[requestId]
-		tss.state.EventBus.Publish(state.SigTimeout, taskPartyMap)
+		tss.state.EventBus.Publish(state.EventSigTimeout{}, taskPartyMap)
 	}
 	delete(tss.sigMap, requestId)
 	delete(tss.sigTimeoutMap, requestId)

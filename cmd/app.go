@@ -106,6 +106,7 @@ func (app *Application) Run() {
 	cancel()
 
 	wg.Wait()
+	app.State.Bus().Close()
 	log.Info("Server stopped")
 }
 

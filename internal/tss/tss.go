@@ -33,11 +33,11 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		sigOutCh:       make(chan tsslib.Message),
 		sigEndCh:       make(chan *common.SignatureData),
 
-		tssMsgCh:       make(chan interface{}, 10),
-		sigStartCh:     make(chan interface{}, 256),
-		sigReceiveCh:   make(chan interface{}, 1024),
-		sigFailChan:    make(chan interface{}, 10),
-		sigTimeoutChan: make(chan interface{}, 10),
+		//tssMsgCh:       make(chan interface{}, 10),
+		//sigStartCh:     make(chan interface{}, 256),
+		//sigReceiveCh:   make(chan interface{}, 1024),
+		//sigFailChan:    make(chan interface{}, 10),
+		//sigTimeoutChan: make(chan interface{}, 10),
 
 		sigMap:                       make(map[string]map[int32]*signing.LocalParty),
 		sigRound1P2pMessageMap:       make(map[string]*p2p.Message),
@@ -136,13 +136,11 @@ func (tss *TSSService) tssLoop(ctx context.Context) {
 }
 
 func (tss *TSSService) eventLoop(ctx context.Context) {
-	tss.state.EventBus.Subscribe(state.TssMsg, tss.tssMsgCh)
-
-	tss.state.EventBus.Subscribe(state.SigStart, tss.sigStartCh)
-	tss.state.EventBus.Subscribe(state.SigReceive, tss.sigReceiveCh)
-
-	tss.state.EventBus.Subscribe(state.SigFailed, tss.sigFailChan)
-	tss.state.EventBus.Subscribe(state.SigTimeout, tss.sigTimeoutChan)
+	tss.tssMsgCh = tss.state.EventBus.Subscribe(state.EventTssMsg{})
+	tss.sigStartCh = tss.state.EventBus.Subscribe(state.EventSigStart{})
+	tss.sigReceiveCh = tss.state.EventBus.Subscribe(state.EventSigReceive{})
+	tss.sigFailChan = tss.state.EventBus.Subscribe(state.EventSigFailed{})
+	tss.sigTimeoutChan = tss.state.EventBus.Subscribe(state.EventSigTimeout{})
 
 	go func() {
 		for {
@@ -179,12 +177,6 @@ func (tss *TSSService) Stop() {
 		close(tss.reSharingOutCh)
 		close(tss.sigOutCh)
 		close(tss.sigEndCh)
-
-		close(tss.tssMsgCh)
-		close(tss.sigStartCh)
-		close(tss.sigReceiveCh)
-		close(tss.sigFailChan)
-		close(tss.sigTimeoutChan)
 	})
 }
 

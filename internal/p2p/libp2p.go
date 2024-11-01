@@ -39,14 +39,15 @@ type P2PService interface {
 }
 
 type LibP2PService struct {
-	messageTopic *pubsub.Topic
-
-	state *state.State
+	messageTopic  *pubsub.Topic
+	state         *state.State
+	typeBindEvent sync.Map
 }
 
 func NewLibP2PService(state *state.State) *LibP2PService {
 	return &LibP2PService{
-		state: state,
+		state:         state,
+		typeBindEvent: sync.Map{},
 	}
 }
 

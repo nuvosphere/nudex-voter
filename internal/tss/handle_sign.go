@@ -56,7 +56,7 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.sigEndCh).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.sigOutCh, tss.sigEndCh).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", requestId, err)
@@ -120,7 +120,7 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.sigEndCh).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.sigOutCh, tss.sigEndCh).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", e.RequestId, err)
@@ -144,7 +144,7 @@ func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 		log.Debugf("Event handleSigStart is of type MsgSignCreateWalletMessage, request id %s", e.RequestId)
 		if err := tss.handleSignCreateWalletStart(ctx, e); err != nil {
 			log.Errorf("Error handleSigStart MsgSignCreateWalletMessage, %v", err)
-			tss.state.EventBus.Publish(state.SigFailed, e)
+			tss.state.EventBus.Publish(state.EventSigFailed{}, e)
 		}
 	default:
 		log.Debug("Unknown event handleSigStart type")

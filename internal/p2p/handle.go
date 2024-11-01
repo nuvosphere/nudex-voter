@@ -48,6 +48,10 @@ func handleHandshake(s network.Stream, node host.Host) {
 	log.Info("Handshake successful")
 }
 
+func (libp2p *LibP2PService) Register(msgType MessageType, event state.Event) {
+	libp2p.typeBindEvent.Store(msgType, event)
+}
+
 func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) error {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
@@ -98,18 +102,25 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 
 			log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, dataStr)
 
-			switch receivedMsg.MessageType {
-			case MessageTypeTssMsg:
-				libp2p.state.EventBus.Publish(state.TssMsg, convertMsgData(receivedMsg))
-			case MessageTypeSigReq:
-				libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
-			case MessageTypeSigResp:
-				libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
-			case MessageTypeDepositReceive:
-				libp2p.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
-			default:
+			event, ok := libp2p.typeBindEvent.Load(receivedMsg.MessageType)
+			if ok {
+				libp2p.state.EventBus.Publish(event, convertMsgData(receivedMsg))
+			} else {
 				log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
 			}
+
+			//switch receivedMsg.MessageType {
+			//case MessageTypeTssMsg:
+			//	libp2p.state.EventBus.Publish(state.TssMsg, convertMsgData(receivedMsg))
+			//case MessageTypeSigReq:
+			//	libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
+			//case MessageTypeSigResp:
+			//	libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
+			//case MessageTypeDepositReceive:
+			//	libp2p.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
+			//default:
+			//	log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
+			//}
 		}
 	}
 }

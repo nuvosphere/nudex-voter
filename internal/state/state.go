@@ -9,7 +9,7 @@ import (
 )
 
 type State struct {
-	EventBus *EventBus
+	EventBus Bus
 
 	dbm *db.DatabaseManager
 
@@ -18,6 +18,10 @@ type State struct {
 	btcHeadState BtcHeadState
 
 	TssState TssState
+}
+
+func (s *State) Bus() Bus {
+	return s.EventBus
 }
 
 // InitializeState initializes the state by reading from the DB
@@ -92,7 +96,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 	wg.Wait()
 
 	return &State{
-		EventBus: NewEventBus(),
+		EventBus: NewBus(),
 		dbm:      dbm,
 
 		btcHeadState: BtcHeadState{
