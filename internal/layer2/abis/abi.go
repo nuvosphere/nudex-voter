@@ -10,4 +10,5 @@ var (
 	AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
 	OperationsAddress  = common.HexToAddress(config.AppConfig.OperationsContract)
 	ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
+	DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
 )

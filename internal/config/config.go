@@ -45,6 +45,7 @@ type Config struct {
 	WithdrawContract    string
 	OperationsContract  string
 	ParticipantContract string
+	DepositContract     string
 	L2PrivateKey        *ecdsa.PrivateKey
 	L2ChainId           *big.Int
 }
@@ -79,6 +80,7 @@ func InitConfig() {
 	viper.SetDefault("ACCOUNT_CONTRACT", "")
 	viper.SetDefault("OPERATIONS_CONTRACT", "")
 	viper.SetDefault("PARTICIPANT_CONTRACT", "")
+	viper.SetDefault("DEPOSIT_CONTRACT", "")
 	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
 	viper.SetDefault("FIREBLOCKS_PRIVKEY", "")
 	viper.SetDefault("TSS_PUBLIC_KEYS", "")
@@ -132,6 +134,7 @@ func InitConfig() {
 		AccountContract:     viper.GetString("ACCOUNT_CONTRACT"),
 		ParticipantContract: viper.GetString("PARTICIPANT_CONTRACT"),
 		OperationsContract:  viper.GetString("OPERATIONS_CONTRACT"),
+		DepositContract:     viper.GetString("DEPOSIT_CONTRACT"),
 		L2PrivateKey:        l2PrivateKey,
 		L2ChainId:           big.NewInt(l2ChainId),
 	}
