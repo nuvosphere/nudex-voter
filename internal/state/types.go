@@ -1,6 +1,9 @@
 package state
 
-import "github.com/nuvosphere/nudex-voter/internal/db"
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/db"
+)
 
 // BtcHeadState to manage BTC head
 type BtcHeadState struct {
@@ -11,8 +14,8 @@ type BtcHeadState struct {
 
 type TssState struct {
 	BlockNumber      uint64
-	CurrentSubmitter string
-	Participants     []string
+	CurrentSubmitter common.Address
+	Participants     []common.Address
 
 	CurrentTask *db.Task
 }

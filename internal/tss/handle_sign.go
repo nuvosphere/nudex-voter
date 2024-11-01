@@ -36,11 +36,11 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	p2pMsg := p2p.Message{
 		MessageType: p2p.MessageTypeSigReq,
 		RequestId:   requestId,
-		DataType:    p2p.DataTypeSignCreateWallet,
+		DataType:    DataTypeSignCreateWallet,
 		Data:        reqMessage,
 	}
 
-	err := tss.libp2p.PublishMessage(ctx, p2pMsg)
+	err := tss.p2p.PublishMessage(ctx, p2pMsg)
 	if err != nil {
 		return err
 	}
@@ -49,14 +49,14 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
-	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
+	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(task)
 	if err != nil {
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.sigFinishChan).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.sigOutCh, tss.sigEndCh).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", requestId, err)
@@ -66,12 +66,12 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 		}
 	}()
 
-	tss.sigMu.Lock()
+	tss.rw.Lock()
 	tss.sigMap[requestId] = make(map[int32]*signing.LocalParty)
 	tss.sigMap[requestId][task.TaskId] = party
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
-	tss.sigMu.Unlock()
+	tss.rw.Unlock()
 	return nil
 }
 
@@ -113,14 +113,14 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
-	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
+	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(e.Task)
 	if err != nil {
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.keyOutCh, tss.sigFinishChan).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *tss.LocalPartySaveData, tss.sigOutCh, tss.sigEndCh).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", e.RequestId, err)
@@ -130,12 +130,11 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 		}
 	}()
 
-	tss.sigMu.Lock()
+	tss.rw.Lock()
 	tss.sigMap[e.RequestId] = make(map[int32]*signing.LocalParty)
 	tss.sigMap[e.RequestId][e.Task.TaskId] = party
-	timeoutDuration := config.AppConfig.TssSigTimeout
-	tss.sigTimeoutMap[e.RequestId] = time.Now().Add(timeoutDuration)
-	tss.sigMu.Unlock()
+	tss.sigTimeoutMap[e.RequestId] = time.Now().Add(config.AppConfig.TssSigTimeout)
+	tss.rw.Unlock()
 	return nil
 }
 
@@ -145,7 +144,7 @@ func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 		log.Debugf("Event handleSigStart is of type MsgSignCreateWalletMessage, request id %s", e.RequestId)
 		if err := tss.handleSignCreateWalletStart(ctx, e); err != nil {
 			log.Errorf("Error handleSigStart MsgSignCreateWalletMessage, %v", err)
-			tss.state.EventBus.Publish(state.SigFailed, e)
+			tss.state.EventBus.Publish(state.EventSigFailed{}, e)
 		}
 	default:
 		log.Debug("Unknown event handleSigStart type")
@@ -157,11 +156,11 @@ func (tss *TSSService) handleSigReceive(ctx context.Context, event interface{}) 
 
 func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
 	log.Infof("sig failed, taskId:%d, reason:%s", tss.state.TssState.CurrentTask.TaskId, reason)
-	tss.CleanAll()
+	tss.CleanAllSigInfo()
 }
 
 func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *common.SignatureData) {
-	tss.sigMu.Lock()
+	tss.rw.Lock()
 
 	log.Infof("sig finish, taskId:%d, R:%x, S:%x, V:%x", tss.state.TssState.CurrentTask.TaskId, signatureData.R, signatureData.S, signatureData.SignatureRecovery)
 	if tss.state.TssState.CurrentTask.Submitter == tss.Address.Hex() {
@@ -178,7 +177,7 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 
 			coinType := getCoinTypeByChain(createWalletTask.Chain)
 			if coinType == -1 {
-				log.Errorf("chain %s not supported", createWalletTask.Chain)
+				log.Errorf("chain %d not supported", createWalletTask.Chain)
 			}
 
 			bip44Path := fmt.Sprintf("m/44'/%d'/%d'/0/%d", coinType, createWalletTask.User, createWalletTask.Account)
@@ -188,7 +187,7 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 		}
 
 	}
-	tss.CleanAll()
+	tss.CleanAllSigInfo()
 
-	tss.sigMu.Unlock()
+	tss.rw.Unlock()
 }

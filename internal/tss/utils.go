@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -27,6 +28,19 @@ func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 		tssAllPartyIDs[i] = tss.NewPartyID(
 			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
 			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
+			key,
+		)
+	}
+	return tss.SortPartyIDs(tssAllPartyIDs)
+}
+
+func createPartyIDsByAddress(publicKeys []common.Address) tss.SortedPartyIDs {
+	var tssAllPartyIDs = make(tss.UnSortedPartyIDs, len(publicKeys))
+	for i, publicKey := range publicKeys {
+		key := new(big.Int).SetBytes(publicKey.Bytes())
+		tssAllPartyIDs[i] = tss.NewPartyID(
+			publicKey.Hex(),
+			publicKey.Hex(),
 			key,
 		)
 	}
@@ -116,9 +130,8 @@ func CompareStrings(a, b []string) bool {
 	return true
 }
 
-func AddressIndex(publicKeys []*ecdsa.PublicKey, tssAddress string) int {
-	for i, pubKey := range publicKeys {
-		address := crypto.PubkeyToAddress(*pubKey).Hex()
+func AddressIndex(addressList []common.Address, tssAddress common.Address) int {
+	for i, address := range addressList {
 		if address == tssAddress {
 			return i // Return the index if a match is found
 		}

@@ -2,68 +2,69 @@ package layer2
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"slices"
 	"time"
 )
 
-func (lis *Layer2Listener) processLogs(vLog types.Log) {
-	if len(vLog.Topics) == 0 {
-		log.Debug("No topics found in the log")
-		return
-	}
-	var err error
-	switch vLog.Address {
-	case abis.VotingAddress:
-		err = lis.processVotingLog(vLog)
-	case abis.AccountAddress:
-		err = lis.processAccountLog(vLog)
-	case abis.OperationsAddress:
-		err = lis.processOperationsLog(vLog)
-	case abis.ParticipantAddress:
-		err = lis.processParticipantLog(vLog)
-	case abis.DepositAddress:
-		err = lis.processDepositLog(vLog)
-	}
-	if err != nil {
-		log.Errorf("Error processing log: %v", err)
+func (l *Layer2Listener) processLogs(vLog types.Log) {
+	method, ok := l.addressBind[vLog.Address]
+	if ok {
+		err := method(vLog)
+		if err != nil {
+			log.Errorf("Error processing log: %v", err)
+		}
 	}
 }
 
-func (lis *Layer2Listener) processVotingLog(vLog types.Log) error {
-	submitterChosenEvent, err := lis.contractVotingManager.ParseSubmitterChosen(vLog)
-	if err == nil {
+func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
+	if vLog.Topics[0] == SubmitterChosenTopic {
+		submitterChosenEvent := abis.VotingManagerContractSubmitterChosen{}
+		err := UnpackLog(abis.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
+		if err != nil {
+			return err
+		}
+
 		// save current submitter
 		var submitterChosen db.SubmitterChosen
-		result := lis.db.GetRelayerDB().Where("block_number = ? AND submitter = ?",
-			vLog.BlockNumber, submitterChosenEvent.NewSubmitter).First(&submitterChosen)
+		result := l.db.GetRelayerDB().
+			Where("block_number = ? AND submitter = ?", vLog.BlockNumber, submitterChosenEvent.NewSubmitter).
+			First(&submitterChosen)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				submitterChosen.BlockNumber = vLog.BlockNumber
 				submitterChosen.Submitter = submitterChosenEvent.NewSubmitter.Hex()
-				err = lis.db.GetRelayerDB().Create(&submitterChosen).Error
+				err = l.db.GetRelayerDB().Create(&submitterChosen).Error
 				if err != nil {
-					lis.state.TssState.CurrentSubmitter = submitterChosenEvent.NewSubmitter.Hex()
-					lis.state.TssState.BlockNumber = vLog.BlockNumber
+					l.state.TssState.CurrentSubmitter = submitterChosenEvent.NewSubmitter
+					l.state.TssState.BlockNumber = vLog.BlockNumber
 				}
 			} else {
 				return err
 			}
 		}
-		return nil
 	}
 	return nil
 }
 
-func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
-	taskSubmitted, err := lis.contractOperations.ParseTaskSubmitted(vLog)
-	if err == nil {
+func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
+
+	switch vLog.Topics[0] {
+	case TaskSubmittedTopic:
+		taskSubmitted := abis.NuDexOperationsContractTaskSubmitted{}
+		err := UnpackLog(abis.NuDexOperationsContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
+		if err != nil {
+			return err
+		}
+
 		var existingTask db.Task
-		result := lis.db.GetRelayerDB().Where("task_id = ?", taskSubmitted.TaskId.Uint64()).First(&existingTask)
+		result := l.db.GetRelayerDB().Where("task_id = ?", taskSubmitted.TaskId.Uint64()).First(&existingTask)
 
 		if result.Error == nil {
 			return nil
@@ -76,7 +77,7 @@ func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
 				BlockHeight: vLog.BlockNumber,
 				CreatedAt:   time.Now(),
 			}
-			err = lis.db.GetRelayerDB().Create(&task).Error
+			err = l.db.GetRelayerDB().Create(&task).Error
 			if err != nil {
 				return err
 			}
@@ -84,20 +85,24 @@ func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
 		} else {
 			return result.Error
 		}
-	}
 
-	taskCompleted, err := lis.contractOperations.ParseTaskCompleted(vLog)
-	if err == nil {
+	case TaskCompletedTopic:
+		taskCompleted := abis.NuDexOperationsContractTaskCompleted{}
+		err := UnpackLog(abis.NuDexOperationsContractMetaData, &taskCompleted, "TaskCompleted", vLog)
+		if err != nil {
+			return err
+		}
+
 		var existingTask db.Task
-		result := lis.db.GetRelayerDB().Where("task_id = ?", taskCompleted.TaskId.Uint64()).First(&existingTask)
+		result := l.db.GetRelayerDB().Where("task_id = ?", taskCompleted.TaskId.Uint64()).First(&existingTask)
 		if result.Error == nil {
 			existingTask.IsCompleted = true
 			existingTask.CompletedAt = time.Unix(taskCompleted.CompletedAt.Int64(), 0)
-			err := lis.db.GetRelayerDB().Save(&existingTask).Error
+			err := l.db.GetRelayerDB().Save(&existingTask).Error
 
-			if lis.state != nil && &lis.state.TssState != nil && lis.state.TssState.CurrentTask != nil {
-				if taskCompleted.TaskId.Uint64() >= lis.state.TssState.CurrentTask.TaskId {
-					lis.state.TssState.CurrentTask = nil
+			if l.state != nil && &l.state.TssState != nil && l.state.TssState.CurrentTask != nil {
+				if taskCompleted.TaskId.Uint64() >= l.state.TssState.CurrentTask.TaskId {
+					l.state.TssState.CurrentTask = nil
 				}
 			}
 
@@ -111,68 +116,89 @@ func (lis *Layer2Listener) processOperationsLog(vLog types.Log) error {
 	return nil
 }
 
-func (lis *Layer2Listener) processAccountLog(vLog types.Log) error {
-	addressRegistered, err := lis.contractAccountManager.ParseAddressRegistered(vLog)
-	if err == nil {
-		account := db.Account{
-			User:    addressRegistered.User.Hex(),
-			Account: addressRegistered.Account.Uint64(),
-			ChainId: addressRegistered.ChainId,
-			Index:   addressRegistered.Index.Uint64(),
-			Address: addressRegistered.NewAddress.Hex(),
-		}
-		err = lis.db.GetRelayerDB().Create(&account).Error
-		if err != nil {
-			log.Fatalf("Error adding address: %v", err)
-		} else {
-			log.Infof("Address %s registered for user: %s, chain: %d", account.Address, account.User, account.ChainId)
-		}
+func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
+	addressRegistered := abis.AccountManagerContractAddressRegistered{}
+	err := UnpackLog(abis.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
+	if err != nil {
+		return err
 	}
+
+	account := db.Account{
+		User:    addressRegistered.User.Hex(),
+		Account: addressRegistered.Account.Uint64(),
+		ChainId: addressRegistered.ChainId,
+		Index:   addressRegistered.Index.Uint64(),
+		Address: addressRegistered.NewAddress.Hex(),
+	}
+	err = l.db.GetRelayerDB().Create(&account).Error
+	if err != nil {
+		log.Fatalf("Error adding address: %v", err)
+	} else {
+		log.Infof("Address %s registered for user: %s, chain: %d", account.Address, account.User, account.ChainId)
+	}
+
 	return nil
 }
 
-func (lis *Layer2Listener) processParticipantLog(vLog types.Log) error {
-	eventParticipantAdded, err := lis.contractParticipantManager.ParseParticipantAdded(vLog)
-	if err == nil {
-		newParticipant := eventParticipantAdded.Participant.Hex()
+func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
+	switch vLog.Topics[0] {
+	case ParticipantAddedTopic:
+		eventParticipantAdded := abis.ParticipantManagerContractParticipantAdded{}
+		err := UnpackLog(abis.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
+		if err != nil {
+			return err
+		}
+		newParticipant := eventParticipantAdded.Participant
 		// save locked relayer member from db
-		participant := db.Participant{
-			Address: newParticipant,
-		}
-		err = lis.db.GetRelayerDB().FirstOrCreate(&participant, "address = ?", participant.Address).Error
+		participant := db.Participant{Address: newParticipant.String()}
+		err = l.db.
+			GetRelayerDB().
+			FirstOrCreate(&participant, "address = ?", participant.Address).
+			Error
 		if err != nil {
-			log.Fatalf("Error adding Participant: %v", err)
-		} else {
-			log.Infof("Participant added: %s", newParticipant)
-			if !slices.Contains(lis.state.TssState.Participants, newParticipant) {
-				lis.state.TssState.Participants = append(lis.state.TssState.Participants, newParticipant)
-			}
+			return err
 		}
-		return nil
+
+		log.Infof("Participant added: %s", newParticipant)
+		if !slices.Contains(l.state.TssState.Participants, newParticipant) {
+			l.state.TssState.Participants = append(l.state.TssState.Participants, newParticipant)
+			l.state.EventBus.Publish(state.EventParticipantAddedOrRemoved{}, l.state.TssState.Participants)
+		}
+	case ParticipantRemovedTopic:
+		participantRemovedEvent := abis.ParticipantManagerContractParticipantRemoved{}
+		err := UnpackLog(abis.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
+		if err != nil {
+			return err
+		}
+
+		removedParticipant := participantRemovedEvent.Participant.Hex()
+		err = l.db.
+			GetRelayerDB().
+			Where("address = ?", removedParticipant).
+			Delete(&db.Participant{}).
+			Error
+		if err != nil {
+			return err
+		}
+		log.Infof("Participant removed: %s", removedParticipant)
+		index := slices.Index(l.state.TssState.Participants, common.HexToAddress(removedParticipant))
+		if index >= 0 {
+			l.state.TssState.Participants = slices.Delete(l.state.TssState.Participants, index, index)
+			l.state.EventBus.Publish(state.EventParticipantAddedOrRemoved{}, l.state.TssState.Participants)
+		}
 	}
 
-	participantRemovedEvent, err := lis.contractParticipantManager.ParseParticipantRemoved(vLog)
-	if err == nil {
-		removedParticipant := participantRemovedEvent.Participant.Hex()
-		err = lis.db.GetRelayerDB().Where("address = ?",
-			removedParticipant).Delete(&db.Participant{}).Error
-		if err != nil {
-			log.Fatalf("Error removing Participant: %v", err)
-		} else {
-			log.Infof("Participant removed: %s", removedParticipant)
-			index := slices.Index(lis.state.TssState.Participants, removedParticipant)
-			if index != -1 {
-				lis.state.TssState.Participants = append(lis.state.TssState.Participants[:index], lis.state.TssState.Participants[index+1:]...)
-			}
-		}
-		return nil
-	}
 	return nil
 }
 
-func (lis *Layer2Listener) processDepositLog(vLog types.Log) error {
-	depositRecorded, err := lis.contractDepositManager.ParseDepositRecorded(vLog)
-	if err == nil {
+func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
+	switch vLog.Topics[0] {
+	case DepositRecordedTopic:
+		depositRecorded := abis.DepositManagerContractDepositRecorded{}
+		err := UnpackLog(abis.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
+		if err != nil {
+			return err
+		}
 		depositRecord := db.DepositRecord{
 			TargetAddress: depositRecorded.TargetAddress.Hex(),
 			Amount:        depositRecorded.Amount.Uint64(),
@@ -180,17 +206,15 @@ func (lis *Layer2Listener) processDepositLog(vLog types.Log) error {
 			TxInfo:        depositRecorded.TxInfo,
 			ExtraInfo:     depositRecorded.ExtraInfo,
 		}
-		err = lis.db.GetRelayerDB().FirstOrCreate(&depositRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
+		return l.db.GetRelayerDB().FirstOrCreate(&depositRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
 			depositRecorded.TargetAddress.Hex(), depositRecorded.Amount.Uint64(), depositRecorded.ChainId.Uint64(), depositRecorded.TxInfo,
 		).Error
+	case WithdrawalRecordedTopic:
+		withdrawalRecorded := abis.DepositManagerContractWithdrawalRecorded{}
+		err := UnpackLog(abis.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
 		if err != nil {
 			return err
 		}
-		return nil
-	}
-
-	withdrawalRecorded, err := lis.contractDepositManager.ParseWithdrawalRecorded(vLog)
-	if err == nil {
 		withdrawalRecord := db.WithdrawalRecord{
 			TargetAddress: withdrawalRecorded.TargetAddress.Hex(),
 			Amount:        withdrawalRecorded.Amount.Uint64(),
@@ -198,14 +222,9 @@ func (lis *Layer2Listener) processDepositLog(vLog types.Log) error {
 			TxInfo:        withdrawalRecorded.TxInfo,
 			ExtraInfo:     withdrawalRecorded.ExtraInfo,
 		}
-		err = lis.db.GetRelayerDB().FirstOrCreate(&withdrawalRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
+		return l.db.GetRelayerDB().FirstOrCreate(&withdrawalRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
 			withdrawalRecorded.TargetAddress.Hex(), withdrawalRecorded.Amount.Uint64(), withdrawalRecorded.ChainId.Uint64(), withdrawalRecorded.TxInfo,
 		).Error
-		if err != nil {
-			return err
-		}
-		return nil
 	}
-
 	return nil
 }

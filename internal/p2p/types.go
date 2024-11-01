@@ -17,13 +17,8 @@ type MessageType int
 
 const (
 	MessageTypeUnknown = iota
-	MessageTypeTssUpdate
+	MessageTypeTssMsg
 	MessageTypeSigReq
 	MessageTypeSigResp
 	MessageTypeDepositReceive
-)
-
-const (
-	DataTypeTssUpdateMessage = "TssUpdateMessage"
-	DataTypeSignCreateWallet = "SignCreateWallet"
 )
