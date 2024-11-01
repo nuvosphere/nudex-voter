@@ -21,18 +21,6 @@ type EVMSyncStatus struct {
 	UpdatedAt     time.Time `gorm:"not null" json:"updated_at"`
 }
 
-type WithdrawalRecord struct {
-	ID           uint      `gorm:"primaryKey" json:"id"`
-	WithdrawalID string    `gorm:"uniqueIndex;not null" json:"withdrawal_id"`
-	UserAddress  string    `gorm:"not null" json:"user_address"`
-	Amount       string    `gorm:"not null" json:"amount"`
-	DetectedAt   time.Time `gorm:"not null" json:"detected_at"`
-	OnChain      bool      `gorm:"default:false" json:"on_chain"`
-	OnChainTxID  string    `json:"on_chain_tx_id"`
-	Processed    bool      `gorm:"default:false" json:"processed"`
-	ProcessedAt  time.Time `json:"processed_at"`
-}
-
 // SubmitterChosen contains block number and current submitter
 type SubmitterChosen struct {
 	ID          uint64 `gorm:"primaryKey" json:"id"`
@@ -57,6 +45,15 @@ type Account struct {
 }
 
 type DepositRecord struct {
+	ID            uint64 `gorm:"primaryKey" json:"id"`
+	TargetAddress string `gorm:"not null" json:"target_address"`
+	Amount        uint64 `gorm:"not null" json:"amount"`
+	ChainId       uint64 `gorm:"not null" json:"chain_id"`
+	TxInfo        []byte `gorm:"not null" json:"tx_info"`
+	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
+}
+
+type WithdrawalRecord struct {
 	ID            uint64 `gorm:"primaryKey" json:"id"`
 	TargetAddress string `gorm:"not null" json:"target_address"`
 	Amount        uint64 `gorm:"not null" json:"amount"`
@@ -112,8 +109,8 @@ type BtcTXOutput struct {
 }
 
 func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterChosen{},
-		&Participant{}, &Account{}, &DepositRecord{}, &Task{}); err != nil {
+	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &SubmitterChosen{}, &Participant{},
+		&Account{}, &DepositRecord{}, &WithdrawalRecord{}, &Task{}); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}
 	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {

@@ -189,5 +189,23 @@ func (lis *Layer2Listener) processDepositLog(vLog types.Log) error {
 		return nil
 	}
 
+	withdrawalRecorded, err := lis.contractDepositManager.ParseWithdrawalRecorded(vLog)
+	if err == nil {
+		withdrawalRecord := db.WithdrawalRecord{
+			TargetAddress: withdrawalRecorded.TargetAddress.Hex(),
+			Amount:        withdrawalRecorded.Amount.Uint64(),
+			ChainId:       withdrawalRecorded.ChainId.Uint64(),
+			TxInfo:        withdrawalRecorded.TxInfo,
+			ExtraInfo:     withdrawalRecorded.ExtraInfo,
+		}
+		err = lis.db.GetRelayerDB().FirstOrCreate(&withdrawalRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
+			withdrawalRecorded.TargetAddress.Hex(), withdrawalRecorded.Amount.Uint64(), withdrawalRecorded.ChainId.Uint64(), withdrawalRecorded.TxInfo,
+		).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
 	return nil
 }
