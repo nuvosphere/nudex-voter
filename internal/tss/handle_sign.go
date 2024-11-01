@@ -36,7 +36,7 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	p2pMsg := p2p.Message{
 		MessageType: p2p.MessageTypeSigReq,
 		RequestId:   requestId,
-		DataType:    p2p.DataTypeSignCreateWallet,
+		DataType:    DataTypeSignCreateWallet,
 		Data:        reqMessage,
 	}
 
@@ -49,7 +49,7 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
-	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
+	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(task)
 	if err != nil {
@@ -113,7 +113,7 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
-	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
+	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(e.Task)
 	if err != nil {
@@ -177,7 +177,7 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 
 			coinType := getCoinTypeByChain(createWalletTask.Chain)
 			if coinType == -1 {
-				log.Errorf("chain %s not supported", createWalletTask.Chain)
+				log.Errorf("chain %d not supported", createWalletTask.Chain)
 			}
 
 			bip44Path := fmt.Sprintf("m/44'/%d'/%d'/0/%d", coinType, createWalletTask.User, createWalletTask.Account)

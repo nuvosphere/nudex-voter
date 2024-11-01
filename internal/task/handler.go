@@ -22,8 +22,8 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		return
 	}
 
-	if ts.state.TssState.CurrentSubmitter != ts.Tss.Address.Hex() {
-		log.Debugf("Current submitter is %s, not self %s", ts.state.TssState.CurrentSubmitter, ts.Tss.Address.Hex())
+	if ts.state.TssState.CurrentSubmitter != ts.Tss.Address {
+		log.Debugf("Current submitter is %v, not self %v", ts.state.TssState.CurrentSubmitter, ts.Tss.Address)
 		return
 	}
 

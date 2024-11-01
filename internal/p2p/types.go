@@ -22,8 +22,3 @@ const (
 	MessageTypeSigResp
 	MessageTypeDepositReceive
 )
-
-const (
-	DataTypeTssMsg           = "TssMessage"
-	DataTypeSignCreateWallet = "SignCreateWallet"
-)

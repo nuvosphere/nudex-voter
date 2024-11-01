@@ -77,7 +77,7 @@ func (tss *TSSService) handleTssMsg(event interface{}) error {
 	return nil
 }
 
-func (tss *TSSService) sendTssMsg(ctx context.Context, event tsslib.Message) (*p2p.Message, error) {
+func (tss *TSSService) sendTssMsg(ctx context.Context, dataType string, event tsslib.Message) (*p2p.Message, error) {
 	if tss.LocalParty == nil {
 		return nil, fmt.Errorf("sendTssMsg error, event %v, self not init", event)
 	}
@@ -102,7 +102,7 @@ func (tss *TSSService) sendTssMsg(ctx context.Context, event tsslib.Message) (*p
 	p2pMsg := p2p.Message{
 		MessageType: p2p.MessageTypeTssMsg,
 		RequestId:   requestId,
-		DataType:    p2p.DataTypeTssMsg,
+		DataType:    dataType,
 		Data:        msg,
 	}
 
@@ -110,13 +110,13 @@ func (tss *TSSService) sendTssMsg(ctx context.Context, event tsslib.Message) (*p
 }
 
 func (tss *TSSService) handleTssKeyOut(ctx context.Context, msg tsslib.Message) (err error) {
-	tss.keygenRound1P2pMessage, err = tss.sendTssMsg(ctx, msg)
+	tss.keygenRound1P2pMessage, err = tss.sendTssMsg(ctx, DataTypeTssKeygenMsg, msg)
 	return err
 }
 
 func (tss *TSSService) handleTssSigOut(ctx context.Context, msg tsslib.Message) error {
 
-	p2pMsg, err := tss.sendTssMsg(ctx, msg)
+	p2pMsg, err := tss.sendTssMsg(ctx, DataTypeTssSignMsg, msg)
 	if err != nil {
 		return fmt.Errorf("handleTssSigOut error, %w", err)
 	}

@@ -2,6 +2,7 @@ package tss
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
 	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
@@ -10,6 +11,8 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"sync"
 	"time"
 )
@@ -22,6 +25,7 @@ type TSSService struct {
 	state *state.State
 	dbm   *db.DatabaseManager
 
+	addressList        []common.Address
 	LocalParty         *keygen.LocalParty
 	LocalPartySaveData *keygen.LocalPartySaveData
 	partyIdMap         map[string]*tsslib.PartyID
@@ -43,11 +47,12 @@ type TSSService struct {
 	sigEndCh chan *tssCommon.SignatureData
 
 	// eventbus channel
-	tssMsgCh       <-chan interface{}
-	sigStartCh     <-chan interface{}
-	sigReceiveCh   <-chan interface{}
-	sigFailChan    <-chan interface{}
-	sigTimeoutChan <-chan interface{}
+	tssMsgCh       <-chan any
+	partyAddOrRmCh <-chan any
+	sigStartCh     <-chan any
+	sigReceiveCh   <-chan any
+	sigFailChan    <-chan any
+	sigTimeoutChan <-chan any
 
 	sigMap                       map[string]map[int32]*signing.LocalParty
 	sigRound1P2pMessageMap       map[string]*p2p.Message
@@ -57,4 +62,31 @@ type TSSService struct {
 	rw sync.RWMutex
 
 	once sync.Once
+}
+
+const (
+	DataTypeTssKeygenMsg     = "TssKeygenMsg"
+	DataTypeTssSignMsg       = "TssSignMsg"
+	DataTypeTssReSharingMsg  = "TssReSharingMsg"
+	DataTypeSignCreateWallet = "SignCreateWallet"
+)
+
+// convertMsgData converts the message data to the corresponding struct
+// TODO: use reflector to optimize this function
+func convertMsgData(msg p2p.Message) any {
+	switch msg.DataType {
+	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
+		jsonBytes, _ := json.Marshal(msg.Data)
+		var rawData types.TssMessage
+		err := json.Unmarshal(jsonBytes, &rawData)
+		utils.Assert(err)
+		return rawData
+	case DataTypeSignCreateWallet:
+		jsonBytes, _ := json.Marshal(msg.Data)
+		var rawData types.MsgSignCreateWalletMessage
+		err := json.Unmarshal(jsonBytes, &rawData)
+		utils.Assert(err)
+		return rawData
+	}
+	return msg.Data
 }

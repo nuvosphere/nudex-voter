@@ -93,6 +93,8 @@ func (tss *TSSService) check(ctx context.Context) {
 }
 
 func (tss *TSSService) tssLoop(ctx context.Context) {
+	tss.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
+
 	go func() {
 		for {
 			select {
@@ -141,6 +143,7 @@ func (tss *TSSService) eventLoop(ctx context.Context) {
 	tss.sigReceiveCh = tss.state.EventBus.Subscribe(state.EventSigReceive{})
 	tss.sigFailChan = tss.state.EventBus.Subscribe(state.EventSigFailed{})
 	tss.sigTimeoutChan = tss.state.EventBus.Subscribe(state.EventSigTimeout{})
+	tss.partyAddOrRmCh = tss.state.EventBus.Subscribe(state.EventParticipantAddedOrRemoved{})
 
 	go func() {
 		for {
@@ -148,11 +151,17 @@ func (tss *TSSService) eventLoop(ctx context.Context) {
 			case <-ctx.Done():
 				log.Info("Signer stopping...")
 				return
-			case event := <-tss.tssMsgCh:
-				log.Debugf("Received tssUpdated event")
+			case event := <-tss.tssMsgCh: // from p2p network
+				log.Debugf("Received tss msg event")
 				err := tss.handleTssMsg(event)
 				if err != nil {
-					log.Warnf("handle tssUpdate error, %v", err)
+					log.Warnf("handle tss msg error, %v", err)
+				}
+			case <-tss.partyAddOrRmCh: // from layer2 log scan
+				log.Debugf("Received tss add or remove participant event")
+				err := tss.startReSharing(tss.state.TssState.Participants, config.AppConfig.TssThreshold) //todo
+				if err != nil {
+					log.Warnf("handle tss add or remove participant event error, %v", err)
 				}
 			case event := <-tss.sigStartCh:
 				log.Debugf("Received sigStart event: %v", event)
@@ -163,7 +172,7 @@ func (tss *TSSService) eventLoop(ctx context.Context) {
 			case sigFail := <-tss.sigFailChan:
 				tss.handleSigFailed(ctx, sigFail, "failed")
 			case sigTimeout := <-tss.sigTimeoutChan:
-				tss.handleSigFailed(ctx, sigTimeout, "timeout")
+				tss.handleSigFailed(ctx, sigTimeout, "timeout") // from self ??? todo
 			}
 		}
 	}()

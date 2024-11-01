@@ -53,6 +53,7 @@ abi: ## generate abi go file
 	abigen --abi internal/layer2/contracts/NuDexOperations.json --pkg abis --type NuDexOperationsContract --out internal/layer2/abis/nudex_operations.go
 	abigen --abi internal/layer2/contracts/ParticipantManager.json --pkg abis --type ParticipantManagerContract --out internal/layer2/abis/participant_manager.go
 	abigen --abi internal/layer2/contracts/VotingManager.json --pkg abis --type VotingManagerContract --out internal/layer2/abis/voting_manager.go
+	abigen --abi internal/layer2/contracts/DepositManager.json --pkg abis --type DepositManagerContract --out internal/layer2/abis/deposit_manager.go
 
 .PHONY: ci
 ci: abi fmt build

@@ -2,7 +2,9 @@ package state
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"sync"
@@ -33,7 +35,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 		sigBtcQueue       []*db.BtcBlock
 
 		currentSubmitter     string
-		participantAddresses []string
+		participantAddresses []common.Address
 		L2BlockNumber        uint64
 	)
 	btcLightDb := dbm.GetBtcLightDB()
@@ -82,14 +84,15 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 
 	go func() {
 		defer wg.Done()
-
 		var participants []db.Participant
-
 		err := relayerDb.Find(&participants).Error
 		if err != nil {
-			for _, participant := range participants {
-				participantAddresses = append(participantAddresses, participant.Address)
-			}
+			participantAddresses = lo.Map(
+				participants,
+				func(item db.Participant, _ int) common.Address {
+					return common.HexToAddress(item.Address)
+				},
+			)
 		}
 	}()
 
@@ -105,7 +108,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 			SigQueue:       sigBtcQueue,
 		},
 		TssState: TssState{
-			CurrentSubmitter: currentSubmitter,
+			CurrentSubmitter: common.HexToAddress(currentSubmitter),
 			Participants:     participantAddresses,
 			BlockNumber:      L2BlockNumber,
 		},

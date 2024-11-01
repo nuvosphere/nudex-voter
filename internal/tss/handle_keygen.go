@@ -1,11 +1,15 @@
 package tss
 
 import (
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -32,10 +36,15 @@ func (tss *TSSService) setup() {
 		log.Infof("Loaded TSS data as prePrams")
 	}
 
+	// todo online contact get address list
+	tss.addressList = lo.Map(
+		config.AppConfig.TssPublicKeys,
+		func(pubKey *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*pubKey) },
+	)
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
-	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
+	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
 	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)

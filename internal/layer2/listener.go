@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -14,6 +15,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"math/big"
@@ -21,70 +23,43 @@ import (
 	"time"
 )
 
-var (
-	votingManagerABI = `[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newParticipant","type":"address"}],"name":"ParticipantAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"participant","type":"address"}],"name":"ParticipantRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"requester","type":"address"},{"indexed":true,"internalType":"address","name":"currentSubmitter","type":"address"}],"name":"SubmitterRotationRequested","type":"event"},{"inputs":[{"internalType":"address","name":"targetAddress","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"txInfo","type":"bytes"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"bytes","name":"extraInfo","type":"bytes"},{"internalType":"bytes","name":"signature","type":"bytes"}],"name":"submitDepositInfo","outputs":[],"stateMutability":"nonpayable","type":"function"}]`
-)
-
 type Layer2Listener struct {
-	libp2p    *p2p.LibP2PService
-	db        *db.DatabaseManager
-	state     *state.State
-	ethClient *ethclient.Client
-
-	contractVotingManager      *abis.VotingManagerContract
-	contractAccountManager     *abis.AccountManagerContract
-	contractOperations         *abis.NuDexOperationsContract
-	contractParticipantManager *abis.ParticipantManagerContract
-	contractDepositManager     *abis.DepositManagerContract
-
-	sigFinishChan chan interface{}
+	p2p             *p2p.LibP2PService
+	db              *db.DatabaseManager
+	state           *state.State
+	ethClient       *ethclient.Client
+	contractAddress []common.Address
+	addressBind     map[common.Address]func(types.Log) error
+	sigFinishChan   chan interface{}
 }
 
-func NewLayer2Listener(libp2p *p2p.LibP2PService, state *state.State, db *db.DatabaseManager) *Layer2Listener {
+func NewLayer2Listener(p *p2p.LibP2PService, state *state.State, db *db.DatabaseManager) *Layer2Listener {
 	ethClient, err := DialEthClient()
 	if err != nil {
 		log.Fatalf("Error creating Layer2 EVM RPC client: %v", err)
 	}
 
-	contractVotingManager, err := abis.NewVotingManagerContract(abis.VotingAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
-	}
-
-	contractAccountManager, err := abis.NewAccountManagerContract(abis.AccountAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract AccountManager: %v", err)
-	}
-
-	contractOperations, err := abis.NewNuDexOperationsContract(abis.OperationsAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract Operations: %v", err)
-	}
-
-	contractParticipantManager, err := abis.NewParticipantManagerContract(abis.ParticipantAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract ParticipantManager: %v", err)
-	}
-
-	contractDepositManager, err := abis.NewDepositManagerContract(abis.DepositAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract ParticipantManager: %v", err)
-	}
-
-	return &Layer2Listener{
-		libp2p:    libp2p,
-		db:        db,
-		state:     state,
-		ethClient: ethClient,
-
-		contractVotingManager:      contractVotingManager,
-		contractAccountManager:     contractAccountManager,
-		contractOperations:         contractOperations,
-		contractParticipantManager: contractParticipantManager,
-		contractDepositManager:     contractDepositManager,
-
+	self := &Layer2Listener{
+		p2p:           p,
+		db:            db,
+		state:         state,
+		ethClient:     ethClient,
 		sigFinishChan: make(chan interface{}, 256),
 	}
+
+	self.addressBind = map[common.Address]func(types.Log) error{
+		abis.VotingAddress:      self.processVotingLog,
+		abis.AccountAddress:     self.processAccountLog,
+		abis.ParticipantAddress: self.processParticipantLog,
+		abis.OperationsAddress:  self.processOperationsLog,
+		abis.DepositAddress:     self.processDepositLog,
+	}
+	self.contractAddress = lo.MapToSlice(
+		self.addressBind,
+		func(item common.Address, _ func(log2 types.Log) error) common.Address { return item },
+	)
+
+	return self
 }
 
 // New an eth client
@@ -110,10 +85,10 @@ func DialEthClient() (*ethclient.Client, error) {
 	return ethclient.NewClient(client), nil
 }
 
-func (lis *Layer2Listener) Start(ctx context.Context) {
+func (l *Layer2Listener) Start(ctx context.Context) {
 	// Get latest sync height
 	var syncStatus db.EVMSyncStatus
-	relayerDB := lis.db.GetRelayerDB()
+	relayerDB := l.db.GetRelayerDB()
 	result := relayerDB.First(&syncStatus)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		syncStatus.LastSyncBlock = uint64(config.AppConfig.L2StartHeight)
@@ -124,7 +99,7 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 	}
 
 	for {
-		if err := lis.scan(ctx, &syncStatus); err != nil {
+		if err := l.scan(ctx, &syncStatus); err != nil {
 			log.Errorf("scan : %v", err)
 		}
 		// Next loop
@@ -133,8 +108,8 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 
 }
 
-func (lis *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) error {
-	latestBlock, err := lis.ethClient.BlockNumber(ctx)
+func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) error {
+	latestBlock, err := l.ethClient.BlockNumber(ctx)
 	if err != nil {
 		return fmt.Errorf("error getting latest block number: %v", err)
 	}
@@ -156,35 +131,31 @@ func (lis *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatu
 			filterQuery := ethereum.FilterQuery{
 				FromBlock: big.NewInt(int64(fromBlock)),
 				ToBlock:   big.NewInt(int64(toBlock)),
-				Addresses: []common.Address{
-					abis.VotingAddress,
-					abis.AccountAddress,
-					abis.ParticipantAddress,
-					abis.OperationsAddress,
-				},
+				Addresses: l.contractAddress,
 				Topics: [][]common.Hash{
 					{SubmitterChosenTopic},
 					{TaskSubmittedTopic},
 					{AddressRegisteredTopic},
 					{ParticipantRemovedTopic},
 					{ParticipantAddedTopic},
+					{DepositRecordedTopic},
 				},
 			}
 
-			logs, err := lis.ethClient.FilterLogs(context.Background(), filterQuery)
+			logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)
 			if err != nil {
 				return fmt.Errorf("failed to filter logs: %w", err)
 			}
 
 			for _, vLog := range logs {
-				lis.processLogs(vLog)
+				l.processLogs(vLog)
 			}
 			// Save sync status
 			syncStatus.LastSyncBlock = toBlock
 			syncStatus.UpdatedAt = time.Now()
-			lis.db.GetRelayerDB().Save(syncStatus)
+			l.db.GetRelayerDB().Save(syncStatus)
 
-			err = lis.scan(ctx, syncStatus)
+			err = l.scan(ctx, syncStatus)
 			if err != nil {
 				return err
 			}
@@ -194,6 +165,4 @@ func (lis *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatu
 }
 
 // stop ctx
-func (lis *Layer2Listener) stop() {
-
-}
+func (l *Layer2Listener) stop() {}

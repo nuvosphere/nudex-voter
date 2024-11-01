@@ -5,15 +5,16 @@ import (
 )
 
 type (
-	EventUnknown           struct{}
-	EventTssMsg            struct{}
-	EventSigStart          struct{}
-	EventSigReceive        struct{}
-	EventSigFailed         struct{}
-	EventSigTimeout        struct{}
-	EventSigDepositReceive struct{}
-	EventBlockScanned      struct{}
-	EventWithdrawRequest   struct{}
+	EventUnknown                   struct{}
+	EventTssMsg                    struct{}
+	EventSigStart                  struct{}
+	EventSigReceive                struct{}
+	EventSigFailed                 struct{}
+	EventSigTimeout                struct{}
+	EventSigDepositReceive         struct{}
+	EventBlockScanned              struct{}
+	EventWithdrawRequest           struct{}
+	EventParticipantAddedOrRemoved struct{}
 )
 
 type Event any

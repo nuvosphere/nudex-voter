@@ -35,6 +35,7 @@ const (
 )
 
 type P2PService interface {
+	Bind(msgType MessageType, event state.Event)
 	PublishMessage(ctx context.Context, msg Message) error
 }
 
