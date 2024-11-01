@@ -151,23 +151,52 @@ func extractToIds(message tss.Message) []string {
 	return ids
 }
 
-func serializeMsgSignCreateWalletMessageToBytes(task types.CreateWalletTask) ([]byte, error) {
+func serializeTaskMessageToBytes(baseTask types.Task) ([]byte, error) {
 	buf := new(bytes.Buffer)
-
-	if err := binary.Write(buf, binary.BigEndian, task.TaskId); err != nil {
-		return nil, err
+	writeField := func(data interface{}) error {
+		return binary.Write(buf, binary.BigEndian, data)
 	}
 
-	if err := binary.Write(buf, binary.BigEndian, task.Account); err != nil {
-		return nil, err
-	}
+	switch task := baseTask.(type) {
+	case *types.CreateWalletTask:
+		if err := writeField(task.GetTaskID()); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.Account); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.User); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.Chain); err != nil {
+			return nil, err
+		}
 
-	if err := binary.Write(buf, binary.BigEndian, task.User); err != nil {
-		return nil, err
-	}
+	case *types.DepositTask:
+		if err := writeField(task.GetTaskID()); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.Address); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.Amount); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.ChainId); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.Token); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.TxInfo); err != nil {
+			return nil, err
+		}
+		if err := writeField(task.ExtraInfo); err != nil {
+			return nil, err
+		}
 
-	if err := binary.Write(buf, binary.BigEndian, task.Chain); err != nil {
-		return nil, err
+	default:
+		return nil, fmt.Errorf("unsupported task type: %T", task)
 	}
 
 	return buf.Bytes(), nil

@@ -7,15 +7,27 @@ const (
 	TaskTypeWithdraw
 )
 
+type Task interface {
+	GetTaskID() int32
+}
+
+type BaseTask struct {
+	TaskId int32 `json:"task_id"`
+}
+
+func (t BaseTask) GetTaskID() int32 {
+	return t.TaskId
+}
+
 type CreateWalletTask struct {
-	TaskId  int32 `json:"task_id"`
+	BaseTask
 	User    int32 `json:"user"`
 	Account int32 `json:"account"`
 	Chain   int32 `json:"chain"` // evm_tss btc solana sui
 }
 
 type DepositTask struct {
-	TaskId    int32  `json:"task_id"`
+	BaseTask
 	Address   string `json:"address"`
 	Amount    uint64 `json:"amount"`
 	ChainId   uint64 `json:"chain_id"`

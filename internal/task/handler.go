@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -83,7 +84,9 @@ func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Tas
 	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
 		return err
 	}
-	createWalletTask := types.CreateWalletTask{TaskId: int32(dbTask.TaskId)}
+	createWalletTask := types.CreateWalletTask{
+		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
+	}
 
 	if err := binary.Read(buf, binary.LittleEndian, &createWalletTask.User); err != nil {
 		return err
@@ -96,7 +99,9 @@ func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Tas
 	if err := binary.Read(buf, binary.LittleEndian, &createWalletTask.Chain); err != nil {
 		return err
 	}
-	return ts.Tss.HandleSignCreateAccount(ctx, createWalletTask)
+
+	requestId := fmt.Sprintf("TSS_SIGN:CREATE_WALLET:%d", dbTask.TaskId)
+	return ts.Tss.HandleSignPrepare(ctx, createWalletTask, requestId)
 }
 
 func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) error {
@@ -105,7 +110,9 @@ func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) er
 	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
 		return err
 	}
-	depositTask := types.DepositTask{TaskId: int32(dbTask.TaskId)}
+	depositTask := types.DepositTask{
+		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
+	}
 
 	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Address); err != nil {
 		return err
@@ -130,7 +137,8 @@ func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) er
 	if err := binary.Read(buf, binary.LittleEndian, &depositTask.ExtraInfo); err != nil {
 		return err
 	}
-	return ts.Tss.HandleSignDeposit(ctx, depositTask)
+	requestId := fmt.Sprintf("TSS_SIGN:DEPOSIT:%d", dbTask.TaskId)
+	return ts.Tss.HandleSignPrepare(ctx, depositTask, requestId)
 }
 
 func (ts *TaskService) handleWithdrawTask(dbTask db.Task) error {

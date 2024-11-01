@@ -21,10 +21,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.CreateWalletTask) error {
-	requestId := fmt.Sprintf("TSS_SIGN:CREATE_WALLET:%d", task.TaskId)
-	reqMessage := types.MsgSignCreateWalletMessage{
-		MsgSign: types.MsgSign{
+func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task, requestId string) error {
+	reqMessage := types.SignMessage{
+		BaseSignMsg: types.BaseSignMsg{
 			RequestId:    requestId,
 			IsProposer:   true,
 			VoterAddress: tss.Address.Hex(),
@@ -51,7 +50,7 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
-	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(task)
+	messageToSign, err := serializeTaskMessageToBytes(task)
 	if err != nil {
 		return err
 	}
@@ -68,15 +67,15 @@ func (tss *TSSService) HandleSignCreateAccount(ctx context.Context, task types.C
 
 	tss.rw.Lock()
 	tss.sigMap[requestId] = make(map[int32]*signing.LocalParty)
-	tss.sigMap[requestId][task.TaskId] = party
+	tss.sigMap[requestId][task.GetTaskID()] = party
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
 	tss.rw.Unlock()
 	return nil
 }
 
-func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.MsgSignCreateWalletMessage) error {
-	if tss.Address.Hex() == e.MsgSign.VoterAddress {
+func (tss *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) error {
+	if tss.Address.Hex() == e.BaseSignMsg.VoterAddress {
 		log.Debugf("ignoring sign create wallet start, proposer self")
 		return nil
 	}
@@ -89,24 +88,24 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 
 	if tss.state.TssState.CurrentTask == nil {
 		var existingTask db.Task
-		result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.TaskId).First(&existingTask)
+		result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.GetTaskID()).First(&existingTask)
 
 		if result.Error == nil {
 			tss.state.TssState.CurrentTask = &existingTask
 		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
+			return fmt.Errorf("find no task from db for taskId:%d", e.Task.GetTaskID())
 		}
 	} else {
-		if tss.state.TssState.CurrentTask.TaskId > uint64(e.Task.TaskId) {
+		if tss.state.TssState.CurrentTask.TaskId > uint64(e.Task.GetTaskID()) {
 			var existingTask db.Task
-			result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.TaskId).First(&existingTask)
+			result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.GetTaskID()).First(&existingTask)
 			if result.Error == nil {
 				tss.state.TssState.CurrentTask = &existingTask
 			} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
+				return fmt.Errorf("find no task from db for taskId:%d", e.Task.GetTaskID())
 			}
-		} else if tss.state.TssState.CurrentTask.TaskId < uint64(e.Task.TaskId) {
-			return fmt.Errorf("new task from p2p: %d is greater than current: %d", e.Task.TaskId, tss.state.TssState.CurrentTask.TaskId)
+		} else if tss.state.TssState.CurrentTask.TaskId < uint64(e.Task.GetTaskID()) {
+			return fmt.Errorf("new task from p2p: %d is greater than current: %d", e.Task.GetTaskID(), tss.state.TssState.CurrentTask.TaskId)
 		}
 	}
 
@@ -115,7 +114,7 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
-	messageToSign, err := serializeMsgSignCreateWalletMessageToBytes(e.Task)
+	messageToSign, err := serializeTaskMessageToBytes(e.Task)
 	if err != nil {
 		return err
 	}
@@ -132,22 +131,21 @@ func (tss *TSSService) handleSignCreateWalletStart(ctx context.Context, e types.
 
 	tss.rw.Lock()
 	tss.sigMap[e.RequestId] = make(map[int32]*signing.LocalParty)
-	tss.sigMap[e.RequestId][e.Task.TaskId] = party
+	tss.sigMap[e.RequestId][e.Task.GetTaskID()] = party
 	tss.sigTimeoutMap[e.RequestId] = time.Now().Add(config.AppConfig.TssSigTimeout)
 	tss.rw.Unlock()
 	return nil
 }
 
 func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
-	switch e := event.(type) {
-	case types.MsgSignCreateWalletMessage:
-		log.Debugf("Event handleSigStart is of type MsgSignCreateWalletMessage, request id %s", e.RequestId)
-		if err := tss.handleSignCreateWalletStart(ctx, e); err != nil {
-			log.Errorf("Error handleSigStart MsgSignCreateWalletMessage, %v", err)
-			tss.state.EventBus.Publish(state.EventSigFailed{}, e)
+	if signMsg, ok := event.(types.SignMessage); ok {
+		log.Debugf("Event handleSigStart is of type SignMessage, request id %s", signMsg.RequestId)
+		if err := tss.handleSignStart(ctx, signMsg); err != nil {
+			log.Errorf("Error handleSigStart handleSignStart, %v", err)
+			tss.state.EventBus.Publish(state.EventSigFailed{}, event)
 		}
-	default:
-		log.Debug("Unknown event handleSigStart type")
+	} else {
+		log.Errorf("HandleSigStart error: event is not of type types.SignMessage")
 	}
 }
 
@@ -169,7 +167,11 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 		_ = binary.Read(buf, binary.LittleEndian, &taskType)
 
 		if taskType == types.TaskTypeCreateWallet {
-			createWalletTask := types.CreateWalletTask{TaskId: int32(tss.state.TssState.CurrentTask.TaskId)}
+			createWalletTask := types.CreateWalletTask{
+				BaseTask: types.BaseTask{
+					TaskId: int32(tss.state.TssState.CurrentTask.TaskId),
+				},
+			}
 
 			_ = binary.Read(buf, binary.LittleEndian, &createWalletTask.User)
 			_ = binary.Read(buf, binary.LittleEndian, &createWalletTask.Account)

@@ -69,13 +69,15 @@ const (
 	DataTypeTssSignMsg       = "TssSignMsg"
 	DataTypeTssReSharingMsg  = "TssReSharingMsg"
 	DataTypeSignCreateWallet = "SignCreateWallet"
+	DataTypeSignDeposit      = "SignDeposit"
+	DataTypeSignWithdrawal   = "SignWithdrawal"
 )
 
 // convertMsgData converts the message data to the corresponding struct
 // TODO: use reflector to optimize this function
 func convertMsgData(msg p2p.Message) any {
 	switch msg.DataType {
-	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
+	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg, DataTypeSignDeposit, DataTypeSignWithdrawal:
 		jsonBytes, _ := json.Marshal(msg.Data)
 		var rawData types.TssMessage
 		err := json.Unmarshal(jsonBytes, &rawData)
@@ -83,7 +85,7 @@ func convertMsgData(msg p2p.Message) any {
 		return rawData
 	case DataTypeSignCreateWallet:
 		jsonBytes, _ := json.Marshal(msg.Data)
-		var rawData types.MsgSignCreateWalletMessage
+		var rawData types.SignMessage
 		err := json.Unmarshal(jsonBytes, &rawData)
 		utils.Assert(err)
 		return rawData
