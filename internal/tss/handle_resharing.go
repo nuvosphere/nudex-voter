@@ -71,8 +71,8 @@ func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold
 
 func (tss *TSSService) handleTssReSharingOut(ctx context.Context, msg tsslib.Message) (err error) {
 	dest := msg.GetTo()
-	if dest == nil {
-		return fmt.Errorf("did not expect a msg to have a nil destination during resharing")
+	if dest == nil && !msg.IsBroadcast() {
+		return fmt.Errorf("did not expect a msg to have a nil destination and not broadcast during resharing")
 	}
 
 	_, err = tss.sendTssMsg(ctx, DataTypeTssReSharingMsg, msg)
