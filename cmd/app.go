@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+
 	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -12,10 +17,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/task"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 )
 
 type Application struct {
@@ -63,38 +64,47 @@ func (app *Application) Run() {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
+
 		if config.AppConfig.EnableRelayer {
 			app.Layer2Listener.Start(ctx)
 		}
 	}()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
 		app.LibP2PService.Start(ctx)
 	}()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
 		app.BTCListener.Start(ctx)
 	}()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
+
 		go app.TssService.Start(ctx)
 	}()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
+
 		go app.TaskService.Start(ctx)
 	}()
 
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
 		app.HTTPServer.Start(ctx)

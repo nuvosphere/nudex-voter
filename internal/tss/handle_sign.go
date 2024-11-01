@@ -6,19 +6,19 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
-	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/state"
-	"gorm.io/gorm"
 	"math/big"
 	"time"
 
+	"github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task, requestId string) error {
@@ -43,6 +43,7 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task, r
 	if err != nil {
 		return err
 	}
+
 	log.Debugf("Publish p2p message SignReq: RequestId=%s, task=%v", requestId, task)
 
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
@@ -50,6 +51,7 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task, r
 
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
+
 	messageToSign, err := serializeTaskMessageToBytes(task)
 	if err != nil {
 		return err
@@ -71,6 +73,7 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task, r
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	tss.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
 	tss.rw.Unlock()
+
 	return nil
 }
 
@@ -99,6 +102,7 @@ func (tss *TSSService) handleSignStart(ctx context.Context, e types.SignMessage)
 		if tss.state.TssState.CurrentTask.TaskId > uint64(e.Task.GetTaskID()) {
 			var existingTask db.Task
 			result := tss.dbm.GetRelayerDB().Where("task_id = ?", e.Task.GetTaskID()).First(&existingTask)
+
 			if result.Error == nil {
 				tss.state.TssState.CurrentTask = &existingTask
 			} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -114,6 +118,7 @@ func (tss *TSSService) handleSignStart(ctx context.Context, e types.SignMessage)
 
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
+
 	messageToSign, err := serializeTaskMessageToBytes(e.Task)
 	if err != nil {
 		return err
@@ -134,6 +139,7 @@ func (tss *TSSService) handleSignStart(ctx context.Context, e types.SignMessage)
 	tss.sigMap[e.RequestId][e.Task.GetTaskID()] = party
 	tss.sigTimeoutMap[e.RequestId] = time.Now().Add(config.AppConfig.TssSigTimeout)
 	tss.rw.Unlock()
+
 	return nil
 }
 
@@ -143,6 +149,7 @@ func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 		if err := tss.handleSignStart(ctx, signMsg); err != nil {
 			log.Errorf("Error handleSigStart handleSignStart, %v", err)
 			tss.state.EventBus.Publish(state.EventSigFailed{}, event)
+
 		}
 	} else {
 		log.Errorf("HandleSigStart error: event is not of type types.SignMessage")
@@ -161,8 +168,10 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 	tss.rw.Lock()
 
 	log.Infof("sig finish, taskId:%d, R:%x, S:%x, V:%x", tss.state.TssState.CurrentTask.TaskId, signatureData.R, signatureData.S, signatureData.SignatureRecovery)
+
 	if tss.state.TssState.CurrentTask.Submitter == tss.Address.Hex() {
 		buf := bytes.NewReader(tss.state.TssState.CurrentTask.Context)
+
 		var taskType int32
 		_ = binary.Read(buf, binary.LittleEndian, &taskType)
 
@@ -183,12 +192,12 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 			}
 
 			bip44Path := fmt.Sprintf("m/44'/%d'/%d'/0/%d", coinType, createWalletTask.User, createWalletTask.Account)
-			log.Infof("bip44Path: %s", bip44Path)
 			// @todo
 			// generate wallet and send to chain
+			log.Infof("bip44Path: %s", bip44Path)
 		}
-
 	}
+
 	tss.CleanAllSigInfo()
 
 	tss.rw.Unlock()

@@ -58,25 +58,31 @@ func (d *defaultBus) Subscribe(event Event) <-chan any {
 func (d *defaultBus) SubscribeWithLen(event Event, channelLen int) <-chan any {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+
 	ch := make(chan any, channelLen)
 	origin, ok := d.subscribers[event]
+
 	if ok {
 		d.subscribers[event] = append(origin, ch)
 	} else {
 		d.subscribers[event] = []chan any{ch}
 	}
+
 	return ch
 }
 
 func (d *defaultBus) Publish(event Event, data any) {
 	d.mu.RLock()
+
 	subscribers, ok := d.subscribers[event]
 	if !ok {
 		d.mu.RUnlock()
 		return
 	}
+
 	originLen := len(subscribers)
 	removeIndexes := make(map[int]bool)
+
 	for i := 0; i < originLen; i++ {
 		ch := subscribers[i]
 		select {
@@ -93,11 +99,13 @@ func (d *defaultBus) Publish(event Event, data any) {
 		d.mu.Lock()
 		if originLen == len(d.subscribers[event]) {
 			var newSubscribers []chan any
+
 			for index, ch := range d.subscribers[event] {
 				if _, is := removeIndexes[index]; !is {
 					newSubscribers = append(newSubscribers, ch)
 				}
 			}
+
 			d.subscribers[event] = newSubscribers
 		}
 		d.mu.Unlock()
@@ -116,10 +124,13 @@ func (d *defaultBus) Unsubscribe(event Event, ch <-chan any) {
 				} else {
 					d.subscribers[event] = append(subscribers[:i], subscribers[i+1:]...)
 				}
+
 				close(subscriber)
+
 				break
 			}
 		}
+
 		if len(d.subscribers[event]) == 0 {
 			delete(d.subscribers, event)
 		}
@@ -137,6 +148,7 @@ func (d *defaultBus) unsubscribeAll(event Event) {
 		for _, subscriber := range subscribers {
 			close(subscriber)
 		}
+
 		delete(d.subscribers, event)
 	}
 }
@@ -144,10 +156,12 @@ func (d *defaultBus) unsubscribeAll(event Event) {
 func (d *defaultBus) Close() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+
 	for topic, subscribers := range d.subscribers {
 		for _, subscriber := range subscribers {
 			close(subscriber)
 		}
+
 		delete(d.subscribers, topic)
 	}
 }

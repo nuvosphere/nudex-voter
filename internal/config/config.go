@@ -143,6 +143,10 @@ func InitConfig() {
 	logrus.SetLevel(AppConfig.LogLevel)
 
 	logLvl, err := golog.LevelFromString(AppConfig.LogLevel.String())
+	if err != nil {
+		logrus.Fatalf("LevelFromString: %v", err)
+	}
+
 	golog.SetAllLoggers(logLvl)
 }
 
@@ -157,12 +161,13 @@ func ParseECDSAPublicKeys(publicKeyStr string) ([]*ecdsa.PublicKey, error) {
 
 	sort.Strings(publicKeyHexArray)
 
-	var publicKeys []*ecdsa.PublicKey
+	publicKeys := make([]*ecdsa.PublicKey, len(publicKeyHexArray))
 
 	for _, keyHex := range publicKeyHexArray {
 		if len(keyHex) != 66 {
 			return nil, errors.New("invalid compressed public key length, expected 33 bytes")
 		}
+
 		pubBytes, err := hex.DecodeString(keyHex)
 		if err != nil {
 			return nil, errors.New("failed to decode public key hex: " + err.Error())
@@ -175,5 +180,6 @@ func ParseECDSAPublicKeys(publicKeyStr string) ([]*ecdsa.PublicKey, error) {
 
 		publicKeys = append(publicKeys, pubKey)
 	}
+
 	return publicKeys, nil
 }

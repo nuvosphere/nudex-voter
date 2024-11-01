@@ -2,12 +2,12 @@ package btc
 
 import (
 	"context"
+
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
-
-	"github.com/btcsuite/btcd/rpcclient"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,10 +31,12 @@ func NewBTCListener(libp2p *p2p.LibP2PService, state *state.State, dbm *db.Datab
 		HTTPPostMode: true,
 		DisableTLS:   true,
 	}
+
 	client, err := rpcclient.New(connConfig, nil)
 	if err != nil {
 		log.Fatalf("Failed to start bitcoin client: %v", err)
 	}
+
 	notifier := NewBTCNotifier(client, cache, poller)
 
 	return &BTCListener{

@@ -5,6 +5,12 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -16,13 +22,8 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -57,6 +58,7 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 	if err != nil {
 		log.Fatalf("Failed to create libp2p node: %v", err)
 	}
+
 	printNodeAddrInfo(node)
 
 	node.SetStreamHandler(protocol.ID(handshakeProtocol), func(s network.Stream) {
@@ -97,29 +99,36 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 			MessageType: MessageTypeUnknown,
 			Data:        "Hello, nudex voter libp2p PubSub network with handshake!",
 		}
-		lp.PublishMessage(ctx, msg)
+		err = lp.PublishMessage(ctx, msg)
+		utils.Assert(err)
 	}()
 
 	<-ctx.Done()
 
 	log.Info("LibP2PService is stopping...")
+
 	if err := node.Close(); err != nil {
 		log.Errorf("Error closing libp2p node: %v", err)
 	}
+
 	log.Info("LibP2PService has stopped.")
 }
 
 func (lp *LibP2PService) connectToBootNodes(ctx context.Context, node host.Host) {
 	bootNodeAddrs := strings.Split(config.AppConfig.Libp2pBootNodes, ",")
+
 	var wg sync.WaitGroup
 
 	for _, addr := range bootNodeAddrs {
 		if addr == "" {
 			continue
 		}
+
 		wg.Add(1)
+
 		go func(addr string) {
 			defer wg.Done()
+
 			for {
 				select {
 				case <-ctx.Done():
@@ -133,6 +142,7 @@ func (lp *LibP2PService) connectToBootNodes(ctx context.Context, node host.Host)
 					} else {
 						log.Infof("Successfully connected to bootnode %s", addr)
 						lp.monitorConnection(ctx, node, addr)
+
 						return
 					}
 				}
@@ -182,14 +192,18 @@ func (lp *LibP2PService) monitorConnection(ctx context.Context, node host.Host, 
 		default:
 			if node.Network().Connectedness(peerInfo.ID) != network.Connected {
 				log.Warnf("Disconnected from %s, attempting to reconnect", addr)
+
 				err := lp.connectToBootNode(ctx, node, addr)
 				if err != nil {
 					log.Errorf("Failed to reconnect to %s: %v", addr, err)
 					time.Sleep(5 * time.Second)
+
 					continue
 				}
+
 				log.Infof("Successfully reconnected to %s", addr)
 			}
+
 			time.Sleep(20 * time.Second)
 		}
 	}
@@ -200,6 +214,7 @@ func parseAddr(addrStr string) (*peer.AddrInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return peer.AddrInfoFromP2pAddr(addr)
 }
 
@@ -213,6 +228,7 @@ func sendHandshake(s network.Stream) error {
 
 	// verify handshake
 	buf := make([]byte, len(handshakeMsg))
+
 	_, err = s.Read(buf)
 	if err != nil {
 		return err
@@ -232,9 +248,10 @@ func createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error
 	}
 
 	listenAddr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.AppConfig.Libp2pPort)
+
 	node, err := libp2p.New(
 		libp2p.Identity(privKey),
-		libp2p.Transport(tcp.NewTCPTransport), //TCP only
+		libp2p.Transport(tcp.NewTCPTransport), // TCP only
 		libp2p.ListenAddrStrings(listenAddr),  // ipv4 only
 	)
 	if err != nil {
@@ -257,14 +274,16 @@ func loadOrCreatePrivateKey(fileName string) (crypto.PrivKey, error) {
 
 	pemPath := filepath.Join(dbDir, fileName)
 	if _, err := os.Stat(pemPath); err == nil {
-		privKeyBytes, err := ioutil.ReadFile(pemPath)
+		privKeyBytes, err := os.ReadFile(pemPath)
 		if err != nil {
 			return nil, err
 		}
+
 		privKey, err := crypto.UnmarshalPrivateKey(privKeyBytes)
 		if err != nil {
 			return nil, err
 		}
+
 		return privKey, nil
 	}
 
@@ -278,7 +297,7 @@ func loadOrCreatePrivateKey(fileName string) (crypto.PrivKey, error) {
 		return nil, err
 	}
 
-	if err := ioutil.WriteFile(pemPath, privKeyBytes, 0600); err != nil {
+	if err := os.WriteFile(pemPath, privKeyBytes, 0o600); err != nil {
 		return nil, err
 	}
 

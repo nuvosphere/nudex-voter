@@ -6,17 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/state"
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	log "github.com/sirupsen/logrus"
 )
 
 func handleHandshake(s network.Stream, node host.Host) {
 	buf := make([]byte, 1024)
+
 	n, err := s.Read(buf)
 	if err != nil {
 		log.Errorf("Error reading handshake message: %v", err)
@@ -29,12 +30,14 @@ func handleHandshake(s network.Stream, node host.Host) {
 	expectedMsg := []byte(expectedHandshake)
 	if !bytes.Equal(handshakeMsg, expectedMsg) {
 		log.Warn("Invalid handshake message received, closing connection")
-		s.Reset()
+
+		_ = s.Reset()
 
 		// disconnect peer
 		peerID := s.Conn().RemotePeer()
 		// s.Conn().Close()
-		node.Network().ClosePeer(peerID)
+		_ = node.Network().ClosePeer(peerID)
+
 		return
 	}
 
@@ -62,6 +65,7 @@ func (lp *LibP2PService) PublishMessage(ctx context.Context, msg Message) error 
 		if time.Since(startTime) >= 10*time.Second {
 			return errors.New("message topic is nil, cannot publish message")
 		}
+
 		if lp.messageTopic == nil {
 			time.Sleep(1 * time.Second)
 		}
@@ -94,7 +98,7 @@ func (lp *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.S
 				continue
 			}
 
-			var dataStr = fmt.Sprintf("%v", receivedMsg.Data)
+			dataStr := fmt.Sprintf("%v", receivedMsg.Data)
 			if len(dataStr) > 200 {
 				dataStr = dataStr[:200] + "..."
 			}
@@ -107,19 +111,6 @@ func (lp *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.S
 			} else {
 				log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
 			}
-
-			//switch receivedMsg.MessageType {
-			//case MessageTypeTssMsg:
-			//	lp.state.EventBus.Publish(state.TssMsg, convertMsgData(receivedMsg))
-			//case MessageTypeSigReq:
-			//	lp.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
-			//case MessageTypeSigResp:
-			//	lp.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
-			//case MessageTypeDepositReceive:
-			//	lp.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
-			//default:
-			//	log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
-			//}
 		}
 	}
 }

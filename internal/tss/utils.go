@@ -7,6 +7,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"os"
+	"path/filepath"
+	"sort"
+
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,14 +20,11 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
-	"math/big"
-	"os"
-	"path/filepath"
-	"sort"
 )
 
 func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
-	var tssAllPartyIDs = make(tss.UnSortedPartyIDs, len(publicKeys))
+	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(publicKeys))
+
 	for i, publicKey := range publicKeys {
 		key, _ := new(big.Int).SetString(ConvertPubKeyToHex(publicKey), 16)
 		tssAllPartyIDs[i] = tss.NewPartyID(
@@ -31,11 +33,13 @@ func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 			key,
 		)
 	}
+
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
 func createPartyIDsByAddress(publicKeys []common.Address) tss.SortedPartyIDs {
-	var tssAllPartyIDs = make(tss.UnSortedPartyIDs, len(publicKeys))
+	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(publicKeys))
+
 	for i, publicKey := range publicKeys {
 		key := new(big.Int).SetBytes(publicKey.Bytes())
 		tssAllPartyIDs[i] = tss.NewPartyID(
@@ -44,6 +48,7 @@ func createPartyIDsByAddress(publicKeys []common.Address) tss.SortedPartyIDs {
 			key,
 		)
 	}
+
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
@@ -55,18 +60,19 @@ func saveTSSData(data interface{}) error {
 	}
 
 	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data")
-	if err := os.MkdirAll(dataDir, 0755); err != nil {
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		log.Errorf("Failed to create TSS data directory: %v", err)
 		return err
 	}
 
 	filePath := filepath.Join(dataDir, "tss_key_data.json")
-	if err := os.WriteFile(filePath, dataBytes, 0644); err != nil {
+	if err := os.WriteFile(filePath, dataBytes, 0o600); err != nil {
 		log.Errorf("Failed to save TSS data to file: %v", err)
 		return err
 	}
 
 	log.Infof("TSS data successfully saved to: %s", filePath)
+
 	return nil
 }
 
@@ -92,6 +98,7 @@ func PublicKeysToHex(pubKeys []*ecdsa.PublicKey) []string {
 	for i, pubKey := range pubKeys {
 		hexStrings[i] = ConvertPubKeyToHex(pubKey)
 	}
+
 	return hexStrings
 }
 
@@ -127,6 +134,7 @@ func CompareStrings(a, b []string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -136,6 +144,7 @@ func AddressIndex(addressList []common.Address, tssAddress common.Address) int {
 			return i // Return the index if a match is found
 		}
 	}
+
 	return -1 // Return -1 if not found
 }
 
@@ -204,8 +213,10 @@ func serializeTaskMessageToBytes(baseTask types.Task) ([]byte, error) {
 
 func getRequestId(task *db.Task) string {
 	buf := bytes.NewReader(task.Context)
+
 	var taskType int32
 	_ = binary.Read(buf, binary.LittleEndian, &taskType)
+
 	switch taskType {
 	case types.TaskTypeUnknown:
 		return ""
@@ -217,6 +228,7 @@ func getRequestId(task *db.Task) string {
 		return fmt.Sprintf("TSS_SIGN:WITHDRAW:%d", task.TaskId)
 	default:
 	}
+
 	return ""
 }
 

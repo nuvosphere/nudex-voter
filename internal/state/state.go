@@ -2,12 +2,13 @@ package state
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"sync"
 )
 
 type State struct {
@@ -26,7 +27,7 @@ func (s *State) Bus() Bus {
 	return s.EventBus
 }
 
-// InitializeState initializes the state by reading from the DB
+// InitializeState initializes the state by reading from the DB.
 func InitializeState(dbm *db.DatabaseManager) *State {
 	// Load states from db when start up
 	var (
@@ -38,6 +39,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 		participantAddresses []common.Address
 		L2BlockNumber        uint64
 	)
+
 	btcLightDb := dbm.GetBtcLightDB()
 	relayerDb := dbm.GetRelayerDB()
 
@@ -48,10 +50,12 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 	}
 
 	var wg sync.WaitGroup
+
 	wg.Add(5)
 
 	go func() {
 		defer wg.Done()
+
 		if err := btcLightDb.Where("status = ?", "processed").Order("height desc").First(&latestBtcBlock).Error; err != nil {
 			log.Warnf("Failed to load latest processed Btc Block: %v", err)
 		}
@@ -71,6 +75,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 		defer wg.Done()
 
 		var submitterChosen db.SubmitterChosen
+
 		err := relayerDb.Order("block_number DESC").First(&submitterChosen).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -84,7 +89,9 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 
 	go func() {
 		defer wg.Done()
+
 		var participants []db.Participant
+
 		err := relayerDb.Find(&participants).Error
 		if err != nil {
 			participantAddresses = lo.Map(

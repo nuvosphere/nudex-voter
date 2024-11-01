@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -18,9 +22,6 @@ import (
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"math/big"
-	"strings"
-	"time"
 )
 
 type Layer2Listener struct {
@@ -62,7 +63,7 @@ func NewLayer2Listener(p *p2p.LibP2PService, state *state.State, db *db.Database
 	return self
 }
 
-// New an eth client
+// New an eth client.
 func DialEthClient() (*ethclient.Client, error) {
 	var opts []rpc.ClientOption
 
@@ -71,10 +72,13 @@ func DialEthClient() (*ethclient.Client, error) {
 		if len(jwtSecret) != 32 {
 			return nil, errors.New("jwt secret is not a 32 bytes hex string")
 		}
+
 		var jwtKey [32]byte
+
 		copy(jwtKey[:], jwtSecret)
 		opts = append(opts, rpc.WithHTTPAuth(node.NewJWTAuth(jwtKey)))
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	// Dial the Ethereum node with optional JWT authentication
@@ -82,13 +86,16 @@ func DialEthClient() (*ethclient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return ethclient.NewClient(client), nil
 }
 
 func (l *Layer2Listener) Start(ctx context.Context) {
 	// Get latest sync height
 	var syncStatus db.EVMSyncStatus
+
 	relayerDB := l.db.GetRelayerDB()
+
 	result := relayerDB.First(&syncStatus)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		syncStatus.LastSyncBlock = uint64(config.AppConfig.L2StartHeight)
@@ -105,7 +112,6 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 		// Next loop
 		time.Sleep(config.AppConfig.L2RequestInterval)
 	}
-
 }
 
 func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) error {
@@ -113,6 +119,7 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 	if err != nil {
 		return fmt.Errorf("error getting latest block number: %v", err)
 	}
+
 	targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)
 	if syncStatus.LastSyncBlock < targetBlock {
 		fromBlock := syncStatus.LastSyncBlock + 1
@@ -161,8 +168,11 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 			}
 		}
 	}
+
 	return nil
 }
 
-// stop ctx
+// stop ctx.
+//
+//lint:ignore U1000 Ignore unused function
 func (l *Layer2Listener) stop() {}

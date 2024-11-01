@@ -5,7 +5,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 )
 
-// BtcHeadState to manage BTC head
+// BtcHeadState to manage BTC head.
 type BtcHeadState struct {
 	Latest         db.BtcBlock
 	UnconfirmQueue []*db.BtcBlock // status in 'unconfirm', 'confirmed'

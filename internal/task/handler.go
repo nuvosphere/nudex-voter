@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -19,7 +20,9 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		if err != nil && localPartySaveData != nil {
 			ts.Tss.LocalPartySaveData = localPartySaveData
 		}
+
 		log.Debug("Party not init, skip task check")
+
 		return
 	}
 
@@ -34,6 +37,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 	}
 
 	var dbTask db.Task
+
 	err := ts.dbm.GetRelayerDB().Order("created_at DESC").First(&dbTask).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -44,8 +48,11 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 			return
 		}
 	}
+
 	buf := bytes.NewReader(dbTask.Context)
+
 	var taskType int32
+
 	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
 		log.Errorf("Parse task %d error, content: %x, ", dbTask.TaskId, dbTask.Context)
 		return
@@ -57,6 +64,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		return
 	case types.TaskTypeCreateWallet:
 		ts.state.TssState.CurrentTask = &dbTask
+
 		err := ts.handleCreateWalletTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle create wallet task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
@@ -75,12 +83,13 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 	default:
 		log.Warnf("Parse task  %d error, not know task type, description: %s", dbTask.TaskId, dbTask.Context)
 	}
-
 }
 
 func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Task) error {
 	buf := bytes.NewReader(dbTask.Context)
+
 	var taskType int32
+
 	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
 		return err
 	}
