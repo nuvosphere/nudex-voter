@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -21,7 +22,21 @@ import (
 	"gorm.io/gorm"
 )
 
-func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task, requestId string) error {
+func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) error {
+	var requestId string
+
+	var taskPrefix = map[reflect.Type]string{
+		reflect.TypeOf(&types.CreateWalletTask{}): "CREATE_WALLET",
+		reflect.TypeOf(&types.DepositTask{}):      "DEPOSIT",
+	}
+
+	taskType := reflect.TypeOf(task)
+	if prefix, found := taskPrefix[taskType]; found {
+		requestId = fmt.Sprintf("TSS_SIGN:%s:%d", prefix, task.GetTaskID())
+	} else {
+		return fmt.Errorf("task type %T not found in task prefix", task)
+	}
+
 	reqMessage := types.SignMessage{
 		BaseSignMsg: types.BaseSignMsg{
 			RequestId:    requestId,

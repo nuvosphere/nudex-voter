@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
-
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -109,8 +107,7 @@ func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Tas
 		return err
 	}
 
-	requestId := fmt.Sprintf("TSS_SIGN:CREATE_WALLET:%d", dbTask.TaskId)
-	return ts.Tss.HandleSignPrepare(ctx, createWalletTask, requestId)
+	return ts.Tss.HandleSignPrepare(ctx, createWalletTask)
 }
 
 func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) error {
@@ -146,8 +143,7 @@ func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) er
 	if err := binary.Read(buf, binary.LittleEndian, &depositTask.ExtraInfo); err != nil {
 		return err
 	}
-	requestId := fmt.Sprintf("TSS_SIGN:DEPOSIT:%d", dbTask.TaskId)
-	return ts.Tss.HandleSignPrepare(ctx, depositTask, requestId)
+	return ts.Tss.HandleSignPrepare(ctx, depositTask)
 }
 
 func (ts *TaskService) handleWithdrawTask(dbTask db.Task) error {
