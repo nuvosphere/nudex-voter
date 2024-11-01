@@ -153,7 +153,7 @@ func (tss *TSSService) eventLoop(ctx context.Context) {
 				return
 			case event := <-tss.tssMsgCh: // from p2p network
 				log.Debugf("Received tss msg event")
-				err := tss.handleTssMsg(event)
+				err := tss.handleTssMsg(convertMsgData(event.(p2p.Message)))
 				if err != nil {
 					log.Warnf("handle tss msg error, %v", err)
 				}
