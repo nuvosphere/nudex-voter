@@ -3,6 +3,7 @@ package layer2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -123,17 +124,30 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 	}
 
 	for {
-		latestBlock, err := lis.ethClient.BlockNumber(ctx)
-		if err != nil {
-			log.Warnf("Error getting latest block number: %v", err)
+		if err := lis.scan(ctx, &syncStatus); err != nil {
+			log.Errorf("scan : %v", err)
+		}
+		// Next loop
+		time.Sleep(config.AppConfig.L2RequestInterval)
+	}
+
+}
+
+func (lis *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) error {
+	latestBlock, err := lis.ethClient.BlockNumber(ctx)
+	if err != nil {
+		return fmt.Errorf("error getting latest block number: %v", err)
+	}
+	targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)
+	if syncStatus.LastSyncBlock < targetBlock {
+		fromBlock := syncStatus.LastSyncBlock + 1
+
+		toBlock := fromBlock + uint64(config.AppConfig.L2MaxBlockRange) - 1
+		if toBlock > targetBlock {
+			toBlock = targetBlock
 		}
 
-		targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)
-
-		if syncStatus.LastSyncBlock < targetBlock {
-			fromBlock := syncStatus.LastSyncBlock + 1
-			toBlock := min(fromBlock+uint64(config.AppConfig.L2MaxBlockRange)-1, targetBlock)
-
+		if toBlock <= targetBlock {
 			log.WithFields(log.Fields{
 				"fromBlock": fromBlock,
 				"toBlock":   toBlock,
@@ -159,33 +173,24 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 
 			logs, err := lis.ethClient.FilterLogs(context.Background(), filterQuery)
 			if err != nil {
-				log.Errorf("Failed to filter logs: %v", err)
-				// Next loop
-				time.Sleep(config.AppConfig.L2RequestInterval)
-				continue
+				return fmt.Errorf("failed to filter logs: %w", err)
 			}
 
 			for _, vLog := range logs {
 				lis.processLogs(vLog)
-				if syncStatus.LastSyncBlock < vLog.BlockNumber {
-					syncStatus.LastSyncBlock = vLog.BlockNumber
-					syncStatus.UpdatedAt = time.Now()
-					lis.db.GetRelayerDB().Save(&syncStatus)
-				}
 			}
+			// Save sync status
+			syncStatus.LastSyncBlock = toBlock
+			syncStatus.UpdatedAt = time.Now()
+			lis.db.GetRelayerDB().Save(syncStatus)
 
-			if syncStatus.LastSyncBlock < toBlock {
-				// Save sync status
-				syncStatus.LastSyncBlock = toBlock
-				syncStatus.UpdatedAt = time.Now()
-				lis.db.GetRelayerDB().Save(&syncStatus)
+			err = lis.scan(ctx, syncStatus)
+			if err != nil {
+				return err
 			}
 		}
-
-		// Next loop
-		time.Sleep(config.AppConfig.L2RequestInterval)
 	}
-
+	return nil
 }
 
 // stop ctx
