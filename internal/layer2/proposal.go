@@ -2,7 +2,6 @@ package layer2
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
 	"strings"
 	"sync"
@@ -10,11 +9,13 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 )
 
 var (
@@ -107,14 +108,14 @@ func submitDepositInfo(targetAddress common.Address, amount *big.Int, txInfo, ex
 	return nil
 }
 
-func getClientAndAbi() (*ethclient.Client, abi.ABI, common.Address) {
+func getClientAndAbi() (*ethclient.Client, *abi.ABI, common.Address) {
 	client, err := ethclient.Dial(config.AppConfig.L2RPC)
 	if err != nil {
 		log.Fatalf("Error creating Layer2 EVM RPC client: %v", err)
 	}
 
 	// Decode ABI
-	parsedVotingManagerABI, err := abi.JSON(strings.NewReader(votingManagerABI))
+	parsedVotingManagerABI, err := abis.VotingManagerContractMetaData.GetAbi()
 	if err != nil {
 		log.Fatalf("Error parsing VotingManager ABI: %v", err)
 	}

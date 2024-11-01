@@ -2,7 +2,8 @@ package tss
 
 import (
 	"crypto/ecdsa"
-	common2 "github.com/bnb-chain/tss-lib/v2/common"
+	"encoding/json"
+	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
@@ -10,6 +11,8 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"sync"
 	"time"
 )
@@ -18,11 +21,12 @@ type TSSService struct {
 	privateKey *ecdsa.PrivateKey
 	Address    common.Address
 
-	libp2p *p2p.LibP2PService
-	state  *state.State
-	dbm    *db.DatabaseManager
+	p2p   p2p.P2PService
+	state *state.State
+	dbm   *db.DatabaseManager
 
-	Party              *keygen.LocalParty
+	addressList        []common.Address
+	LocalParty         *keygen.LocalParty
 	LocalPartySaveData *keygen.LocalPartySaveData
 	partyIdMap         map[string]*tsslib.PartyID
 
@@ -30,25 +34,59 @@ type TSSService struct {
 	keygenRound1P2pMessage *p2p.Message
 	round1MessageSendTimes int
 
-	tssUpdateCh chan interface{}
+	// tss keygen
+	keyOutCh chan tsslib.Message
+	keyEndCh chan *keygen.LocalPartySaveData
 
-	keyOutCh    chan tsslib.Message
-	keygenEndCh chan *keygen.LocalPartySaveData
+	// resharing channel
+	reSharingOutCh chan tsslib.Message
+	reSharingEndCh chan *keygen.LocalPartySaveData
 
-	sigFinishChan chan *common2.SignatureData
+	// tss signature channel
+	sigOutCh chan tsslib.Message
+	sigEndCh chan *tssCommon.SignatureData
 
-	sigStartCh   chan interface{}
-	sigReceiveCh chan interface{}
-
-	sigFailChan    chan interface{}
-	sigTimeoutChan chan interface{}
+	// eventbus channel
+	tssMsgCh       <-chan any
+	partyAddOrRmCh <-chan any
+	sigStartCh     <-chan any
+	sigReceiveCh   <-chan any
+	sigFailChan    <-chan any
+	sigTimeoutChan <-chan any
 
 	sigMap                       map[string]map[int32]*signing.LocalParty
 	sigRound1P2pMessageMap       map[string]*p2p.Message
 	sigRound1MessageSendTimesMap map[string]int
 	sigTimeoutMap                map[string]time.Time
 
-	sigMu sync.RWMutex
+	rw sync.RWMutex
 
 	once sync.Once
+}
+
+const (
+	DataTypeTssKeygenMsg     = "TssKeygenMsg"
+	DataTypeTssSignMsg       = "TssSignMsg"
+	DataTypeTssReSharingMsg  = "TssReSharingMsg"
+	DataTypeSignCreateWallet = "SignCreateWallet"
+)
+
+// convertMsgData converts the message data to the corresponding struct
+// TODO: use reflector to optimize this function
+func convertMsgData(msg p2p.Message) any {
+	switch msg.DataType {
+	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
+		jsonBytes, _ := json.Marshal(msg.Data)
+		var rawData types.TssMessage
+		err := json.Unmarshal(jsonBytes, &rawData)
+		utils.Assert(err)
+		return rawData
+	case DataTypeSignCreateWallet:
+		jsonBytes, _ := json.Marshal(msg.Data)
+		var rawData types.MsgSignCreateWalletMessage
+		err := json.Unmarshal(jsonBytes, &rawData)
+		utils.Assert(err)
+		return rawData
+	}
+	return msg.Data
 }

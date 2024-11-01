@@ -142,5 +142,5 @@ func (p *BTCPoller) handleConfirmedBlock(block *types.BtcBlockExt) {
 	}
 
 	// push to event bus
-	p.state.EventBus.Publish(state.BlockScanned, *block)
+	p.state.Bus().Publish(state.EventBlockScanned{}, *block)
 }

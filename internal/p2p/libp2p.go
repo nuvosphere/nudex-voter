@@ -34,15 +34,21 @@ const (
 	privKeyFile        = "node_private_key.pem"
 )
 
-type LibP2PService struct {
-	messageTopic *pubsub.Topic
+type P2PService interface {
+	Bind(msgType MessageType, event state.Event)
+	PublishMessage(ctx context.Context, msg Message) error
+}
 
-	state *state.State
+type LibP2PService struct {
+	messageTopic  *pubsub.Topic
+	state         *state.State
+	typeBindEvent sync.Map
 }
 
 func NewLibP2PService(state *state.State) *LibP2PService {
 	return &LibP2PService{
-		state: state,
+		state:         state,
+		typeBindEvent: sync.Map{},
 	}
 }
 

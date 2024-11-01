@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/state"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -48,26 +47,30 @@ func handleHandshake(s network.Stream, node host.Host) {
 	log.Info("Handshake successful")
 }
 
-func (libp2p *LibP2PService) PublishMessage(ctx context.Context, msg Message) error {
+func (lp *LibP2PService) Bind(msgType MessageType, event state.Event) {
+	lp.typeBindEvent.Store(msgType, event)
+}
+
+func (lp *LibP2PService) PublishMessage(ctx context.Context, msg Message) error {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		return errors.New("failed to marshal message")
 	}
 
-	if libp2p.messageTopic == nil {
+	if lp.messageTopic == nil {
 		startTime := time.Now()
 		if time.Since(startTime) >= 10*time.Second {
 			return errors.New("message topic is nil, cannot publish message")
 		}
-		if libp2p.messageTopic == nil {
+		if lp.messageTopic == nil {
 			time.Sleep(1 * time.Second)
 		}
 	}
 
-	return libp2p.messageTopic.Publish(ctx, msgBytes)
+	return lp.messageTopic.Publish(ctx, msgBytes)
 }
 
-func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
+func (lp *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -98,41 +101,30 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 
 			log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, dataStr)
 
-			switch receivedMsg.MessageType {
-			case MessageTypeTssUpdate:
-				libp2p.state.EventBus.Publish(state.TssUpdate, convertMsgData(receivedMsg))
-			case MessageTypeSigReq:
-				libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
-			case MessageTypeSigResp:
-				libp2p.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
-			case MessageTypeDepositReceive:
-				libp2p.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
-			default:
+			event, ok := lp.typeBindEvent.Load(receivedMsg.MessageType)
+			if ok {
+				lp.state.EventBus.Publish(event, receivedMsg)
+			} else {
 				log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
 			}
+
+			//switch receivedMsg.MessageType {
+			//case MessageTypeTssMsg:
+			//	lp.state.EventBus.Publish(state.TssMsg, convertMsgData(receivedMsg))
+			//case MessageTypeSigReq:
+			//	lp.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
+			//case MessageTypeSigResp:
+			//	lp.state.EventBus.Publish(state.SigReceive, convertMsgData(receivedMsg))
+			//case MessageTypeDepositReceive:
+			//	lp.state.EventBus.Publish(state.DepositReceive, convertMsgData(receivedMsg))
+			//default:
+			//	log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
+			//}
 		}
 	}
 }
 
-// convertMsgData converts the message data to the corresponding struct
-// TODO: use reflector to optimize this function
-func convertMsgData(msg Message) interface{} {
-	if msg.DataType == DataTypeSignCreateWallet {
-		jsonBytes, _ := json.Marshal(msg.Data)
-		var rawData types.MsgSignCreateWalletMessage
-		_ = json.Unmarshal(jsonBytes, &rawData)
-		return rawData
-	}
-	if msg.DataType == DataTypeTssUpdateMessage {
-		jsonBytes, _ := json.Marshal(msg.Data)
-		var rawData types.TssUpdateMessage
-		_ = json.Unmarshal(jsonBytes, &rawData)
-		return rawData
-	}
-	return msg.Data
-}
-
-func (libp2p *LibP2PService) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
+func (lp *LibP2PService) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription, node host.Host) {
 	for {
 		select {
 		case <-ctx.Done():
