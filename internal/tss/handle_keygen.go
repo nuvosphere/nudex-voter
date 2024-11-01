@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"errors"
 	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
@@ -10,7 +11,7 @@ import (
 )
 
 func (tss *TSSService) setup() {
-	tss.Party = nil
+	tss.LocalParty = nil
 	tss.setupTime = time.Time{}
 
 	var preParams *keygen.LocalPreParams
@@ -37,10 +38,10 @@ func (tss *TSSService) setup() {
 	index := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keygenEndCh, *preParams).(*keygen.LocalParty)
+	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)
 
 	tss.setupTime = time.Now()
-	tss.Party = party
+	tss.LocalParty = party
 	tss.partyIdMap = make(map[string]*tsslib.PartyID)
 	for _, partyId := range partyIDs {
 		tss.partyIdMap[partyId.Id] = partyId
@@ -56,8 +57,14 @@ func (tss *TSSService) setup() {
 }
 
 func (tss *TSSService) handleTssKeyEnd(event *keygen.LocalPartySaveData) error {
-	if tss.Party == nil {
-		return fmt.Errorf("handleTssEnd error, event %v, self not init", event)
-	}
+	tss.assertLocalParty(event)
 	return saveTSSData(event)
+}
+
+var ErrLocalParty = errors.New("local party not initialized")
+
+func (tss *TSSService) assertLocalParty(extra any) {
+	if tss.LocalParty == nil {
+		panic(fmt.Errorf("%w, extra:%v", ErrLocalParty, extra))
+	}
 }

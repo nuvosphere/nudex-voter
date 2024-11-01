@@ -99,8 +99,8 @@ func (libp2p *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubs
 			log.Debugf("Received message via pubsub: ID=%d, RequestId=%s, Data=%v", receivedMsg.MessageType, receivedMsg.RequestId, dataStr)
 
 			switch receivedMsg.MessageType {
-			case MessageTypeTssUpdate:
-				libp2p.state.EventBus.Publish(state.TssUpdate, convertMsgData(receivedMsg))
+			case MessageTypeTssMsg:
+				libp2p.state.EventBus.Publish(state.TssMsg, convertMsgData(receivedMsg))
 			case MessageTypeSigReq:
 				libp2p.state.EventBus.Publish(state.SigStart, convertMsgData(receivedMsg))
 			case MessageTypeSigResp:
@@ -123,9 +123,9 @@ func convertMsgData(msg Message) interface{} {
 		_ = json.Unmarshal(jsonBytes, &rawData)
 		return rawData
 	}
-	if msg.DataType == DataTypeTssUpdateMessage {
+	if msg.DataType == DataTypeTssMsg {
 		jsonBytes, _ := json.Marshal(msg.Data)
-		var rawData types.TssUpdateMessage
+		var rawData types.TssMessage
 		_ = json.Unmarshal(jsonBytes, &rawData)
 		return rawData
 	}

@@ -8,7 +8,7 @@ type EventType int
 
 const (
 	EventUnkown EventType = iota
-	TssUpdate
+	TssMsg
 	SigStart
 	SigReceive
 	SigFailed
@@ -19,7 +19,7 @@ const (
 )
 
 func (e EventType) String() string {
-	return [...]string{"EventUnkown", "TssUpdate", "KeygenStart", "KeygenReceive", "SigStart", "SigReceive",
+	return [...]string{"EventUnkown", "TssMsg", "SigStart", "SigReceive",
 		"SigFailed", "SigTimeout", "DepositReceive", "BlockScanned", "WithdrawRequest"}[e]
 }
 
@@ -34,7 +34,7 @@ func NewEventBus() *EventBus {
 	}
 }
 
-// enum for eventType
+// Subscribe enum for eventType
 func (eb *EventBus) Subscribe(eventType EventType, ch chan interface{}) {
 	eb.mu.Lock()
 	defer eb.mu.Unlock()

@@ -34,6 +34,10 @@ const (
 	privKeyFile        = "node_private_key.pem"
 )
 
+type P2PService interface {
+	PublishMessage(ctx context.Context, msg Message) error
+}
+
 type LibP2PService struct {
 	messageTopic *pubsub.Topic
 

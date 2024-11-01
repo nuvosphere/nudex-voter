@@ -16,24 +16,26 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewTssService(libp2p *p2p.LibP2PService, dbm *db.DatabaseManager, state *state.State) *TSSService {
+func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State) *TSSService {
 	return &TSSService{
 		privateKey: config.AppConfig.L2PrivateKey,
 		Address:    crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
-		libp2p:     libp2p,
+		p2p:        p,
 		dbm:        dbm,
 		state:      state,
 
-		tssUpdateCh: make(chan interface{}, 10),
+		partyIdMap: make(map[string]*tsslib.PartyID),
 
-		keyOutCh:    make(chan tsslib.Message),
-		keygenEndCh: make(chan *keygen.LocalPartySaveData),
+		keyOutCh:       make(chan tsslib.Message),
+		keyEndCh:       make(chan *keygen.LocalPartySaveData),
+		reSharingOutCh: make(chan tsslib.Message),
+		reSharingEndCh: make(chan *keygen.LocalPartySaveData),
+		sigOutCh:       make(chan tsslib.Message),
+		sigEndCh:       make(chan *common.SignatureData),
 
-		sigFinishChan: make(chan *common.SignatureData),
-
-		sigStartCh:   make(chan interface{}, 256),
-		sigReceiveCh: make(chan interface{}, 1024),
-
+		tssMsgCh:       make(chan interface{}, 10),
+		sigStartCh:     make(chan interface{}, 256),
+		sigReceiveCh:   make(chan interface{}, 1024),
 		sigFailChan:    make(chan interface{}, 10),
 		sigTimeoutChan: make(chan interface{}, 10),
 
@@ -45,62 +47,20 @@ func NewTssService(libp2p *p2p.LibP2PService, dbm *db.DatabaseManager, state *st
 }
 
 func (tss *TSSService) Start(ctx context.Context) {
-	go tss.signLoop(ctx)
+	tss.loop(ctx)
+	tss.check(ctx)
 
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
 	tss.Stop()
 }
 
-func (tss *TSSService) signLoop(ctx context.Context) {
-	tss.state.EventBus.Subscribe(state.TssUpdate, tss.tssUpdateCh)
+func (tss *TSSService) loop(ctx context.Context) {
+	tss.eventLoop(ctx)
+	tss.tssLoop(ctx)
+}
 
-	tss.state.EventBus.Subscribe(state.SigStart, tss.sigStartCh)
-	tss.state.EventBus.Subscribe(state.SigReceive, tss.sigReceiveCh)
-
-	tss.state.EventBus.Subscribe(state.SigFailed, tss.sigFailChan)
-	tss.state.EventBus.Subscribe(state.SigTimeout, tss.sigTimeoutChan)
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				log.Info("Signer stopping...")
-				return
-			case event := <-tss.tssUpdateCh:
-				log.Debugf("Received tssUpdated event")
-				err := tss.handleTssUpdate(event)
-				if err != nil {
-					log.Warnf("handle tssUpdate error, %v", err)
-				}
-			case event := <-tss.keyOutCh:
-				log.Debugf("Received tss keyOut event")
-				err := tss.handleTssKeyOut(ctx, event)
-				if err != nil {
-					log.Warnf("handle tss keyOut error, event: %v, %v", event, err)
-				}
-			case event := <-tss.keygenEndCh:
-				log.Debugf("Received tss keygenEnd event")
-				err := tss.handleTssKeyEnd(event)
-				if err != nil {
-					log.Warnf("handle tss keygenEnd error, event: %v, %v", event, err)
-				}
-			case event := <-tss.sigStartCh:
-				log.Debugf("Received sigStart event: %v", event)
-				tss.handleSigStart(ctx, event)
-			case event := <-tss.sigReceiveCh:
-				log.Debugf("Received sigReceive event: %v", event)
-				tss.handleSigReceive(ctx, event)
-			case sigFail := <-tss.sigFailChan:
-				tss.handleSigFailed(ctx, sigFail, "failed")
-			case sigTimeout := <-tss.sigTimeoutChan:
-				tss.handleSigFailed(ctx, sigTimeout, "timeout")
-			case sigFinish := <-tss.sigFinishChan:
-				tss.handleSigFinish(ctx, sigFinish)
-			}
-		}
-	}()
-
+func (tss *TSSService) check(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
@@ -126,7 +86,86 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 				log.Info("Tss keygen checker stopping...")
 				return
 			case <-ticker.C:
-				tss.check(ctx)
+				tss.checkParty(ctx)
+			}
+		}
+	}()
+}
+
+func (tss *TSSService) tssLoop(ctx context.Context) {
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("tss loop stopping...")
+				return
+			case msg := <-tss.keyOutCh:
+				log.Debugf("Received tss keyOut event")
+				err := tss.handleTssKeyOut(ctx, msg)
+				if err != nil {
+					log.Warnf("handle tss keyOut error, msg: %v, %v", msg, err)
+				}
+			case event := <-tss.keyEndCh:
+				log.Debugf("Received tss keygenEnd event")
+				err := tss.handleTssKeyEnd(event)
+				if err != nil {
+					log.Warnf("handle tss keygenEnd error, event: %v, %v", event, err)
+				}
+			case msg := <-tss.reSharingOutCh:
+				log.Debugf("Received tss re-sharing event")
+				err := tss.handleTssReSharingOut(ctx, msg)
+				if err != nil {
+					log.Warnf("handle tss keyOut error, msg: %v, %v", msg, err)
+				}
+			case event := <-tss.reSharingEndCh:
+				log.Debugf("Received tss re-sharing event")
+				err := tss.handleTssKeyEnd(event)
+				if err != nil {
+					log.Warnf("handle tss re-sharing error, event: %v, %v", event, err)
+				}
+			case msg := <-tss.sigOutCh:
+				err := tss.handleTssSigOut(ctx, msg)
+				if err != nil {
+					log.Warnf("handle tss signature out error, msg: %v, %v", msg, err)
+				}
+			case sigFinish := <-tss.sigEndCh:
+				tss.handleSigFinish(ctx, sigFinish)
+			}
+		}
+	}()
+}
+
+func (tss *TSSService) eventLoop(ctx context.Context) {
+	tss.state.EventBus.Subscribe(state.TssMsg, tss.tssMsgCh)
+
+	tss.state.EventBus.Subscribe(state.SigStart, tss.sigStartCh)
+	tss.state.EventBus.Subscribe(state.SigReceive, tss.sigReceiveCh)
+
+	tss.state.EventBus.Subscribe(state.SigFailed, tss.sigFailChan)
+	tss.state.EventBus.Subscribe(state.SigTimeout, tss.sigTimeoutChan)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("Signer stopping...")
+				return
+			case event := <-tss.tssMsgCh:
+				log.Debugf("Received tssUpdated event")
+				err := tss.handleTssMsg(event)
+				if err != nil {
+					log.Warnf("handle tssUpdate error, %v", err)
+				}
+			case event := <-tss.sigStartCh:
+				log.Debugf("Received sigStart event: %v", event)
+				tss.handleSigStart(ctx, event)
+			case event := <-tss.sigReceiveCh:
+				log.Debugf("Received sigReceive event: %v", event)
+				tss.handleSigReceive(ctx, event)
+			case sigFail := <-tss.sigFailChan:
+				tss.handleSigFailed(ctx, sigFail, "failed")
+			case sigTimeout := <-tss.sigTimeoutChan:
+				tss.handleSigFailed(ctx, sigTimeout, "timeout")
 			}
 		}
 	}()
@@ -134,21 +173,22 @@ func (tss *TSSService) signLoop(ctx context.Context) {
 
 func (tss *TSSService) Stop() {
 	tss.once.Do(func() {
-		close(tss.tssUpdateCh)
-
 		close(tss.keyOutCh)
-		close(tss.keygenEndCh)
-		close(tss.sigFinishChan)
+		close(tss.keyEndCh)
+		close(tss.reSharingEndCh)
+		close(tss.reSharingOutCh)
+		close(tss.sigOutCh)
+		close(tss.sigEndCh)
 
+		close(tss.tssMsgCh)
 		close(tss.sigStartCh)
 		close(tss.sigReceiveCh)
-
 		close(tss.sigFailChan)
 		close(tss.sigTimeoutChan)
 	})
 }
 
-func (tss *TSSService) CleanAll() {
+func (tss *TSSService) CleanAllSigInfo() {
 	for k := range tss.sigMap {
 		delete(tss.sigMap, k)
 	}

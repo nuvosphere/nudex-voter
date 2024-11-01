@@ -12,7 +12,7 @@ type MsgSignCreateWalletMessage struct {
 	Task CreateWalletTask `json:"task"`
 }
 
-type TssUpdateMessage struct {
+type TssMessage struct {
 	FromPartyId  string   `json:"from_party_id"`
 	ToPartyIds   []string `json:"to_party_ids"`
 	IsBroadcast  bool     `json:"is_broadcast"`

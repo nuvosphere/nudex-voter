@@ -2,7 +2,7 @@ package tss
 
 import (
 	"crypto/ecdsa"
-	common2 "github.com/bnb-chain/tss-lib/v2/common"
+	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
@@ -18,11 +18,11 @@ type TSSService struct {
 	privateKey *ecdsa.PrivateKey
 	Address    common.Address
 
-	libp2p *p2p.LibP2PService
-	state  *state.State
-	dbm    *db.DatabaseManager
+	p2p   p2p.P2PService
+	state *state.State
+	dbm   *db.DatabaseManager
 
-	Party              *keygen.LocalParty
+	LocalParty         *keygen.LocalParty
 	LocalPartySaveData *keygen.LocalPartySaveData
 	partyIdMap         map[string]*tsslib.PartyID
 
@@ -30,16 +30,22 @@ type TSSService struct {
 	keygenRound1P2pMessage *p2p.Message
 	round1MessageSendTimes int
 
-	tssUpdateCh chan interface{}
+	// tss keygen
+	keyOutCh chan tsslib.Message
+	keyEndCh chan *keygen.LocalPartySaveData
 
-	keyOutCh    chan tsslib.Message
-	keygenEndCh chan *keygen.LocalPartySaveData
+	// resharing channel
+	reSharingOutCh chan tsslib.Message
+	reSharingEndCh chan *keygen.LocalPartySaveData
 
-	sigFinishChan chan *common2.SignatureData
+	// tss signature channel
+	sigOutCh chan tsslib.Message
+	sigEndCh chan *tssCommon.SignatureData
 
-	sigStartCh   chan interface{}
-	sigReceiveCh chan interface{}
-
+	// eventbus channel
+	tssMsgCh       chan interface{}
+	sigStartCh     chan interface{}
+	sigReceiveCh   chan interface{}
 	sigFailChan    chan interface{}
 	sigTimeoutChan chan interface{}
 
@@ -48,7 +54,7 @@ type TSSService struct {
 	sigRound1MessageSendTimesMap map[string]int
 	sigTimeoutMap                map[string]time.Time
 
-	sigMu sync.RWMutex
+	rw sync.RWMutex
 
 	once sync.Once
 }

@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -10,18 +11,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (tss *TSSService) startResharing(publicKeys []*ecdsa.PublicKey, threshold int) error {
-	if tss.Party == nil {
-		return fmt.Errorf("startResharing error, self not init")
+func (tss *TSSService) StartReSharing(publicKeys []*ecdsa.PublicKey, threshold int) error {
+	if tss.LocalParty == nil || tss.LocalPartySaveData == nil || tss.LocalPartySaveData.ECDSAPub == nil {
+		return fmt.Errorf("local party not initialized")
 	}
 
-	localPartySaveData, err := LoadTSSData()
-	if err != nil {
-		return err
-	}
-	if localPartySaveData == nil || localPartySaveData.ECDSAPub == nil {
-		return fmt.Errorf("startResharing error, self not init")
-	}
 	currentPartyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	currentPeerCtx := tsslib.NewPeerContext(currentPartyIDs)
 
@@ -30,7 +24,7 @@ func (tss *TSSService) startResharing(publicKeys []*ecdsa.PublicKey, threshold i
 
 	currentIndex := AddressIndex(config.AppConfig.TssPublicKeys, tss.Address.Hex())
 	currentParams := tsslib.NewReSharingParameters(tsslib.S256(), currentPeerCtx, newPeerCtx, currentPartyIDs[currentIndex], len(config.AppConfig.TssPublicKeys), config.AppConfig.TssThreshold, len(publicKeys), threshold)
-	currentParty := resharing.NewLocalParty(currentParams, *localPartySaveData, tss.keyOutCh, tss.keygenEndCh).(*keygen.LocalParty)
+	currentParty := resharing.NewLocalParty(currentParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*keygen.LocalParty)
 
 	go func() {
 		if err := currentParty.Start(); err != nil {
@@ -43,7 +37,7 @@ func (tss *TSSService) startResharing(publicKeys []*ecdsa.PublicKey, threshold i
 
 	newIndex := AddressIndex(publicKeys, tss.Address.Hex())
 	newParams := tsslib.NewReSharingParameters(tsslib.S256(), currentPeerCtx, newPeerCtx, newPartyIDs[newIndex], len(config.AppConfig.TssPublicKeys), threshold, len(publicKeys), threshold)
-	newParty := resharing.NewLocalParty(newParams, *localPartySaveData, tss.keyOutCh, tss.keygenEndCh).(*keygen.LocalParty)
+	newParty := resharing.NewLocalParty(newParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*keygen.LocalParty)
 
 	go func() {
 		if err := newParty.Start(); err != nil {
@@ -54,4 +48,14 @@ func (tss *TSSService) startResharing(publicKeys []*ecdsa.PublicKey, threshold i
 		}
 	}()
 	return nil
+}
+
+func (tss *TSSService) handleTssReSharingOut(ctx context.Context, msg tsslib.Message) (err error) {
+	dest := msg.GetTo()
+	if dest == nil {
+		return fmt.Errorf("did not expect a msg to have a nil destination during resharing")
+	}
+
+	_, err = tss.sendTssMsg(ctx, msg)
+	return err
 }
