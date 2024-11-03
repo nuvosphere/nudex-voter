@@ -188,19 +188,12 @@ func (tss *TSSService) Stop() {
 }
 
 func (tss *TSSService) CleanAllSigInfo() {
-	for k := range tss.sigMap {
-		delete(tss.sigMap, k)
-	}
+	// todo make new map
+	defer tss.rw.Unlock()
+	tss.rw.Lock()
 
-	for k := range tss.sigTimeoutMap {
-		delete(tss.sigTimeoutMap, k)
-	}
-
-	for k := range tss.sigRound1P2pMessageMap {
-		delete(tss.sigRound1P2pMessageMap, k)
-	}
-
-	for k := range tss.sigRound1MessageSendTimesMap {
-		delete(tss.sigRound1MessageSendTimesMap, k)
-	}
+	tss.sigMap = make(map[string]map[int32]*signing.LocalParty)
+	tss.sigRound1P2pMessageMap = make(map[string]*p2p.Message[types.TssMessage])
+	tss.sigRound1MessageSendTimesMap = make(map[string]int)
+	tss.sigTimeoutMap = make(map[string]time.Time)
 }
