@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
-	"strings"
 	"time"
 	"unsafe"
 
@@ -18,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (tss *TSSService) handleTssMsg(event interface{}) error {
+func (tss *TSSService) handleTssMsg(dataType string, event interface{}) error {
 	if tss.LocalParty == nil {
 		return fmt.Errorf("handleTssUpdate error, tss local party not init")
 	}
@@ -47,14 +46,15 @@ func (tss *TSSService) handleTssMsg(event interface{}) error {
 	}
 
 	go func() {
-		if strings.HasPrefix(msg.Type(), "binance.tsslib.ecdsa.keygen.") {
+		switch dataType {
+		case DataTypeTssKeygenMsg, DataTypeTssReSharingMsg:
 			if _, err := tss.LocalParty.Update(msg); err != nil {
 				log.Errorf("Failed to update keygen party: FromPartyID=%v, error=%v", message.FromPartyId, err)
 				return
 			} else {
 				log.Infof("Keygen party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
 			}
-		} else if strings.HasPrefix(msg.Type(), "binance.tsslib.ecdsa.signing.") {
+		case DataTypeTssSignMsg:
 			if tss.state.TssState.CurrentTask != nil {
 				requestId := getRequestId(tss.state.TssState.CurrentTask)
 
@@ -73,6 +73,8 @@ func (tss *TSSService) handleTssMsg(event interface{}) error {
 			} else {
 				log.Errorf("Failed to update sign party: FromPartyID=%v, current task not found", message.FromPartyId)
 			}
+		default:
+			panic(fmt.Sprintf("unknown data type %v, event %v", dataType, event))
 		}
 	}()
 
