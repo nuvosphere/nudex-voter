@@ -31,7 +31,7 @@ var (
 
 // ParticipantManagerContractMetaData contains all meta data concerning the ParticipantManagerContract contract.
 var ParticipantManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"addParticipant\",\"inputs\":[{\"name\":\"newParticipant\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getParticipants\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRandomParticipant\",\"inputs\":[{\"name\":\"_salt\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"randParticipant\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_nuvoLock\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_minLockAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_minLockPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_initialParticipant\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isEligible\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"isParticipant\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"minLockAmount\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"minLockPeriod\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuvoLock\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuvoLock\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"participants\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"removeParticipant\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ParticipantAdded\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ParticipantRemoved\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AlreadyParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotEligible\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotEnoughParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"addParticipant\",\"inputs\":[{\"name\":\"newParticipant\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getParticipants\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRandomParticipant\",\"inputs\":[{\"name\":\"_salt\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"randParticipant\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_nuvoLock\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_initialParticipants\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isParticipant\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuvoLock\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuvoLock\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"participants\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"removeParticipant\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ParticipantAdded\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ParticipantRemoved\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AlreadyParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotEligible\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotEnoughParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
 }
 
 // ParticipantManagerContractABI is the input ABI used to generate the binding from.
@@ -242,37 +242,6 @@ func (_ParticipantManagerContract *ParticipantManagerContractCallerSession) GetR
 	return _ParticipantManagerContract.Contract.GetRandomParticipant(&_ParticipantManagerContract.CallOpts, _salt)
 }
 
-// IsEligible is a free data retrieval call binding the contract method 0x66e305fd.
-//
-// Solidity: function isEligible(address participant) view returns(bool)
-func (_ParticipantManagerContract *ParticipantManagerContractCaller) IsEligible(opts *bind.CallOpts, participant common.Address) (bool, error) {
-	var out []interface{}
-	err := _ParticipantManagerContract.contract.Call(opts, &out, "isEligible", participant)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsEligible is a free data retrieval call binding the contract method 0x66e305fd.
-//
-// Solidity: function isEligible(address participant) view returns(bool)
-func (_ParticipantManagerContract *ParticipantManagerContractSession) IsEligible(participant common.Address) (bool, error) {
-	return _ParticipantManagerContract.Contract.IsEligible(&_ParticipantManagerContract.CallOpts, participant)
-}
-
-// IsEligible is a free data retrieval call binding the contract method 0x66e305fd.
-//
-// Solidity: function isEligible(address participant) view returns(bool)
-func (_ParticipantManagerContract *ParticipantManagerContractCallerSession) IsEligible(participant common.Address) (bool, error) {
-	return _ParticipantManagerContract.Contract.IsEligible(&_ParticipantManagerContract.CallOpts, participant)
-}
-
 // IsParticipant is a free data retrieval call binding the contract method 0x929066f5.
 //
 // Solidity: function isParticipant(address ) view returns(bool)
@@ -302,68 +271,6 @@ func (_ParticipantManagerContract *ParticipantManagerContractSession) IsParticip
 // Solidity: function isParticipant(address ) view returns(bool)
 func (_ParticipantManagerContract *ParticipantManagerContractCallerSession) IsParticipant(arg0 common.Address) (bool, error) {
 	return _ParticipantManagerContract.Contract.IsParticipant(&_ParticipantManagerContract.CallOpts, arg0)
-}
-
-// MinLockAmount is a free data retrieval call binding the contract method 0x08804275.
-//
-// Solidity: function minLockAmount() view returns(uint256)
-func (_ParticipantManagerContract *ParticipantManagerContractCaller) MinLockAmount(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _ParticipantManagerContract.contract.Call(opts, &out, "minLockAmount")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// MinLockAmount is a free data retrieval call binding the contract method 0x08804275.
-//
-// Solidity: function minLockAmount() view returns(uint256)
-func (_ParticipantManagerContract *ParticipantManagerContractSession) MinLockAmount() (*big.Int, error) {
-	return _ParticipantManagerContract.Contract.MinLockAmount(&_ParticipantManagerContract.CallOpts)
-}
-
-// MinLockAmount is a free data retrieval call binding the contract method 0x08804275.
-//
-// Solidity: function minLockAmount() view returns(uint256)
-func (_ParticipantManagerContract *ParticipantManagerContractCallerSession) MinLockAmount() (*big.Int, error) {
-	return _ParticipantManagerContract.Contract.MinLockAmount(&_ParticipantManagerContract.CallOpts)
-}
-
-// MinLockPeriod is a free data retrieval call binding the contract method 0x73ae54b5.
-//
-// Solidity: function minLockPeriod() view returns(uint256)
-func (_ParticipantManagerContract *ParticipantManagerContractCaller) MinLockPeriod(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _ParticipantManagerContract.contract.Call(opts, &out, "minLockPeriod")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// MinLockPeriod is a free data retrieval call binding the contract method 0x73ae54b5.
-//
-// Solidity: function minLockPeriod() view returns(uint256)
-func (_ParticipantManagerContract *ParticipantManagerContractSession) MinLockPeriod() (*big.Int, error) {
-	return _ParticipantManagerContract.Contract.MinLockPeriod(&_ParticipantManagerContract.CallOpts)
-}
-
-// MinLockPeriod is a free data retrieval call binding the contract method 0x73ae54b5.
-//
-// Solidity: function minLockPeriod() view returns(uint256)
-func (_ParticipantManagerContract *ParticipantManagerContractCallerSession) MinLockPeriod() (*big.Int, error) {
-	return _ParticipantManagerContract.Contract.MinLockPeriod(&_ParticipantManagerContract.CallOpts)
 }
 
 // NuvoLock is a free data retrieval call binding the contract method 0xe1bf9f1a.
@@ -480,25 +387,25 @@ func (_ParticipantManagerContract *ParticipantManagerContractTransactorSession) 
 	return _ParticipantManagerContract.Contract.AddParticipant(&_ParticipantManagerContract.TransactOpts, newParticipant)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x03b54d52.
+// Initialize is a paid mutator transaction binding the contract method 0x77a24f36.
 //
-// Solidity: function initialize(address _nuvoLock, uint256 _minLockAmount, uint256 _minLockPeriod, address _owner, address _initialParticipant) returns()
-func (_ParticipantManagerContract *ParticipantManagerContractTransactor) Initialize(opts *bind.TransactOpts, _nuvoLock common.Address, _minLockAmount *big.Int, _minLockPeriod *big.Int, _owner common.Address, _initialParticipant common.Address) (*types.Transaction, error) {
-	return _ParticipantManagerContract.contract.Transact(opts, "initialize", _nuvoLock, _minLockAmount, _minLockPeriod, _owner, _initialParticipant)
+// Solidity: function initialize(address _nuvoLock, address _owner, address[] _initialParticipants) returns()
+func (_ParticipantManagerContract *ParticipantManagerContractTransactor) Initialize(opts *bind.TransactOpts, _nuvoLock common.Address, _owner common.Address, _initialParticipants []common.Address) (*types.Transaction, error) {
+	return _ParticipantManagerContract.contract.Transact(opts, "initialize", _nuvoLock, _owner, _initialParticipants)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x03b54d52.
+// Initialize is a paid mutator transaction binding the contract method 0x77a24f36.
 //
-// Solidity: function initialize(address _nuvoLock, uint256 _minLockAmount, uint256 _minLockPeriod, address _owner, address _initialParticipant) returns()
-func (_ParticipantManagerContract *ParticipantManagerContractSession) Initialize(_nuvoLock common.Address, _minLockAmount *big.Int, _minLockPeriod *big.Int, _owner common.Address, _initialParticipant common.Address) (*types.Transaction, error) {
-	return _ParticipantManagerContract.Contract.Initialize(&_ParticipantManagerContract.TransactOpts, _nuvoLock, _minLockAmount, _minLockPeriod, _owner, _initialParticipant)
+// Solidity: function initialize(address _nuvoLock, address _owner, address[] _initialParticipants) returns()
+func (_ParticipantManagerContract *ParticipantManagerContractSession) Initialize(_nuvoLock common.Address, _owner common.Address, _initialParticipants []common.Address) (*types.Transaction, error) {
+	return _ParticipantManagerContract.Contract.Initialize(&_ParticipantManagerContract.TransactOpts, _nuvoLock, _owner, _initialParticipants)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x03b54d52.
+// Initialize is a paid mutator transaction binding the contract method 0x77a24f36.
 //
-// Solidity: function initialize(address _nuvoLock, uint256 _minLockAmount, uint256 _minLockPeriod, address _owner, address _initialParticipant) returns()
-func (_ParticipantManagerContract *ParticipantManagerContractTransactorSession) Initialize(_nuvoLock common.Address, _minLockAmount *big.Int, _minLockPeriod *big.Int, _owner common.Address, _initialParticipant common.Address) (*types.Transaction, error) {
-	return _ParticipantManagerContract.Contract.Initialize(&_ParticipantManagerContract.TransactOpts, _nuvoLock, _minLockAmount, _minLockPeriod, _owner, _initialParticipant)
+// Solidity: function initialize(address _nuvoLock, address _owner, address[] _initialParticipants) returns()
+func (_ParticipantManagerContract *ParticipantManagerContractTransactorSession) Initialize(_nuvoLock common.Address, _owner common.Address, _initialParticipants []common.Address) (*types.Transaction, error) {
+	return _ParticipantManagerContract.Contract.Initialize(&_ParticipantManagerContract.TransactOpts, _nuvoLock, _owner, _initialParticipants)
 }
 
 // RemoveParticipant is a paid mutator transaction binding the contract method 0x668a2001.

@@ -146,6 +146,11 @@
     "name": "initialize",
     "inputs": [
       {
+        "name": "_tssSigner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "_accountManager",
         "type": "address",
         "internalType": "address"
@@ -363,6 +368,29 @@
   },
   {
     "type": "function",
+    "name": "setMinLockInfo",
+    "inputs": [
+      {
+        "name": "_minLockAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_minLockPeriod",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setRewardPerPeriod",
     "inputs": [
       {
@@ -372,6 +400,24 @@
       },
       {
         "name": "signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSignerAddress",
+    "inputs": [
+      {
+        "name": "_newSigner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_signature",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -492,6 +538,55 @@
     "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "tssNonce",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "tssSigner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "verifyAndCall",
+    "inputs": [
+      {
+        "name": "_target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_data",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "_signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "event",
     "name": "Initialized",
     "inputs": [
@@ -500,19 +595,6 @@
         "type": "uint64",
         "indexed": false,
         "internalType": "uint64"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "RewardPerPeriodVoted",
-    "inputs": [
-      {
-        "name": "newRewardPerPeriod",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false

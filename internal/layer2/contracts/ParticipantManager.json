@@ -54,47 +54,18 @@
         "internalType": "address"
       },
       {
-        "name": "_minLockAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_minLockPeriod",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
         "name": "_owner",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_initialParticipant",
-        "type": "address",
-        "internalType": "address"
+        "name": "_initialParticipants",
+        "type": "address[]",
+        "internalType": "address[]"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "isEligible",
-    "inputs": [
-      {
-        "name": "participant",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -111,32 +82,6 @@
         "name": "",
         "type": "bool",
         "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "minLockAmount",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "minLockPeriod",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"

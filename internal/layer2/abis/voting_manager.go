@@ -31,7 +31,7 @@ var (
 
 // VotingManagerContractMetaData contains all meta data concerning the VotingManagerContract contract.
 var VotingManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"accountManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIAccountManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"addBonusPoints\",\"inputs\":[{\"name\":\"_voters\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"addParticipant\",\"inputs\":[{\"name\":\"newParticipant\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"assetManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIAssetManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"chooseNewSubmitter\",\"inputs\":[{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"confirmTasks\",\"inputs\":[{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"delistAsset\",\"inputs\":[{\"name\":\"assetType\",\"type\":\"uint8\",\"internalType\":\"enumIAssetManager.AssetType\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"depositManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIDepositManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"forcedRotationWindow\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_accountManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_assetManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_depositManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_participantManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_nuDexOperations\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_nuvoLock\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"lastSubmissionTime\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"listAsset\",\"inputs\":[{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"nuDexName\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"internalType\":\"enumIAssetManager.AssetType\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nextSubmitter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuDexOperations\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuDexOperations\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuvoLock\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuvoLock\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"participantManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIParticipantManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmTask\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_result\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"registerAccount\",\"inputs\":[{\"name\":\"_user\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeParticipant\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setRewardPerPeriod\",\"inputs\":[{\"name\":\"newRewardPerPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitDepositInfo\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitTaskReceipt\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitWithdrawalInfo\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"taskCompletionThreshold\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RewardPerPeriodVoted\",\"inputs\":[{\"name\":\"newRewardPerPeriod\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterChosen\",\"inputs\":[{\"name\":\"newSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterRotationRequested\",\"inputs\":[{\"name\":\"requester\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"currentSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"IncorrectSubmitter\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSigner\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RotationWindowNotPassed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"TaskAlreadyCompleted\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"accountManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIAccountManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"addBonusPoints\",\"inputs\":[{\"name\":\"_voters\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"addParticipant\",\"inputs\":[{\"name\":\"newParticipant\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"assetManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIAssetManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"chooseNewSubmitter\",\"inputs\":[{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"confirmTasks\",\"inputs\":[{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"delistAsset\",\"inputs\":[{\"name\":\"assetType\",\"type\":\"uint8\",\"internalType\":\"enumIAssetManager.AssetType\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"depositManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIDepositManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"forcedRotationWindow\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_tssSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_accountManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_assetManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_depositManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_participantManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_nuDexOperations\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_nuvoLock\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"lastSubmissionTime\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"listAsset\",\"inputs\":[{\"name\":\"name\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"nuDexName\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"internalType\":\"enumIAssetManager.AssetType\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nextSubmitter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuDexOperations\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuDexOperations\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuvoLock\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuvoLock\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"participantManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIParticipantManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmTask\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_result\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"registerAccount\",\"inputs\":[{\"name\":\"_user\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeParticipant\",\"inputs\":[{\"name\":\"participant\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setMinLockInfo\",\"inputs\":[{\"name\":\"_minLockAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_minLockPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setRewardPerPeriod\",\"inputs\":[{\"name\":\"newRewardPerPeriod\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setSignerAddress\",\"inputs\":[{\"name\":\"_newSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitDepositInfo\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitTaskReceipt\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitWithdrawalInfo\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"taskCompletionThreshold\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tssNonce\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tssSigner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyAndCall\",\"inputs\":[{\"name\":\"_target\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterChosen\",\"inputs\":[{\"name\":\"newSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterRotationRequested\",\"inputs\":[{\"name\":\"requester\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"currentSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"IncorrectSubmitter\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSigner\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotParticipant\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RotationWindowNotPassed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"TaskAlreadyCompleted\",\"inputs\":[]}]",
 }
 
 // VotingManagerContractABI is the input ABI used to generate the binding from.
@@ -490,6 +490,68 @@ func (_VotingManagerContract *VotingManagerContractCallerSession) TaskCompletion
 	return _VotingManagerContract.Contract.TaskCompletionThreshold(&_VotingManagerContract.CallOpts)
 }
 
+// TssNonce is a free data retrieval call binding the contract method 0x3596d7eb.
+//
+// Solidity: function tssNonce() view returns(uint256)
+func (_VotingManagerContract *VotingManagerContractCaller) TssNonce(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _VotingManagerContract.contract.Call(opts, &out, "tssNonce")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// TssNonce is a free data retrieval call binding the contract method 0x3596d7eb.
+//
+// Solidity: function tssNonce() view returns(uint256)
+func (_VotingManagerContract *VotingManagerContractSession) TssNonce() (*big.Int, error) {
+	return _VotingManagerContract.Contract.TssNonce(&_VotingManagerContract.CallOpts)
+}
+
+// TssNonce is a free data retrieval call binding the contract method 0x3596d7eb.
+//
+// Solidity: function tssNonce() view returns(uint256)
+func (_VotingManagerContract *VotingManagerContractCallerSession) TssNonce() (*big.Int, error) {
+	return _VotingManagerContract.Contract.TssNonce(&_VotingManagerContract.CallOpts)
+}
+
+// TssSigner is a free data retrieval call binding the contract method 0xd5e2cb37.
+//
+// Solidity: function tssSigner() view returns(address)
+func (_VotingManagerContract *VotingManagerContractCaller) TssSigner(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _VotingManagerContract.contract.Call(opts, &out, "tssSigner")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// TssSigner is a free data retrieval call binding the contract method 0xd5e2cb37.
+//
+// Solidity: function tssSigner() view returns(address)
+func (_VotingManagerContract *VotingManagerContractSession) TssSigner() (common.Address, error) {
+	return _VotingManagerContract.Contract.TssSigner(&_VotingManagerContract.CallOpts)
+}
+
+// TssSigner is a free data retrieval call binding the contract method 0xd5e2cb37.
+//
+// Solidity: function tssSigner() view returns(address)
+func (_VotingManagerContract *VotingManagerContractCallerSession) TssSigner() (common.Address, error) {
+	return _VotingManagerContract.Contract.TssSigner(&_VotingManagerContract.CallOpts)
+}
+
 // AddBonusPoints is a paid mutator transaction binding the contract method 0x57b61412.
 //
 // Solidity: function addBonusPoints(address[] _voters, bytes _signature) returns()
@@ -595,25 +657,25 @@ func (_VotingManagerContract *VotingManagerContractTransactorSession) DelistAsse
 	return _VotingManagerContract.Contract.DelistAsset(&_VotingManagerContract.TransactOpts, assetType, contractAddress, chainId, signature)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xcc2a9a5b.
+// Initialize is a paid mutator transaction binding the contract method 0x35876476.
 //
-// Solidity: function initialize(address _accountManager, address _assetManager, address _depositManager, address _participantManager, address _nuDexOperations, address _nuvoLock) returns()
-func (_VotingManagerContract *VotingManagerContractTransactor) Initialize(opts *bind.TransactOpts, _accountManager common.Address, _assetManager common.Address, _depositManager common.Address, _participantManager common.Address, _nuDexOperations common.Address, _nuvoLock common.Address) (*types.Transaction, error) {
-	return _VotingManagerContract.contract.Transact(opts, "initialize", _accountManager, _assetManager, _depositManager, _participantManager, _nuDexOperations, _nuvoLock)
+// Solidity: function initialize(address _tssSigner, address _accountManager, address _assetManager, address _depositManager, address _participantManager, address _nuDexOperations, address _nuvoLock) returns()
+func (_VotingManagerContract *VotingManagerContractTransactor) Initialize(opts *bind.TransactOpts, _tssSigner common.Address, _accountManager common.Address, _assetManager common.Address, _depositManager common.Address, _participantManager common.Address, _nuDexOperations common.Address, _nuvoLock common.Address) (*types.Transaction, error) {
+	return _VotingManagerContract.contract.Transact(opts, "initialize", _tssSigner, _accountManager, _assetManager, _depositManager, _participantManager, _nuDexOperations, _nuvoLock)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xcc2a9a5b.
+// Initialize is a paid mutator transaction binding the contract method 0x35876476.
 //
-// Solidity: function initialize(address _accountManager, address _assetManager, address _depositManager, address _participantManager, address _nuDexOperations, address _nuvoLock) returns()
-func (_VotingManagerContract *VotingManagerContractSession) Initialize(_accountManager common.Address, _assetManager common.Address, _depositManager common.Address, _participantManager common.Address, _nuDexOperations common.Address, _nuvoLock common.Address) (*types.Transaction, error) {
-	return _VotingManagerContract.Contract.Initialize(&_VotingManagerContract.TransactOpts, _accountManager, _assetManager, _depositManager, _participantManager, _nuDexOperations, _nuvoLock)
+// Solidity: function initialize(address _tssSigner, address _accountManager, address _assetManager, address _depositManager, address _participantManager, address _nuDexOperations, address _nuvoLock) returns()
+func (_VotingManagerContract *VotingManagerContractSession) Initialize(_tssSigner common.Address, _accountManager common.Address, _assetManager common.Address, _depositManager common.Address, _participantManager common.Address, _nuDexOperations common.Address, _nuvoLock common.Address) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.Initialize(&_VotingManagerContract.TransactOpts, _tssSigner, _accountManager, _assetManager, _depositManager, _participantManager, _nuDexOperations, _nuvoLock)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xcc2a9a5b.
+// Initialize is a paid mutator transaction binding the contract method 0x35876476.
 //
-// Solidity: function initialize(address _accountManager, address _assetManager, address _depositManager, address _participantManager, address _nuDexOperations, address _nuvoLock) returns()
-func (_VotingManagerContract *VotingManagerContractTransactorSession) Initialize(_accountManager common.Address, _assetManager common.Address, _depositManager common.Address, _participantManager common.Address, _nuDexOperations common.Address, _nuvoLock common.Address) (*types.Transaction, error) {
-	return _VotingManagerContract.Contract.Initialize(&_VotingManagerContract.TransactOpts, _accountManager, _assetManager, _depositManager, _participantManager, _nuDexOperations, _nuvoLock)
+// Solidity: function initialize(address _tssSigner, address _accountManager, address _assetManager, address _depositManager, address _participantManager, address _nuDexOperations, address _nuvoLock) returns()
+func (_VotingManagerContract *VotingManagerContractTransactorSession) Initialize(_tssSigner common.Address, _accountManager common.Address, _assetManager common.Address, _depositManager common.Address, _participantManager common.Address, _nuDexOperations common.Address, _nuvoLock common.Address) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.Initialize(&_VotingManagerContract.TransactOpts, _tssSigner, _accountManager, _assetManager, _depositManager, _participantManager, _nuDexOperations, _nuvoLock)
 }
 
 // ListAsset is a paid mutator transaction binding the contract method 0xd1c0a28a.
@@ -700,6 +762,27 @@ func (_VotingManagerContract *VotingManagerContractTransactorSession) RemovePart
 	return _VotingManagerContract.Contract.RemoveParticipant(&_VotingManagerContract.TransactOpts, participant, signature)
 }
 
+// SetMinLockInfo is a paid mutator transaction binding the contract method 0x39b3c3ee.
+//
+// Solidity: function setMinLockInfo(uint256 _minLockAmount, uint256 _minLockPeriod, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractTransactor) SetMinLockInfo(opts *bind.TransactOpts, _minLockAmount *big.Int, _minLockPeriod *big.Int, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.contract.Transact(opts, "setMinLockInfo", _minLockAmount, _minLockPeriod, _signature)
+}
+
+// SetMinLockInfo is a paid mutator transaction binding the contract method 0x39b3c3ee.
+//
+// Solidity: function setMinLockInfo(uint256 _minLockAmount, uint256 _minLockPeriod, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractSession) SetMinLockInfo(_minLockAmount *big.Int, _minLockPeriod *big.Int, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.SetMinLockInfo(&_VotingManagerContract.TransactOpts, _minLockAmount, _minLockPeriod, _signature)
+}
+
+// SetMinLockInfo is a paid mutator transaction binding the contract method 0x39b3c3ee.
+//
+// Solidity: function setMinLockInfo(uint256 _minLockAmount, uint256 _minLockPeriod, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractTransactorSession) SetMinLockInfo(_minLockAmount *big.Int, _minLockPeriod *big.Int, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.SetMinLockInfo(&_VotingManagerContract.TransactOpts, _minLockAmount, _minLockPeriod, _signature)
+}
+
 // SetRewardPerPeriod is a paid mutator transaction binding the contract method 0x77833f18.
 //
 // Solidity: function setRewardPerPeriod(uint256 newRewardPerPeriod, bytes signature) returns()
@@ -719,6 +802,27 @@ func (_VotingManagerContract *VotingManagerContractSession) SetRewardPerPeriod(n
 // Solidity: function setRewardPerPeriod(uint256 newRewardPerPeriod, bytes signature) returns()
 func (_VotingManagerContract *VotingManagerContractTransactorSession) SetRewardPerPeriod(newRewardPerPeriod *big.Int, signature []byte) (*types.Transaction, error) {
 	return _VotingManagerContract.Contract.SetRewardPerPeriod(&_VotingManagerContract.TransactOpts, newRewardPerPeriod, signature)
+}
+
+// SetSignerAddress is a paid mutator transaction binding the contract method 0x1b004ebb.
+//
+// Solidity: function setSignerAddress(address _newSigner, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractTransactor) SetSignerAddress(opts *bind.TransactOpts, _newSigner common.Address, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.contract.Transact(opts, "setSignerAddress", _newSigner, _signature)
+}
+
+// SetSignerAddress is a paid mutator transaction binding the contract method 0x1b004ebb.
+//
+// Solidity: function setSignerAddress(address _newSigner, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractSession) SetSignerAddress(_newSigner common.Address, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.SetSignerAddress(&_VotingManagerContract.TransactOpts, _newSigner, _signature)
+}
+
+// SetSignerAddress is a paid mutator transaction binding the contract method 0x1b004ebb.
+//
+// Solidity: function setSignerAddress(address _newSigner, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractTransactorSession) SetSignerAddress(_newSigner common.Address, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.SetSignerAddress(&_VotingManagerContract.TransactOpts, _newSigner, _signature)
 }
 
 // SubmitDepositInfo is a paid mutator transaction binding the contract method 0xf9cb78de.
@@ -782,6 +886,27 @@ func (_VotingManagerContract *VotingManagerContractSession) SubmitWithdrawalInfo
 // Solidity: function submitWithdrawalInfo(address targetAddress, uint256 amount, uint256 chainId, bytes txInfo, bytes extraInfo, bytes signature) returns()
 func (_VotingManagerContract *VotingManagerContractTransactorSession) SubmitWithdrawalInfo(targetAddress common.Address, amount *big.Int, chainId *big.Int, txInfo []byte, extraInfo []byte, signature []byte) (*types.Transaction, error) {
 	return _VotingManagerContract.Contract.SubmitWithdrawalInfo(&_VotingManagerContract.TransactOpts, targetAddress, amount, chainId, txInfo, extraInfo, signature)
+}
+
+// VerifyAndCall is a paid mutator transaction binding the contract method 0xbb0e5801.
+//
+// Solidity: function verifyAndCall(address _target, bytes _data, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractTransactor) VerifyAndCall(opts *bind.TransactOpts, _target common.Address, _data []byte, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.contract.Transact(opts, "verifyAndCall", _target, _data, _signature)
+}
+
+// VerifyAndCall is a paid mutator transaction binding the contract method 0xbb0e5801.
+//
+// Solidity: function verifyAndCall(address _target, bytes _data, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractSession) VerifyAndCall(_target common.Address, _data []byte, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.VerifyAndCall(&_VotingManagerContract.TransactOpts, _target, _data, _signature)
+}
+
+// VerifyAndCall is a paid mutator transaction binding the contract method 0xbb0e5801.
+//
+// Solidity: function verifyAndCall(address _target, bytes _data, bytes _signature) returns()
+func (_VotingManagerContract *VotingManagerContractTransactorSession) VerifyAndCall(_target common.Address, _data []byte, _signature []byte) (*types.Transaction, error) {
+	return _VotingManagerContract.Contract.VerifyAndCall(&_VotingManagerContract.TransactOpts, _target, _data, _signature)
 }
 
 // VotingManagerContractInitializedIterator is returned from FilterInitialized and is used to iterate over the raw logs and unpacked data for Initialized events raised by the VotingManagerContract contract.
@@ -912,140 +1037,6 @@ func (_VotingManagerContract *VotingManagerContractFilterer) WatchInitialized(op
 func (_VotingManagerContract *VotingManagerContractFilterer) ParseInitialized(log types.Log) (*VotingManagerContractInitialized, error) {
 	event := new(VotingManagerContractInitialized)
 	if err := _VotingManagerContract.contract.UnpackLog(event, "Initialized", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// VotingManagerContractRewardPerPeriodVotedIterator is returned from FilterRewardPerPeriodVoted and is used to iterate over the raw logs and unpacked data for RewardPerPeriodVoted events raised by the VotingManagerContract contract.
-type VotingManagerContractRewardPerPeriodVotedIterator struct {
-	Event *VotingManagerContractRewardPerPeriodVoted // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *VotingManagerContractRewardPerPeriodVotedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(VotingManagerContractRewardPerPeriodVoted)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(VotingManagerContractRewardPerPeriodVoted)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *VotingManagerContractRewardPerPeriodVotedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *VotingManagerContractRewardPerPeriodVotedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// VotingManagerContractRewardPerPeriodVoted represents a RewardPerPeriodVoted event raised by the VotingManagerContract contract.
-type VotingManagerContractRewardPerPeriodVoted struct {
-	NewRewardPerPeriod *big.Int
-	Raw                types.Log // Blockchain specific contextual infos
-}
-
-// FilterRewardPerPeriodVoted is a free log retrieval operation binding the contract event 0x49c1ed88b0c8d97e2b2c5ed61e83a948d5ceb786bc26227eaab0cd748878cc66.
-//
-// Solidity: event RewardPerPeriodVoted(uint256 newRewardPerPeriod)
-func (_VotingManagerContract *VotingManagerContractFilterer) FilterRewardPerPeriodVoted(opts *bind.FilterOpts) (*VotingManagerContractRewardPerPeriodVotedIterator, error) {
-
-	logs, sub, err := _VotingManagerContract.contract.FilterLogs(opts, "RewardPerPeriodVoted")
-	if err != nil {
-		return nil, err
-	}
-	return &VotingManagerContractRewardPerPeriodVotedIterator{contract: _VotingManagerContract.contract, event: "RewardPerPeriodVoted", logs: logs, sub: sub}, nil
-}
-
-// WatchRewardPerPeriodVoted is a free log subscription operation binding the contract event 0x49c1ed88b0c8d97e2b2c5ed61e83a948d5ceb786bc26227eaab0cd748878cc66.
-//
-// Solidity: event RewardPerPeriodVoted(uint256 newRewardPerPeriod)
-func (_VotingManagerContract *VotingManagerContractFilterer) WatchRewardPerPeriodVoted(opts *bind.WatchOpts, sink chan<- *VotingManagerContractRewardPerPeriodVoted) (event.Subscription, error) {
-
-	logs, sub, err := _VotingManagerContract.contract.WatchLogs(opts, "RewardPerPeriodVoted")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(VotingManagerContractRewardPerPeriodVoted)
-				if err := _VotingManagerContract.contract.UnpackLog(event, "RewardPerPeriodVoted", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseRewardPerPeriodVoted is a log parse operation binding the contract event 0x49c1ed88b0c8d97e2b2c5ed61e83a948d5ceb786bc26227eaab0cd748878cc66.
-//
-// Solidity: event RewardPerPeriodVoted(uint256 newRewardPerPeriod)
-func (_VotingManagerContract *VotingManagerContractFilterer) ParseRewardPerPeriodVoted(log types.Log) (*VotingManagerContractRewardPerPeriodVoted, error) {
-	event := new(VotingManagerContractRewardPerPeriodVoted)
-	if err := _VotingManagerContract.contract.UnpackLog(event, "RewardPerPeriodVoted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
