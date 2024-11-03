@@ -3,7 +3,7 @@ package tss
 import (
 	"crypto/ecdsa"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -16,7 +16,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
 type TSSService struct {
@@ -75,61 +74,25 @@ const (
 	DataTypeSignWithdrawal   = "SignWithdrawal"
 )
 
-//type MsgSign struct {
-//	RequestId    string `json:"request_id"`
-//	VoterAddress string `json:"voter_address"`
-//	IsProposer   bool   `json:"is_proposer"`
-//	CreateTime   int64  `json:"create_time"`
-//}
-//
-//type MsgSignCreateWalletMessage struct {
-//	MsgSign
-//	Task types.CreateWalletTask `json:"task"`
-//}
-//
-//func (m *MsgSignCreateWalletMessage) Unmarshal(msg p2p.Message[json.RawMessage]) error {
-//	if msg.DataType == DataTypeSignCreateWallet {
-//		return json.Unmarshal(msg.Data, m)
-//	}
-//
-//	return ErrDataType
-//}
-//
-//type TssMessage struct {
-//	FromPartyId  string   `json:"from_party_id"`
-//	ToPartyIds   []string `json:"to_party_ids"`
-//	IsBroadcast  bool     `json:"is_broadcast"`
-//	MsgWireBytes []byte   `json:"msg_wire_bytes"`
-//}
-//
-//func (t *TssMessage) Unmarshal(msg p2p.Message[json.RawMessage]) error {
-//	switch msg.DataType {
-//	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
-//		return json.Unmarshal(msg.Data, t)
-//	}
-//
-//	return ErrDataType
-//}
-
-var ErrDataType = errors.New("error data type")
-
 // convertMsgData converts the message data to the corresponding struct.
 func convertMsgData(msg p2p.Message[json.RawMessage]) any {
-	var rawData any
-
 	switch msg.DataType {
 	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
-		rawData = &types.TssMessage{}
+		return unmarshal[types.TssMessage](msg.Data)
 	case DataTypeSignCreateWallet:
-		rawData = &types.SignMessage{}
+		return unmarshal[types.SignMessage](msg.Data)
 	}
 
-	if rawData != nil {
-		err := json.Unmarshal(msg.Data, &rawData)
-		utils.Assert(err)
-	} else {
-		utils.Assert(ErrDataType)
+	return unmarshal[any](msg.Data)
+}
+
+func unmarshal[T any](data json.RawMessage) T {
+	var obj T
+
+	err := json.Unmarshal(data, &obj)
+	if err != nil || data == nil {
+		panic(fmt.Errorf("unmarshal data:%v, error: %w", data, err))
 	}
 
-	return rawData
+	return obj
 }
