@@ -25,33 +25,43 @@ func (l *Layer2Listener) processLogs(vLog types.Log) {
 }
 
 func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
-	if vLog.Topics[0] == SubmitterChosenTopic {
+	// save current submitter
+	var (
+		submitterChosen db.SubmitterChosen
+		submitter       string
+		err             error
+	)
+
+	switch vLog.Topics[0] {
+	case SubmitterChosenTopic:
 		submitterChosenEvent := abis.VotingManagerContractSubmitterChosen{}
+		err = UnpackLog(abis.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
+		submitter = submitterChosenEvent.NewSubmitter.Hex()
+	case SubmitterRotationRequestedTopic:
+		submitterChosenEvent := abis.VotingManagerContractSubmitterRotationRequested{}
+		err = UnpackLog(abis.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
+		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
+	}
 
-		err := UnpackLog(abis.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
+	}
 
-		// save current submitter
-		var submitterChosen db.SubmitterChosen
+	result := l.db.GetRelayerDB().
+		Where("block_number = ? AND submitter = ?", vLog.BlockNumber, submitter).
+		First(&submitterChosen)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			submitterChosen.BlockNumber = vLog.BlockNumber
+			submitterChosen.Submitter = submitter
 
-		result := l.db.GetRelayerDB().
-			Where("block_number = ? AND submitter = ?", vLog.BlockNumber, submitterChosenEvent.NewSubmitter).
-			First(&submitterChosen)
-		if result.Error != nil {
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				submitterChosen.BlockNumber = vLog.BlockNumber
-				submitterChosen.Submitter = submitterChosenEvent.NewSubmitter.Hex()
-
-				err = l.db.GetRelayerDB().Create(&submitterChosen).Error
-				if err != nil {
-					l.state.TssState.CurrentSubmitter = submitterChosenEvent.NewSubmitter
-					l.state.TssState.BlockNumber = vLog.BlockNumber
-				}
-			} else {
-				return err
+			err = l.db.GetRelayerDB().Create(&submitterChosen).Error
+			if err != nil {
+				l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
+				l.state.TssState.BlockNumber = vLog.BlockNumber
 			}
+		} else {
+			return err
 		}
 	}
 
