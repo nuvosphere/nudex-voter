@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/nuvosphere/nudex-voter/internal/btc"
@@ -16,6 +15,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/task"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/samber/lo/parallel"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -61,61 +61,26 @@ func (app *Application) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
-	var wg sync.WaitGroup
+	var moules []Module
+	if config.AppConfig.EnableRelayer {
+		moules = append(moules, app.Layer2Listener)
+	}
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
-		if config.AppConfig.EnableRelayer {
-			app.Layer2Listener.Start(ctx)
-		}
-	}()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		app.LibP2PService.Start(ctx)
-	}()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		app.BTCListener.Start(ctx)
-	}()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
-		go app.TssService.Start(ctx)
-	}()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
-		go app.TaskService.Start(ctx)
-	}()
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		app.HTTPServer.Start(ctx)
-	}()
+	otherModules := []Module{
+		app.LibP2PService,
+		app.BTCListener,
+		app.TssService,
+		app.TaskService,
+		app.HTTPServer,
+	}
+	moules = append(moules, otherModules...)
+	parallel.ForEach(moules, func(module Module, _ int) { module.Start(ctx) })
 
 	<-stop
 	log.Info("Receiving exit signal...")
 
 	cancel()
 
-	wg.Wait()
 	app.State.Bus().Close()
 	log.Info("Server stopped")
 }
@@ -123,4 +88,8 @@ func (app *Application) Run() {
 func main() {
 	app := NewApplication()
 	app.Run()
+}
+
+type Module interface {
+	Start(ctx context.Context)
 }
