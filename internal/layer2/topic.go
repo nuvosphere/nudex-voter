@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -19,6 +20,17 @@ var (
 	DepositRecordedTopic    = crypto.Keccak256Hash([]byte(`DepositRecorded(address,uint256,uint256,bytes,bytes)`))     // DepositManagerContract
 	WithdrawalRecordedTopic = crypto.Keccak256Hash([]byte(`WithdrawalRecorded(address,uint256,uint256,bytes,bytes)`))  // DepositManagerContract
 )
+
+var topics = [][]common.Hash{
+	{SubmitterChosenTopic},
+	{TaskSubmittedTopic},
+	{TaskCompletedTopic},
+	{AddressRegisteredTopic},
+	{ParticipantRemovedTopic},
+	{ParticipantAddedTopic},
+	{DepositRecordedTopic},
+	{WithdrawalRecordedTopic},
+}
 
 var (
 	errNoEventSignature       = errors.New("no event signature")
