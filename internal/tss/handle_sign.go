@@ -28,6 +28,7 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) e
 	taskPrefix := map[reflect.Type]string{
 		reflect.TypeOf(&types.CreateWalletTask{}): "CREATE_WALLET",
 		reflect.TypeOf(&types.DepositTask{}):      "DEPOSIT",
+		reflect.TypeOf(&types.WithdrawalTask{}):   "WITHDRAWAL",
 	}
 
 	taskType := reflect.TypeOf(task)
