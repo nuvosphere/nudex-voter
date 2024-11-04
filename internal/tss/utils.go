@@ -217,7 +217,11 @@ func serializeTaskMessageToBytes(baseTask types.Task) ([]byte, error) {
 		return nil, fmt.Errorf("unsupported task type: %T", task)
 	}
 
-	return buf.Bytes(), nil
+	bufBytes := buf.Bytes()
+	length := len(bufBytes)
+	lengthBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(lengthBytes, uint32(length))
+	return append(lengthBytes, bufBytes...), nil
 }
 
 func getRequestId(task *db.Task) string {
