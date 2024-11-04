@@ -36,6 +36,16 @@ type DepositTask struct {
 	ExtraInfo []byte `json:"extra_info"`
 }
 
+type WithdrawalTask struct {
+	BaseTask
+	Address   string `json:"address"`
+	Amount    uint64 `json:"amount"`
+	ChainId   uint64 `json:"chain_id"`
+	Token     []byte `json:"token"`
+	TxInfo    []byte `json:"tx_info"`
+	ExtraInfo []byte `json:"extra_info"`
+}
+
 const (
 	WalletTypeEVM = iota
 	WalletTypeBTC
