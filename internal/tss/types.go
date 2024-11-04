@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"sync"
 	"time"
 
@@ -25,7 +26,9 @@ type TSSService struct {
 
 	p2p   p2p.P2PService
 	state *state.State
-	dbm   *db.DatabaseManager
+
+	layer2Listener *layer2.Layer2Listener
+	dbm            *db.DatabaseManager
 
 	addressList        []common.Address
 	LocalParty         *keygen.LocalParty

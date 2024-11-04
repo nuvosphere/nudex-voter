@@ -31,7 +31,13 @@ type Layer2Listener struct {
 	ethClient       *ethclient.Client
 	contractAddress []common.Address
 	addressBind     map[common.Address]func(types.Log) error
-	sigFinishChan   chan interface{}
+
+	contractVotingManager *abis.VotingManagerContract
+	sigFinishChan         chan interface{}
+}
+
+func (l *Layer2Listener) ContractVotingManager() *abis.VotingManagerContract {
+	return l.contractVotingManager
 }
 
 func NewLayer2Listener(p *p2p.LibP2PService, state *state.State, db *db.DatabaseManager) *Layer2Listener {
@@ -59,6 +65,12 @@ func NewLayer2Listener(p *p2p.LibP2PService, state *state.State, db *db.Database
 		self.addressBind,
 		func(item common.Address, _ func(log2 types.Log) error) common.Address { return item },
 	)
+
+	contractVotingManager, err := abis.NewVotingManagerContract(abis.VotingAddress, ethClient)
+	if err != nil {
+		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
+	}
+	self.contractVotingManager = contractVotingManager
 
 	return self
 }

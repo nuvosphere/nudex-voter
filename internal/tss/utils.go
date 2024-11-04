@@ -160,7 +160,7 @@ func extractToIds(message tss.Message) []string {
 	return ids
 }
 
-func serializeTaskMessageToBytes(baseTask types.Task) ([]byte, error) {
+func serializeTaskMessageToBytes(nonce uint64, baseTask types.Task) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	writeField := func(data interface{}) error {
 		return binary.Write(buf, binary.BigEndian, data)
@@ -221,7 +221,11 @@ func serializeTaskMessageToBytes(baseTask types.Task) ([]byte, error) {
 	length := len(bufBytes)
 	lengthBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(lengthBytes, uint32(length))
-	return append(lengthBytes, bufBytes...), nil
+
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, nonce)
+
+	return append(append(nonceBytes, lengthBytes...), bufBytes...), nil
 }
 
 func getRequestId(task *db.Task) string {

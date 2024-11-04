@@ -3,6 +3,7 @@ package tss
 import (
 	"context"
 	"encoding/json"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -18,13 +19,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State) *TSSService {
+func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State, layer2Listener *layer2.Layer2Listener) *TSSService {
 	return &TSSService{
-		privateKey: config.AppConfig.L2PrivateKey,
-		Address:    crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
-		p2p:        p,
-		dbm:        dbm,
-		state:      state,
+		privateKey:     config.AppConfig.L2PrivateKey,
+		Address:        crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
+		p2p:            p,
+		dbm:            dbm,
+		state:          state,
+		layer2Listener: layer2Listener,
 
 		partyIdMap: make(map[string]*tsslib.PartyID),
 

@@ -68,7 +68,12 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) e
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	messageToSign, err := serializeTaskMessageToBytes(task)
+	nonce, err := tss.layer2Listener.ContractVotingManager().TssNonce(nil)
+	if err != nil {
+		return err
+	}
+
+	messageToSign, err := serializeTaskMessageToBytes(nonce.Uint64(), task)
 	if err != nil {
 		return err
 	}
@@ -135,7 +140,7 @@ func (tss *TSSService) handleSignStart(ctx context.Context, e types.SignMessage)
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	messageToSign, err := serializeTaskMessageToBytes(e.Task)
+	messageToSign, err := serializeTaskMessageToBytes(0, e.Task)
 	if err != nil {
 		return err
 	}
