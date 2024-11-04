@@ -189,11 +189,7 @@ func (tss *TSSService) Stop() {
 	})
 }
 
-func (tss *TSSService) CleanAllSigInfo() {
-	// todo make new map
-	defer tss.rw.Unlock()
-	tss.rw.Lock()
-
+func (tss *TSSService) cleanAllSigInfo() {
 	tss.sigMap = make(map[string]map[int32]*signing.LocalParty)
 	tss.sigRound1P2pMessageMap = make(map[string]*p2p.Message[types.TssMessage])
 	tss.sigRound1MessageSendTimesMap = make(map[string]int)

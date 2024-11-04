@@ -9,6 +9,7 @@ import (
 
 	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
@@ -42,6 +43,7 @@ type TSSService struct {
 	// resharing channel
 	reSharingOutCh chan tsslib.Message
 	reSharingEndCh chan *keygen.LocalPartySaveData
+	reLocalParty   *resharing.LocalParty
 
 	// tss signature channel
 	sigOutCh chan tsslib.Message

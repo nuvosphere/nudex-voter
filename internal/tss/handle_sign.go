@@ -174,7 +174,7 @@ func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
 
 func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
 	log.Infof("sig failed, taskId:%d, reason:%s", tss.state.TssState.CurrentTask.TaskId, reason)
-	tss.CleanAllSigInfo()
+	tss.cleanAllSigInfo()
 }
 
 func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *common.SignatureData) {
@@ -211,7 +211,7 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 		}
 	}
 
-	tss.CleanAllSigInfo()
+	tss.cleanAllSigInfo()
 
 	tss.rw.Unlock()
 }
