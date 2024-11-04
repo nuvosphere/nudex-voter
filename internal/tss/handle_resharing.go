@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
@@ -35,7 +34,7 @@ func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold
 		len(newAddressList),
 		threshold,
 	)
-	currentParty := resharing.NewLocalParty(currentParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*keygen.LocalParty)
+	currentParty := resharing.NewLocalParty(currentParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*resharing.LocalParty)
 
 	go func() {
 		if err := currentParty.Start(); err != nil {
@@ -57,10 +56,10 @@ func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold
 		len(newAddressList),
 		threshold,
 	)
-	newParty := resharing.NewLocalParty(newParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*keygen.LocalParty)
+	tss.reLocalParty = resharing.NewLocalParty(newParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*resharing.LocalParty)
 
 	go func() {
-		if err := newParty.Start(); err != nil {
+		if err := tss.reLocalParty.Start(); err != nil {
 			log.Errorf("Failed to start resharing new party, error=%v", err)
 			return
 		} else {

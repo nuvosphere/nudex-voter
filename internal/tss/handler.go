@@ -47,13 +47,21 @@ func (tss *TSSService) handleTssMsg(dataType string, event interface{}) error {
 
 	go func() {
 		switch dataType {
-		case DataTypeTssKeygenMsg, DataTypeTssReSharingMsg:
+		case DataTypeTssKeygenMsg:
 			if _, err := tss.LocalParty.Update(msg); err != nil {
 				log.Errorf("Failed to update keygen party: FromPartyID=%v, error=%v", message.FromPartyId, err)
 				return
 			} else {
 				log.Infof("Keygen party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
 			}
+		case DataTypeTssReSharingMsg:
+			if _, err := tss.reLocalParty.Update(msg); err != nil {
+				log.Errorf("Failed to update resharing party: FromPartyID=%v, error=%v", message.FromPartyId, err)
+				return
+			} else {
+				log.Infof("resharing party updated: FromPartyID=%v, type=%v", message.FromPartyId, msg.Type())
+			}
+
 		case DataTypeTssSignMsg:
 			if tss.state.TssState.CurrentTask != nil {
 				requestId := getRequestId(tss.state.TssState.CurrentTask)
