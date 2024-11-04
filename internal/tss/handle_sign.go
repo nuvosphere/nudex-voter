@@ -38,10 +38,16 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) e
 		return fmt.Errorf("task type %T not found in task prefix", task)
 	}
 
+	nonce, err := tss.layer2Listener.ContractVotingManager().TssNonce(nil)
+	if err != nil {
+		return err
+	}
+
 	reqMessage := types.SignMessage{
 		BaseSignMsg: types.BaseSignMsg{
 			RequestId:    requestId,
 			IsProposer:   true,
+			Nonce:        nonce.Uint64(),
 			VoterAddress: tss.Address.Hex(),
 			CreateTime:   time.Now().Unix(),
 		},
@@ -55,7 +61,7 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) e
 		Data:        reqMessage,
 	}
 
-	err := tss.p2p.PublishMessage(ctx, p2pMsg)
+	err = tss.p2p.PublishMessage(ctx, p2pMsg)
 	if err != nil {
 		return err
 	}
@@ -67,11 +73,6 @@ func (tss *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) e
 
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
-
-	nonce, err := tss.layer2Listener.ContractVotingManager().TssNonce(nil)
-	if err != nil {
-		return err
-	}
 
 	messageToSign, err := serializeTaskMessageToBytes(nonce.Uint64(), task)
 	if err != nil {
@@ -140,7 +141,7 @@ func (tss *TSSService) handleSignStart(ctx context.Context, e types.SignMessage)
 	index := AddressIndex(tss.addressList, tss.Address)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	messageToSign, err := serializeTaskMessageToBytes(0, e.Task)
+	messageToSign, err := serializeTaskMessageToBytes(e.Nonce, e.Task)
 	if err != nil {
 		return err
 	}

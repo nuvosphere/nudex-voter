@@ -3,6 +3,7 @@ package types
 type BaseSignMsg struct {
 	RequestId    string `json:"request_id"`
 	VoterAddress string `json:"voter_address"`
+	Nonce        uint64 `json:"nonce"`
 	IsProposer   bool   `json:"is_proposer"`
 	CreateTime   int64  `json:"create_time"`
 }
