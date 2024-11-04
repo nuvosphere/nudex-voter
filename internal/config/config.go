@@ -163,7 +163,7 @@ func ParseECDSAPublicKeys(publicKeyStr string) ([]*ecdsa.PublicKey, error) {
 
 	publicKeys := make([]*ecdsa.PublicKey, len(publicKeyHexArray))
 
-	for _, keyHex := range publicKeyHexArray {
+	for i, keyHex := range publicKeyHexArray {
 		if len(keyHex) != 66 {
 			return nil, errors.New("invalid compressed public key length, expected 33 bytes")
 		}
@@ -178,7 +178,7 @@ func ParseECDSAPublicKeys(publicKeyStr string) ([]*ecdsa.PublicKey, error) {
 			return nil, errors.New("failed to decompress public key: " + err.Error())
 		}
 
-		publicKeys = append(publicKeys, pubKey)
+		publicKeys[i] = pubKey
 	}
 
 	return publicKeys, nil
