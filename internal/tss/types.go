@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"sync"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"

@@ -3,7 +3,6 @@ package tss
 import (
 	"context"
 	"encoding/json"
-	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -13,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"

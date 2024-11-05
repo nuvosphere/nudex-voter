@@ -2,13 +2,13 @@ package layer2
 
 import (
 	"errors"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"slices"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"

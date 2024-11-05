@@ -2,7 +2,6 @@ package layer2
 
 import (
 	"context"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"math/big"
 	"strings"
 	"sync"
@@ -14,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	log "github.com/sirupsen/logrus"
 )
 

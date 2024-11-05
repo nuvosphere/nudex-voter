@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"math/big"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/samber/lo"
@@ -70,6 +70,7 @@ func NewLayer2Listener(p *p2p.LibP2PService, state *state.State, db *db.Database
 	if err != nil {
 		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
 	}
+
 	self.contractVotingManager = contractVotingManager
 
 	return self
