@@ -23,22 +23,52 @@ message DepositRequest {
   bytes target_address = 1;
   uint64 amount = 2;
   uint32 chain_id = 3;
-  bytes tx_info = 4;
-  bytes extra_info = 5;
+  WithdrawalRequestTxInfo tx_info = 4;
+  DepositRequestExtraInfo extra_info = 5;
 }
 
 message WithdrawalRequest {
   bytes target_address = 1;
   uint64 amount = 2;
   uint32 chain_id = 3;
-  bytes tx_info = 4;
-  bytes extra_info = 5;
+  WithdrawalRequestTxInfo tx_info = 4;
+  WithdrawalRequestExtraInfo extra_info = 5;
 }
 
+message DepositRequestTxInfo {
+  uint64 block_height = 1;
+  bytes tx_hash = 2;
+}
+
+message DepositRequestExtraInfo {
+  bytes contract_address = 1;
+  string ticker = 2;
+  AssetType type = 3;
+  int32 decimal = 4;
+}
+
+
+message WithdrawalRequestTxInfo {
+  uint64 block_height = 1;
+  bytes tx_hash = 2;
+}
+
+message WithdrawalRequestExtraInfo {
+  bytes contract_address = 1;
+  string ticker = 2;
+  AssetType type = 3;
+  int32 decimal = 4;
+}
+
+
 enum Chain {
-  UNKNOWN = 0;
-  ETHEREUM = 1;
-  BITCOIN = 2;
-  SOLANA = 3;
-  SUI = 4;
+  ETHEREUM = 0;
+  BITCOIN = 1;
+  SOLANA = 2;
+  SUI = 3;
+}
+
+enum AssetType {
+  MAIN = 0;
+  ERC20 = 1;
 }
