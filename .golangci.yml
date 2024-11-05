@@ -22,6 +22,8 @@ linters:
   - prealloc
   - predeclared
   - unconvert
+  disable:
+  - unused
 
 linters-settings:
   govet:
