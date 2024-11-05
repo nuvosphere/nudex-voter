@@ -164,6 +164,7 @@ func (p *DerivePathParams) Indexes() []uint32 {
 	return indexes
 }
 
+// DerivingPubKeyFromPath EDDSA hd support: https://github.com/bnb-chain/tss-lib/pull/299/files
 func DerivingPubKeyFromPath(masterPub ecdsa.PublicKey, path []uint32) (*big.Int, *ckd.ExtendedKey, error) {
 	// Generate key and chaincode
 	// h := hmac.New(sha512.New, []byte("Bitcoin seed"))
