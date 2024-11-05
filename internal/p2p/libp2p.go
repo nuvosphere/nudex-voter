@@ -304,6 +304,17 @@ func loadOrCreatePrivateKey(fileName string) (crypto.PrivKey, error) {
 	return privKey, nil
 }
 
+func createPrivateKey(s string) (crypto.PrivKey, error) {
+	reader := rand.Reader
+	if s != "" {
+		reader = strings.NewReader(s)
+	}
+
+	pk, _, err := crypto.GenerateECDSAKeyPair(reader)
+
+	return pk, err
+}
+
 func printNodeAddrInfo(node host.Host) {
 	addrs := node.Addrs()
 	peerID := node.ID().String()

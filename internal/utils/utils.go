@@ -102,9 +102,5 @@ func ContainErr(err, subErr error) bool {
 		return true
 	}
 
-	if err == nil || subErr == nil {
-		return false
-	}
-
 	return strings.Contains(err.Error(), subErr.Error())
 }

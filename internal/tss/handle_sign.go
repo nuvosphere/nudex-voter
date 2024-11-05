@@ -18,6 +18,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -210,10 +211,15 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 				log.Errorf("chain %d not supported", createWalletTask.Chain)
 			}
 
-			bip44Path := fmt.Sprintf("m/44'/%d'/%d'/0/%d", coinType, createWalletTask.User, createWalletTask.Account)
 			// @todo
 			// generate wallet and send to chain
-			log.Infof("bip44Path: %s", bip44Path)
+			address := wallet.GenerateAddressByPath(
+				*(tss.LocalPartySaveData.ECDSAPub.ToECDSAPubKey()),
+				uint32(coinType),
+				uint32(createWalletTask.User),
+				uint32(createWalletTask.Account),
+			)
+			log.Infof("user account address: %s", address)
 		}
 	}
 
