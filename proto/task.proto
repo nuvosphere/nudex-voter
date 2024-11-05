@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "github.com/nuvosphere/nudex-voter/proto";
+
+message Task {
+  uint32 version = 1;
+  uint32 type = 2;
+  oneof request {
+    WalletCreationRequest wallet_creation = 3;
+    DepositRequest deposit_request = 4;
+    WithdrawalRequest withdrawal_request = 5;
+  }
+}
+
+message WalletCreationRequest {
+  bytes user = 1;
+  uint64 account = 2;
+  Chain chain = 3;
+  uint32 index = 4;
+}
+
+message DepositRequest {
+  bytes target_address = 1;
+  uint64 amount = 2;
+  uint32 chain_id = 3;
+  bytes tx_info = 4;
+  bytes extra_info = 5;
+}
+
+message WithdrawalRequest {
+  bytes target_address = 1;
+  uint64 amount = 2;
+  uint32 chain_id = 3;
+  bytes tx_info = 4;
+  bytes extra_info = 5;
+}
+
+enum Chain {
+  UNKNOWN = 0;
+  ETHEREUM = 1;
+  BITCOIN = 2;
+  SOLANA = 3;
+  SUI = 4;
+}
