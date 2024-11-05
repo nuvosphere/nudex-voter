@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"math/big"
 	"strings"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/samber/lo"
@@ -32,11 +32,11 @@ type Layer2Listener struct {
 	contractAddress []common.Address
 	addressBind     map[common.Address]func(types.Log) error
 
-	contractVotingManager *abis.VotingManagerContract
+	contractVotingManager *contracts.VotingManagerContract
 	sigFinishChan         chan interface{}
 }
 
-func (l *Layer2Listener) ContractVotingManager() *abis.VotingManagerContract {
+func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContract {
 	return l.contractVotingManager
 }
 
@@ -55,18 +55,18 @@ func NewLayer2Listener(p *p2p.LibP2PService, state *state.State, db *db.Database
 	}
 
 	self.addressBind = map[common.Address]func(types.Log) error{
-		abis.VotingAddress:      self.processVotingLog,
-		abis.AccountAddress:     self.processAccountLog,
-		abis.ParticipantAddress: self.processParticipantLog,
-		abis.OperationsAddress:  self.processOperationsLog,
-		abis.DepositAddress:     self.processDepositLog,
+		contracts.VotingAddress:      self.processVotingLog,
+		contracts.AccountAddress:     self.processAccountLog,
+		contracts.ParticipantAddress: self.processParticipantLog,
+		contracts.OperationsAddress:  self.processOperationsLog,
+		contracts.DepositAddress:     self.processDepositLog,
 	}
 	self.contractAddress = lo.MapToSlice(
 		self.addressBind,
 		func(item common.Address, _ func(log2 types.Log) error) common.Address { return item },
 	)
 
-	contractVotingManager, err := abis.NewVotingManagerContract(abis.VotingAddress, ethClient)
+	contractVotingManager, err := contracts.NewVotingManagerContract(contracts.VotingAddress, ethClient)
 	if err != nil {
 		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
 	}

@@ -1,4 +1,4 @@
-package abis
+package contracts
 
 import (
 	"github.com/ethereum/go-ethereum/common"

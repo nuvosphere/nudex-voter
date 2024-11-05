@@ -2,6 +2,7 @@ package layer2
 
 import (
 	"context"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"math/big"
 	"strings"
 	"sync"
@@ -13,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -121,7 +121,7 @@ func getClientAndAbi() (*ethclient.Client, *abi.ABI, common.Address) {
 	}
 
 	// Decode ABI
-	parsedVotingManagerABI, err := abis.VotingManagerContractMetaData.GetAbi()
+	parsedVotingManagerABI, err := contracts.VotingManagerContractMetaData.GetAbi()
 	if err != nil {
 		log.Fatalf("Error parsing VotingManager ABI: %v", err)
 	}

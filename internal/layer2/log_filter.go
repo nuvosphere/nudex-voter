@@ -2,13 +2,13 @@ package layer2
 
 import (
 	"errors"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"slices"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -34,12 +34,12 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 
 	switch vLog.Topics[0] {
 	case SubmitterChosenTopic:
-		submitterChosenEvent := abis.VotingManagerContractSubmitterChosen{}
-		err = UnpackLog(abis.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
+		submitterChosenEvent := contracts.VotingManagerContractSubmitterChosen{}
+		err = UnpackLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
 		submitter = submitterChosenEvent.NewSubmitter.Hex()
 	case SubmitterRotationRequestedTopic:
-		submitterChosenEvent := abis.VotingManagerContractSubmitterRotationRequested{}
-		err = UnpackLog(abis.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
+		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
+		err = UnpackLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
 	}
 
@@ -71,9 +71,9 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case TaskSubmittedTopic:
-		taskSubmitted := abis.NuDexOperationsContractTaskSubmitted{}
+		taskSubmitted := contracts.NuDexOperationsContractTaskSubmitted{}
 
-		err := UnpackLog(abis.NuDexOperationsContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
+		err := UnpackLog(contracts.NuDexOperationsContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
 		if err != nil {
 			return err
 		}
@@ -104,9 +104,9 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 		}
 
 	case TaskCompletedTopic:
-		taskCompleted := abis.NuDexOperationsContractTaskCompleted{}
+		taskCompleted := contracts.NuDexOperationsContractTaskCompleted{}
 
-		err := UnpackLog(abis.NuDexOperationsContractMetaData, &taskCompleted, "TaskCompleted", vLog)
+		err := UnpackLog(contracts.NuDexOperationsContractMetaData, &taskCompleted, "TaskCompleted", vLog)
 		if err != nil {
 			return err
 		}
@@ -137,9 +137,9 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 }
 
 func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
-	addressRegistered := abis.AccountManagerContractAddressRegistered{}
+	addressRegistered := contracts.AccountManagerContractAddressRegistered{}
 
-	err := UnpackLog(abis.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
+	err := UnpackLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
 	if err != nil {
 		return err
 	}
@@ -165,9 +165,9 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case ParticipantAddedTopic:
-		eventParticipantAdded := abis.ParticipantManagerContractParticipantAdded{}
+		eventParticipantAdded := contracts.ParticipantManagerContractParticipantAdded{}
 
-		err := UnpackLog(abis.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
+		err := UnpackLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
 		if err != nil {
 			return err
 		}
@@ -191,9 +191,9 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 			l.state.EventBus.Publish(state.EventParticipantAddedOrRemoved{}, l.state.TssState.Participants)
 		}
 	case ParticipantRemovedTopic:
-		participantRemovedEvent := abis.ParticipantManagerContractParticipantRemoved{}
+		participantRemovedEvent := contracts.ParticipantManagerContractParticipantRemoved{}
 
-		err := UnpackLog(abis.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
+		err := UnpackLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
 		if err != nil {
 			return err
 		}
@@ -224,9 +224,9 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case DepositRecordedTopic:
-		depositRecorded := abis.DepositManagerContractDepositRecorded{}
+		depositRecorded := contracts.DepositManagerContractDepositRecorded{}
 
-		err := UnpackLog(abis.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
+		err := UnpackLog(contracts.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
 		if err != nil {
 			return err
 		}
@@ -243,9 +243,9 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 			depositRecorded.TargetAddress.Hex(), depositRecorded.Amount.Uint64(), depositRecorded.ChainId.Uint64(), depositRecorded.TxInfo,
 		).Error
 	case WithdrawalRecordedTopic:
-		withdrawalRecorded := abis.DepositManagerContractWithdrawalRecorded{}
+		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
 
-		err := UnpackLog(abis.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
+		err := UnpackLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
 		if err != nil {
 			return err
 		}
