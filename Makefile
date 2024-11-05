@@ -62,6 +62,11 @@ tool: ## Install dep tool
 
 .PHONY: abi
 abi: ## generate abi go file
+	abigen --abi internal/layer2/contracts/erc20.json --pkg abis --type ERC20 --out internal/layer2/abis/erc20.go
+	abigen --abi internal/layer2/contracts/ierc1271.json --pkg abis --type IERC1271 --out internal/layer2/abis/ierc1271.go
+	abigen --abi internal/layer2/contracts/erc721.json --pkg abis --type ERC721 --out internal/layer2/abis/erc721.go
+	abigen --abi internal/layer2/contracts/erc1155.json --pkg abis --type ERC1155 --out internal/layer2/abis/erc1155.go
+	abigen --abi internal/layer2/contracts/multicall3.json --pkg abis --type Multicall3 --out internal/layer2/abis/multicall3.go
 	abigen --abi internal/layer2/contracts/AccountManager.json --pkg abis --type AccountManagerContract --out internal/layer2/abis/account_manager.go
 	abigen --abi internal/layer2/contracts/NuDexOperations.json --pkg abis --type NuDexOperationsContract --out internal/layer2/abis/nudex_operations.go
 	abigen --abi internal/layer2/contracts/ParticipantManager.json --pkg abis --type ParticipantManagerContract --out internal/layer2/abis/participant_manager.go
