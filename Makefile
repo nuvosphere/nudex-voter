@@ -74,6 +74,7 @@ abi: ## generate abi go file
 	abigen --abi internal/layer2/abis/ParticipantManager.json --pkg contracts --type ParticipantManagerContract --out internal/layer2/contracts/participant_manager.go
 	abigen --abi internal/layer2/abis/VotingManager.json --pkg contracts --type VotingManagerContract --out internal/layer2/contracts/voting_manager.go
 	abigen --abi internal/layer2/abis/DepositManager.json --pkg contracts --type DepositManagerContract --out internal/layer2/contracts/deposit_manager.go
+	abigen --abi internal/layer2/abis/TaskPayload.json --pkg contracts --type TaskPayloadContract --out internal/layer2/contracts/task_payload.go
 
 .PHONY: ci
 ci: abi fix fmt lint build test 
