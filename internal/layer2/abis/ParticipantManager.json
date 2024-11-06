@@ -225,7 +225,13 @@
   {
     "type": "error",
     "name": "AlreadyParticipant",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -235,7 +241,13 @@
   {
     "type": "error",
     "name": "NotEligible",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -250,7 +262,13 @@
   {
     "type": "error",
     "name": "NotParticipant",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",

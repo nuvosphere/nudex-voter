@@ -71,9 +71,9 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case TaskSubmittedTopic:
-		taskSubmitted := contracts.NuDexOperationsContractTaskSubmitted{}
+		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 
-		err := UnpackLog(contracts.NuDexOperationsContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
+		err := UnpackLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
 		if err != nil {
 			return err
 		}
@@ -104,9 +104,9 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 		}
 
 	case TaskCompletedTopic:
-		taskCompleted := contracts.NuDexOperationsContractTaskCompleted{}
+		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
 
-		err := UnpackLog(contracts.NuDexOperationsContractMetaData, &taskCompleted, "TaskCompleted", vLog)
+		err := UnpackLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
 		if err != nil {
 			return err
 		}

@@ -31,7 +31,7 @@ var (
 
 // AccountManagerContractMetaData contains all meta data concerning the AccountManagerContract contract.
 var AccountManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"addressRecord\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAddressRecord\",\"inputs\":[{\"name\":\"_user\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"registerNewAddress\",\"inputs\":[{\"name\":\"_user\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"userMapping\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"}],\"outputs\":[{\"name\":\"user\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AddressRegistered\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint8\",\"indexed\":true,\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"index\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"newAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAccountNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"RegisteredAccount\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"addressRecord\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAddressRecord\",\"inputs\":[{\"name\":\"_user\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"registerNewAddress\",\"inputs\":[{\"name\":\"_user\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"userMapping\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"}],\"outputs\":[{\"name\":\"user\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AddressRegistered\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint8\",\"indexed\":true,\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"index\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"newAddress\",\"type\":\"string\",\"indexed\":true,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAccountNumber\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"RegisteredAccount\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}]}]",
 }
 
 // AccountManagerContractABI is the input ABI used to generate the binding from.
@@ -182,16 +182,16 @@ func (_AccountManagerContract *AccountManagerContractTransactorRaw) Transact(opt
 
 // AddressRecord is a free data retrieval call binding the contract method 0x5192a407.
 //
-// Solidity: function addressRecord(bytes ) view returns(address)
-func (_AccountManagerContract *AccountManagerContractCaller) AddressRecord(opts *bind.CallOpts, arg0 []byte) (common.Address, error) {
+// Solidity: function addressRecord(bytes ) view returns(string)
+func (_AccountManagerContract *AccountManagerContractCaller) AddressRecord(opts *bind.CallOpts, arg0 []byte) (string, error) {
 	var out []interface{}
 	err := _AccountManagerContract.contract.Call(opts, &out, "addressRecord", arg0)
 
 	if err != nil {
-		return *new(common.Address), err
+		return *new(string), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
 
 	return out0, err
 
@@ -199,30 +199,30 @@ func (_AccountManagerContract *AccountManagerContractCaller) AddressRecord(opts 
 
 // AddressRecord is a free data retrieval call binding the contract method 0x5192a407.
 //
-// Solidity: function addressRecord(bytes ) view returns(address)
-func (_AccountManagerContract *AccountManagerContractSession) AddressRecord(arg0 []byte) (common.Address, error) {
+// Solidity: function addressRecord(bytes ) view returns(string)
+func (_AccountManagerContract *AccountManagerContractSession) AddressRecord(arg0 []byte) (string, error) {
 	return _AccountManagerContract.Contract.AddressRecord(&_AccountManagerContract.CallOpts, arg0)
 }
 
 // AddressRecord is a free data retrieval call binding the contract method 0x5192a407.
 //
-// Solidity: function addressRecord(bytes ) view returns(address)
-func (_AccountManagerContract *AccountManagerContractCallerSession) AddressRecord(arg0 []byte) (common.Address, error) {
+// Solidity: function addressRecord(bytes ) view returns(string)
+func (_AccountManagerContract *AccountManagerContractCallerSession) AddressRecord(arg0 []byte) (string, error) {
 	return _AccountManagerContract.Contract.AddressRecord(&_AccountManagerContract.CallOpts, arg0)
 }
 
 // GetAddressRecord is a free data retrieval call binding the contract method 0x38652e68.
 //
-// Solidity: function getAddressRecord(address _user, uint256 _account, uint8 _chain, uint256 _index) view returns(address)
-func (_AccountManagerContract *AccountManagerContractCaller) GetAddressRecord(opts *bind.CallOpts, _user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (common.Address, error) {
+// Solidity: function getAddressRecord(address _user, uint256 _account, uint8 _chain, uint256 _index) view returns(string)
+func (_AccountManagerContract *AccountManagerContractCaller) GetAddressRecord(opts *bind.CallOpts, _user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
 	var out []interface{}
 	err := _AccountManagerContract.contract.Call(opts, &out, "getAddressRecord", _user, _account, _chain, _index)
 
 	if err != nil {
-		return *new(common.Address), err
+		return *new(string), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
 
 	return out0, err
 
@@ -230,15 +230,15 @@ func (_AccountManagerContract *AccountManagerContractCaller) GetAddressRecord(op
 
 // GetAddressRecord is a free data retrieval call binding the contract method 0x38652e68.
 //
-// Solidity: function getAddressRecord(address _user, uint256 _account, uint8 _chain, uint256 _index) view returns(address)
-func (_AccountManagerContract *AccountManagerContractSession) GetAddressRecord(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (common.Address, error) {
+// Solidity: function getAddressRecord(address _user, uint256 _account, uint8 _chain, uint256 _index) view returns(string)
+func (_AccountManagerContract *AccountManagerContractSession) GetAddressRecord(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
 	return _AccountManagerContract.Contract.GetAddressRecord(&_AccountManagerContract.CallOpts, _user, _account, _chain, _index)
 }
 
 // GetAddressRecord is a free data retrieval call binding the contract method 0x38652e68.
 //
-// Solidity: function getAddressRecord(address _user, uint256 _account, uint8 _chain, uint256 _index) view returns(address)
-func (_AccountManagerContract *AccountManagerContractCallerSession) GetAddressRecord(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (common.Address, error) {
+// Solidity: function getAddressRecord(address _user, uint256 _account, uint8 _chain, uint256 _index) view returns(string)
+func (_AccountManagerContract *AccountManagerContractCallerSession) GetAddressRecord(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
 	return _AccountManagerContract.Contract.GetAddressRecord(&_AccountManagerContract.CallOpts, _user, _account, _chain, _index)
 }
 
@@ -273,10 +273,10 @@ func (_AccountManagerContract *AccountManagerContractCallerSession) Owner() (com
 	return _AccountManagerContract.Contract.Owner(&_AccountManagerContract.CallOpts)
 }
 
-// UserMapping is a free data retrieval call binding the contract method 0x39835c17.
+// UserMapping is a free data retrieval call binding the contract method 0xa0873ccb.
 //
-// Solidity: function userMapping(address depositAddress, uint8 ) view returns(address user)
-func (_AccountManagerContract *AccountManagerContractCaller) UserMapping(opts *bind.CallOpts, depositAddress common.Address, arg1 uint8) (common.Address, error) {
+// Solidity: function userMapping(string depositAddress, uint8 ) view returns(address user)
+func (_AccountManagerContract *AccountManagerContractCaller) UserMapping(opts *bind.CallOpts, depositAddress string, arg1 uint8) (common.Address, error) {
 	var out []interface{}
 	err := _AccountManagerContract.contract.Call(opts, &out, "userMapping", depositAddress, arg1)
 
@@ -290,17 +290,17 @@ func (_AccountManagerContract *AccountManagerContractCaller) UserMapping(opts *b
 
 }
 
-// UserMapping is a free data retrieval call binding the contract method 0x39835c17.
+// UserMapping is a free data retrieval call binding the contract method 0xa0873ccb.
 //
-// Solidity: function userMapping(address depositAddress, uint8 ) view returns(address user)
-func (_AccountManagerContract *AccountManagerContractSession) UserMapping(depositAddress common.Address, arg1 uint8) (common.Address, error) {
+// Solidity: function userMapping(string depositAddress, uint8 ) view returns(address user)
+func (_AccountManagerContract *AccountManagerContractSession) UserMapping(depositAddress string, arg1 uint8) (common.Address, error) {
 	return _AccountManagerContract.Contract.UserMapping(&_AccountManagerContract.CallOpts, depositAddress, arg1)
 }
 
-// UserMapping is a free data retrieval call binding the contract method 0x39835c17.
+// UserMapping is a free data retrieval call binding the contract method 0xa0873ccb.
 //
-// Solidity: function userMapping(address depositAddress, uint8 ) view returns(address user)
-func (_AccountManagerContract *AccountManagerContractCallerSession) UserMapping(depositAddress common.Address, arg1 uint8) (common.Address, error) {
+// Solidity: function userMapping(string depositAddress, uint8 ) view returns(address user)
+func (_AccountManagerContract *AccountManagerContractCallerSession) UserMapping(depositAddress string, arg1 uint8) (common.Address, error) {
 	return _AccountManagerContract.Contract.UserMapping(&_AccountManagerContract.CallOpts, depositAddress, arg1)
 }
 
@@ -325,24 +325,24 @@ func (_AccountManagerContract *AccountManagerContractTransactorSession) Initiali
 	return _AccountManagerContract.Contract.Initialize(&_AccountManagerContract.TransactOpts, _owner)
 }
 
-// RegisterNewAddress is a paid mutator transaction binding the contract method 0x1a98a163.
+// RegisterNewAddress is a paid mutator transaction binding the contract method 0xba76e9e6.
 //
-// Solidity: function registerNewAddress(address _user, uint256 _account, uint8 _chain, uint256 _index, address _address) returns()
-func (_AccountManagerContract *AccountManagerContractTransactor) RegisterNewAddress(opts *bind.TransactOpts, _user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address common.Address) (*types.Transaction, error) {
+// Solidity: function registerNewAddress(address _user, uint256 _account, uint8 _chain, uint256 _index, string _address) returns()
+func (_AccountManagerContract *AccountManagerContractTransactor) RegisterNewAddress(opts *bind.TransactOpts, _user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
 	return _AccountManagerContract.contract.Transact(opts, "registerNewAddress", _user, _account, _chain, _index, _address)
 }
 
-// RegisterNewAddress is a paid mutator transaction binding the contract method 0x1a98a163.
+// RegisterNewAddress is a paid mutator transaction binding the contract method 0xba76e9e6.
 //
-// Solidity: function registerNewAddress(address _user, uint256 _account, uint8 _chain, uint256 _index, address _address) returns()
-func (_AccountManagerContract *AccountManagerContractSession) RegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address common.Address) (*types.Transaction, error) {
+// Solidity: function registerNewAddress(address _user, uint256 _account, uint8 _chain, uint256 _index, string _address) returns()
+func (_AccountManagerContract *AccountManagerContractSession) RegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
 	return _AccountManagerContract.Contract.RegisterNewAddress(&_AccountManagerContract.TransactOpts, _user, _account, _chain, _index, _address)
 }
 
-// RegisterNewAddress is a paid mutator transaction binding the contract method 0x1a98a163.
+// RegisterNewAddress is a paid mutator transaction binding the contract method 0xba76e9e6.
 //
-// Solidity: function registerNewAddress(address _user, uint256 _account, uint8 _chain, uint256 _index, address _address) returns()
-func (_AccountManagerContract *AccountManagerContractTransactorSession) RegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address common.Address) (*types.Transaction, error) {
+// Solidity: function registerNewAddress(address _user, uint256 _account, uint8 _chain, uint256 _index, string _address) returns()
+func (_AccountManagerContract *AccountManagerContractTransactorSession) RegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
 	return _AccountManagerContract.Contract.RegisterNewAddress(&_AccountManagerContract.TransactOpts, _user, _account, _chain, _index, _address)
 }
 
@@ -461,14 +461,14 @@ type AccountManagerContractAddressRegistered struct {
 	Account    *big.Int
 	ChainId    uint8
 	Index      *big.Int
-	NewAddress common.Address
+	NewAddress common.Hash
 	Raw        types.Log // Blockchain specific contextual infos
 }
 
-// FilterAddressRegistered is a free log retrieval operation binding the contract event 0x10d3f3c3d0c7da2f6751b14c10b9dbc6e04f5ebc6b798a6e220f3857ba1cd454.
+// FilterAddressRegistered is a free log retrieval operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
 //
-// Solidity: event AddressRegistered(address indexed user, uint256 account, uint8 indexed chainId, uint256 index, address indexed newAddress)
-func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegistered(opts *bind.FilterOpts, user []common.Address, chainId []uint8, newAddress []common.Address) (*AccountManagerContractAddressRegisteredIterator, error) {
+// Solidity: event AddressRegistered(address indexed user, uint256 account, uint8 indexed chainId, uint256 index, string indexed newAddress)
+func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegistered(opts *bind.FilterOpts, user []common.Address, chainId []uint8, newAddress []string) (*AccountManagerContractAddressRegisteredIterator, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -492,10 +492,10 @@ func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegi
 	return &AccountManagerContractAddressRegisteredIterator{contract: _AccountManagerContract.contract, event: "AddressRegistered", logs: logs, sub: sub}, nil
 }
 
-// WatchAddressRegistered is a free log subscription operation binding the contract event 0x10d3f3c3d0c7da2f6751b14c10b9dbc6e04f5ebc6b798a6e220f3857ba1cd454.
+// WatchAddressRegistered is a free log subscription operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
 //
-// Solidity: event AddressRegistered(address indexed user, uint256 account, uint8 indexed chainId, uint256 index, address indexed newAddress)
-func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegistered(opts *bind.WatchOpts, sink chan<- *AccountManagerContractAddressRegistered, user []common.Address, chainId []uint8, newAddress []common.Address) (event.Subscription, error) {
+// Solidity: event AddressRegistered(address indexed user, uint256 account, uint8 indexed chainId, uint256 index, string indexed newAddress)
+func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegistered(opts *bind.WatchOpts, sink chan<- *AccountManagerContractAddressRegistered, user []common.Address, chainId []uint8, newAddress []string) (event.Subscription, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -544,9 +544,9 @@ func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegis
 	}), nil
 }
 
-// ParseAddressRegistered is a log parse operation binding the contract event 0x10d3f3c3d0c7da2f6751b14c10b9dbc6e04f5ebc6b798a6e220f3857ba1cd454.
+// ParseAddressRegistered is a log parse operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
 //
-// Solidity: event AddressRegistered(address indexed user, uint256 account, uint8 indexed chainId, uint256 index, address indexed newAddress)
+// Solidity: event AddressRegistered(address indexed user, uint256 account, uint8 indexed chainId, uint256 index, string indexed newAddress)
 func (_AccountManagerContract *AccountManagerContractFilterer) ParseAddressRegistered(log types.Log) (*AccountManagerContractAddressRegistered, error) {
 	event := new(AccountManagerContractAddressRegistered)
 	if err := _AccountManagerContract.contract.UnpackLog(event, "AddressRegistered", log); err != nil {

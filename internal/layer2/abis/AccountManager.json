@@ -12,8 +12,8 @@
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "stateMutability": "view"
@@ -46,8 +46,8 @@
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "stateMutability": "view"
@@ -104,8 +104,8 @@
       },
       {
         "name": "_address",
-        "type": "address",
-        "internalType": "address"
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -137,8 +137,8 @@
     "inputs": [
       {
         "name": "depositAddress",
-        "type": "address",
-        "internalType": "address"
+        "type": "string",
+        "internalType": "string"
       },
       {
         "name": "",
@@ -185,9 +185,9 @@
       },
       {
         "name": "newAddress",
-        "type": "address",
+        "type": "string",
         "indexed": true,
-        "internalType": "address"
+        "internalType": "string"
       }
     ],
     "anonymous": false
@@ -227,7 +227,13 @@
   {
     "type": "error",
     "name": "InvalidAccountNumber",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -269,6 +275,17 @@
   {
     "type": "error",
     "name": "RegisteredAccount",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
   }
 ]

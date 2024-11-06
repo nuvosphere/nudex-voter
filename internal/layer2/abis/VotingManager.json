@@ -14,42 +14,6 @@
   },
   {
     "type": "function",
-    "name": "addBonusPoints",
-    "inputs": [
-      {
-        "name": "_voters",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "addParticipant",
-    "inputs": [
-      {
-        "name": "newParticipant",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "assetManager",
     "inputs": [],
     "outputs": [
@@ -256,7 +220,7 @@
       {
         "name": "",
         "type": "address",
-        "internalType": "contract INuDexOperations"
+        "internalType": "contract ITaskManager"
       }
     ],
     "stateMutability": "view"
@@ -312,103 +276,6 @@
   },
   {
     "type": "function",
-    "name": "registerAccount",
-    "inputs": [
-      {
-        "name": "_user",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_account",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_chain",
-        "type": "uint8",
-        "internalType": "enum IAccountManager.Chain"
-      },
-      {
-        "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_address",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "removeParticipant",
-    "inputs": [
-      {
-        "name": "participant",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setMinLockInfo",
-    "inputs": [
-      {
-        "name": "_minLockAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_minLockPeriod",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setRewardPerPeriod",
-    "inputs": [
-      {
-        "name": "newRewardPerPeriod",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "setSignerAddress",
     "inputs": [
       {
@@ -427,96 +294,20 @@
   },
   {
     "type": "function",
-    "name": "submitDepositInfo",
-    "inputs": [
-      {
-        "name": "targetAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "chainId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "txInfo",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "extraInfo",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "submitTaskReceipt",
     "inputs": [
       {
-        "name": "taskId",
+        "name": "_taskId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "result",
+        "name": "_result",
         "type": "bytes",
         "internalType": "bytes"
       },
       {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "submitWithdrawalInfo",
-    "inputs": [
-      {
-        "name": "targetAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "chainId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "txInfo",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "extraInfo",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "signature",
+        "name": "_signature",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -634,7 +425,18 @@
   {
     "type": "error",
     "name": "IncorrectSubmitter",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "submitter",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -644,7 +446,18 @@
   {
     "type": "error",
     "name": "InvalidSigner",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "recoverAddr",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -654,7 +467,13 @@
   {
     "type": "error",
     "name": "NotParticipant",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -664,11 +483,28 @@
   {
     "type": "error",
     "name": "RotationWindowNotPassed",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "current",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "window",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
     "name": "TaskAlreadyCompleted",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "taskId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   }
 ]

@@ -13,8 +13,8 @@ import (
 var (
 	SubmitterRotationRequestedTopic = crypto.Keccak256Hash([]byte(`SubmitterRotationRequested(address,address)`))              // VotingManagerUpgradeable
 	SubmitterChosenTopic            = crypto.Keccak256Hash([]byte(`SubmitterChosen(address)`))                                 // VotingManagerUpgradeable
-	TaskSubmittedTopic              = crypto.Keccak256Hash([]byte(`TaskSubmitted(uint256,bytes,address)`))                     // INuDexOperations
-	TaskCompletedTopic              = crypto.Keccak256Hash([]byte(`TaskCompleted(uint256,address,uint256,bytes)`))             // INuDexOperations
+	TaskSubmittedTopic              = crypto.Keccak256Hash([]byte(`TaskSubmitted(uint256,bytes,address)`))                     // TaskManager
+	TaskCompletedTopic              = crypto.Keccak256Hash([]byte(`TaskCompleted(uint256,address,uint256,bytes)`))             // TaskManager
 	AddressRegisteredTopic          = crypto.Keccak256Hash([]byte(`AddressRegistered(address,uint256,uint8,uint256,address)`)) // AccountManagerContract
 	ParticipantAddedTopic           = crypto.Keccak256Hash([]byte(`ParticipantAdded(address)`))                                // IParticipantManager
 	ParticipantRemovedTopic         = crypto.Keccak256Hash([]byte(`ParticipantRemoved(address)`))                              // IParticipantManager

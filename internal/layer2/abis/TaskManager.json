@@ -14,7 +14,7 @@
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct INuDexOperations.Task",
+        "internalType": "struct ITaskManager.Task",
         "components": [
           {
             "name": "id",
@@ -64,7 +64,7 @@
       {
         "name": "",
         "type": "tuple[]",
-        "internalType": "struct INuDexOperations.Task[]",
+        "internalType": "struct ITaskManager.Task[]",
         "components": [
           {
             "name": "id",
@@ -111,7 +111,7 @@
     "name": "initialize",
     "inputs": [
       {
-        "name": "_participantManager",
+        "name": "_taskSubmitter",
         "type": "address",
         "internalType": "address"
       },
@@ -207,19 +207,6 @@
   },
   {
     "type": "function",
-    "name": "participantManager",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IParticipantManager"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "preconfirmTask",
     "inputs": [
       {
@@ -283,8 +270,26 @@
   },
   {
     "type": "function",
+    "name": "setTaskSubmitter",
+    "inputs": [
+      {
+        "name": "_taskSubmitter",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "submitTask",
     "inputs": [
+      {
+        "name": "_submitter",
+        "type": "address",
+        "internalType": "address"
+      },
       {
         "name": "_context",
         "type": "bytes",
@@ -293,6 +298,19 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "taskSubmitter",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -461,7 +479,7 @@
   },
   {
     "type": "error",
-    "name": "NotParticipant",
+    "name": "OnlyTaskSubmitter",
     "inputs": []
   },
   {

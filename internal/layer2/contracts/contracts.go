@@ -64,47 +64,24 @@ func MustParseABI(abiJSON string) abi.ABI {
 }
 
 type Contract struct {
-	*bind.BoundContract
 	Address common.Address
 	ABI     abi.ABI
 }
 
-func NewContractCaller(address common.Address, abi abi.ABI, caller bind.ContractCaller) *Contract {
-	return NewContract(address, abi, caller, nil, nil)
-}
-
-func NewContractTransactor(address common.Address, abi abi.ABI, caller bind.ContractCaller, transactor bind.ContractTransactor) *Contract {
-	return NewContract(address, abi, caller, transactor, nil)
-}
-
-func NewContractFilterer(address common.Address, abi abi.ABI, filterer bind.ContractFilterer) *Contract {
-	return NewContract(address, abi, nil, nil, filterer)
-}
-
-func NewContract(address common.Address, abi abi.ABI, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) *Contract {
-	contract := &Contract{
-		BoundContract: bind.NewBoundContract(address, abi, caller, transactor, filterer),
-		Address:       address,
-		ABI:           abi,
+func NewContract(address common.Address, abi abi.ABI) *Contract {
+	return &Contract{
+		Address: address,
+		ABI:     abi,
 	}
-
-	return contract
 }
 
-func (c *Contract) Encode(method string, args ...interface{}) ([]byte, error) {
-	m, ok := c.ABI.Methods[method]
-	if !ok {
-		return nil, fmt.Errorf("contract method %s not found", method)
-	}
+func (c *Contract) Encode(method string, args ...any) ([]byte, error) {
+	// Otherwise pack up the parameters and invoke the contract
+	return c.ABI.Pack(method, args...)
+}
 
-	input, err := m.Inputs.Pack(args...)
-	if err != nil {
-		return nil, err
-	}
-
-	input = append(m.ID, input...)
-
-	return input, nil
+func (c *Contract) Decode(method string, data []byte) ([]any, error) {
+	return c.ABI.Unpack(method, data)
 }
 
 func (c *Contract) EventTopicHash(eventName string) (common.Hash, error) {
@@ -120,4 +97,12 @@ func (c *Contract) EventTopicHash(eventName string) (common.Hash, error) {
 
 func EncodeTransferOfERC20(from, to common.Address, amount *big.Int) []byte {
 	return EncodeFun(ERC20ABI, "transferFrom", from, to, amount)
+}
+
+func EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte) []byte {
+	return EncodeFun(VotingManagerContractABI, "verifyAndCall", _target, _data, _signature)
+}
+
+func EncodeSubmitTaskReceipt(taskId *big.Int, result []byte, signature []byte) []byte {
+	return EncodeFun(VotingManagerContractABI, "submitTaskReceipt", taskId, result, signature)
 }
