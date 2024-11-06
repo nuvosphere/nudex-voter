@@ -45,6 +45,7 @@ message DepositRequestExtraInfo {
   string ticker = 2;
   AssetType type = 3;
   uint32 decimal = 4;
+  uint64 fee = 5;
 }
 
 
@@ -67,8 +68,8 @@ message TaskResult {
   string error_msg = 4;
   oneof result {
     WalletCreationResult wallet_creation = 5;
-    DepositRequest deposit = 6;
-    WithdrawalRequest withdrawal = 7;
+    DepositResult deposit = 6;
+    WithdrawalResult withdrawal = 7;
   }
 }
 
