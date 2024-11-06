@@ -84,6 +84,10 @@ func (s *Wallet) BalanceOf(erc20Token, owner common.Address) (*big.Int, error) {
 	return erc20.BalanceOf(nil, owner)
 }
 
+func (s *Wallet) BalanceAt(owner common.Address) (*big.Int, error) {
+	return s.client.BalanceAt(context.Background(), owner, nil)
+}
+
 func (s *Wallet) ChainID(ctx context.Context) (*big.Int, error) {
 	if s.chainID.Load() == 0 {
 		chainID, err := s.client.ChainID(ctx)
