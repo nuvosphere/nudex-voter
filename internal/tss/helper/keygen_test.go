@@ -2,19 +2,20 @@ package helper_test
 
 import (
 	"context"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"testing"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestKeygen(t *testing.T) {
 	utils.SkipCI(t)
-	t.Skip("TestKeygen")
+	// t.Skip("TestKeygen")
 	// err := logging.SetLogLevel("*", "debug")
 	// require.NoError(t, err)
 	// 1. Create party ID for each peer, share with other peers
@@ -66,6 +67,11 @@ func TestKeygen(t *testing.T) {
 	for i, key := range keys {
 		assert.True(t, key.Validate(), "key should be valid")
 		assert.True(t, key.ValidateWithProof(), "key should be valid with proof")
+		t.Log(
+			"party: ", i,
+			"address: ", crypto.PubkeyToAddress(*(key.ECDSAPub.ToECDSAPubKey())),
+			"public key: ", key.ECDSAPub.ToECDSAPubKey(),
+		)
 
 		for j, key2 := range keys {
 			// Skip self and previous keys
@@ -93,5 +99,5 @@ func TestKeygen(t *testing.T) {
 	//			}
 	//		}
 	//	}
-	t.Log("end")
+	t.Log("TestKeygen end")
 }
