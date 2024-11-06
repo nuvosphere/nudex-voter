@@ -12,29 +12,29 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold int) error {
-	if tss.LocalParty == nil || tss.LocalPartySaveData == nil || tss.LocalPartySaveData.ECDSAPub == nil {
+func (t *TSSService) startReSharing(newAddressList []common.Address, threshold int) error {
+	if t.LocalParty == nil || t.LocalPartySaveData == nil || t.LocalPartySaveData.ECDSAPub == nil {
 		return fmt.Errorf("local party not initialized")
 	}
 
-	currentPartyIDs := createPartyIDsByAddress(tss.addressList)
+	currentPartyIDs := createPartyIDsByAddress(t.partners)
 	currentPeerCtx := tsslib.NewPeerContext(currentPartyIDs)
 
 	newPartyIDs := createPartyIDsByAddress(newAddressList)
 	newPeerCtx := tsslib.NewPeerContext(newPartyIDs)
 
-	currentIndex := slices.Index(tss.addressList, tss.Address)
+	currentIndex := slices.Index(t.partners, t.localAddress)
 	currentParams := tsslib.NewReSharingParameters(
 		tsslib.S256(),
 		currentPeerCtx,
 		newPeerCtx,
 		currentPartyIDs[currentIndex],
-		len(tss.addressList),
+		len(t.partners),
 		config.AppConfig.TssThreshold,
 		len(newAddressList),
 		threshold,
 	)
-	currentParty := resharing.NewLocalParty(currentParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*resharing.LocalParty)
+	currentParty := resharing.NewLocalParty(currentParams, *t.LocalPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
 
 	go func() {
 		if err := currentParty.Start(); err != nil {
@@ -45,7 +45,7 @@ func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold
 		}
 	}()
 
-	newIndex := slices.Index(newAddressList, tss.Address)
+	newIndex := slices.Index(newAddressList, t.localAddress)
 	newParams := tsslib.NewReSharingParameters(
 		tsslib.S256(),
 		currentPeerCtx,
@@ -56,10 +56,10 @@ func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold
 		len(newAddressList),
 		threshold,
 	)
-	tss.reLocalParty = resharing.NewLocalParty(newParams, *tss.LocalPartySaveData, tss.reSharingOutCh, tss.reSharingEndCh).(*resharing.LocalParty)
+	t.reLocalParty = resharing.NewLocalParty(newParams, *t.LocalPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
 
 	go func() {
-		if err := tss.reLocalParty.Start(); err != nil {
+		if err := t.reLocalParty.Start(); err != nil {
 			log.Errorf("Failed to start resharing new party, error=%v", err)
 			return
 		} else {
@@ -70,13 +70,13 @@ func (tss *TSSService) startReSharing(newAddressList []common.Address, threshold
 	return nil
 }
 
-func (tss *TSSService) handleTssReSharingOut(ctx context.Context, msg tsslib.Message) (err error) {
+func (t *TSSService) handleTssReSharingOut(ctx context.Context, msg tsslib.Message) (err error) {
 	dest := msg.GetTo()
 	if dest == nil && !msg.IsBroadcast() {
 		return fmt.Errorf("did not expect a msg to have a nil destination and not broadcast during resharing")
 	}
 
-	_, err = tss.sendTssMsg(ctx, DataTypeTssReSharingMsg, msg)
+	_, err = t.sendTssMsg(ctx, DataTypeTssReSharingMsg, msg)
 
 	return err
 }
