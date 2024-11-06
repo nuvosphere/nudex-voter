@@ -39,7 +39,7 @@ func TestHDSign(t *testing.T) {
 	outputAgg := make(chan *common.SignatureData, testutil.TestThreshold)
 	errAgg := make(chan *tss.Error, testutil.TestThreshold)
 
-	msgHash := big.NewInt(1234)
+	msgHash := crypto.Keccak256([]byte("hello world"))
 
 	keyDerivationDelta, extendedChildPk, errorDerivation := wallet.DerivingPubKeyFromPath(*(keys[0].ECDSAPub.ToECDSAPubKey()), []uint32{44, 60, 0, 0, 0})
 	assert.NoErrorf(t, errorDerivation, "there should not be an error deriving the child public key")
@@ -55,7 +55,8 @@ func TestHDSign(t *testing.T) {
 		t.Log(params.PartyID())
 
 		// big.Int message, would be message hash converted to big int
-		outputCh, errCh := RunSignWithHD(ctx, msgHash, params, keys[i], transports[i], keyDerivationDelta)
+		b := &big.Int{}
+		outputCh, errCh := RunSignWithHD(ctx, b.SetBytes(msgHash), params, keys[i], transports[i], keyDerivationDelta)
 
 		go func(outputCh chan *common.SignatureData, errCh chan *tss.Error) {
 			for {
@@ -101,7 +102,8 @@ func TestHDSign(t *testing.T) {
 				continue
 			}
 
-			// t.Log(utils.VerifySig(ethcommon.BytesToHash(msgHash.Bytes()), sig.Signature, ethcommon.HexToAddress("0x4326E0BcE74b754A29627D3A15C2CADD6F7b5DaA")))
+			crypto.VerifySignature(crypto.CompressPubkey(&extendedChildPk.PublicKey), msgHash, sig.SignatureRecovery)
+			t.Log(crypto.VerifySignature(crypto.CompressPubkey(&extendedChildPk.PublicKey), msgHash, sig.SignatureRecovery))
 			// make sure everyone has the same signature
 			assert.True(t, bytes.Equal(sig.Signature, sig2.Signature))
 		}
@@ -117,7 +119,7 @@ func TestHDSign(t *testing.T) {
 
 	ok := ecdsa.Verify(
 		&pk,                                    // pubkey
-		msgHash.Bytes(),                        // message hash
+		msgHash,                                // message hash
 		new(big.Int).SetBytes(signatures[0].R), // R
 		new(big.Int).SetBytes(signatures[0].S), // S
 	)
