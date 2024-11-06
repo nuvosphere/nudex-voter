@@ -216,8 +216,8 @@ func (tss *TSSService) handleSigFinish(ctx context.Context, signatureData *commo
 			address := wallet.GenerateAddressByPath(
 				*(tss.LocalPartySaveData.ECDSAPub.ToECDSAPubKey()),
 				uint32(coinType),
-				uint32(createWalletTask.User),
 				uint32(createWalletTask.Account),
+				uint32(createWalletTask.Index),
 			)
 			log.Infof("user account address: %s", address)
 		}

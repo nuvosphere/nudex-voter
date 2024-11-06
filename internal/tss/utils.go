@@ -249,7 +249,7 @@ func getRequestId(task *db.Task) string {
 	return ""
 }
 
-func getCoinTypeByChain(chain int32) int {
+func getCoinTypeByChain(chain uint8) int {
 	switch chain {
 	case types.WalletTypeEVM:
 		return 60

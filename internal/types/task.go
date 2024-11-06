@@ -21,9 +21,10 @@ func (t BaseTask) GetTaskID() int32 {
 
 type CreateWalletTask struct {
 	BaseTask
-	User    int32 `json:"user"`
-	Account int32 `json:"account"`
-	Chain   int32 `json:"chain"` // evm_tss btc solana sui
+	User    string `json:"user"`
+	Account uint64 `json:"account"`
+	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
+	Index   uint32 `json:"index"`
 }
 
 type DepositTask struct {

@@ -45,7 +45,6 @@ message DepositRequestExtraInfo {
   string ticker = 2;
   AssetType type = 3;
   uint32 decimal = 4;
-  uint64 fee = 5;
 }
 
 
@@ -59,6 +58,7 @@ message WithdrawalRequestExtraInfo {
   string ticker = 2;
   AssetType type = 3;
   uint32 decimal = 4;
+  uint64 fee = 5;
 }
 
 message TaskResult {
