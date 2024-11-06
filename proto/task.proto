@@ -44,7 +44,7 @@ message DepositRequestExtraInfo {
   bytes contract_address = 1;
   string ticker = 2;
   AssetType type = 3;
-  int32 decimal = 4;
+  uint32 decimal = 4;
 }
 
 
@@ -57,9 +57,15 @@ message WithdrawalRequestExtraInfo {
   bytes contract_address = 1;
   string ticker = 2;
   AssetType type = 3;
-  int32 decimal = 4;
+  uint32 decimal = 4;
 }
 
+message TaskResult {
+  uint32 version = 1;
+  uint32 success = 2;
+  uint32 error_code = 3;
+  string error_msg = 4;
+}
 
 enum Chain {
   ETHEREUM = 0;
