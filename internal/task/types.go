@@ -11,3 +11,19 @@ type TaskService struct {
 	dbm   *db.DatabaseManager
 	Tss   *tss.TSSService
 }
+
+type Chain int
+
+const (
+	ETHEREUM Chain = iota
+	BITCOIN
+	SOLANA
+	SUI
+)
+
+type AssetType int
+
+const (
+	MAIN AssetType = iota
+	ERC20
+)

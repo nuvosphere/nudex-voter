@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Task",
+    "type": "struct",
+    "components": [
+      { "name": "version", "type": "uint256" },
+      { "name": "type", "type": "uint256" },
+      {
+        "name": "request",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "wallet_creation",
+            "type": "tuple",
+            "components": [
+              { "name": "user", "type": "bytes" },
+              { "name": "account", "type": "uint256" },
+              { "name": "chain", "type": "uint8" },
+              { "name": "index", "type": "uint256" }
+            ]
+          },
+          {
+            "name": "deposit_request",
+            "type": "tuple",
+            "components": [
+              { "name": "target_address", "type": "bytes" },
+              { "name": "amount", "type": "uint256" },
+              { "name": "chain_id", "type": "uint256" },
+              {
+                "name": "tx_info",
+                "type": "tuple",
+                "components": [
+                  { "name": "block_height", "type": "uint256" },
+                  { "name": "tx_hash", "type": "bytes" }
+                ]
+              },
+              {
+                "name": "extra_info",
+                "type": "tuple",
+                "components": [
+                  { "name": "contract_address", "type": "bytes" },
+                  { "name": "ticker", "type": "string" },
+                  { "name": "type", "type": "uint8" },
+                  { "name": "decimal", "type": "uint256" }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "withdrawal_request",
+            "type": "tuple",
+            "components": [
+              { "name": "target_address", "type": "bytes" },
+              { "name": "amount", "type": "uint256" },
+              { "name": "chain_id", "type": "uint256" },
+              {
+                "name": "tx_info",
+                "type": "tuple",
+                "components": [
+                  { "name": "block_height", "type": "uint256" },
+                  { "name": "tx_hash", "type": "bytes" }
+                ]
+              },
+              {
+                "name": "extra_info",
+                "type": "tuple",
+                "components": [
+                  { "name": "contract_address", "type": "bytes" },
+                  { "name": "ticker", "type": "string" },
+                  { "name": "type", "type": "uint8" },
+                  { "name": "decimal", "type": "uint256" }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "TaskResult",
+    "type": "struct",
+    "components": [
+      { "name": "version", "type": "uint256" },
+      { "name": "success", "type": "uint256" },
+      { "name": "error_code", "type": "uint256" },
+      { "name": "error_msg", "type": "string" }
+    ]
+  }
+]
