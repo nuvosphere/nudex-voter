@@ -30,6 +30,7 @@ type Wallet struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
+	nonce               atomic.Uint64
 }
 
 func NewWallet(l2url string, tssPublicKey ecdsa.PublicKey, submitterPrivateKey ecdsa.PrivateKey) *Wallet {
@@ -43,6 +44,7 @@ func NewWallet(l2url string, tssPublicKey ecdsa.PublicKey, submitterPrivateKey e
 		submitter:           crypto.PubkeyToAddress(submitterPrivateKey.PublicKey),
 		pendingTx:           sync.Map{},
 		chainID:             atomic.Int64{},
+		nonce:               atomic.Uint64{},
 	}
 }
 
@@ -177,6 +179,12 @@ func (s *Wallet) BuildUnsignTx(ctx context.Context, contractAddress common.Addre
 	nextNonce, err := s.client.PendingNonceAt(ctx, s.submitter)
 	if err != nil {
 		return nil, wrapError(err)
+	}
+
+	latestNonce := s.nonce.Load()
+	if latestNonce >= nextNonce {
+		nextNonce = latestNonce + 1
+		s.nonce.Store(nextNonce)
 	}
 
 	baseTx := &types.DynamicFeeTx{
