@@ -20,27 +20,10 @@ func RunSign(
 	key keygen.LocalPartySaveData,
 	transport Transporter,
 ) (chan *common.SignatureData, chan *tss.Error) {
-	// outgoing messages to other peers - not one to not deadlock when a party
-	// round is waiting for outgoing messages channel to clear
-	outCh := make(chan tss.Message, params.PartyCount())
-	// output signature when finished
-	endCh := make(chan *common.SignatureData, 1)
-	// error if signing fails, contains culprits to blame
-	errCh := make(chan *tss.Error, 1)
-
-	log.Debug("creating new local party")
-
-	party := signing.NewLocalParty(msg, params, key, outCh, endCh)
-	log.Debug("local signing party created", "partyID", party.PartyID())
-
-	RunParty(ctx, party, errCh, outCh, transport, false)
-
-	return endCh, errCh
+	return runSign(ctx, msg, params, key, transport, nil)
 }
 
-// RunSignWithHD starts the local signing party and handles incoming and outgoing
-// messages to other parties.
-func RunSignWithHD(
+func runSign(
 	ctx context.Context,
 	msg *big.Int,
 	params *tss.Parameters,
@@ -58,10 +41,29 @@ func RunSignWithHD(
 
 	log.Debug("creating new local party")
 
-	party := signing.NewLocalPartyWithKDD(msg, params, key, keyDerivationDelta, outCh, endCh)
+	var party tss.Party
+	if keyDerivationDelta != nil {
+		party = signing.NewLocalPartyWithKDD(msg, params, key, keyDerivationDelta, outCh, endCh)
+	} else {
+		party = signing.NewLocalParty(msg, params, key, outCh, endCh)
+	}
+
 	log.Debug("local signing party created", "partyID", party.PartyID())
 
 	RunParty(ctx, party, errCh, outCh, transport, false)
 
 	return endCh, errCh
+}
+
+// RunSignWithHD starts the local signing party and handles incoming and outgoing
+// messages to other parties.
+func RunSignWithHD(
+	ctx context.Context,
+	msg *big.Int,
+	params *tss.Parameters,
+	key keygen.LocalPartySaveData,
+	transport Transporter,
+	keyDerivationDelta *big.Int,
+) (chan *common.SignatureData, chan *tss.Error) {
+	return runSign(ctx, msg, params, key, transport, keyDerivationDelta)
 }
