@@ -35,6 +35,25 @@ func Pack(meta *bind.MetaData, method string, params ...interface{}) []byte {
 	return input
 }
 
+func PackEvent(meta *bind.MetaData, name string, args ...interface{}) []byte {
+	a, err := meta.GetAbi()
+	if err != nil {
+		panic(err)
+	}
+	// Otherwise pack up the parameters and invoke the contract
+	event, exist := a.Events[name]
+	if !exist {
+		panic(fmt.Errorf("event '%s' not found", name))
+	}
+
+	arguments, err := event.Inputs.Pack(args...)
+	if err != nil {
+		panic(err)
+	}
+	// Pack up the event ID too if not a constructor and return
+	return append(event.ID.Bytes(), arguments...)
+}
+
 func EncodeFun(abiStr string, method string, params ...interface{}) []byte {
 	return Pack(
 		&bind.MetaData{
