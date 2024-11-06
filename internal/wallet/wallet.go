@@ -48,17 +48,17 @@ func NewWallet(l2url string, tssPublicKey ecdsa.PublicKey, submitterPrivateKey e
 	}
 }
 
-func Bip44DerivationPath(coinType, user, account uint32) string {
+func Bip44DerivationPath(coinType, user, account uint32) DerivePath {
 	// https://learnblockchain.cn/2018/09/28/hdwallet
 	// m / purpose' / coin' / account' / change / address_index
 	// coin list https://github.com/satoshilabs/slips/blob/master/slip-0044.md
-	return fmt.Sprintf("m/44/%d/%d/0/%d", coinType, user, account)
+	return DerivePath(fmt.Sprintf("m/44/%d/%d/0/%d", coinType, user, account))
 }
 
 func GenerateAddressByPath(masterPubKey ecdsa.PublicKey, coinType, user, account uint32) common.Address {
 	bip44Path := Bip44DerivationPath(coinType, user, account)
 
-	p, err := DerivePath(bip44Path).ToParams()
+	p, err := bip44Path.ToParams()
 	utils.Assert(err)
 
 	_, extendKey, err := DerivingPubKeyFromPath(masterPubKey, p.Indexes())
