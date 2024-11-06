@@ -15,9 +15,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (tss *TSSService) setup() {
-	tss.LocalParty = nil
-	tss.setupTime = time.Time{}
+// init setup.
+func (t *TSSService) setup() {
+	t.LocalParty = nil
+	t.setupTime = time.Time{}
 
 	var preParams *keygen.LocalPreParams
 
@@ -43,27 +44,27 @@ func (tss *TSSService) setup() {
 	}
 
 	// todo online contact get address list
-	tss.addressList = lo.Map(
+	t.partners = lo.Map(
 		config.AppConfig.TssPublicKeys,
 		func(pubKey *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*pubKey) },
 	)
 	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
 	peerCtx := tsslib.NewPeerContext(partyIDs)
 
-	index := AddressIndex(tss.addressList, tss.Address)
+	index := AddressIndex(t.partners, t.localAddress)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	party := keygen.NewLocalParty(params, tss.keyOutCh, tss.keyEndCh, *preParams).(*keygen.LocalParty)
+	party := keygen.NewLocalParty(params, t.keyOutCh, t.keyEndCh, *preParams).(*keygen.LocalParty)
 
-	tss.setupTime = time.Now()
-	tss.LocalParty = party
-	tss.partyIdMap = make(map[string]*tsslib.PartyID)
+	t.setupTime = time.Now()
+	t.LocalParty = party
+	t.partyIdMap = make(map[string]*tsslib.PartyID)
 
 	for _, partyId := range partyIDs {
-		tss.partyIdMap[partyId.Id] = partyId
+		t.partyIdMap[partyId.Id] = partyId
 	}
 
-	tss.LocalPartySaveData = localPartySaveData
+	t.LocalPartySaveData = localPartySaveData
 
 	if localPartySaveData == nil || localPartySaveData.ECDSAPub == nil {
 		if err := party.Start(); err != nil {
@@ -73,15 +74,15 @@ func (tss *TSSService) setup() {
 	}
 }
 
-func (tss *TSSService) handleTssKeyEnd(event *keygen.LocalPartySaveData) error {
-	tss.assertLocalParty(event)
+func (t *TSSService) handleTssKeyEnd(event *keygen.LocalPartySaveData) error {
+	t.assertLocalParty(event)
 	return saveTSSData(event)
 }
 
 var ErrLocalParty = errors.New("local party not initialized")
 
-func (tss *TSSService) assertLocalParty(extra any) {
-	if tss.LocalParty == nil {
+func (t *TSSService) assertLocalParty(extra any) {
+	if t.LocalParty == nil {
 		panic(fmt.Errorf("%w, extra:%v", ErrLocalParty, extra))
 	}
 }
