@@ -31,7 +31,7 @@ var (
 
 // TaskPayloadContractMetaData contains all meta data concerning the TaskPayloadContract contract.
 var TaskPayloadContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"event\",\"name\":\"DepositRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"index\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false}]",
+	ABI: "[{\"type\":\"event\",\"name\":\"DepositRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DepositResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"index\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"walletAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false}]",
 }
 
 // TaskPayloadContractABI is the input ABI used to generate the binding from.
@@ -324,6 +324,143 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseDepositRequest(log
 	return event, nil
 }
 
+// TaskPayloadContractDepositResultIterator is returned from FilterDepositResult and is used to iterate over the raw logs and unpacked data for DepositResult events raised by the TaskPayloadContract contract.
+type TaskPayloadContractDepositResultIterator struct {
+	Event *TaskPayloadContractDepositResult // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaskPayloadContractDepositResultIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaskPayloadContractDepositResult)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaskPayloadContractDepositResult)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaskPayloadContractDepositResultIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaskPayloadContractDepositResultIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaskPayloadContractDepositResult represents a DepositResult event raised by the TaskPayloadContract contract.
+type TaskPayloadContractDepositResult struct {
+	Version   uint32
+	Success   uint32
+	ErrorCode uint32
+	ErrorMsg  string
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterDepositResult is a free log retrieval operation binding the contract event 0x4b9d422b81766e21945af43bf87aded9d3c761f290a88bf9e694f99dc1f584d3.
+//
+// Solidity: event DepositResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterDepositResult(opts *bind.FilterOpts) (*TaskPayloadContractDepositResultIterator, error) {
+
+	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "DepositResult")
+	if err != nil {
+		return nil, err
+	}
+	return &TaskPayloadContractDepositResultIterator{contract: _TaskPayloadContract.contract, event: "DepositResult", logs: logs, sub: sub}, nil
+}
+
+// WatchDepositResult is a free log subscription operation binding the contract event 0x4b9d422b81766e21945af43bf87aded9d3c761f290a88bf9e694f99dc1f584d3.
+//
+// Solidity: event DepositResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchDepositResult(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractDepositResult) (event.Subscription, error) {
+
+	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "DepositResult")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaskPayloadContractDepositResult)
+				if err := _TaskPayloadContract.contract.UnpackLog(event, "DepositResult", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseDepositResult is a log parse operation binding the contract event 0x4b9d422b81766e21945af43bf87aded9d3c761f290a88bf9e694f99dc1f584d3.
+//
+// Solidity: event DepositResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseDepositResult(log types.Log) (*TaskPayloadContractDepositResult, error) {
+	event := new(TaskPayloadContractDepositResult)
+	if err := _TaskPayloadContract.contract.UnpackLog(event, "DepositResult", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // TaskPayloadContractTaskResultIterator is returned from FilterTaskResult and is used to iterate over the raw logs and unpacked data for TaskResult events raised by the TaskPayloadContract contract.
 type TaskPayloadContractTaskResultIterator struct {
 	Event *TaskPayloadContractTaskResult // Event containing the contract specifics and raw log
@@ -600,6 +737,144 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseWalletCreationRequ
 	return event, nil
 }
 
+// TaskPayloadContractWalletCreationResultIterator is returned from FilterWalletCreationResult and is used to iterate over the raw logs and unpacked data for WalletCreationResult events raised by the TaskPayloadContract contract.
+type TaskPayloadContractWalletCreationResultIterator struct {
+	Event *TaskPayloadContractWalletCreationResult // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaskPayloadContractWalletCreationResultIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaskPayloadContractWalletCreationResult)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaskPayloadContractWalletCreationResult)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaskPayloadContractWalletCreationResultIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaskPayloadContractWalletCreationResultIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaskPayloadContractWalletCreationResult represents a WalletCreationResult event raised by the TaskPayloadContract contract.
+type TaskPayloadContractWalletCreationResult struct {
+	Version       uint32
+	Success       uint32
+	ErrorCode     uint32
+	ErrorMsg      string
+	WalletAddress string
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterWalletCreationResult is a free log retrieval operation binding the contract event 0x99f6ad63176d2f97471cb4d5385e8fa14767b05685160ef30ba50f9415008e8e.
+//
+// Solidity: event WalletCreationResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg, string walletAddress)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWalletCreationResult(opts *bind.FilterOpts) (*TaskPayloadContractWalletCreationResultIterator, error) {
+
+	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "WalletCreationResult")
+	if err != nil {
+		return nil, err
+	}
+	return &TaskPayloadContractWalletCreationResultIterator{contract: _TaskPayloadContract.contract, event: "WalletCreationResult", logs: logs, sub: sub}, nil
+}
+
+// WatchWalletCreationResult is a free log subscription operation binding the contract event 0x99f6ad63176d2f97471cb4d5385e8fa14767b05685160ef30ba50f9415008e8e.
+//
+// Solidity: event WalletCreationResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg, string walletAddress)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWalletCreationResult(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractWalletCreationResult) (event.Subscription, error) {
+
+	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "WalletCreationResult")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaskPayloadContractWalletCreationResult)
+				if err := _TaskPayloadContract.contract.UnpackLog(event, "WalletCreationResult", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseWalletCreationResult is a log parse operation binding the contract event 0x99f6ad63176d2f97471cb4d5385e8fa14767b05685160ef30ba50f9415008e8e.
+//
+// Solidity: event WalletCreationResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg, string walletAddress)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseWalletCreationResult(log types.Log) (*TaskPayloadContractWalletCreationResult, error) {
+	event := new(TaskPayloadContractWalletCreationResult)
+	if err := _TaskPayloadContract.contract.UnpackLog(event, "WalletCreationResult", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // TaskPayloadContractWithdrawalRequestIterator is returned from FilterWithdrawalRequest and is used to iterate over the raw logs and unpacked data for WithdrawalRequest events raised by the TaskPayloadContract contract.
 type TaskPayloadContractWithdrawalRequestIterator struct {
 	Event *TaskPayloadContractWithdrawalRequest // Event containing the contract specifics and raw log
@@ -738,6 +1013,143 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWithdrawalRequest(
 func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseWithdrawalRequest(log types.Log) (*TaskPayloadContractWithdrawalRequest, error) {
 	event := new(TaskPayloadContractWithdrawalRequest)
 	if err := _TaskPayloadContract.contract.UnpackLog(event, "WithdrawalRequest", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// TaskPayloadContractWithdrawalResultIterator is returned from FilterWithdrawalResult and is used to iterate over the raw logs and unpacked data for WithdrawalResult events raised by the TaskPayloadContract contract.
+type TaskPayloadContractWithdrawalResultIterator struct {
+	Event *TaskPayloadContractWithdrawalResult // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TaskPayloadContractWithdrawalResultIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TaskPayloadContractWithdrawalResult)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TaskPayloadContractWithdrawalResult)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TaskPayloadContractWithdrawalResultIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TaskPayloadContractWithdrawalResultIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TaskPayloadContractWithdrawalResult represents a WithdrawalResult event raised by the TaskPayloadContract contract.
+type TaskPayloadContractWithdrawalResult struct {
+	Version   uint32
+	Success   uint32
+	ErrorCode uint32
+	ErrorMsg  string
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterWithdrawalResult is a free log retrieval operation binding the contract event 0xf011021fc9bcde3609110858e94203136e99da4f02bd0804d05021317d58f728.
+//
+// Solidity: event WithdrawalResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWithdrawalResult(opts *bind.FilterOpts) (*TaskPayloadContractWithdrawalResultIterator, error) {
+
+	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "WithdrawalResult")
+	if err != nil {
+		return nil, err
+	}
+	return &TaskPayloadContractWithdrawalResultIterator{contract: _TaskPayloadContract.contract, event: "WithdrawalResult", logs: logs, sub: sub}, nil
+}
+
+// WatchWithdrawalResult is a free log subscription operation binding the contract event 0xf011021fc9bcde3609110858e94203136e99da4f02bd0804d05021317d58f728.
+//
+// Solidity: event WithdrawalResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWithdrawalResult(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractWithdrawalResult) (event.Subscription, error) {
+
+	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "WithdrawalResult")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TaskPayloadContractWithdrawalResult)
+				if err := _TaskPayloadContract.contract.UnpackLog(event, "WithdrawalResult", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseWithdrawalResult is a log parse operation binding the contract event 0xf011021fc9bcde3609110858e94203136e99da4f02bd0804d05021317d58f728.
+//
+// Solidity: event WithdrawalResult(uint32 version, uint32 success, uint32 errorCode, string errorMsg)
+func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseWithdrawalResult(log types.Log) (*TaskPayloadContractWithdrawalResult, error) {
+	event := new(TaskPayloadContractWithdrawalResult)
+	if err := _TaskPayloadContract.contract.UnpackLog(event, "WithdrawalResult", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
