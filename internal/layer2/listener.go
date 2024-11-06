@@ -118,19 +118,24 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 		log.Fatalf("Error querying sync status: %v", result.Error)
 	}
 
+L:
 	for {
-		if err := l.scan(ctx, &syncStatus); err != nil {
+		isContinue, err := l.scan(ctx, &syncStatus)
+		if err != nil {
 			log.Errorf("scan : %v", err)
+		}
+		if isContinue {
+			continue L
 		}
 		// Next loop
 		time.Sleep(config.AppConfig.L2RequestInterval)
 	}
 }
 
-func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) error {
+func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) (isContinue bool, err error) {
 	latestBlock, err := l.ethClient.BlockNumber(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting latest block number: %v", err)
+		return false, fmt.Errorf("error getting latest block number: %v", err)
 	}
 
 	targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)
@@ -142,40 +147,32 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 			toBlock = targetBlock
 		}
 
-		if toBlock <= targetBlock {
-			log.WithFields(log.Fields{
-				"fromBlock": fromBlock,
-				"toBlock":   toBlock,
-			}).Info("Syncing L2 nudex events")
+		log.WithFields(log.Fields{"fromBlock": fromBlock, "toBlock": toBlock}).Info("Syncing L2 nudex events")
 
-			filterQuery := ethereum.FilterQuery{
-				FromBlock: big.NewInt(int64(fromBlock)),
-				ToBlock:   big.NewInt(int64(toBlock)),
-				Addresses: l.contractAddress,
-				Topics:    topics,
-			}
-
-			logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)
-			if err != nil {
-				return fmt.Errorf("failed to filter logs: %w", err)
-			}
-
-			for _, vLog := range logs {
-				l.processLogs(vLog)
-			}
-			// Save sync status
-			syncStatus.LastSyncBlock = toBlock
-			syncStatus.UpdatedAt = time.Now()
-			l.db.GetRelayerDB().Save(syncStatus)
-
-			err = l.scan(ctx, syncStatus)
-			if err != nil {
-				return err
-			}
+		filterQuery := ethereum.FilterQuery{
+			FromBlock: big.NewInt(int64(fromBlock)),
+			ToBlock:   big.NewInt(int64(toBlock)),
+			Addresses: l.contractAddress,
+			Topics:    topics,
 		}
+
+		logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)
+		if err != nil {
+			return false, fmt.Errorf("failed to filter logs: %w", err)
+		}
+
+		for _, vLog := range logs {
+			l.processLogs(vLog)
+		}
+		// Save sync status
+		syncStatus.LastSyncBlock = toBlock
+		syncStatus.UpdatedAt = time.Now()
+		l.db.GetRelayerDB().Save(syncStatus)
+
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 // stop ctx.
