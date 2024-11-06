@@ -9,13 +9,24 @@ import (
 	"testing"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSign(t *testing.T) {
+func TestBip44GenerateAddress(t *testing.T) {
+	localData := testutil.ReadTestKey(1)
+	masterPublicKey := *(localData.ECDSAPub.ToECDSAPubKey())
+	t.Log("master address: ", crypto.PubkeyToAddress(masterPublicKey))
+	address := wallet.GenerateAddressByPath(masterPublicKey, 60, 0, 0)
+	t.Log("address: ", address)
+}
+
+func TestHDSign(t *testing.T) {
 	// err := logging.SetLogLevel("*", "debug")
 	// require.NoError(t, err)
 	_, _, keys, signPIDs := testutil.GetTestKeys(t, testutil.TestThreshold+1)
@@ -30,6 +41,12 @@ func TestSign(t *testing.T) {
 
 	msgHash := big.NewInt(1234)
 
+	keyDerivationDelta, extendedChildPk, errorDerivation := wallet.DerivingPubKeyFromPath(*(keys[0].ECDSAPub.ToECDSAPubKey()), []uint32{44, 60, 0, 0, 0})
+	assert.NoErrorf(t, errorDerivation, "there should not be an error deriving the child public key")
+
+	err := signing.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, keys, &extendedChildPk.PublicKey, Curve)
+	assert.NoErrorf(t, err, "there should not be an error setting the derived keys")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -38,7 +55,7 @@ func TestSign(t *testing.T) {
 		t.Log(params.PartyID())
 
 		// big.Int message, would be message hash converted to big int
-		outputCh, errCh := RunSign(ctx, msgHash, params, keys[i], transports[i])
+		outputCh, errCh := RunSignWithHD(ctx, msgHash, params, keys[i], transports[i], keyDerivationDelta)
 
 		go func(outputCh chan *common.SignatureData, errCh chan *tss.Error) {
 			for {
@@ -67,6 +84,7 @@ func TestSign(t *testing.T) {
 
 			//nolint:govet
 			signatures = append(signatures, output)
+
 		case err := <-errAgg:
 			t.Logf("err: %v", err)
 		}
@@ -83,13 +101,14 @@ func TestSign(t *testing.T) {
 				continue
 			}
 
+			// t.Log(utils.VerifySig(ethcommon.BytesToHash(msgHash.Bytes()), sig.Signature, ethcommon.HexToAddress("0x4326E0BcE74b754A29627D3A15C2CADD6F7b5DaA")))
 			// make sure everyone has the same signature
 			assert.True(t, bytes.Equal(sig.Signature, sig2.Signature))
 		}
 	}
 
 	// Verify signature
-	pkX, pkY := keys[0].ECDSAPub.X(), keys[0].ECDSAPub.Y()
+	pkX, pkY := extendedChildPk.X, extendedChildPk.Y
 	pk := ecdsa.PublicKey{
 		Curve: Curve,
 		X:     pkX,

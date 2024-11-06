@@ -1,4 +1,4 @@
-package helper_test
+package helper
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/test"
 	"github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,7 +52,7 @@ func TestReshare(t *testing.T) {
 
 	// Start old parties
 	for i, partyID := range oldPartyIDs {
-		params := helper.CreateReShareParams(
+		params := CreateReShareParams(
 			oldPartyIDs,
 			newPartyIDs.ToUnSorted(),
 			partyID,
@@ -61,7 +60,7 @@ func TestReshare(t *testing.T) {
 			newThreshold,
 		)
 
-		outputCh, errCh := helper.RunReshare(ctx, params, oldKeys[i], oldTransports[i])
+		outputCh, errCh := RunReshare(ctx, params, oldKeys[i], oldTransports[i])
 
 		go func(outputCh chan *keygen.LocalPartySaveData, errCh chan *tss.Error) {
 			for {
@@ -77,7 +76,7 @@ func TestReshare(t *testing.T) {
 
 	// Start new parties
 	for i, partyID := range newPartyIDs {
-		params := helper.CreateReShareParams(
+		params := CreateReShareParams(
 			oldPartyIDs,
 			newPartyIDs.ToUnSorted(),
 			partyID,
@@ -90,7 +89,7 @@ func TestReshare(t *testing.T) {
 		// Reuse fixture pre-generated preparams
 		save.LocalPreParams = testutil.ReadTestKey(i).LocalPreParams
 
-		outputCh, errCh := helper.RunReshare(ctx, params, save, newTransports[i])
+		outputCh, errCh := RunReshare(ctx, params, save, newTransports[i])
 
 		go func(outputCh chan *keygen.LocalPartySaveData, errCh chan *tss.Error) {
 			for {
@@ -137,7 +136,7 @@ func TestReshare(t *testing.T) {
 	for j, key := range newKeys {
 		// xj test: BigXj == xj*G
 		xj := key.Xi
-		gXj := crypto.ScalarBaseMult(helper.Curve, xj)
+		gXj := crypto.ScalarBaseMult(Curve, xj)
 
 		// Uses index here so it must use OriginalIndex(), not append() in arbitrary order
 		BigXj := key.BigXj[j]

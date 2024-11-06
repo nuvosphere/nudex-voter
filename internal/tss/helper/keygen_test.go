@@ -1,4 +1,4 @@
-package helper_test
+package helper
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/stretchr/testify/assert"
@@ -34,9 +33,9 @@ func TestKeygen(t *testing.T) {
 	for i := range partyIDs {
 		// Load from disk to avoid re-generating
 		preParams := LoadTestPreParam(i)
-		params := helper.CreateParams(partyIDs, partyIDs[i], testutil.TestThreshold)
+		params := CreateParams(partyIDs, partyIDs[i], testutil.TestThreshold)
 
-		outputCh, errCh := helper.RunKeyGen(ctx, preParams, params, transports[i])
+		outputCh, errCh := RunKeyGen(ctx, preParams, params, transports[i])
 		go func(outputCh chan *keygen.LocalPartySaveData, errCh chan *tss.Error) {
 			for {
 				select {
