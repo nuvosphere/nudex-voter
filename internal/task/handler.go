@@ -75,7 +75,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		if err != nil {
 			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
 		}
-	case types.TaskTypeWithdraw:
+	case types.TaskTypeWithdrawal:
 		err := ts.handleWithdrawTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle withdraw task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)

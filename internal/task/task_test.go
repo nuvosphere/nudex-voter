@@ -8,7 +8,7 @@ import (
 )
 
 func TestEncodeCreateWalletTask(t *testing.T) {
-	createWalletTask := types.CreateWalletTask{
+	task := types.CreateWalletTask{
 		BaseTask: types.BaseTask{
 			TaskId: 1,
 		},
@@ -17,7 +17,7 @@ func TestEncodeCreateWalletTask(t *testing.T) {
 		Chain:   uint8(ETHEREUM),
 		Index:   uint32(0),
 	}
-	bytes, err := encodeCreateWalletTask(createWalletTask)
+	bytes, err := encodeTask(types.TaskTypeCreateWallet, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, bytes)
 
@@ -25,7 +25,7 @@ func TestEncodeCreateWalletTask(t *testing.T) {
 }
 
 func TestEncodeDepositTask(t *testing.T) {
-	depositTask := types.DepositTask{
+	task := types.DepositTask{
 		BaseTask: types.BaseTask{
 			TaskId: 1,
 		},
@@ -40,7 +40,7 @@ func TestEncodeDepositTask(t *testing.T) {
 		AssetType:       uint8(ERC20),
 		Decimal:         18,
 	}
-	bytes, err := encodeDepositTask(depositTask)
+	bytes, err := encodeTask(types.TaskTypeDeposit, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, bytes)
 
@@ -64,7 +64,7 @@ func TestEncodeWithdrawalTask(t *testing.T) {
 		Decimal:         18,
 		Fee:             uint64(100000000000000),
 	}
-	bytes, err := encodeWithdrawalTask(task)
+	bytes, err := encodeTask(types.TaskTypeWithdrawal, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, bytes)
 

@@ -241,8 +241,8 @@ func getRequestId(task *db.Task) string {
 		return fmt.Sprintf("TSS_SIGN:CREATE_WALLET:%d", task.TaskId)
 	case types.TaskTypeDeposit:
 		return fmt.Sprintf("TSS_SIGN:DEPOSIT:%d", task.TaskId)
-	case types.TaskTypeWithdraw:
-		return fmt.Sprintf("TSS_SIGN:WITHDRAW:%d", task.TaskId)
+	case types.TaskTypeWithdrawal:
+		return fmt.Sprintf("TSS_SIGN:WITHDRAWAL:%d", task.TaskId)
 	default:
 	}
 

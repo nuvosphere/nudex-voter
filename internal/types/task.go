@@ -4,7 +4,7 @@ const (
 	TaskTypeUnknown = iota
 	TaskTypeCreateWallet
 	TaskTypeDeposit
-	TaskTypeWithdraw
+	TaskTypeWithdrawal
 )
 
 type Task interface {

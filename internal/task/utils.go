@@ -7,7 +7,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
-func encodeCreateWalletTask(task types.CreateWalletTask) (bytes []byte, err error) {
+func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("failed to encode task: %v", r)
@@ -15,70 +15,63 @@ func encodeCreateWalletTask(task types.CreateWalletTask) (bytes []byte, err erro
 		}
 	}()
 
-	bytes = contracts.PackEvent(
-		contracts.TaskPayloadContractMetaData,
-		"WalletCreationRequest",
-		uint32(V1),
-		uint32(types.TaskTypeCreateWallet),
-		common.HexToAddress(task.User),
-		task.Account,
-		task.Chain,
-		task.Index,
-	)
-	return bytes, nil
-}
+	switch taskType {
+	case types.TaskTypeCreateWallet:
+		t := task.(types.CreateWalletTask)
+		bytes = contracts.PackEvent(
+			contracts.TaskPayloadContractMetaData,
+			"WalletCreationRequest",
+			uint32(V1),
+			uint32(taskType),
+			common.HexToAddress(t.User),
+			t.Account,
+			t.Chain,
+			t.Index,
+		)
 
-func encodeDepositTask(task types.DepositTask) (bytes []byte, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("failed to encode task: %v", r)
-			bytes = nil
-		}
-	}()
+	case types.TaskTypeDeposit:
+		t := task.(types.DepositTask)
+		bytes = contracts.PackEvent(
+			contracts.TaskPayloadContractMetaData,
+			"DepositRequest",
+			uint32(V1),
+			uint32(taskType),
+			t.TargetAddress,
+			t.Amount,
+			t.Chain,
+			t.ChainId,
+			t.BlockHeight,
+			t.TxHash,
+			t.ContractAddress,
+			t.Ticker,
+			t.AssetType,
+			t.Decimal,
+		)
 
-	bytes = contracts.PackEvent(
-		contracts.TaskPayloadContractMetaData,
-		"DepositRequest",
-		uint32(V1),
-		uint32(types.TaskTypeDeposit),
-		task.TargetAddress,
-		task.Amount,
-		task.Chain,
-		task.ChainId,
-		task.BlockHeight,
-		task.TxHash,
-		task.ContractAddress,
-		task.Ticker,
-		task.AssetType,
-		task.Decimal,
-	)
-	return bytes, nil
-}
+	case types.TaskTypeWithdrawal:
+		t := task.(types.WithdrawalTask)
+		bytes = contracts.PackEvent(
+			contracts.TaskPayloadContractMetaData,
+			"WithdrawalRequest",
+			uint32(V1),
+			uint32(taskType),
+			t.TargetAddress,
+			t.Amount,
+			t.Chain,
+			t.ChainId,
+			t.BlockHeight,
+			t.TxHash,
+			t.ContractAddress,
+			t.Ticker,
+			t.AssetType,
+			t.Decimal,
+			t.Fee,
+		)
 
-func encodeWithdrawalTask(task types.WithdrawalTask) (bytes []byte, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("failed to encode task: %v", r)
-			bytes = nil
-		}
-	}()
+	default:
+		err = fmt.Errorf("unsupported task type: %v", taskType)
+		bytes = nil
+	}
 
-	bytes = contracts.PackEvent(
-		contracts.TaskPayloadContractMetaData,
-		"WithdrawalRequest",
-		uint32(V1),
-		uint32(types.TaskTypeWithdraw),
-		task.TargetAddress,
-		task.Amount,
-		task.Chain,
-		task.ChainId,
-		task.BlockHeight,
-		task.TxHash,
-		task.ContractAddress,
-		task.Ticker,
-		task.AssetType,
-		task.Decimal,
-		task.Fee,
-	)
-	return bytes, nil
+	return bytes, err
 }
