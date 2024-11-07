@@ -28,6 +28,29 @@ func encodeCreateWalletTask(task types.CreateWalletTask) (bytes []byte, err erro
 	return bytes, nil
 }
 
-func encodeDepositTask(task types.DepositTask) ([]byte, error) {
-	return nil, nil
+func encodeDepositTask(task types.DepositTask) (bytes []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("failed to encode task: %v", r)
+			bytes = nil
+		}
+	}()
+
+	bytes = contracts.PackEvent(
+		contracts.TaskPayloadContractMetaData,
+		"DepositRequest",
+		uint32(V1),
+		uint32(types.TaskTypeDeposit),
+		task.TargetAddress,
+		task.Amount,
+		task.Chain,
+		task.ChainId,
+		task.BlockHeight,
+		task.TxHash,
+		task.ContractAddress,
+		task.Ticker,
+		task.AssetType,
+		task.Decimal,
+	)
+	return bytes, nil
 }

@@ -22,17 +22,19 @@ message WalletCreationRequest {
 message DepositRequest {
   bytes target_address = 1;
   uint64 amount = 2;
-  uint32 chain_id = 3;
-  DepositRequestTxInfo tx_info = 4;
-  DepositRequestExtraInfo extra_info = 5;
+  Chain chain = 3;
+  uint32 chain_id = 4;
+  DepositRequestTxInfo tx_info = 5;
+  DepositRequestExtraInfo extra_info = 6;
 }
 
 message WithdrawalRequest {
   bytes target_address = 1;
   uint64 amount = 2;
-  uint32 chain_id = 3;
-  WithdrawalRequestTxInfo tx_info = 4;
-  WithdrawalRequestExtraInfo extra_info = 5;
+  Chain chain = 3;
+  uint32 chain_id = 4;
+  WithdrawalRequestTxInfo tx_info = 5;
+  WithdrawalRequestExtraInfo extra_info = 6;
 }
 
 message DepositRequestTxInfo {
