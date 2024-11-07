@@ -3,6 +3,7 @@ package task
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 )
@@ -74,4 +75,20 @@ func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 	}
 
 	return bytes, err
+}
+
+func parseTask(context []byte) (interface{}, error) {
+	eventHash := common.BytesToHash(context[:32])
+	switch eventHash {
+	case layer2.WalletCreationRequestTopic:
+		parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
+		if err != nil {
+			return nil, err
+		}
+		request := contracts.TaskPayloadContractWalletCreationRequest{}
+
+		err = parsedABI.UnpackIntoInterface(&request, "WalletCreationRequest", context[32:])
+		return request, err
+	}
+	return nil, nil
 }
