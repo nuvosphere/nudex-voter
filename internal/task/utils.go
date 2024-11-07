@@ -54,3 +54,31 @@ func encodeDepositTask(task types.DepositTask) (bytes []byte, err error) {
 	)
 	return bytes, nil
 }
+
+func encodeWithdrawalTask(task types.WithdrawalTask) (bytes []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("failed to encode task: %v", r)
+			bytes = nil
+		}
+	}()
+
+	bytes = contracts.PackEvent(
+		contracts.TaskPayloadContractMetaData,
+		"WithdrawalRequest",
+		uint32(V1),
+		uint32(types.TaskTypeWithdraw),
+		task.TargetAddress,
+		task.Amount,
+		task.Chain,
+		task.ChainId,
+		task.BlockHeight,
+		task.TxHash,
+		task.ContractAddress,
+		task.Ticker,
+		task.AssetType,
+		task.Decimal,
+		task.Fee,
+	)
+	return bytes, nil
+}

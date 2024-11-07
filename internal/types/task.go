@@ -46,13 +46,14 @@ type WithdrawalTask struct {
 	TargetAddress   string `json:"target_address"`
 	Amount          uint64 `json:"amount"`
 	Chain           uint8  `json:"chain"`
-	ChainId         uint64 `json:"chain_id"`
+	ChainId         uint32 `json:"chain_id"`
 	BlockHeight     uint64 `json:"block_height"`
 	TxHash          string `json:"tx_hash"`
 	ContractAddress string `json:"contract_address"`
 	Ticker          string `json:"ticker"`
 	AssetType       uint8  `json:"asset_type"`
 	Decimal         uint32 `json:"decimal"`
+	Fee             uint64 `json:"fee"`
 }
 
 const (
