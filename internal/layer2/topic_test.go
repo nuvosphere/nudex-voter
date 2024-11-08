@@ -19,4 +19,7 @@ func TestTopic(t *testing.T) {
 	assert.Equal(t, WalletCreationRequestTopic.String(), "0x0f1413e8d10cd1ec520cd20e110e7f744aadade9260edf12bea2ae80bf938c2e")
 	assert.Equal(t, DepositRequestTopic.String(), "0xa16e6f3f5818b6d9cdc9da7bb4b22b721875ee019d05d2416544b3ec35fe7b8b")
 	assert.Equal(t, WithdrawalRequestTopic.String(), "0x3cf4fbf96439aad214ca1e3508b15d4b50f1767c8216a7efe11af2ac7a520e91")
+	assert.Equal(t, WalletCreationResultTopic.String(), "0x99f6ad63176d2f97471cb4d5385e8fa14767b05685160ef30ba50f9415008e8e")
+	assert.Equal(t, DepositResultTopic.String(), "0x4b9d422b81766e21945af43bf87aded9d3c761f290a88bf9e694f99dc1f584d3")
+	assert.Equal(t, WithdrawalResultTopic.String(), "0xf011021fc9bcde3609110858e94203136e99da4f02bd0804d05021317d58f728")
 }
