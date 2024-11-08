@@ -2,10 +2,11 @@ package task
 
 import (
 	"encoding/hex"
+	"testing"
+
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestEncodeCreateWalletTask(t *testing.T) {

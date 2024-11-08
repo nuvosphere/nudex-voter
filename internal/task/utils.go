@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -88,15 +89,19 @@ func parseTask(context []byte) (interface{}, error) {
 	case layer2.WalletCreationRequestTopic:
 		request := contracts.TaskPayloadContractWalletCreationRequest{}
 		err = parsedABI.UnpackIntoInterface(&request, "WalletCreationRequest", context[32:])
+
 		return request, err
 	case layer2.DepositRequestTopic:
 		request := contracts.TaskPayloadContractDepositRequest{}
 		err = parsedABI.UnpackIntoInterface(&request, "DepositRequest", context[32:])
+
 		return request, err
 	case layer2.WithdrawalRequestTopic:
 		request := contracts.TaskPayloadContractWithdrawalRequest{}
 		err = parsedABI.UnpackIntoInterface(&request, "WithdrawalRequest", context[32:])
+
 		return request, err
 	}
+
 	return nil, nil
 }
