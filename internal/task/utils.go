@@ -78,25 +78,24 @@ func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 }
 
 func parseTask(context []byte) (interface{}, error) {
+	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
+	if err != nil {
+		return nil, err
+	}
+
 	eventHash := common.BytesToHash(context[:32])
 	switch eventHash {
 	case layer2.WalletCreationRequestTopic:
-		parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
-		if err != nil {
-			return nil, err
-		}
 		request := contracts.TaskPayloadContractWalletCreationRequest{}
-
 		err = parsedABI.UnpackIntoInterface(&request, "WalletCreationRequest", context[32:])
 		return request, err
 	case layer2.DepositRequestTopic:
-		parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
-		if err != nil {
-			return nil, err
-		}
 		request := contracts.TaskPayloadContractDepositRequest{}
-
 		err = parsedABI.UnpackIntoInterface(&request, "DepositRequest", context[32:])
+		return request, err
+	case layer2.WithdrawalRequestTopic:
+		request := contracts.TaskPayloadContractWithdrawalRequest{}
+		err = parsedABI.UnpackIntoInterface(&request, "WithdrawalRequest", context[32:])
 		return request, err
 	}
 	return nil, nil
