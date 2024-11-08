@@ -73,6 +73,7 @@ func RunParty(
 				// Prevent blocking goroutine to receive messages, may deadlock
 				// if receive channels are full if not in goroutine.
 				go func() {
+					// outCh => Send
 					// send to other parties
 					if err := transport.Send(ctx, data, routing, isReSharing); err != nil {
 						log.Error(
@@ -88,6 +89,7 @@ func RunParty(
 					log.Debug("done sending outgoing message", "partyID", party.PartyID())
 				}()
 			case incomingMsg := <-incomingMsgCh:
+				// Receive => party
 				// Running in goroutine prevents blocking when channels get
 				// filled up. This may deadlock if not run in a goroutine and
 				// blocks receiving messages.
