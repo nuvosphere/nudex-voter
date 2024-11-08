@@ -64,7 +64,7 @@ type WithdrawalRecord struct {
 
 type Task struct {
 	ID          uint64    `gorm:"primaryKey"      json:"id"`
-	TaskId      uint64    `gorm:"unique;not null" json:"task_id"`
+	TaskId      uint32    `gorm:"unique;not null" json:"task_id"`
 	Context     []byte    `gorm:"not null"        json:"Context"`
 	Submitter   string    `gorm:"not null"        json:"submitter"`
 	BlockHeight uint64    `gorm:"not null"        json:"block_height"`

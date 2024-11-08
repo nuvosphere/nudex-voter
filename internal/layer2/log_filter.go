@@ -85,7 +85,7 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 			return nil
 		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			task := db.Task{
-				TaskId:      taskSubmitted.TaskId.Uint64(),
+				TaskId:      uint32(taskSubmitted.TaskId.Uint64()),
 				Context:     taskSubmitted.Context,
 				Submitter:   taskSubmitted.Submitter.Hex(),
 				IsCompleted: false,
@@ -120,7 +120,7 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 			err := l.db.GetRelayerDB().Save(&existingTask).Error
 
 			if l.state != nil && l.state.TssState.CurrentTask != nil {
-				if taskCompleted.TaskId.Uint64() >= l.state.TssState.CurrentTask.TaskId {
+				if uint32(taskCompleted.TaskId.Uint64()) >= l.state.TssState.CurrentTask.TaskId {
 					l.state.TssState.CurrentTask = nil
 				}
 			}

@@ -98,5 +98,5 @@ func parseTask(context []byte) (interface{}, error) {
 		err = parsedABI.UnpackIntoInterface(&request, "WithdrawalRequest", context[32:])
 		return request, err
 	}
-	return nil, nil
+	return nil, fmt.Errorf("unknown task type: %v", eventHash)
 }

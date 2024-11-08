@@ -10,7 +10,12 @@ type BaseSignMsg struct {
 
 type SignMessage struct {
 	BaseSignMsg
-	Task Task
+	Task SignTask
+}
+
+type SignTask struct {
+	TaskId uint32 `json:"task_id"`
+	Data   []byte `json:"data"`
 }
 
 type TssMessage struct {

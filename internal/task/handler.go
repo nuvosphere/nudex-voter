@@ -1,14 +1,10 @@
 package task
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"errors"
-
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -47,148 +43,15 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 			return
 		}
 	}
-
-	buf := bytes.NewReader(dbTask.Context)
-
-	var taskType int32
-
-	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
-		log.Errorf("Parse task %d error, content: %x, ", dbTask.TaskId, dbTask.Context)
+	task, err := parseTask(dbTask.Context)
+	if err != nil {
+		log.Errorf("Parse task %x error: %v", dbTask.Context, err)
 		return
 	}
 
-	switch taskType {
-	case types.TaskTypeUnknown:
-		log.Warnf("Parse task  %d type error, not know task type, context: %s", dbTask.TaskId, dbTask.Context)
-		return
-	case types.TaskTypeCreateWallet:
-		ts.state.TssState.CurrentTask = &dbTask
-
-		err := ts.handleCreateWalletTask(ctx, dbTask)
-		if err != nil {
-			log.Errorf("Handle create wallet task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
-		}
-	case types.TaskTypeDeposit:
-		ts.state.TssState.CurrentTask = &dbTask
-
-		err := ts.handleDepositTask(ctx, dbTask)
-		if err != nil {
-			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
-		}
-	case types.TaskTypeWithdrawal:
-		err := ts.handleWithdrawTask(ctx, dbTask)
-		if err != nil {
-			log.Errorf("Handle withdraw task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
-		}
-	default:
-		log.Warnf("Parse task  %d error, not know task type, description: %s", dbTask.TaskId, dbTask.Context)
+	ts.state.TssState.CurrentTask = &dbTask
+	err = ts.Tss.HandleSignPrepare(ctx, dbTask, task)
+	if err != nil {
+		log.Errorf("Handle sign prepare error for task %x err: %v", dbTask.Context, err)
 	}
-}
-
-func (ts *TaskService) handleCreateWalletTask(ctx context.Context, dbTask db.Task) error {
-	buf := bytes.NewReader(dbTask.Context)
-
-	var taskType int32
-
-	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
-		return err
-	}
-
-	createWalletTask := types.CreateWalletTask{
-		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &createWalletTask.User); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &createWalletTask.Account); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &createWalletTask.Chain); err != nil {
-		return err
-	}
-
-	return ts.Tss.HandleSignPrepare(ctx, createWalletTask)
-}
-
-func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) error {
-	buf := bytes.NewReader(dbTask.Context)
-
-	var taskType int32
-
-	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
-		return err
-	}
-
-	depositTask := types.DepositTask{
-		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.TargetAddress); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Amount); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.ChainId); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Ticker); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.BlockHeight); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.TxHash); err != nil {
-		return err
-	}
-
-	return ts.Tss.HandleSignPrepare(ctx, depositTask)
-}
-
-func (ts *TaskService) handleWithdrawTask(ctx context.Context, dbTask db.Task) error {
-	buf := bytes.NewReader(dbTask.Context)
-
-	var taskType int32
-
-	if err := binary.Read(buf, binary.LittleEndian, &taskType); err != nil {
-		return err
-	}
-
-	withdrawalTask := types.WithdrawalTask{
-		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.TargetAddress); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.Amount); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.ChainId); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.Ticker); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.BlockHeight); err != nil {
-		return err
-	}
-
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.TxHash); err != nil {
-		return err
-	}
-
-	return ts.Tss.HandleSignPrepare(ctx, withdrawalTask)
 }

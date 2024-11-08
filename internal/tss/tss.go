@@ -63,7 +63,7 @@ type TSSService struct {
 	sigFailChan    <-chan any
 	sigTimeoutChan <-chan any
 
-	sigMap                       map[string]map[int32]*signing.LocalParty
+	sigMap                       map[string]map[uint32]*signing.LocalParty
 	sigRound1P2pMessageMap       map[string]*p2p.Message[types.TssMessage]
 	sigRound1MessageSendTimesMap map[string]int
 	sigTimeoutMap                map[string]time.Time
@@ -95,7 +95,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		sigOutCh:       make(chan tsslib.Message),
 		sigEndCh:       make(chan *tssCommon.SignatureData),
 
-		sigMap:                       make(map[string]map[int32]*signing.LocalParty),
+		sigMap:                       make(map[string]map[uint32]*signing.LocalParty),
 		sigRound1P2pMessageMap:       make(map[string]*p2p.Message[types.TssMessage]),
 		sigRound1MessageSendTimesMap: make(map[string]int),
 		sigTimeoutMap:                make(map[string]time.Time),
@@ -274,7 +274,7 @@ func (t *TSSService) Stop() {
 }
 
 func (t *TSSService) cleanAllSigInfo() {
-	t.sigMap = make(map[string]map[int32]*signing.LocalParty)
+	t.sigMap = make(map[string]map[uint32]*signing.LocalParty)
 	t.sigRound1P2pMessageMap = make(map[string]*p2p.Message[types.TssMessage])
 	t.sigRound1MessageSendTimesMap = make(map[string]int)
 	t.sigTimeoutMap = make(map[string]time.Time)

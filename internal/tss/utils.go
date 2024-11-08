@@ -160,63 +160,8 @@ func extractToIds(message tss.Message) []string {
 	return ids
 }
 
-func serializeTaskMessageToBytes(nonce uint64, baseTask types.Task) ([]byte, error) {
+func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	writeField := func(data interface{}) error {
-		return binary.Write(buf, binary.BigEndian, data)
-	}
-
-	switch task := baseTask.(type) {
-	case *types.CreateWalletTask:
-		if err := writeField(task.GetTaskID()); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.Account); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.User); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.Chain); err != nil {
-			return nil, err
-		}
-
-	case *types.DepositTask:
-		if err := writeField(task.GetTaskID()); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.TargetAddress); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.Amount); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.ChainId); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.Ticker); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.BlockHeight); err != nil {
-			return nil, err
-		}
-
-		if err := writeField(task.TxHash); err != nil {
-			return nil, err
-		}
-
-	default:
-		return nil, fmt.Errorf("unsupported task type: %T", task)
-	}
-
 	bufBytes := buf.Bytes()
 	length := len(bufBytes)
 	lengthBytes := make([]byte, 4)
@@ -225,7 +170,7 @@ func serializeTaskMessageToBytes(nonce uint64, baseTask types.Task) ([]byte, err
 	nonceBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(nonceBytes, nonce)
 
-	return append(append(nonceBytes, lengthBytes...), bufBytes...), nil
+	return append(append(nonceBytes, lengthBytes...), data...), nil
 }
 
 func getRequestId(task *db.Task) string {

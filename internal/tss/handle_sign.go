@@ -29,17 +29,31 @@ var taskPrefix = map[reflect.Type]string{
 	reflect.TypeOf(&types.WithdrawalTask{}):   "WITHDRAWAL",
 }
 
-func (t *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) error {
+func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task, task interface{}) ([]byte, error) {
+	return nil, nil
+}
+
+func (t *TSSService) HandleSignPrepare(ctx context.Context, dbTask db.Task, task interface{}) error {
+	taskResult, err := t.HandleSignCheck(ctx, dbTask, task)
+	if err != nil {
+		return err
+	}
+
 	var requestId string
 
 	taskType := reflect.TypeOf(task)
 	if prefix, found := taskPrefix[taskType]; found {
-		requestId = fmt.Sprintf("TSS_SIGN:%s:%d", prefix, task.GetTaskID())
+		requestId = fmt.Sprintf("TSS_SIGN:%s:%d", prefix, dbTask.TaskId)
 	} else {
 		return fmt.Errorf("task type %T not found in task prefix", task)
 	}
 
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
+	if err != nil {
+		return err
+	}
+
+	messageToSign, err := serializeMessageToBeSigned(nonce.Uint64(), taskResult)
 	if err != nil {
 		return err
 	}
@@ -52,7 +66,7 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) err
 			VoterAddress: t.localAddress.Hex(),
 			CreateTime:   time.Now().Unix(),
 		},
-		Task: task,
+		Task: types.SignTask{TaskId: dbTask.TaskId, Data: taskResult},
 	}
 
 	p2pMsg := p2p.Message[types.SignMessage]{
@@ -75,11 +89,6 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) err
 	index := AddressIndex(t.partners, t.localAddress)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	messageToSign, err := serializeTaskMessageToBytes(nonce.Uint64(), task)
-	if err != nil {
-		return err
-	}
-
 	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *t.LocalPartySaveData, t.sigOutCh, t.sigEndCh).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
@@ -91,8 +100,8 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) err
 	}()
 
 	t.rw.Lock()
-	t.sigMap[requestId] = make(map[int32]*signing.LocalParty)
-	t.sigMap[requestId][task.GetTaskID()] = party
+	t.sigMap[requestId] = make(map[uint32]*signing.LocalParty)
+	t.sigMap[requestId][dbTask.TaskId] = party
 	timeoutDuration := config.AppConfig.TssSigTimeout
 	t.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
 	t.rw.Unlock()
@@ -114,25 +123,25 @@ func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) e
 
 	if t.state.TssState.CurrentTask == nil {
 		var existingTask db.Task
-		result := t.dbm.GetRelayerDB().Where("task_id = ?", e.Task.GetTaskID()).First(&existingTask)
+		result := t.dbm.GetRelayerDB().Where("task_id = ?", e.Task.TaskId).First(&existingTask)
 
 		if result.Error == nil {
 			t.state.TssState.CurrentTask = &existingTask
 		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("find no task from db for taskId:%d", e.Task.GetTaskID())
+			return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
 		}
 	} else {
-		if t.state.TssState.CurrentTask.TaskId > uint64(e.Task.GetTaskID()) {
+		if t.state.TssState.CurrentTask.TaskId > e.Task.TaskId {
 			var existingTask db.Task
-			result := t.dbm.GetRelayerDB().Where("task_id = ?", e.Task.GetTaskID()).First(&existingTask)
+			result := t.dbm.GetRelayerDB().Where("task_id = ?", e.Task.TaskId).First(&existingTask)
 
 			if result.Error == nil {
 				t.state.TssState.CurrentTask = &existingTask
 			} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("find no task from db for taskId:%d", e.Task.GetTaskID())
+				return fmt.Errorf("find no task from db for taskId:%d", e.Task.TaskId)
 			}
-		} else if t.state.TssState.CurrentTask.TaskId < uint64(e.Task.GetTaskID()) {
-			return fmt.Errorf("new task from p2p: %d is greater than current: %d", e.Task.GetTaskID(), t.state.TssState.CurrentTask.TaskId)
+		} else if t.state.TssState.CurrentTask.TaskId < e.Task.TaskId {
+			return fmt.Errorf("new task from p2p: %d is greater than current: %d", e.Task.TaskId, t.state.TssState.CurrentTask.TaskId)
 		}
 	}
 
@@ -142,7 +151,7 @@ func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) e
 	index := AddressIndex(t.partners, t.localAddress)
 	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
 
-	messageToSign, err := serializeTaskMessageToBytes(e.Nonce, e.Task)
+	messageToSign, err := serializeMessageToBeSigned(e.Nonce, e.Task.Data)
 	if err != nil {
 		return err
 	}
@@ -158,8 +167,8 @@ func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) e
 	}()
 
 	t.rw.Lock()
-	t.sigMap[e.RequestId] = make(map[int32]*signing.LocalParty)
-	t.sigMap[e.RequestId][e.Task.GetTaskID()] = party
+	t.sigMap[e.RequestId] = make(map[uint32]*signing.LocalParty)
+	t.sigMap[e.RequestId][e.Task.TaskId] = party
 	t.sigTimeoutMap[e.RequestId] = time.Now().Add(config.AppConfig.TssSigTimeout)
 	t.rw.Unlock()
 
@@ -198,7 +207,7 @@ func (t *TSSService) handleSigFinish(ctx context.Context, signatureData *common.
 		if taskType == types.TaskTypeCreateWallet {
 			createWalletTask := types.CreateWalletTask{
 				BaseTask: types.BaseTask{
-					TaskId: int32(t.state.TssState.CurrentTask.TaskId),
+					TaskId: t.state.TssState.CurrentTask.TaskId,
 				},
 			}
 
@@ -217,7 +226,7 @@ func (t *TSSService) handleSigFinish(ctx context.Context, signatureData *common.
 				*(t.LocalPartySaveData.ECDSAPub.ToECDSAPubKey()),
 				uint32(coinType),
 				uint32(createWalletTask.Account),
-				uint32(createWalletTask.Index),
+				createWalletTask.Index,
 			)
 			log.Infof("user account address: %s", address)
 		}

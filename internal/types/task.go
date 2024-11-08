@@ -8,14 +8,14 @@ const (
 )
 
 type Task interface {
-	GetTaskID() int32
+	GetTaskID() uint32
 }
 
 type BaseTask struct {
-	TaskId int32 `json:"task_id"`
+	TaskId uint32 `json:"task_id"`
 }
 
-func (t BaseTask) GetTaskID() int32 {
+func (t BaseTask) GetTaskID() uint32 {
 	return t.TaskId
 }
 
