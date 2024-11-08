@@ -27,11 +27,6 @@ type CreateWalletTask struct {
 	Index   uint32 `json:"index"`
 }
 
-type TaskHeader struct {
-	Version  uint32
-	TaskType uint32
-}
-
 type DepositTask struct {
 	BaseTask
 	TargetAddress   string `json:"target_address"`
