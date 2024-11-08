@@ -12,7 +12,7 @@ type TaskService struct {
 	Tss   *tss.TSSService
 }
 
-type Chain int
+type Chain uint8
 
 const (
 	ETHEREUM Chain = iota
@@ -21,9 +21,16 @@ const (
 	SUI
 )
 
-type AssetType int
+type AssetType uint32
 
 const (
 	MAIN AssetType = iota
 	ERC20
+)
+
+type Version uint32
+
+const (
+	INITIAL Version = iota
+	V1
 )

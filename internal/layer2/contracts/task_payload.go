@@ -31,7 +31,7 @@ var (
 
 // TaskPayloadContractMetaData contains all meta data concerning the TaskPayloadContract contract.
 var TaskPayloadContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"event\",\"name\":\"DepositRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DepositResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"index\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"walletAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"contractAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"fee\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false}]",
+	ABI: "[{\"type\":\"event\",\"name\":\"DepositRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DepositResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"index\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"walletAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"taskType\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"targetAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"fee\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"success\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorCode\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false}]",
 }
 
 // TaskPayloadContractABI is the input ABI used to generate the binding from.
@@ -251,21 +251,22 @@ func (it *TaskPayloadContractDepositRequestIterator) Close() error {
 type TaskPayloadContractDepositRequest struct {
 	Version         uint32
 	TaskType        uint32
-	TargetAddress   common.Address
+	TargetAddress   string
 	Amount          uint64
+	Chain           uint8
 	ChainId         uint32
 	BlockHeight     uint64
-	TxHash          []byte
-	ContractAddress common.Address
+	TxHash          string
+	ContractAddress string
 	Ticker          string
 	AssetType       uint8
 	Decimal         uint32
 	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterDepositRequest is a free log retrieval operation binding the contract event 0xea93332254f87d488690c41de539c76f81103e770e84d209304f8ce20f417c54.
+// FilterDepositRequest is a free log retrieval operation binding the contract event 0xa16e6f3f5818b6d9cdc9da7bb4b22b721875ee019d05d2416544b3ec35fe7b8b.
 //
-// Solidity: event DepositRequest(uint32 version, uint32 taskType, address targetAddress, uint64 amount, uint32 chainId, uint64 blockHeight, bytes txHash, address contractAddress, string ticker, uint8 assetType, uint32 decimal)
+// Solidity: event DepositRequest(uint32 version, uint32 taskType, string targetAddress, uint64 amount, uint8 chain, uint32 chainId, uint64 blockHeight, string txHash, string contractAddress, string ticker, uint8 assetType, uint32 decimal)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterDepositRequest(opts *bind.FilterOpts) (*TaskPayloadContractDepositRequestIterator, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "DepositRequest")
@@ -275,9 +276,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterDepositRequest(op
 	return &TaskPayloadContractDepositRequestIterator{contract: _TaskPayloadContract.contract, event: "DepositRequest", logs: logs, sub: sub}, nil
 }
 
-// WatchDepositRequest is a free log subscription operation binding the contract event 0xea93332254f87d488690c41de539c76f81103e770e84d209304f8ce20f417c54.
+// WatchDepositRequest is a free log subscription operation binding the contract event 0xa16e6f3f5818b6d9cdc9da7bb4b22b721875ee019d05d2416544b3ec35fe7b8b.
 //
-// Solidity: event DepositRequest(uint32 version, uint32 taskType, address targetAddress, uint64 amount, uint32 chainId, uint64 blockHeight, bytes txHash, address contractAddress, string ticker, uint8 assetType, uint32 decimal)
+// Solidity: event DepositRequest(uint32 version, uint32 taskType, string targetAddress, uint64 amount, uint8 chain, uint32 chainId, uint64 blockHeight, string txHash, string contractAddress, string ticker, uint8 assetType, uint32 decimal)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchDepositRequest(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractDepositRequest) (event.Subscription, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "DepositRequest")
@@ -312,9 +313,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchDepositRequest(opt
 	}), nil
 }
 
-// ParseDepositRequest is a log parse operation binding the contract event 0xea93332254f87d488690c41de539c76f81103e770e84d209304f8ce20f417c54.
+// ParseDepositRequest is a log parse operation binding the contract event 0xa16e6f3f5818b6d9cdc9da7bb4b22b721875ee019d05d2416544b3ec35fe7b8b.
 //
-// Solidity: event DepositRequest(uint32 version, uint32 taskType, address targetAddress, uint64 amount, uint32 chainId, uint64 blockHeight, bytes txHash, address contractAddress, string ticker, uint8 assetType, uint32 decimal)
+// Solidity: event DepositRequest(uint32 version, uint32 taskType, string targetAddress, uint64 amount, uint8 chain, uint32 chainId, uint64 blockHeight, string txHash, string contractAddress, string ticker, uint8 assetType, uint32 decimal)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseDepositRequest(log types.Log) (*TaskPayloadContractDepositRequest, error) {
 	event := new(TaskPayloadContractDepositRequest)
 	if err := _TaskPayloadContract.contract.UnpackLog(event, "DepositRequest", log); err != nil {
@@ -946,12 +947,13 @@ func (it *TaskPayloadContractWithdrawalRequestIterator) Close() error {
 type TaskPayloadContractWithdrawalRequest struct {
 	Version         uint32
 	TaskType        uint32
-	TargetAddress   common.Address
+	TargetAddress   string
 	Amount          uint64
+	Chain           uint8
 	ChainId         uint32
 	BlockHeight     uint64
-	TxHash          []byte
-	ContractAddress common.Address
+	TxHash          string
+	ContractAddress string
 	Ticker          string
 	AssetType       uint8
 	Decimal         uint32
@@ -959,9 +961,9 @@ type TaskPayloadContractWithdrawalRequest struct {
 	Raw             types.Log // Blockchain specific contextual infos
 }
 
-// FilterWithdrawalRequest is a free log retrieval operation binding the contract event 0x2736409ff4a5cd9801eb42aab7605153fcdef013b298ea806e99325efaacaf8e.
+// FilterWithdrawalRequest is a free log retrieval operation binding the contract event 0x3cf4fbf96439aad214ca1e3508b15d4b50f1767c8216a7efe11af2ac7a520e91.
 //
-// Solidity: event WithdrawalRequest(uint32 version, uint32 taskType, address targetAddress, uint64 amount, uint32 chainId, uint64 blockHeight, bytes txHash, address contractAddress, string ticker, uint8 assetType, uint32 decimal, uint64 fee)
+// Solidity: event WithdrawalRequest(uint32 version, uint32 taskType, string targetAddress, uint64 amount, uint8 chain, uint32 chainId, uint64 blockHeight, string txHash, string contractAddress, string ticker, uint8 assetType, uint32 decimal, uint64 fee)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWithdrawalRequest(opts *bind.FilterOpts) (*TaskPayloadContractWithdrawalRequestIterator, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "WithdrawalRequest")
@@ -971,9 +973,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWithdrawalRequest
 	return &TaskPayloadContractWithdrawalRequestIterator{contract: _TaskPayloadContract.contract, event: "WithdrawalRequest", logs: logs, sub: sub}, nil
 }
 
-// WatchWithdrawalRequest is a free log subscription operation binding the contract event 0x2736409ff4a5cd9801eb42aab7605153fcdef013b298ea806e99325efaacaf8e.
+// WatchWithdrawalRequest is a free log subscription operation binding the contract event 0x3cf4fbf96439aad214ca1e3508b15d4b50f1767c8216a7efe11af2ac7a520e91.
 //
-// Solidity: event WithdrawalRequest(uint32 version, uint32 taskType, address targetAddress, uint64 amount, uint32 chainId, uint64 blockHeight, bytes txHash, address contractAddress, string ticker, uint8 assetType, uint32 decimal, uint64 fee)
+// Solidity: event WithdrawalRequest(uint32 version, uint32 taskType, string targetAddress, uint64 amount, uint8 chain, uint32 chainId, uint64 blockHeight, string txHash, string contractAddress, string ticker, uint8 assetType, uint32 decimal, uint64 fee)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWithdrawalRequest(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractWithdrawalRequest) (event.Subscription, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "WithdrawalRequest")
@@ -1008,9 +1010,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWithdrawalRequest(
 	}), nil
 }
 
-// ParseWithdrawalRequest is a log parse operation binding the contract event 0x2736409ff4a5cd9801eb42aab7605153fcdef013b298ea806e99325efaacaf8e.
+// ParseWithdrawalRequest is a log parse operation binding the contract event 0x3cf4fbf96439aad214ca1e3508b15d4b50f1767c8216a7efe11af2ac7a520e91.
 //
-// Solidity: event WithdrawalRequest(uint32 version, uint32 taskType, address targetAddress, uint64 amount, uint32 chainId, uint64 blockHeight, bytes txHash, address contractAddress, string ticker, uint8 assetType, uint32 decimal, uint64 fee)
+// Solidity: event WithdrawalRequest(uint32 version, uint32 taskType, string targetAddress, uint64 amount, uint8 chain, uint32 chainId, uint64 blockHeight, string txHash, string contractAddress, string ticker, uint8 assetType, uint32 decimal, uint64 fee)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseWithdrawalRequest(log types.Log) (*TaskPayloadContractWithdrawalRequest, error) {
 	event := new(TaskPayloadContractWithdrawalRequest)
 	if err := _TaskPayloadContract.contract.UnpackLog(event, "WithdrawalRequest", log); err != nil {

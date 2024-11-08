@@ -4,7 +4,7 @@ const (
 	TaskTypeUnknown = iota
 	TaskTypeCreateWallet
 	TaskTypeDeposit
-	TaskTypeWithdraw
+	TaskTypeWithdrawal
 )
 
 type Task interface {
@@ -21,29 +21,39 @@ func (t BaseTask) GetTaskID() int32 {
 
 type CreateWalletTask struct {
 	BaseTask
-	User    int32 `json:"user"`
-	Account int32 `json:"account"`
-	Chain   int32 `json:"chain"` // evm_tss btc solana sui
+	User    string `json:"user"`
+	Account uint64 `json:"account"`
+	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
+	Index   uint32 `json:"index"`
 }
 
 type DepositTask struct {
 	BaseTask
-	Address   string `json:"address"`
-	Amount    uint64 `json:"amount"`
-	ChainId   uint64 `json:"chain_id"`
-	Token     []byte `json:"token"`
-	TxInfo    []byte `json:"tx_info"`
-	ExtraInfo []byte `json:"extra_info"`
+	TargetAddress   string `json:"target_address"`
+	Amount          uint64 `json:"amount"`
+	Chain           uint8  `json:"chain"`
+	ChainId         uint32 `json:"chain_id"`
+	BlockHeight     uint64 `json:"block_height"`
+	TxHash          string `json:"tx_hash"`
+	ContractAddress string `json:"contract_address"`
+	Ticker          string `json:"ticker"`
+	AssetType       uint8  `json:"asset_type"`
+	Decimal         uint32 `json:"decimal"`
 }
 
 type WithdrawalTask struct {
 	BaseTask
-	Address   string `json:"address"`
-	Amount    uint64 `json:"amount"`
-	ChainId   uint64 `json:"chain_id"`
-	Token     []byte `json:"token"`
-	TxInfo    []byte `json:"tx_info"`
-	ExtraInfo []byte `json:"extra_info"`
+	TargetAddress   string `json:"target_address"`
+	Amount          uint64 `json:"amount"`
+	Chain           uint8  `json:"chain"`
+	ChainId         uint32 `json:"chain_id"`
+	BlockHeight     uint64 `json:"block_height"`
+	TxHash          string `json:"tx_hash"`
+	ContractAddress string `json:"contract_address"`
+	Ticker          string `json:"ticker"`
+	AssetType       uint8  `json:"asset_type"`
+	Decimal         uint32 `json:"decimal"`
+	Fee             uint64 `json:"fee"`
 }
 
 const (

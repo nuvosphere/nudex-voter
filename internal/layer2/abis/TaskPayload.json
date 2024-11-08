@@ -17,15 +17,21 @@
       },
       {
         "name": "targetAddress",
-        "type": "address",
+        "type": "string",
         "indexed": false,
-        "internalType": "address"
+        "internalType": "string"
       },
       {
         "name": "amount",
         "type": "uint64",
         "indexed": false,
         "internalType": "uint64"
+      },
+      {
+        "name": "chain",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum TaskPayload.Chain"
       },
       {
         "name": "chainId",
@@ -41,15 +47,15 @@
       },
       {
         "name": "txHash",
-        "type": "bytes",
+        "type": "string",
         "indexed": false,
-        "internalType": "bytes"
+        "internalType": "string"
       },
       {
         "name": "contractAddress",
-        "type": "address",
+        "type": "string",
         "indexed": false,
-        "internalType": "address"
+        "internalType": "string"
       },
       {
         "name": "ticker",
@@ -232,15 +238,21 @@
       },
       {
         "name": "targetAddress",
-        "type": "address",
+        "type": "string",
         "indexed": false,
-        "internalType": "address"
+        "internalType": "string"
       },
       {
         "name": "amount",
         "type": "uint64",
         "indexed": false,
         "internalType": "uint64"
+      },
+      {
+        "name": "chain",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum TaskPayload.Chain"
       },
       {
         "name": "chainId",
@@ -256,15 +268,15 @@
       },
       {
         "name": "txHash",
-        "type": "bytes",
+        "type": "string",
         "indexed": false,
-        "internalType": "bytes"
+        "internalType": "string"
       },
       {
         "name": "contractAddress",
-        "type": "address",
+        "type": "string",
         "indexed": false,
-        "internalType": "address"
+        "internalType": "string"
       },
       {
         "name": "ticker",

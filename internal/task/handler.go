@@ -68,7 +68,7 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 		if err != nil {
 			log.Errorf("Handle deposit task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
 		}
-	case types.TaskTypeWithdraw:
+	case types.TaskTypeWithdrawal:
 		err := ts.handleWithdrawTask(ctx, dbTask)
 		if err != nil {
 			log.Errorf("Handle withdraw task %d error, description: %s, %v", dbTask.TaskId, dbTask.Context, err)
@@ -119,7 +119,7 @@ func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) er
 		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Address); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.TargetAddress); err != nil {
 		return err
 	}
 
@@ -131,15 +131,15 @@ func (ts *TaskService) handleDepositTask(ctx context.Context, dbTask db.Task) er
 		return err
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Token); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.Ticker); err != nil {
 		return err
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.TxInfo); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.BlockHeight); err != nil {
 		return err
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &depositTask.ExtraInfo); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &depositTask.TxHash); err != nil {
 		return err
 	}
 
@@ -159,7 +159,7 @@ func (ts *TaskService) handleWithdrawTask(ctx context.Context, dbTask db.Task) e
 		BaseTask: types.BaseTask{TaskId: int32(dbTask.TaskId)},
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.Address); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.TargetAddress); err != nil {
 		return err
 	}
 
@@ -171,15 +171,15 @@ func (ts *TaskService) handleWithdrawTask(ctx context.Context, dbTask db.Task) e
 		return err
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.Token); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.Ticker); err != nil {
 		return err
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.TxInfo); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.BlockHeight); err != nil {
 		return err
 	}
 
-	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.ExtraInfo); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &withdrawalTask.TxHash); err != nil {
 		return err
 	}
 

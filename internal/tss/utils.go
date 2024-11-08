@@ -189,7 +189,7 @@ func serializeTaskMessageToBytes(nonce uint64, baseTask types.Task) ([]byte, err
 			return nil, err
 		}
 
-		if err := writeField(task.Address); err != nil {
+		if err := writeField(task.TargetAddress); err != nil {
 			return nil, err
 		}
 
@@ -201,15 +201,15 @@ func serializeTaskMessageToBytes(nonce uint64, baseTask types.Task) ([]byte, err
 			return nil, err
 		}
 
-		if err := writeField(task.Token); err != nil {
+		if err := writeField(task.Ticker); err != nil {
 			return nil, err
 		}
 
-		if err := writeField(task.TxInfo); err != nil {
+		if err := writeField(task.BlockHeight); err != nil {
 			return nil, err
 		}
 
-		if err := writeField(task.ExtraInfo); err != nil {
+		if err := writeField(task.TxHash); err != nil {
 			return nil, err
 		}
 
@@ -241,15 +241,15 @@ func getRequestId(task *db.Task) string {
 		return fmt.Sprintf("TSS_SIGN:CREATE_WALLET:%d", task.TaskId)
 	case types.TaskTypeDeposit:
 		return fmt.Sprintf("TSS_SIGN:DEPOSIT:%d", task.TaskId)
-	case types.TaskTypeWithdraw:
-		return fmt.Sprintf("TSS_SIGN:WITHDRAW:%d", task.TaskId)
+	case types.TaskTypeWithdrawal:
+		return fmt.Sprintf("TSS_SIGN:WITHDRAWAL:%d", task.TaskId)
 	default:
 	}
 
 	return ""
 }
 
-func getCoinTypeByChain(chain int32) int {
+func getCoinTypeByChain(chain uint8) int {
 	switch chain {
 	case types.WalletTypeEVM:
 		return 60
