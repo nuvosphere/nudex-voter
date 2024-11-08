@@ -3,6 +3,7 @@ package tss
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"reflect"
 	"slices"
 	"time"
@@ -10,22 +11,67 @@ import (
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
-func (t *TSSService) handleTssMsg(dataType string, event interface{}) error {
-	if t.localParty == nil {
-		return fmt.Errorf("handleTssUpdate error, t local party not init")
+func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
+	session := t.manager.GetSession(msg.SessionID)
+	if session != nil {
+		from := session.PartyID(msg.FromPartyId)
+		if from != nil {
+			session.Post(msg.State(from))
+		}
+
+		return nil
+	}
+	// build new session
+	// todo to validator msg field
+	txHash := common.Hash{} // todo
+
+	switch msg.Type {
+	case GenKeySessionType:
+		session = NewGenerateKeySession(t.p2p, t.manager, t.LocalSubmitter(), msg.TaskID, txHash.Bytes(), int(t.threshold.Load()), t.partners)
+	case ReShareGroupSessionType:
+		// todo
+		session = NewReShareGroupSession(t.p2p, t.manager, t.LocalSubmitter(), msg.TaskID, txHash.Bytes(), int(t.threshold.Load()), t.partners)
+	case SignSessionType:
+		keyDerivationDelta := &big.Int{} // todo
+		localPartySaveData, err := LoadTSSData()
+		utils.Assert(err)
+
+		session = NewSignSession(
+			t.p2p,
+			t.manager,
+			msg.GroupID,
+			msg.Sponsor,
+			msg.TaskID,
+			new(big.Int).SetBytes(txHash.Bytes()),
+			int(t.threshold.Load()),
+			t.partners,
+			*localPartySaveData,
+			keyDerivationDelta,
+			t.manager.inToOut,
+		)
+
+	default:
+		return fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}
 
-	message, ok := event.(types.TssMessage)
-	if !ok {
-		return fmt.Errorf("handleTssUpdate error, event %v, is not t update message", event)
-	}
+	session.Run()
+	t.manager.AddSession(session)
+
+	return nil
+}
+
+// handleTssMsg: p2p return tss msg.
+func (t *TSSService) handleTssMsg(dataType string, event interface{}) error {
+	message := event.(types.TssMessage)
 
 	fromPartyID := t.partyIdMap[message.FromPartyId]
 	if fromPartyID == nil {
@@ -90,10 +136,6 @@ func (t *TSSService) handleTssMsg(dataType string, event interface{}) error {
 }
 
 func (t *TSSService) sendTssMsg(ctx context.Context, dataType string, event tsslib.Message) (*p2p.Message[types.TssMessage], error) {
-	if t.localParty == nil {
-		return nil, fmt.Errorf("sendTssMsg error, event %v, self not init", event)
-	}
-
 	if event.GetFrom().Id != t.localParty.PartyID().Id {
 		return nil, fmt.Errorf("sendTssMsg error, event %v, not self", event)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,8 +31,10 @@ type TSSService struct {
 	privateKey   *ecdsa.PrivateKey // submit
 	localAddress common.Address    // submit = partyID
 
-	p2p   p2p.P2PService
-	state *state.State
+	p2p     p2p.P2PService
+	state   *state.State
+	manager *Manager[int32]
+	cache   *cache.Cache
 
 	layer2Listener *layer2.Layer2Listener
 	dbm            *db.DatabaseManager
@@ -77,6 +81,15 @@ type TSSService struct {
 	once sync.Once
 }
 
+func (t *TSSService) IsCompleted(taskID int32) bool {
+	_, ok := t.cache.Get(fmt.Sprintf("%d", taskID))
+	return ok
+}
+
+func (t *TSSService) AddCompletedTask(taskID int32) {
+	t.cache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
+}
+
 func (t *TSSService) LocalSubmitter() common.Address {
 	return t.localAddress
 }
@@ -109,6 +122,8 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		dbm:            dbm,
 		state:          state,
 		layer2Listener: layer2Listener,
+		manager:        NewManager[int32](),
+		cache:          cache.New(time.Minute*10, time.Minute),
 
 		partyIdMap: make(map[string]*tsslib.PartyID),
 
