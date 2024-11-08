@@ -20,8 +20,8 @@ const (
 // convertMsgData converts the message data to the corresponding struct.
 func convertMsgData(msg p2p.Message[json.RawMessage]) any {
 	switch msg.DataType {
-	case DataTypeTssKeygenMsg, DataTypeTssSignMsg, DataTypeTssReSharingMsg:
-		return unmarshal[types.TssMessage](msg.Data)
+	case GenKeySessionType, SignSessionType, ReShareGroupSessionType:
+		return unmarshal[SessionMessage[int32]](msg.Data)
 	case DataTypeSignCreateWallet:
 		return unmarshal[types.SignMessage](msg.Data)
 	}

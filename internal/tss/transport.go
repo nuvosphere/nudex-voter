@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	_ Session[any] = &GenerateKeySession[any, any]{}
-	_ Session[any] = &ReShareGroupSession[any, any]{}
-	_ Session[any] = &SignSession[any]{}
+	_ Session[any] = &GenerateKeySession[any, any, any]{}
+	_ Session[any] = &ReShareGroupSession[any, any, any]{}
+	_ Session[any] = &SignSession[any, any, any]{}
 )
 
 type SessionMessage[T any] struct {
@@ -49,7 +49,7 @@ func (s *SessionMessage[T]) State(from *tss.PartyID) *helper.ReceivedPartyState 
 }
 
 // sessionTransport is a transport for a specific session.
-type sessionTransport[T, M any] struct {
+type sessionTransport[T, M, D any] struct {
 	broadcaster    p2p.P2PService                  // send data
 	recvChan       chan *helper.ReceivedPartyState // receive data
 	partyIDStore   *helper.PartyIDStore
@@ -61,6 +61,9 @@ type sessionTransport[T, M any] struct {
 	rw             sync.RWMutex
 	ctx            context.Context
 	cancel         context.CancelFunc
+	endCh          chan D
+	errCH          chan *tss.Error
+	inToOut        chan<- *SessionResult[T, D]
 }
 
 const (
@@ -69,10 +72,8 @@ const (
 	SignSessionType         = "SignSession"
 )
 
-type GenerateKeySession[T, M any] struct {
-	*sessionTransport[T, M]
-	endCh chan *keygen.LocalPartySaveData
-	errCH chan *tss.Error
+type GenerateKeySession[T, M, D any] struct {
+	*sessionTransport[T, M, D]
 }
 
 func NewParam(
@@ -91,40 +92,41 @@ func NewParam(
 	return params, partyIdMap
 }
 
-func NewGenerateKeySession[T comparable, M any](
+func (m *Scheduler[T]) NewGenerateKeySession(
 	p p2p.P2PService,
-	m *Scheduler[T],
 	sponsor common.Address, // current submitter
 	taskID T, // msg id
-	msg M,
+	msg *big.Int,
 	threshold int,
 	allPartners []common.Address,
-) Session[T] {
+) helper.SessionID {
 	preParams, err := keygen.GeneratePreParams(1 * time.Minute)
 	if err != nil {
 		panic(err)
 	}
 
 	params, partyIdMap := NewParam(sponsor, threshold, allPartners)
-	s := newSession(p, m, helper.SenateGroupID, helper.SenateSessionID, sponsor, taskID, msg, threshold, GenKeySessionType, allPartners)
+	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](p, m, helper.SenateGroupID, helper.SenateSessionID, sponsor, taskID, msg, threshold, GenKeySessionType, allPartners)
 	party, endCh, errCh := helper.RunKeyGen(context.Background(), preParams, params, s) // todo
 	s.party = party
 	s.partyIdMap = partyIdMap
+	s.inToOut = m.genKeyInToOut
+	s.errCH = errCh
+	s.endCh = endCh
+	session := &GenerateKeySession[T, *big.Int, *keygen.LocalPartySaveData]{sessionTransport: s}
+	m.AddSession(session)
+	session.Run()
 
-	return &GenerateKeySession[T, M]{
-		sessionTransport: s,
-		endCh:            endCh,
-		errCH:            errCh,
-	}
+	return session.SessionID()
 }
 
-func (m *GenerateKeySession[T, M]) Release() {
+func (m *GenerateKeySession[T, M, D]) Release() {
 	m.sessionTransport.Release()
 	close(m.endCh)
 	close(m.errCH)
 }
 
-func (m *GenerateKeySession[T, M]) Run() {
+func (m *GenerateKeySession[T, M, D]) Run() {
 	go func() {
 		defer m.Release()
 		select {
@@ -138,37 +140,33 @@ func (m *GenerateKeySession[T, M]) Run() {
 	}()
 }
 
-type ReShareGroupSession[T, M any] struct {
-	*GenerateKeySession[T, M]
+type ReShareGroupSession[T, M, D any] struct {
+	*GenerateKeySession[T, M, D]
 }
 
-func NewReShareGroupSession[T comparable, M any](
+func (m *Scheduler[T]) NewReShareGroupSession(
 	p p2p.P2PService,
-	m *Scheduler[T],
 	sponsor common.Address, // current submitter
 	taskID T, // msg id
-	msg M,
+	msg *big.Int,
 	threshold int,
 	allPartners []common.Address,
-) Session[T] {
+) helper.SessionID {
 	// return newSession(p, m, groupID, helper.SenateSessionID, sponsor, taskID, msg, threshold, ReShareGroupSessionType, allPartners)
-	return nil
+	return helper.SessionID{}
 }
 
-type SignSession[T any] struct {
-	*sessionTransport[T, *big.Int]
-	inToOut chan<- *SignResult[T]
-	endCh   chan *tsscommon.SignatureData
-	errCH   chan *tss.Error
+type SignSession[T, M, D any] struct {
+	*sessionTransport[T, M, D]
 }
 
-func (m *SignSession[T]) Release() {
+func (m *SignSession[T, M, D]) Release() {
 	m.sessionTransport.Release()
 	close(m.endCh)
 	close(m.errCH)
 }
 
-func (m *SignSession[T]) Run() {
+func (m *SignSession[T, M, D]) Run() {
 	go func() {
 		defer m.Release()
 		select {
@@ -181,34 +179,6 @@ func (m *SignSession[T]) Run() {
 	}()
 }
 
-type SignResult[T any] struct {
-	TaskID    T
-	SessionID helper.SessionID
-	GroupID   helper.GroupID
-	Data      *tsscommon.SignatureData
-	Err       error
-}
-
-func (m *SignSession[T]) newDataResult(data *tsscommon.SignatureData) *SignResult[T] {
-	return &SignResult[T]{
-		TaskID:    m.TaskID(),
-		SessionID: m.SessionID(),
-		GroupID:   m.GroupID(),
-		Data:      data,
-		Err:       nil,
-	}
-}
-
-func (m *SignSession[T]) newErrResult(err error) *SignResult[T] {
-	return &SignResult[T]{
-		TaskID:    m.TaskID(),
-		SessionID: m.SessionID(),
-		GroupID:   m.GroupID(),
-		Data:      nil,
-		Err:       err,
-	}
-}
-
 func RandSessionID() helper.SessionID {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
@@ -216,9 +186,8 @@ func RandSessionID() helper.SessionID {
 	return common.BytesToHash(b[:])
 }
 
-func NewSignSession[T comparable](
+func (m *Scheduler[T]) NewSignSession(
 	p p2p.P2PService,
-	m *Scheduler[T],
 	groupID helper.GroupID,
 	sponsor common.Address,
 	taskID T,
@@ -227,23 +196,25 @@ func NewSignSession[T comparable](
 	allPartners []common.Address,
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
-	inToOut chan<- *SignResult[T],
-) *SignSession[T] {
+) helper.SessionID {
 	params, partyIdMap := NewParam(sponsor, threshold, allPartners)
-	innerSession := newSession(p, m, groupID, RandSessionID(), sponsor, taskID, msg, threshold, GenKeySessionType, allPartners)
+	innerSession := newSession[T, *big.Int, *tsscommon.SignatureData](p, m, groupID, RandSessionID(), sponsor, taskID, msg, threshold, GenKeySessionType, allPartners)
 	party, endCh, errCh := helper.Run(context.Background(), msg, params, key, innerSession, keyDerivationDelta) // todo
 	innerSession.party = party
 	innerSession.partyIdMap = partyIdMap
-
-	return &SignSession[T]{
+	innerSession.endCh = endCh
+	innerSession.errCH = errCh
+	innerSession.inToOut = m.sigInToOut
+	session := &SignSession[T, *big.Int, *tsscommon.SignatureData]{
 		sessionTransport: innerSession,
-		inToOut:          inToOut,
-		endCh:            endCh,
-		errCH:            errCh,
 	}
+	m.AddSession(session)
+	session.Run()
+
+	return session.SessionID()
 }
 
-func newSession[T comparable, M any](
+func newSession[T comparable, M, D any](
 	p p2p.P2PService,
 	m *Scheduler[T],
 	groupID helper.GroupID,
@@ -254,10 +225,10 @@ func newSession[T comparable, M any](
 	threshold int,
 	ty string,
 	allPartners []common.Address,
-) *sessionTransport[T, M] {
+) *sessionTransport[T, M, D] {
 	recvChan := make(chan *helper.ReceivedPartyState, 1)
 
-	return &sessionTransport[T, M]{
+	return &sessionTransport[T, M, D]{
 		broadcaster: p,
 		recvChan:    recvChan,
 		session: helper.Session[T, M]{
@@ -276,11 +247,11 @@ func newSession[T comparable, M any](
 	}
 }
 
-func (s *sessionTransport[T, M]) Type() string {
+func (s *sessionTransport[T, M, D]) Type() string {
 	return s.ty
 }
 
-func (s *sessionTransport[T, M]) Name() string {
+func (s *sessionTransport[T, M, D]) Name() string {
 	return fmt.Sprintf(
 		"%s: seesionID=%v, groupID=%v,taskID=%v,msg=%v,threshold=%d",
 		s.Type(),
@@ -292,41 +263,41 @@ func (s *sessionTransport[T, M]) Name() string {
 	)
 }
 
-func (s *sessionTransport[T, M]) PartyID(id string) *tss.PartyID {
+func (s *sessionTransport[T, M, D]) PartyID(id string) *tss.PartyID {
 	return s.party.PartyID()
 }
 
-func (s *sessionTransport[T, M]) Party() tss.Party {
+func (s *sessionTransport[T, M, D]) Party() tss.Party {
 	return s.party
 }
 
-func (s *sessionTransport[T, M]) SessionID() helper.SessionID {
+func (s *sessionTransport[T, M, D]) SessionID() helper.SessionID {
 	return s.session.SessionID
 }
 
-func (s *sessionTransport[T, M]) GroupID() helper.GroupID {
+func (s *sessionTransport[T, M, D]) GroupID() helper.GroupID {
 	return s.session.GroupID
 }
 
-func (s *sessionTransport[T, M]) TaskID() T {
+func (s *sessionTransport[T, M, D]) TaskID() T {
 	return s.session.TaskID
 }
 
-func (s *sessionTransport[T, M]) Sponsor() common.Address {
+func (s *sessionTransport[T, M, D]) Sponsor() common.Address {
 	return s.session.Sponsor
 }
 
-func (s *sessionTransport[T, M]) Threshold() int {
+func (s *sessionTransport[T, M, D]) Threshold() int {
 	return s.session.Threshold
 }
 
-func (s *sessionTransport[T, M]) Release() {
+func (s *sessionTransport[T, M, D]) Release() {
 	s.sessionRelease.SessionRelease(s.SessionID())
 	s.cancel()
 	close(s.recvChan)
 }
 
-func (s *sessionTransport[T, M]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {
+func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {
 	msg := p2p.Message[any]{
 		MessageType: p2p.MessageTypeTssMsg,
 		RequestId:   fmt.Sprintf("%v", s.TaskID()), // todo taskID
@@ -349,10 +320,37 @@ func (s *sessionTransport[T, M]) Send(ctx context.Context, bytes []byte, routing
 	return s.broadcaster.PublishMessage(ctx, msg)
 }
 
-func (s *sessionTransport[T, M]) Receive() chan *helper.ReceivedPartyState {
+func (s *sessionTransport[T, M, D]) Receive() chan *helper.ReceivedPartyState {
 	return s.recvChan
 }
 
-func (s *sessionTransport[T, M]) Post(data *helper.ReceivedPartyState) {
+func (s *sessionTransport[T, M, D]) Post(data *helper.ReceivedPartyState) {
 	s.recvChan <- data
+}
+
+func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
+	return &SessionResult[T, D]{
+		TaskID:    s.TaskID(),
+		SessionID: s.SessionID(),
+		GroupID:   s.GroupID(),
+		Data:      data,
+		Err:       nil,
+	}
+}
+
+func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D] {
+	return &SessionResult[T, D]{
+		TaskID:    s.TaskID(),
+		SessionID: s.SessionID(),
+		GroupID:   s.GroupID(),
+		Err:       err,
+	}
+}
+
+type SessionResult[T, D any] struct {
+	TaskID    T
+	SessionID helper.SessionID
+	GroupID   helper.GroupID
+	Data      D
+	Err       error
 }

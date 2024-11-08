@@ -1,8 +1,11 @@
 package tss
 
 import (
+	"context"
 	"sync"
 
+	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/samber/lo"
 )
@@ -19,22 +22,28 @@ type SessionReleaser interface {
 }
 
 type Scheduler[T comparable] struct {
-	grw          sync.RWMutex
-	groups       map[helper.GroupID]*helper.Group
-	srw          sync.RWMutex
-	sessions     map[helper.SessionID]Session[T]
-	sessionTasks map[T]Session[T]
-	inToOut      chan *SignResult[T]
+	grw                 sync.RWMutex
+	groups              map[helper.GroupID]*helper.Group
+	srw                 sync.RWMutex
+	sessions            map[helper.SessionID]Session[T]
+	sessionTasks        map[T]Session[T]
+	sigInToOut          chan *SessionResult[T, *tsscommon.SignatureData]
+	genKeyInToOut       chan *SessionResult[T, *keygen.LocalPartySaveData]
+	reShareGroupInToOut chan *SessionResult[T, *keygen.LocalPartySaveData]
+	ctx                 context.Context
+	cancel              context.CancelFunc
 }
 
-func NewManager[T comparable]() *Scheduler[T] {
+func NewScheduler[T comparable]() *Scheduler[T] {
 	return &Scheduler[T]{
-		srw:          sync.RWMutex{},
-		grw:          sync.RWMutex{},
-		groups:       make(map[helper.GroupID]*helper.Group),
-		sessions:     make(map[helper.SessionID]Session[T]),
-		sessionTasks: make(map[T]Session[T]),
-		inToOut:      make(chan *SignResult[T], 1024),
+		srw:                 sync.RWMutex{},
+		grw:                 sync.RWMutex{},
+		groups:              make(map[helper.GroupID]*helper.Group),
+		sessions:            make(map[helper.SessionID]Session[T]),
+		sessionTasks:        make(map[T]Session[T]),
+		sigInToOut:          make(chan *SessionResult[T, *tsscommon.SignatureData], 1024),
+		genKeyInToOut:       make(chan *SessionResult[T, *keygen.LocalPartySaveData], 1),
+		reShareGroupInToOut: make(chan *SessionResult[T, *keygen.LocalPartySaveData], 1),
 	}
 }
 
@@ -125,5 +134,5 @@ func (m *Scheduler[T]) Release() {
 	m.sessions = make(map[helper.SessionID]Session[T])
 	m.sessionTasks = make(map[T]Session[T])
 	m.srw.Unlock()
-	close(m.inToOut)
+	close(m.sigInToOut)
 }

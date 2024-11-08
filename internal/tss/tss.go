@@ -31,10 +31,10 @@ type TSSService struct {
 	privateKey   *ecdsa.PrivateKey // submit
 	localAddress common.Address    // submit = partyID
 
-	p2p     p2p.P2PService
-	state   *state.State
-	manager *Scheduler[int32]
-	cache   *cache.Cache
+	p2p       p2p.P2PService
+	state     *state.State
+	scheduler *Scheduler[int32]
+	cache     *cache.Cache
 
 	layer2Listener *layer2.Layer2Listener
 	dbm            *db.DatabaseManager
@@ -102,6 +102,25 @@ func (t *TSSService) PostTask(task any) {
 	t.taskReceive <- task
 }
 
+func (t *TSSService) sigEndLoop(ctx context.Context) {
+	out := t.scheduler.sigInToOut
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("tss signature read result loop stopped")
+		case result := <-out:
+			info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.TaskID)
+			if result.Err != nil {
+				log.Errorf("%s, result error:%v", info, result.Err)
+			} else {
+				// todo
+				log.Info(info)
+			}
+		}
+	}
+}
+
 func (t *TSSService) taskLoop(ctx context.Context) {
 	for {
 		select {
@@ -122,7 +141,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		dbm:            dbm,
 		state:          state,
 		layer2Listener: layer2Listener,
-		manager:        NewManager[int32](),
+		scheduler:      NewScheduler[int32](),
 		cache:          cache.New(time.Minute*10, time.Minute),
 
 		partyIdMap: make(map[string]*tsslib.PartyID),
@@ -295,9 +314,9 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 
 				e := event.(p2p.Message[json.RawMessage])
 
-				err := t.handleTssMsg(e.DataType, convertMsgData(e))
+				err := t.handleSessionMsg(convertMsgData(e).(SessionMessage[int32]))
 				if err != nil {
-					log.Warnf("handle t msg error, %v", err)
+					log.Warnf("handle session msg error, %v", err)
 				}
 			case <-t.partyAddOrRmCh: // from layer2 log scan
 				log.Debugf("Received t add or remove participant event")

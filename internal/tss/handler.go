@@ -21,10 +21,10 @@ import (
 )
 
 func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
-	session := t.manager.GetSession(msg.SessionID)
+	session := t.scheduler.GetSession(msg.SessionID)
 	if session != nil {
 		from := session.PartyID(msg.FromPartyId)
-		if from != nil {
+		if from != nil && from != session.Party().PartyID() && (msg.IsBroadcast || slices.Contains(msg.ToPartyIds, t.localAddress.Hex())) {
 			session.Post(msg.State(from))
 		}
 
@@ -36,18 +36,17 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 
 	switch msg.Type {
 	case GenKeySessionType:
-		session = NewGenerateKeySession(t.p2p, t.manager, t.LocalSubmitter(), msg.TaskID, txHash.Bytes(), int(t.threshold.Load()), t.partners)
+		_ = t.scheduler.NewGenerateKeySession(t.p2p, t.LocalSubmitter(), msg.TaskID, new(big.Int).SetBytes(txHash.Bytes()), int(t.threshold.Load()), t.partners)
 	case ReShareGroupSessionType:
 		// todo
-		session = NewReShareGroupSession(t.p2p, t.manager, t.LocalSubmitter(), msg.TaskID, txHash.Bytes(), int(t.threshold.Load()), t.partners)
+		_ = t.scheduler.NewReShareGroupSession(t.p2p, t.LocalSubmitter(), msg.TaskID, new(big.Int).SetBytes(txHash.Bytes()), int(t.threshold.Load()), t.partners)
 	case SignSessionType:
 		keyDerivationDelta := &big.Int{} // todo
 		localPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
 
-		session = NewSignSession(
+		_ = t.scheduler.NewSignSession(
 			t.p2p,
-			t.manager,
 			msg.GroupID,
 			msg.Sponsor,
 			msg.TaskID,
@@ -56,15 +55,10 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 			t.partners,
 			*localPartySaveData,
 			keyDerivationDelta,
-			t.manager.inToOut,
 		)
-
 	default:
 		return fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}
-
-	session.Run()
-	t.manager.AddSession(session)
 
 	return nil
 }
