@@ -9,10 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,7 +19,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
@@ -44,37 +41,15 @@ type TSSService struct {
 	partners           []common.Address
 	localParty         *keygen.LocalParty
 	localPartySaveData *keygen.LocalPartySaveData
-	partyIdMap         map[string]*tsslib.PartyID
-
-	setupTime              time.Time
-	keygenRound1P2pMessage *p2p.Message[types.TssMessage]
-	round1MessageSendTimes int
-
-	// tss keygen
-	keyOutCh chan tsslib.Message
-	keyEndCh chan *keygen.LocalPartySaveData
 
 	// resharing channel
 	reSharingOutCh chan tsslib.Message
 	reSharingEndCh chan *keygen.LocalPartySaveData
 	reLocalParty   *resharing.LocalParty
 
-	// tss signature channel
-	sigOutCh chan tsslib.Message
-	sigEndCh chan *tssCommon.SignatureData
-
 	// eventbus channel
 	tssMsgCh       <-chan any
 	partyAddOrRmCh <-chan any
-	sigStartCh     <-chan any
-	// sigReceiveCh   <-chan any
-	sigFailChan    <-chan any
-	sigTimeoutChan <-chan any
-
-	sigMap                       map[string]map[int32]*signing.LocalParty
-	sigRound1P2pMessageMap       map[string]*p2p.Message[types.TssMessage]
-	sigRound1MessageSendTimesMap map[string]int
-	sigTimeoutMap                map[string]time.Time
 
 	rw sync.RWMutex
 
@@ -143,112 +118,31 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		layer2Listener: layer2Listener,
 		scheduler:      NewScheduler[int32](),
 		cache:          cache.New(time.Minute*10, time.Minute),
-
-		partyIdMap: make(map[string]*tsslib.PartyID),
-
-		keyOutCh:       make(chan tsslib.Message),
-		keyEndCh:       make(chan *keygen.LocalPartySaveData),
 		reSharingOutCh: make(chan tsslib.Message),
 		reSharingEndCh: make(chan *keygen.LocalPartySaveData),
-		sigOutCh:       make(chan tsslib.Message),
-		sigEndCh:       make(chan *tssCommon.SignatureData),
-
-		sigMap:                       make(map[string]map[int32]*signing.LocalParty),
-		sigRound1P2pMessageMap:       make(map[string]*p2p.Message[types.TssMessage]),
-		sigRound1MessageSendTimesMap: make(map[string]int),
-		sigTimeoutMap:                make(map[string]time.Time),
-		taskReceive:                  make(chan any, 256),
+		taskReceive:    make(chan any, 256),
 	}
 }
 
 func (t *TSSService) Start(ctx context.Context) {
+	t.eventLoop(ctx)
 	t.waitForThreshold(ctx)
 
 	is := t.IsGenesis()
 	if is {
 		t.Genesis(ctx)
-	}
 
-	t.initCheckGenKey(ctx)
-	t.loop(ctx)
-	t.check(ctx)
+		sessionResult := <-t.scheduler.genKeyInToOut
+		if sessionResult.Err != nil {
+			panic(sessionResult.Err)
+		}
+
+		t.localPartySaveData = sessionResult.Data
+	}
 
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
 	t.Stop()
-}
-
-func (t *TSSService) loop(ctx context.Context) {
-	t.eventLoop(ctx)
-}
-
-func (t *TSSService) check(ctx context.Context) {
-	go func() {
-		ticker := time.NewTicker(10 * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				log.Info("Timeout checker stopping...")
-				return
-			case <-ticker.C:
-				t.checkSigTimeouts()
-			}
-		}
-	}()
-}
-
-func (t *TSSService) initCheckGenKey(ctx context.Context) {
-	go func() {
-		ticker := time.NewTicker(10 * time.Second)
-		defer ticker.Stop()
-
-	L:
-		for {
-			if t.localParty != nil && t.localPartySaveData != nil {
-				break L
-			}
-			select {
-			case <-ctx.Done():
-				log.Info("Tss keygen checker stopping...")
-				return
-			case <-ticker.C:
-				t.checkParty(ctx)
-			}
-		}
-		t.tssLoop(ctx)
-	}()
-}
-
-func (t *TSSService) genKeyLoop(ctx context.Context) {
-	// generate tss key
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				log.Info("t loop stopping...")
-				return
-			case msg := <-t.keyOutCh:
-				log.Debugf("Received t keyOut event")
-
-				err := t.handleTssKeyOut(ctx, msg)
-				if err != nil {
-					log.Warnf("handle t keyOut error, msg: %v, %v", msg, err)
-				}
-			case event := <-t.keyEndCh:
-				log.Debugf("Received t keygenEnd event")
-
-				err := t.handleTssKeyEnd(event)
-				if err != nil {
-					log.Warnf("handle t keygenEnd error, event: %v, %v", event, err)
-				} else {
-					t.isPrepared.Store(true)
-					return
-				}
-			}
-		}
-	}()
 }
 
 func (t *TSSService) tssLoop(ctx context.Context) {
@@ -266,30 +160,8 @@ func (t *TSSService) tssLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle t keyOut error, msg: %v, %v", msg, err)
 				}
-			case event := <-t.reSharingEndCh:
+			case <-t.reSharingEndCh:
 				log.Debugf("Received t re-sharing event")
-
-				err := t.handleTssKeyEnd(event)
-				if err != nil {
-					log.Warnf("handle t re-sharing error, event: %v, %v", event, err)
-				}
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				log.Info("t loop stopping...")
-				return
-			case msg := <-t.sigOutCh:
-				err := t.handleTssSigOut(ctx, msg)
-				if err != nil {
-					log.Warnf("handle t signature out error, msg: %v, %v", msg, err)
-				}
-			case sigFinish := <-t.sigEndCh:
-				t.handleSigFinish(ctx, sigFinish)
 			}
 		}
 	}()
@@ -298,9 +170,6 @@ func (t *TSSService) tssLoop(ctx context.Context) {
 func (t *TSSService) eventLoop(ctx context.Context) {
 	t.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
 	t.tssMsgCh = t.state.EventBus.Subscribe(state.EventTssMsg{})
-	t.sigStartCh = t.state.EventBus.Subscribe(state.EventSigStart{})
-	t.sigFailChan = t.state.EventBus.Subscribe(state.EventSigFailed{})
-	t.sigTimeoutChan = t.state.EventBus.Subscribe(state.EventSigTimeout{})
 	t.partyAddOrRmCh = t.state.EventBus.Subscribe(state.EventParticipantAddedOrRemoved{})
 
 	go func() {
@@ -325,13 +194,6 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle t add or remove participant event error, %v", err)
 				}
-			case event := <-t.sigStartCh:
-				log.Debugf("Received sigStart event: %v", event)
-				t.handleSigStart(ctx, event)
-			case sigFail := <-t.sigFailChan:
-				t.handleSigFailed(ctx, sigFail, "failed")
-			case sigTimeout := <-t.sigTimeoutChan:
-				t.handleSigFailed(ctx, sigTimeout, "timeout") // from self ??? todo
 			}
 		}
 	}()
@@ -339,20 +201,9 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 
 func (t *TSSService) Stop() {
 	t.once.Do(func() {
-		// close(t.keyOutCh)
-		// close(t.keyEndCh)
 		close(t.reSharingEndCh)
 		close(t.reSharingOutCh)
-		close(t.sigOutCh)
-		close(t.sigEndCh)
 	})
-}
-
-func (t *TSSService) cleanAllSigInfo() {
-	t.sigMap = make(map[string]map[int32]*signing.LocalParty)
-	t.sigRound1P2pMessageMap = make(map[string]*p2p.Message[types.TssMessage])
-	t.sigRound1MessageSendTimesMap = make(map[string]int)
-	t.sigTimeoutMap = make(map[string]time.Time)
 }
 
 func (t *TSSService) waitForThreshold(ctx context.Context) {
@@ -369,4 +220,12 @@ L:
 			time.Sleep(time.Second)
 		}
 	}
+}
+
+func (t *TSSService) oldPartners() []common.Address {
+	return t.partners
+}
+
+func (t *TSSService) newPartners() []common.Address {
+	return nil // todo
 }

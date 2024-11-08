@@ -42,8 +42,8 @@ func NewScheduler[T comparable]() *Scheduler[T] {
 		sessions:            make(map[helper.SessionID]Session[T]),
 		sessionTasks:        make(map[T]Session[T]),
 		sigInToOut:          make(chan *SessionResult[T, *tsscommon.SignatureData], 1024),
-		genKeyInToOut:       make(chan *SessionResult[T, *keygen.LocalPartySaveData], 1),
-		reShareGroupInToOut: make(chan *SessionResult[T, *keygen.LocalPartySaveData], 1),
+		genKeyInToOut:       make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
+		reShareGroupInToOut: make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
 	}
 }
 

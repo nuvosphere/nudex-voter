@@ -11,12 +11,8 @@ import (
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
-	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
-	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
@@ -55,48 +51,22 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) err
 		Task: task,
 	}
 
-	p2pMsg := p2p.Message[types.SignMessage]{
+	_ = p2p.Message[types.SignMessage]{
 		MessageType: p2p.MessageTypeSigReq,
 		RequestId:   requestId,
 		DataType:    DataTypeSignCreateWallet,
 		Data:        reqMessage,
 	}
 
-	err = t.p2p.PublishMessage(ctx, p2pMsg)
-	if err != nil {
-		return err
-	}
-
-	log.Debugf("Publish p2p message SignReq: RequestId=%s, task=%v", requestId, task)
-
-	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
-	peerCtx := tsslib.NewPeerContext(partyIDs)
-
-	index := AddressIndex(t.partners, t.localAddress)
-	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
-
 	messageToSign, err := serializeTaskMessageToBytes(nonce.Uint64(), task)
 	if err != nil {
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *t.localPartySaveData, t.sigOutCh, t.sigEndCh).(*signing.LocalParty)
-	go func() {
-		if err := party.Start(); err != nil {
-			log.Errorf("Failed to start sign party: requestId=%s, error=%v", requestId, err)
-			return
-		} else {
-			log.Infof("Sign party started: requestId=%s", requestId)
-		}
-	}()
+	msg := new(big.Int).SetBytes(messageToSign)
 
-	t.rw.Lock()
-	t.sigMap[requestId] = make(map[int32]*signing.LocalParty)
-	t.sigMap[requestId][task.GetTaskID()] = party
-	timeoutDuration := config.AppConfig.TssSigTimeout
-	t.sigTimeoutMap[requestId] = time.Now().Add(timeoutDuration)
-	t.rw.Unlock()
-
+	log.Debug(msg)
+	// todo
 	return nil
 }
 
@@ -104,12 +74,6 @@ func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) e
 	if t.localAddress.Hex() == e.BaseSignMsg.VoterAddress {
 		log.Debugf("ignoring sign create wallet start, proposer self")
 		return nil
-	}
-
-	// check map
-	_, ok := t.sigExists(e.RequestId)
-	if ok {
-		return fmt.Errorf("sig exists: %s", e.RequestId)
 	}
 
 	if t.state.TssState.CurrentTask == nil {
@@ -136,52 +100,16 @@ func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) e
 		}
 	}
 
-	partyIDs := createPartyIDs(config.AppConfig.TssPublicKeys)
-	peerCtx := tsslib.NewPeerContext(partyIDs)
-
-	index := AddressIndex(t.partners, t.localAddress)
-	params := tsslib.NewParameters(tsslib.S256(), peerCtx, partyIDs[index], len(partyIDs), config.AppConfig.TssThreshold)
-
 	messageToSign, err := serializeTaskMessageToBytes(e.Nonce, e.Task)
 	if err != nil {
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *t.localPartySaveData, t.sigOutCh, t.sigEndCh).(*signing.LocalParty)
-	go func() {
-		if err := party.Start(); err != nil {
-			log.Errorf("Failed to start sign party: requestId=%s, error=%v", e.RequestId, err)
-			return
-		} else {
-			log.Infof("Sign party started: requestId=%s", e.RequestId)
-		}
-	}()
-
-	t.rw.Lock()
-	t.sigMap[e.RequestId] = make(map[int32]*signing.LocalParty)
-	t.sigMap[e.RequestId][e.Task.GetTaskID()] = party
-	t.sigTimeoutMap[e.RequestId] = time.Now().Add(config.AppConfig.TssSigTimeout)
-	t.rw.Unlock()
+	msg := new(big.Int).SetBytes(messageToSign)
+	log.Debug(msg)
+	// todo
 
 	return nil
-}
-
-func (t *TSSService) handleSigStart(ctx context.Context, event interface{}) {
-	if signMsg, ok := event.(types.SignMessage); ok {
-		log.Debugf("Event handleSigStart is of type SignMessage, request id %s", signMsg.RequestId)
-
-		if err := t.handleSignStart(ctx, signMsg); err != nil {
-			log.Errorf("Error handleSigStart handleSignStart, %v", err)
-			t.state.EventBus.Publish(state.EventSigFailed{}, event)
-		}
-	} else {
-		log.Errorf("HandleSigStart error: event is not of type types.SignMessage")
-	}
-}
-
-func (t *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
-	log.Infof("sig failed, taskId:%d, reason:%s", t.state.TssState.CurrentTask.TaskId, reason)
-	t.cleanAllSigInfo()
 }
 
 func (t *TSSService) handleSigFinish(ctx context.Context, signatureData *common.SignatureData) {
@@ -222,8 +150,6 @@ func (t *TSSService) handleSigFinish(ctx context.Context, signatureData *common.
 			log.Infof("user account address: %s", address)
 		}
 	}
-
-	t.cleanAllSigInfo()
 
 	t.rw.Unlock()
 }

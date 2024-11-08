@@ -12,14 +12,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (t *TSSService) oldPartners() []common.Address {
-	return t.partners
-}
-
-func (t *TSSService) newPartners() []common.Address {
-	return nil // todo
-}
-
 func (t *TSSService) startReSharing(newAddressList []common.Address, threshold int) error {
 	oldPartyIDs := createPartyIDsByAddress(t.oldPartners())
 	oldPeerCtx := tsslib.NewPeerContext(oldPartyIDs)
