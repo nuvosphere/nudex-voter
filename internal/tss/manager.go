@@ -109,6 +109,7 @@ func (m *Manager[T]) SessionRelease(session helper.SessionID) {
 	if ok {
 		delete(m.sessions, session)
 		delete(m.sessionTasks, s.TaskID())
+		s.Release()
 	}
 }
 
@@ -117,6 +118,10 @@ func (m *Manager[T]) Release() {
 	m.groups = make(map[helper.GroupID]*helper.Group)
 	m.grw.Unlock()
 	m.srw.Lock()
+	for _, s := range m.sessions {
+		s.Release()
+	}
+
 	m.sessions = make(map[helper.SessionID]Session[T])
 	m.sessionTasks = make(map[T]Session[T])
 	m.srw.Unlock()
