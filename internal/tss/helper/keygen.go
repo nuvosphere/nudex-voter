@@ -15,7 +15,7 @@ func RunKeyGen(
 	preParams *keygen.LocalPreParams,
 	params *tss.Parameters,
 	transport Transporter,
-) (chan *keygen.LocalPartySaveData, chan *tss.Error) {
+) (tss.Party, chan *keygen.LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 10)
 	// error if keygen fails, contains culprits to blame
@@ -30,5 +30,5 @@ func RunKeyGen(
 
 	RunParty(ctx, party, errCh, outCh, transport, false)
 
-	return endCh, errCh
+	return party, endCh, errCh
 }

@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,18 +11,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -38,60 +39,132 @@ const (
 type P2PService interface {
 	Bind(msgType MessageType, event state.Event)
 	PublishMessage(ctx context.Context, msg any) error
+	OnlinePeerCount() int
+	IsOnline(partyID string) bool
 }
 
 type LibP2PService struct {
 	messageTopic  *pubsub.Topic
 	state         *state.State
 	typeBindEvent sync.Map
+
+	partyIDBindPeerID map[string]peer.ID // partyID:peer.ID
+	peerIDBindPartyID map[peer.ID]string // peer.ID:partyID
+	onlineList        map[peer.ID]bool   // peer.ID:bool
+	rw                sync.RWMutex
+	localSubmitter    common.Address // submitter == partyID
+	selfPeerID        peer.ID
 }
 
-func NewLibP2PService(state *state.State) *LibP2PService {
+func NewLibP2PService(state *state.State, localSubmitter common.Address) *LibP2PService {
 	return &LibP2PService{
-		state:         state,
-		typeBindEvent: sync.Map{},
+		state:             state,
+		typeBindEvent:     sync.Map{},
+		partyIDBindPeerID: make(map[string]peer.ID),
+		peerIDBindPartyID: make(map[peer.ID]string),
+		rw:                sync.RWMutex{},
+		localSubmitter:    localSubmitter,
+	}
+}
+
+// addPeerInfo: submitter == partyID.
+func (lp *LibP2PService) addPeerInfo(peerID peer.ID, partyID string) {
+	defer lp.rw.Unlock()
+	lp.rw.Lock()
+	lp.partyIDBindPeerID[partyID] = peerID
+	lp.peerIDBindPartyID[peerID] = partyID
+	lp.onlineList[peerID] = true
+}
+
+func (lp *LibP2PService) OnlinePeerCount() int {
+	defer lp.rw.RUnlock()
+	lp.rw.RLock()
+	return len(lp.onlineList)
+}
+
+func (lp *LibP2PService) IsOnline(partyID string) bool {
+	defer lp.rw.RUnlock()
+	lp.rw.RLock()
+
+	peerID, ok := lp.partyIDBindPeerID[partyID]
+	if ok {
+		_, ok = lp.onlineList[peerID]
+		return ok
+	}
+
+	return false
+}
+
+func (lp *LibP2PService) online(remotePeerID peer.ID) {
+	defer lp.rw.Unlock()
+	lp.rw.Lock()
+	lp.onlineList[remotePeerID] = true
+}
+
+func (lp *LibP2PService) offline(remotePeerID peer.ID) {
+	defer lp.rw.Unlock()
+	lp.rw.Lock()
+	delete(lp.onlineList, remotePeerID)
+}
+
+func (lp *LibP2PService) removePeer(remotePeerID peer.ID) {
+	defer lp.rw.Unlock()
+	lp.rw.Lock()
+
+	partyID, ok := lp.peerIDBindPartyID[remotePeerID]
+	if ok {
+		delete(lp.onlineList, remotePeerID)
+		delete(lp.peerIDBindPartyID, remotePeerID)
+		delete(lp.partyIDBindPeerID, partyID)
 	}
 }
 
 func (lp *LibP2PService) Start(ctx context.Context) {
-	node, ps, err := createNodeWithPubSub(ctx)
+	self, ps, err := createNodeWithPubSub(ctx)
 	if err != nil {
-		log.Fatalf("Failed to create libp2p node: %v", err)
+		log.Fatalf("Failed to create libp2p self: %v", err)
 	}
 
-	printNodeAddrInfo(node)
+	lp.selfPeerID = self.ID()
 
-	node.SetStreamHandler(protocol.ID(handshakeProtocol), func(s network.Stream) {
+	printNodeAddrInfo(self)
+
+	self.SetStreamHandler(handshakeProtocol, func(s network.Stream) {
 		log.Println("New handshake stream")
-		handleHandshake(s, node)
+
+		err := lp.handleHandshake(s, self)
+		if err != nil {
+			log.Errorf("Failed to handle handshake message: %v", err)
+		}
+
 		s.Close()
 	})
 
-	go lp.connectToBootNodes(ctx, node)
+	go lp.connectToBootNodes(ctx, self)
 
 	lp.messageTopic, err = ps.Join(messageTopicName)
 	if err != nil {
 		log.Fatalf("Failed to join message topic: %v", err)
 	}
 
-	sub, err := lp.messageTopic.Subscribe()
+	msgSub, err := lp.messageTopic.Subscribe()
 	if err != nil {
 		log.Fatalf("Failed to subscribe to message topic: %v", err)
 	}
 
-	hbTopic, err := ps.Join(heartbeatTopicName)
+	heartbeatTopic, err := ps.Join(heartbeatTopicName)
 	if err != nil {
 		log.Fatalf("Failed to join heartbeat topic: %v", err)
 	}
 
-	hbSub, err := hbTopic.Subscribe()
+	heartbeatSub, err := heartbeatTopic.Subscribe()
 	if err != nil {
 		log.Fatalf("Failed to subscribe to heartbeat topic: %v", err)
 	}
 
-	go lp.handlePubSubMessages(ctx, sub, node)
-	go lp.handleHeartbeatMessages(ctx, hbSub, node)
-	go startHeartbeat(ctx, node, hbTopic)
+	go lp.handlePubSubMessages(ctx, msgSub)
+	go lp.handleHeartbeatMessages(ctx, heartbeatSub)
+	go lp.startHeartbeat(ctx, heartbeatTopic)
 
 	go func() {
 		msg := Message[string]{
@@ -103,30 +176,38 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 		utils.Assert(err)
 	}()
 
+	lp.addPeerInfo(self.ID(), lp.localSubmitter.Hex())
+
 	<-ctx.Done()
 
 	log.Info("LibP2PService is stopping...")
 
-	if err := node.Close(); err != nil {
-		log.Errorf("Error closing libp2p node: %v", err)
+	if err := self.Close(); err != nil {
+		log.Errorf("Error closing libp2p self: %v", err)
 	}
 
 	log.Info("LibP2PService has stopped.")
 }
 
-func (lp *LibP2PService) connectToBootNodes(ctx context.Context, node host.Host) {
-	bootNodeAddrs := strings.Split(config.AppConfig.Libp2pBootNodes, ",")
+func (lp *LibP2PService) connectToBootNodes(ctx context.Context, self host.Host) {
+	bootNodeAddList := lo.FilterMap(
+		strings.Split(config.AppConfig.Libp2pBootNodes, ","),
+		func(addr string, index int) (*peer.AddrInfo, bool) {
+			peerInfo, err := parseAddr(addr)
+			if err != nil {
+				return nil, false
+			}
+
+			return peerInfo, true
+		},
+	)
 
 	var wg sync.WaitGroup
 
-	for _, addr := range bootNodeAddrs {
-		if addr == "" {
-			continue
-		}
-
+	for _, addr := range bootNodeAddList {
 		wg.Add(1)
 
-		go func(addr string) {
+		go func() {
 			defer wg.Done()
 
 			for {
@@ -135,72 +216,65 @@ func (lp *LibP2PService) connectToBootNodes(ctx context.Context, node host.Host)
 					log.Infof("Context cancelled, stopping connection attempts to %s", addr)
 					return
 				default:
-					err := lp.connectToBootNode(ctx, node, addr)
+					err := lp.connectToBootNode(ctx, self, addr)
 					if err != nil {
+						lp.offline(addr.ID)
 						log.Errorf("Failed to connect to bootnode %s: %v", addr, err)
 						time.Sleep(10 * time.Second)
 					} else {
-						log.Infof("Successfully connected to bootnode %s", addr)
-						lp.monitorConnection(ctx, node, addr)
+						log.Infof("Successfully connected to bootnode %v", addr)
+						lp.online(addr.ID)
+						lp.monitorConnection(ctx, self, addr)
 
 						return
 					}
 				}
 			}
-		}(addr)
+		}()
 	}
 
 	wg.Wait()
 }
 
-func (lp *LibP2PService) connectToBootNode(ctx context.Context, node host.Host, addr string) error {
-	peerInfo, err := parseAddr(addr)
-	if err != nil {
-		return fmt.Errorf("failed to parse bootnode address %s: %v", addr, err)
+func (lp *LibP2PService) connectToBootNode(ctx context.Context, self host.Host, peerInfo *peer.AddrInfo) error {
+	if err := self.Connect(ctx, *peerInfo); err != nil {
+		return fmt.Errorf("failed to connect to bootnode %s: %v", peerInfo, err)
 	}
 
-	if err := node.Connect(ctx, *peerInfo); err != nil {
-		return fmt.Errorf("failed to connect to bootnode %s: %v", addr, err)
-	}
-
-	s, err := node.NewStream(ctx, peerInfo.ID, protocol.ID(handshakeProtocol))
+	s, err := self.NewStream(ctx, peerInfo.ID, handshakeProtocol)
 	if err != nil {
-		return fmt.Errorf("failed to create handshake stream with %s: %v", addr, err)
+		return fmt.Errorf("failed to create handshake stream with %s: %v", peerInfo, err)
 	}
 	defer s.Close()
 
-	err = sendHandshake(s)
+	err = lp.sendHandshake(s, self)
 	if err != nil {
-		return fmt.Errorf("failed to send handshake to %s: %v", addr, err)
+		return fmt.Errorf("failed to send handshake to %s: %v", peerInfo, err)
 	}
 
 	return nil
 }
 
-func (lp *LibP2PService) monitorConnection(ctx context.Context, node host.Host, addr string) {
-	peerInfo, err := parseAddr(addr)
-	if err != nil {
-		log.Errorf("Failed to parse bootnode address %s: %v", addr, err)
-		return
-	}
-
+func (lp *LibP2PService) monitorConnection(ctx context.Context, self host.Host, addr *peer.AddrInfo) {
 	for {
 		select {
 		case <-ctx.Done():
 			log.Infof("Context cancelled, stopping monitoring of %s", addr)
 			return
 		default:
-			if node.Network().Connectedness(peerInfo.ID) != network.Connected {
+			if self.Network().Connectedness(addr.ID) != network.Connected {
 				log.Warnf("Disconnected from %s, attempting to reconnect", addr)
 
-				err := lp.connectToBootNode(ctx, node, addr)
+				err := lp.connectToBootNode(ctx, self, addr)
 				if err != nil {
 					log.Errorf("Failed to reconnect to %s: %v", addr, err)
+					lp.offline(addr.ID)
 					time.Sleep(5 * time.Second)
 
 					continue
 				}
 
+				lp.online(addr.ID)
 				log.Infof("Successfully reconnected to %s", addr)
 			}
 
@@ -218,25 +292,34 @@ func parseAddr(addrStr string) (*peer.AddrInfo, error) {
 	return peer.AddrInfoFromP2pAddr(addr)
 }
 
-func sendHandshake(s network.Stream) error {
-	handshakeMsg := []byte(expectedHandshake)
+func (lp *LibP2PService) handshakeMessage() []byte {
+	msg := HandshakeMessage{
+		PeerID:    lp.selfPeerID.String(),
+		Submitter: lp.localSubmitter.Hex(),
+		Handshake: expectedHandshake,
+		Timestamp: time.Now().Unix(),
+	}
+	handshakeMsg, err := json.Marshal(&msg)
+	utils.Assert(err)
 
-	_, err := s.Write(handshakeMsg)
+	return handshakeMsg
+}
+
+func (lp *LibP2PService) sendHandshake(s network.Stream, self host.Host) error {
+	err := lp.handleWriteHandshake(s, self)
 	if err != nil {
 		return err
 	}
 
-	// verify handshake
-	buf := make([]byte, len(handshakeMsg))
-
-	_, err = s.Read(buf)
+	handShake, err := lp.handleReadHandshake(s, self)
 	if err != nil {
 		return err
 	}
 
-	if !bytes.Equal(buf, handshakeMsg) {
-		return fmt.Errorf("invalid handshake response")
-	}
+	id, err := peer.Decode(handShake.PeerID)
+	utils.Assert(err)
+	lp.addPeerInfo(id, handShake.Submitter)
+	log.Info("sendHandshake successful")
 
 	return nil
 }

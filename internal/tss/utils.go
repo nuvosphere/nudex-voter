@@ -37,14 +37,14 @@ func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func createPartyIDsByAddress(publicKeys []common.Address) tss.SortedPartyIDs {
-	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(publicKeys))
+func createPartyIDsByAddress(addressList []common.Address) tss.SortedPartyIDs {
+	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
-	for i, publicKey := range publicKeys {
-		key := new(big.Int).SetBytes(publicKey.Bytes())
+	for i, address := range addressList {
+		key := new(big.Int).SetBytes(address.Bytes())
 		tssAllPartyIDs[i] = tss.NewPartyID(
-			publicKey.Hex(),
-			publicKey.Hex(),
+			address.Hex(),
+			address.Hex(),
 			key,
 		)
 	}

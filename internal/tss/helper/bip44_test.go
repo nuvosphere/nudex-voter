@@ -56,7 +56,7 @@ func TestHDSign(t *testing.T) {
 
 		// big.Int message, would be message hash converted to big int
 		b := &big.Int{}
-		outputCh, errCh := RunSignWithHD(ctx, b.SetBytes(msgHash), params, keys[i], transports[i], keyDerivationDelta)
+		_, outputCh, errCh := RunSignWithHD(ctx, b.SetBytes(msgHash), params, keys[i], transports[i], keyDerivationDelta)
 
 		go func(outputCh chan *common.SignatureData, errCh chan *tss.Error) {
 			for {

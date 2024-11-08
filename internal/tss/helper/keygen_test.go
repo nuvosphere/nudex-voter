@@ -35,7 +35,7 @@ func TestKeygen(t *testing.T) {
 		preParams := LoadTestPreParam(i)
 		params := CreateParams(partyIDs, partyIDs[i], testutil.TestThreshold)
 
-		outputCh, errCh := RunKeyGen(ctx, preParams, params, transports[i])
+		_, outputCh, errCh := RunKeyGen(ctx, preParams, params, transports[i])
 		go func(outputCh chan *keygen.LocalPartySaveData, errCh chan *tss.Error) {
 			for {
 				select {

@@ -19,18 +19,18 @@ func RunSign(
 	params *tss.Parameters,
 	key keygen.LocalPartySaveData,
 	transport Transporter,
-) (chan *common.SignatureData, chan *tss.Error) {
-	return runSign(ctx, msg, params, key, transport, nil)
+) (tss.Party, chan *common.SignatureData, chan *tss.Error) {
+	return Run(ctx, msg, params, key, transport, nil)
 }
 
-func runSign(
+func Run(
 	ctx context.Context,
 	msg *big.Int,
 	params *tss.Parameters,
 	key keygen.LocalPartySaveData,
 	transport Transporter,
 	keyDerivationDelta *big.Int,
-) (chan *common.SignatureData, chan *tss.Error) {
+) (tss.Party, chan *common.SignatureData, chan *tss.Error) {
 	// outgoing messages to other peers - not one to not deadlock when a party
 	// round is waiting for outgoing messages channel to clear
 	outCh := make(chan tss.Message, params.PartyCount())
@@ -52,7 +52,7 @@ func runSign(
 
 	RunParty(ctx, party, errCh, outCh, transport, false)
 
-	return endCh, errCh
+	return party, endCh, errCh
 }
 
 // RunSignWithHD starts the local signing party and handles incoming and outgoing
@@ -64,6 +64,6 @@ func RunSignWithHD(
 	key keygen.LocalPartySaveData,
 	transport Transporter,
 	keyDerivationDelta *big.Int,
-) (chan *common.SignatureData, chan *tss.Error) {
-	return runSign(ctx, msg, params, key, transport, keyDerivationDelta)
+) (tss.Party, chan *common.SignatureData, chan *tss.Error) {
+	return Run(ctx, msg, params, key, transport, keyDerivationDelta)
 }

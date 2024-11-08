@@ -3,7 +3,7 @@ package tss
 import (
 	"context"
 	"fmt"
-	"slices"
+	"math/big"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
@@ -13,31 +13,28 @@ import (
 )
 
 func (t *TSSService) startReSharing(newAddressList []common.Address, threshold int) error {
-	if t.LocalParty == nil || t.LocalPartySaveData == nil || t.LocalPartySaveData.ECDSAPub == nil {
-		return fmt.Errorf("local party not initialized")
-	}
-
-	currentPartyIDs := createPartyIDsByAddress(t.partners)
-	currentPeerCtx := tsslib.NewPeerContext(currentPartyIDs)
+	oldPartyIDs := createPartyIDsByAddress(t.oldPartners())
+	oldPeerCtx := tsslib.NewPeerContext(oldPartyIDs)
+	oldPartyID := oldPartyIDs.FindByKey(new(big.Int).SetBytes(t.localAddress.Bytes()))
 
 	newPartyIDs := createPartyIDsByAddress(newAddressList)
 	newPeerCtx := tsslib.NewPeerContext(newPartyIDs)
+	newPartyID := newPartyIDs.FindByKey(new(big.Int).SetBytes(t.localAddress.Bytes()))
 
-	currentIndex := slices.Index(t.partners, t.localAddress)
 	currentParams := tsslib.NewReSharingParameters(
 		tsslib.S256(),
-		currentPeerCtx,
+		oldPeerCtx,
 		newPeerCtx,
-		currentPartyIDs[currentIndex],
-		len(t.partners),
+		oldPartyID,
+		len(t.oldPartners()),
 		config.AppConfig.TssThreshold,
 		len(newAddressList),
 		threshold,
 	)
-	currentParty := resharing.NewLocalParty(currentParams, *t.LocalPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
+	oldParty := resharing.NewLocalParty(currentParams, *t.localPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
 
 	go func() {
-		if err := currentParty.Start(); err != nil {
+		if err := oldParty.Start(); err != nil {
 			log.Errorf("Failed to start resharing old party, error=%v", err)
 			return
 		} else {
@@ -45,18 +42,17 @@ func (t *TSSService) startReSharing(newAddressList []common.Address, threshold i
 		}
 	}()
 
-	newIndex := slices.Index(newAddressList, t.localAddress)
 	newParams := tsslib.NewReSharingParameters(
 		tsslib.S256(),
-		currentPeerCtx,
+		oldPeerCtx,
 		newPeerCtx,
-		newPartyIDs[newIndex],
-		len(config.AppConfig.TssPublicKeys),
+		newPartyID,
+		len(t.oldPartners()),
 		threshold,
 		len(newAddressList),
 		threshold,
 	)
-	t.reLocalParty = resharing.NewLocalParty(newParams, *t.LocalPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
+	t.reLocalParty = resharing.NewLocalParty(newParams, *t.localPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
 
 	go func() {
 		if err := t.reLocalParty.Start(); err != nil {

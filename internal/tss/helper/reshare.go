@@ -16,7 +16,7 @@ func RunReshare(
 	params *tss.ReSharingParameters,
 	key keygen.LocalPartySaveData,
 	transport Transporter,
-) (chan *keygen.LocalPartySaveData, chan *tss.Error) {
+) (tss.Party, chan *keygen.LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 1)
 	// output reshared key when finished
@@ -31,5 +31,5 @@ func RunReshare(
 
 	RunParty(ctx, party, errCh, outCh, transport, true)
 
-	return endCh, errCh
+	return party, endCh, errCh
 }

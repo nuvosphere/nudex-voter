@@ -60,7 +60,7 @@ func TestReshare(t *testing.T) {
 			newThreshold,
 		)
 
-		outputCh, errCh := RunReshare(ctx, params, oldKeys[i], oldTransports[i])
+		_, outputCh, errCh := RunReshare(ctx, params, oldKeys[i], oldTransports[i])
 
 		go func(outputCh chan *keygen.LocalPartySaveData, errCh chan *tss.Error) {
 			for {
@@ -89,7 +89,7 @@ func TestReshare(t *testing.T) {
 		// Reuse fixture pre-generated preparams
 		save.LocalPreParams = testutil.ReadTestKey(i).LocalPreParams
 
-		outputCh, errCh := RunReshare(ctx, params, save, newTransports[i])
+		_, outputCh, errCh := RunReshare(ctx, params, save, newTransports[i])
 
 		go func(outputCh chan *keygen.LocalPartySaveData, errCh chan *tss.Error) {
 			for {
