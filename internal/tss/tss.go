@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	tssCommon "github.com/bnb-chain/tss-lib/v2/common"
@@ -24,18 +25,21 @@ import (
 )
 
 type TSSService struct {
+	isPrepared   atomic.Bool
 	privateKey   *ecdsa.PrivateKey // submit
-	localAddress common.Address    // submit
+	localAddress common.Address    // submit = partyID
 
 	p2p   p2p.P2PService
 	state *state.State
 
 	layer2Listener *layer2.Layer2Listener
 	dbm            *db.DatabaseManager
+	taskReceive    chan any // task
 
+	threshold          *atomic.Int64
 	partners           []common.Address
-	LocalParty         *keygen.LocalParty
-	LocalPartySaveData *keygen.LocalPartySaveData
+	localParty         *keygen.LocalParty
+	localPartySaveData *keygen.LocalPartySaveData
 	partyIdMap         map[string]*tsslib.PartyID
 
 	setupTime              time.Time
@@ -77,8 +81,28 @@ func (t *TSSService) LocalSubmitter() common.Address {
 	return t.localAddress
 }
 
+func (t *TSSService) IsPrepared() bool {
+	return t.isPrepared.Load()
+}
+
+func (t *TSSService) PostTask(task any) {
+	t.taskReceive <- task
+}
+
+func (t *TSSService) taskLoop(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("TSS task loop stopped")
+		case task := <-t.taskReceive:
+			log.Info("TSS task receive", task)
+		}
+	}
+}
+
 func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State, layer2Listener *layer2.Layer2Listener) *TSSService {
 	return &TSSService{
+		isPrepared:     atomic.Bool{},
 		privateKey:     config.AppConfig.L2PrivateKey,
 		localAddress:   crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
 		p2p:            p,
@@ -99,10 +123,19 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		sigRound1P2pMessageMap:       make(map[string]*p2p.Message[types.TssMessage]),
 		sigRound1MessageSendTimesMap: make(map[string]int),
 		sigTimeoutMap:                make(map[string]time.Time),
+		taskReceive:                  make(chan any, 256),
 	}
 }
 
 func (t *TSSService) Start(ctx context.Context) {
+	t.waitForThreshold(ctx)
+
+	is := t.IsGenesis()
+	if is {
+		t.Genesis(ctx)
+	}
+
+	t.initCheckGenKey(ctx)
 	t.loop(ctx)
 	t.check(ctx)
 
@@ -113,7 +146,6 @@ func (t *TSSService) Start(ctx context.Context) {
 
 func (t *TSSService) loop(ctx context.Context) {
 	t.eventLoop(ctx)
-	t.tssLoop(ctx)
 }
 
 func (t *TSSService) check(ctx context.Context) {
@@ -127,16 +159,22 @@ func (t *TSSService) check(ctx context.Context) {
 				log.Info("Timeout checker stopping...")
 				return
 			case <-ticker.C:
-				t.checkTimeouts()
+				t.checkSigTimeouts()
 			}
 		}
 	}()
+}
 
+func (t *TSSService) initCheckGenKey(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 
+	L:
 		for {
+			if t.localParty != nil && t.localPartySaveData != nil {
+				break L
+			}
 			select {
 			case <-ctx.Done():
 				log.Info("Tss keygen checker stopping...")
@@ -145,13 +183,12 @@ func (t *TSSService) check(ctx context.Context) {
 				t.checkParty(ctx)
 			}
 		}
+		t.tssLoop(ctx)
 	}()
 }
 
-func (t *TSSService) tssLoop(ctx context.Context) {
-	t.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
-
-	// generate t key
+func (t *TSSService) genKeyLoop(ctx context.Context) {
+	// generate tss key
 	go func() {
 		for {
 			select {
@@ -172,12 +209,15 @@ func (t *TSSService) tssLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle t keygenEnd error, event: %v, %v", event, err)
 				} else {
+					t.isPrepared.Store(true)
 					return
 				}
 			}
 		}
 	}()
+}
 
+func (t *TSSService) tssLoop(ctx context.Context) {
 	// t re-share
 	go func() {
 		for {
@@ -222,6 +262,7 @@ func (t *TSSService) tssLoop(ctx context.Context) {
 }
 
 func (t *TSSService) eventLoop(ctx context.Context) {
+	t.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
 	t.tssMsgCh = t.state.EventBus.Subscribe(state.EventTssMsg{})
 	t.sigStartCh = t.state.EventBus.Subscribe(state.EventSigStart{})
 	t.sigFailChan = t.state.EventBus.Subscribe(state.EventSigFailed{})
@@ -264,8 +305,8 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 
 func (t *TSSService) Stop() {
 	t.once.Do(func() {
-		close(t.keyOutCh)
-		close(t.keyEndCh)
+		// close(t.keyOutCh)
+		// close(t.keyEndCh)
 		close(t.reSharingEndCh)
 		close(t.reSharingOutCh)
 		close(t.sigOutCh)
@@ -278,4 +319,20 @@ func (t *TSSService) cleanAllSigInfo() {
 	t.sigRound1P2pMessageMap = make(map[string]*p2p.Message[types.TssMessage])
 	t.sigRound1MessageSendTimesMap = make(map[string]int)
 	t.sigTimeoutMap = make(map[string]time.Time)
+}
+
+func (t *TSSService) waitForThreshold(ctx context.Context) {
+	count := t.p2p.OnlinePeerCount()
+L:
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("waitForThreshold context done")
+		default:
+			if int64(count) >= t.threshold.Load() {
+				break L
+			}
+			time.Sleep(time.Second)
+		}
+	}
 }

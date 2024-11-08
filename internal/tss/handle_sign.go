@@ -80,7 +80,7 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, task types.Task) err
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *t.LocalPartySaveData, t.sigOutCh, t.sigEndCh).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *t.localPartySaveData, t.sigOutCh, t.sigEndCh).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", requestId, err)
@@ -147,7 +147,7 @@ func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) e
 		return err
 	}
 
-	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *t.LocalPartySaveData, t.sigOutCh, t.sigEndCh).(*signing.LocalParty)
+	party := signing.NewLocalParty(new(big.Int).SetBytes(messageToSign), params, *t.localPartySaveData, t.sigOutCh, t.sigEndCh).(*signing.LocalParty)
 	go func() {
 		if err := party.Start(); err != nil {
 			log.Errorf("Failed to start sign party: requestId=%s, error=%v", e.RequestId, err)
@@ -214,7 +214,7 @@ func (t *TSSService) handleSigFinish(ctx context.Context, signatureData *common.
 			// @todo
 			// generate wallet and send to chain
 			address := wallet.GenerateAddressByPath(
-				*(t.LocalPartySaveData.ECDSAPub.ToECDSAPubKey()),
+				*(t.localPartySaveData.ECDSAPub.ToECDSAPubKey()),
 				uint32(coinType),
 				uint32(createWalletTask.User),
 				uint32(createWalletTask.Account),

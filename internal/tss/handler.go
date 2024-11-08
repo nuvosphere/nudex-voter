@@ -18,7 +18,7 @@ import (
 )
 
 func (t *TSSService) handleTssMsg(dataType string, event interface{}) error {
-	if t.LocalParty == nil {
+	if t.localParty == nil {
 		return fmt.Errorf("handleTssUpdate error, t local party not init")
 	}
 
@@ -32,7 +32,7 @@ func (t *TSSService) handleTssMsg(dataType string, event interface{}) error {
 		return fmt.Errorf("fromPartyID %s not found", message.FromPartyId)
 	}
 
-	if !message.IsBroadcast && !slices.Contains(message.ToPartyIds, t.LocalParty.PartyID().Id) {
+	if !message.IsBroadcast && !slices.Contains(message.ToPartyIds, t.localParty.PartyID().Id) {
 		log.Debugf("PartyId not one of p2p message receiver: %v", message.ToPartyIds)
 		return nil
 	}
@@ -48,7 +48,7 @@ func (t *TSSService) handleTssMsg(dataType string, event interface{}) error {
 	go func() {
 		switch dataType {
 		case DataTypeTssKeygenMsg:
-			if _, err := t.LocalParty.Update(msg); err != nil {
+			if _, err := t.localParty.Update(msg); err != nil {
 				log.Errorf("Failed to update keygen party: FromPartyID=%v, error=%v", message.FromPartyId, err)
 				return
 			} else {
@@ -90,11 +90,11 @@ func (t *TSSService) handleTssMsg(dataType string, event interface{}) error {
 }
 
 func (t *TSSService) sendTssMsg(ctx context.Context, dataType string, event tsslib.Message) (*p2p.Message[types.TssMessage], error) {
-	if t.LocalParty == nil {
+	if t.localParty == nil {
 		return nil, fmt.Errorf("sendTssMsg error, event %v, self not init", event)
 	}
 
-	if event.GetFrom().Id != t.LocalParty.PartyID().Id {
+	if event.GetFrom().Id != t.localParty.PartyID().Id {
 		return nil, fmt.Errorf("sendTssMsg error, event %v, not self", event)
 	}
 
@@ -138,7 +138,7 @@ func (t *TSSService) handleTssSigOut(ctx context.Context, msg tsslib.Message) er
 	return nil
 }
 
-func (t *TSSService) checkTimeouts() {
+func (t *TSSService) checkSigTimeouts() {
 	t.rw.Lock()
 	now := time.Now()
 	expiredRequests := make([]string, 0)
@@ -157,7 +157,7 @@ func (t *TSSService) checkTimeouts() {
 }
 
 func (t *TSSService) checkParty(ctx context.Context) {
-	if t.LocalParty == nil {
+	if t.localParty == nil {
 		log.Debug("Party not init, start to setup")
 		t.setup()
 
@@ -177,7 +177,7 @@ func (t *TSSService) checkParty(ctx context.Context) {
 		return
 	}
 
-	party := reflect.ValueOf(t.LocalParty.BaseParty).Elem()
+	party := reflect.ValueOf(t.localParty.BaseParty).Elem()
 
 	round := party.FieldByName("rnd")
 	if !round.CanInterface() {
@@ -209,7 +209,7 @@ func (t *TSSService) checkParty(ctx context.Context) {
 	}
 
 	if time.Now().After(t.setupTime.Add(config.AppConfig.TssSigTimeout)) {
-		if err := t.LocalParty.FirstRound().Start(); err != nil {
+		if err := t.localParty.FirstRound().Start(); err != nil {
 			log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
 			t.setup()
 
