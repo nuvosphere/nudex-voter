@@ -93,7 +93,7 @@ func NewParam(
 
 func NewGenerateKeySession[T comparable, M any](
 	p p2p.P2PService,
-	m *Manager[T],
+	m *Scheduler[T],
 	sponsor common.Address, // current submitter
 	taskID T, // msg id
 	msg M,
@@ -144,7 +144,7 @@ type ReShareGroupSession[T, M any] struct {
 
 func NewReShareGroupSession[T comparable, M any](
 	p p2p.P2PService,
-	m *Manager[T],
+	m *Scheduler[T],
 	sponsor common.Address, // current submitter
 	taskID T, // msg id
 	msg M,
@@ -218,7 +218,7 @@ func RandSessionID() helper.SessionID {
 
 func NewSignSession[T comparable](
 	p p2p.P2PService,
-	m *Manager[T],
+	m *Scheduler[T],
 	groupID helper.GroupID,
 	sponsor common.Address,
 	taskID T,
@@ -245,7 +245,7 @@ func NewSignSession[T comparable](
 
 func newSession[T comparable, M any](
 	p p2p.P2PService,
-	m *Manager[T],
+	m *Scheduler[T],
 	groupID helper.GroupID,
 	sessionID helper.SessionID,
 	sponsor common.Address, // current submitter

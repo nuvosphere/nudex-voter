@@ -33,7 +33,7 @@ type TSSService struct {
 
 	p2p     p2p.P2PService
 	state   *state.State
-	manager *Manager[int32]
+	manager *Scheduler[int32]
 	cache   *cache.Cache
 
 	layer2Listener *layer2.Layer2Listener

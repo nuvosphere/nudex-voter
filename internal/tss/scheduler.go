@@ -18,7 +18,7 @@ type SessionReleaser interface {
 	SessionRelease(session helper.SessionID)
 }
 
-type Manager[T comparable] struct {
+type Scheduler[T comparable] struct {
 	grw          sync.RWMutex
 	groups       map[helper.GroupID]*helper.Group
 	srw          sync.RWMutex
@@ -27,8 +27,8 @@ type Manager[T comparable] struct {
 	inToOut      chan *SignResult[T]
 }
 
-func NewManager[T comparable]() *Manager[T] {
-	return &Manager[T]{
+func NewManager[T comparable]() *Scheduler[T] {
+	return &Scheduler[T]{
 		srw:          sync.RWMutex{},
 		grw:          sync.RWMutex{},
 		groups:       make(map[helper.GroupID]*helper.Group),
@@ -38,13 +38,13 @@ func NewManager[T comparable]() *Manager[T] {
 	}
 }
 
-func (m *Manager[T]) AddGroup(group *helper.Group) {
+func (m *Scheduler[T]) AddGroup(group *helper.Group) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	m.groups[group.GroupID] = group
 }
 
-func (m *Manager[T]) AddSession(session Session[T]) bool {
+func (m *Scheduler[T]) AddSession(session Session[T]) bool {
 	m.grw.Lock()
 	_, ok := m.groups[session.GroupID()]
 	m.grw.Unlock()
@@ -59,21 +59,21 @@ func (m *Manager[T]) AddSession(session Session[T]) bool {
 	return ok
 }
 
-func (m *Manager[T]) GetGroup(groupID helper.GroupID) *helper.Group {
+func (m *Scheduler[T]) GetGroup(groupID helper.GroupID) *helper.Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
 	return m.groups[groupID]
 }
 
-func (m *Manager[T]) GetSession(sessionID helper.SessionID) Session[T] {
+func (m *Scheduler[T]) GetSession(sessionID helper.SessionID) Session[T] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
 	return m.sessions[sessionID]
 }
 
-func (m *Manager[T]) IsMeeting(taskID T) bool {
+func (m *Scheduler[T]) IsMeeting(taskID T) bool {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 	_, ok := m.sessionTasks[taskID]
@@ -81,27 +81,27 @@ func (m *Manager[T]) IsMeeting(taskID T) bool {
 	return ok
 }
 
-func (m *Manager[T]) GetGroups() []*helper.Group {
+func (m *Scheduler[T]) GetGroups() []*helper.Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
 	return lo.MapToSlice(m.groups, func(_ helper.GroupID, group *helper.Group) *helper.Group { return group })
 }
 
-func (m *Manager[T]) GetSessions() []Session[T] {
+func (m *Scheduler[T]) GetSessions() []Session[T] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
 	return lo.MapToSlice(m.sessions, func(_ helper.SessionID, session Session[T]) Session[T] { return session })
 }
 
-func (m *Manager[T]) ReleaseGroup(groupID helper.GroupID) {
+func (m *Scheduler[T]) ReleaseGroup(groupID helper.GroupID) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	delete(m.groups, groupID)
 }
 
-func (m *Manager[T]) SessionRelease(session helper.SessionID) {
+func (m *Scheduler[T]) SessionRelease(session helper.SessionID) {
 	m.srw.Lock()
 	defer m.srw.Unlock()
 
@@ -113,7 +113,7 @@ func (m *Manager[T]) SessionRelease(session helper.SessionID) {
 	}
 }
 
-func (m *Manager[T]) Release() {
+func (m *Scheduler[T]) Release() {
 	m.grw.Lock()
 	m.groups = make(map[helper.GroupID]*helper.Group)
 	m.grw.Unlock()
