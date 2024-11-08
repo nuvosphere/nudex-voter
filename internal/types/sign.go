@@ -19,8 +19,10 @@ type SignTask struct {
 }
 
 type TssMessage struct {
-	FromPartyId  string   `json:"from_party_id"`
-	ToPartyIds   []string `json:"to_party_ids"`
-	IsBroadcast  bool     `json:"is_broadcast"`
-	MsgWireBytes []byte   `json:"msg_wire_bytes"`
+	FromPartyId             string   `json:"from_party_id"`
+	ToPartyIds              []string `json:"to_party_ids"`
+	IsBroadcast             bool     `json:"is_broadcast"`
+	IsToOldCommittee        bool     `json:"is_to_old_committee"`          // whether the message should be sent to old committee participants rather than the new committee
+	IsToOldAndNewCommittees bool     `json:"is_to_old_and_new_committees"` // whether the message should be sent to both old and new committee participants
+	MsgWireBytes            []byte   `json:"msg_wire_bytes"`
 }
