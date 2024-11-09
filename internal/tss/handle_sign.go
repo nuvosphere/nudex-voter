@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -19,17 +21,25 @@ import (
 )
 
 var taskPrefix = map[reflect.Type]string{
-	reflect.TypeOf(&types.CreateWalletTask{}): "CREATE_WALLET",
-	reflect.TypeOf(&types.DepositTask{}):      "DEPOSIT",
-	reflect.TypeOf(&types.WithdrawalTask{}):   "WITHDRAWAL",
+	reflect.TypeOf(&contracts.TaskPayloadContractWalletCreationRequest{}): "CREATE_WALLET",
+	reflect.TypeOf(&contracts.TaskPayloadContractDepositRequest{}):        "DEPOSIT",
+	reflect.TypeOf(&contracts.TaskPayloadContractWithdrawalRequest{}):     "WITHDRAWAL",
 }
 
-func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task, task interface{}) ([]byte, error) {
-	return nil, nil
+func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (interface{}, *big.Int, []byte, error) {
+	task, err := ParseTask(dbTask.Context)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("parse task %x error: %v", dbTask.Context, err)
+	}
+	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
+	if err != nil {
+		return task, nonce, nil, err
+	}
+	return task, nonce, nil, err
 }
 
-func (t *TSSService) HandleSignPrepare(ctx context.Context, dbTask db.Task, task interface{}) error {
-	taskResult, err := t.HandleSignCheck(ctx, dbTask, task)
+func (t *TSSService) HandleSignPrepare(ctx context.Context, dbTask db.Task) error {
+	task, nonce, taskResult, err := t.HandleSignCheck(ctx, dbTask)
 	if err != nil {
 		return err
 	}
@@ -41,11 +51,6 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, dbTask db.Task, task
 		requestId = fmt.Sprintf("TSS_SIGN:%s:%d", prefix, dbTask.TaskId)
 	} else {
 		return fmt.Errorf("task type %T not found in task prefix", task)
-	}
-
-	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
-	if err != nil {
-		return err
 	}
 
 	reqMessage := types.SignMessage{

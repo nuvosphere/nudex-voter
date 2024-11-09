@@ -36,15 +36,11 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 			return
 		}
 	}
-	task, err := parseTask(dbTask.Context)
-	if err != nil {
-		log.Errorf("Parse task %x error: %v", dbTask.Context, err)
-		return
-	}
 
 	ts.state.TssState.CurrentTask = &dbTask
-	err = ts.Tss.HandleSignPrepare(ctx, dbTask, task)
+	err = ts.Tss.HandleSignPrepare(ctx, dbTask)
 	if err != nil {
 		log.Errorf("Handle sign prepare error for task %x err: %v", dbTask.Context, err)
+		ts.state.TssState.CurrentTask = nil
 	}
 }
