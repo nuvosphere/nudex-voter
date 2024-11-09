@@ -28,14 +28,14 @@ const (
 	ERC20
 )
 
-type Version uint32
+type Version uint8
 
 const (
 	INITIAL Version = iota
 	V1
 )
 
-type ErrorCode uint32
+type ErrorCode uint8
 
 const (
 	SUCCESS ErrorCode = iota

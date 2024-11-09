@@ -8,7 +8,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
-func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
+func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("failed to encode task: %v", r)
@@ -22,8 +22,8 @@ func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WalletCreationRequest",
-			uint32(V1),
-			uint32(taskType),
+			uint8(V1),
+			taskType,
 			common.HexToAddress(t.User),
 			t.Account,
 			t.Chain,
@@ -35,8 +35,8 @@ func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"DepositRequest",
-			uint32(V1),
-			uint32(taskType),
+			uint8(V1),
+			taskType,
 			t.TargetAddress,
 			t.Amount,
 			t.Chain,
@@ -54,8 +54,8 @@ func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WithdrawalRequest",
-			uint32(V1),
-			uint32(taskType),
+			uint8(V1),
+			taskType,
 			t.TargetAddress,
 			t.Amount,
 			t.Chain,
@@ -77,7 +77,7 @@ func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 	return bytes, err
 }
 
-func encodeTaskResult(taskType int, result interface{}) (bytes []byte, err error) {
+func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("failed to encode task result: %v", r)

@@ -5,15 +5,15 @@
     "inputs": [
       {
         "name": "version",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "taskType",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "targetAddress",
@@ -71,9 +71,9 @@
       },
       {
         "name": "decimal",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       }
     ],
     "anonymous": false
@@ -84,21 +84,21 @@
     "inputs": [
       {
         "name": "version",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "success",
-        "type": "uint32",
+        "type": "bool",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "bool"
       },
       {
         "name": "errorCode",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "errorMsg",
@@ -115,21 +115,21 @@
     "inputs": [
       {
         "name": "version",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "success",
-        "type": "uint32",
+        "type": "bool",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "bool"
       },
       {
         "name": "errorCode",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "errorMsg",
@@ -146,15 +146,15 @@
     "inputs": [
       {
         "name": "version",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "taskType",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "user",
@@ -164,9 +164,9 @@
       },
       {
         "name": "account",
-        "type": "uint64",
+        "type": "uint32",
         "indexed": false,
-        "internalType": "uint64"
+        "internalType": "uint32"
       },
       {
         "name": "chain",
@@ -176,9 +176,9 @@
       },
       {
         "name": "index",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       }
     ],
     "anonymous": false
@@ -189,21 +189,21 @@
     "inputs": [
       {
         "name": "version",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "success",
-        "type": "uint32",
+        "type": "bool",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "bool"
       },
       {
         "name": "errorCode",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "errorMsg",
@@ -226,15 +226,15 @@
     "inputs": [
       {
         "name": "version",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "taskType",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "targetAddress",
@@ -292,9 +292,9 @@
       },
       {
         "name": "decimal",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "fee",
@@ -311,21 +311,21 @@
     "inputs": [
       {
         "name": "version",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "success",
-        "type": "uint32",
+        "type": "bool",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "bool"
       },
       {
         "name": "errorCode",
-        "type": "uint32",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "uint32"
+        "internalType": "uint8"
       },
       {
         "name": "errorMsg",

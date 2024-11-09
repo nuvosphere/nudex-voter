@@ -22,9 +22,9 @@ func (t BaseTask) GetTaskID() uint32 {
 type CreateWalletTask struct {
 	BaseTask
 	User    string `json:"user"`
-	Account uint64 `json:"account"`
+	Account uint32 `json:"account"`
 	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
-	Index   uint32 `json:"index"`
+	Index   uint8  `json:"index"`
 }
 
 type DepositTask struct {
@@ -38,7 +38,7 @@ type DepositTask struct {
 	ContractAddress string `json:"contract_address"`
 	Ticker          string `json:"ticker"`
 	AssetType       uint8  `json:"asset_type"`
-	Decimal         uint32 `json:"decimal"`
+	Decimal         uint8  `json:"decimal"`
 }
 
 type WithdrawalTask struct {
@@ -52,7 +52,7 @@ type WithdrawalTask struct {
 	ContractAddress string `json:"contract_address"`
 	Ticker          string `json:"ticker"`
 	AssetType       uint8  `json:"asset_type"`
-	Decimal         uint32 `json:"decimal"`
+	Decimal         uint8  `json:"decimal"`
 	Fee             uint64 `json:"fee"`
 }
 
