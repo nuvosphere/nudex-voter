@@ -17,7 +17,7 @@ func TestEncodeCreateWalletTask(t *testing.T) {
 		},
 		User:    "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Account: uint32(10001),
-		Chain:   uint8(ETHEREUM),
+		Chain:   uint8(types.ETHEREUM),
 		Index:   uint8(0),
 	}
 	bytes, err := encodeTask(types.TaskTypeCreateWallet, task)
@@ -34,13 +34,13 @@ func TestEncodeDepositTask(t *testing.T) {
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Amount:          uint64(1000000000000000000),
-		Chain:           uint8(ETHEREUM),
+		Chain:           uint8(types.ETHEREUM),
 		ChainId:         uint32(1),
 		BlockHeight:     uint64(21133979),
 		TxHash:          "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8",
 		ContractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
 		Ticker:          "USDC",
-		AssetType:       uint8(ERC20),
+		AssetType:       uint8(types.ERC20),
 		Decimal:         uint8(18),
 	}
 	bytes, err := encodeTask(types.TaskTypeDeposit, task)
@@ -57,13 +57,13 @@ func TestEncodeWithdrawalTask(t *testing.T) {
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Amount:          uint64(1000000000000000000),
-		Chain:           uint8(ETHEREUM),
+		Chain:           uint8(types.ETHEREUM),
 		ChainId:         uint32(1),
 		BlockHeight:     uint64(21133979),
 		TxHash:          "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8",
 		ContractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
 		Ticker:          "USDC",
-		AssetType:       uint8(ERC20),
+		AssetType:       uint8(types.ERC20),
 		Decimal:         18,
 		Fee:             uint64(100000000000000),
 	}
@@ -85,7 +85,7 @@ func TestParseCreateWalletTask(t *testing.T) {
 	assert.IsType(t, contracts.TaskPayloadContractWalletCreationRequest{}, task)
 
 	request := task.(contracts.TaskPayloadContractWalletCreationRequest)
-	assert.Equal(t, uint8(V1), request.Version)
+	assert.Equal(t, uint8(types.V1), request.Version)
 	assert.Equal(t, uint8(types.TaskTypeCreateWallet), request.TaskType)
 	assert.Equal(t, uint32(10001), request.Account)
 }
@@ -101,7 +101,7 @@ func TestParseDepositTask(t *testing.T) {
 	assert.IsType(t, contracts.TaskPayloadContractDepositRequest{}, task)
 
 	request := task.(contracts.TaskPayloadContractDepositRequest)
-	assert.Equal(t, uint8(V1), request.Version)
+	assert.Equal(t, uint8(types.V1), request.Version)
 	assert.Equal(t, uint8(types.TaskTypeDeposit), request.TaskType)
 	assert.Equal(t, "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8", request.TxHash)
 }
@@ -117,16 +117,16 @@ func TestParseWithdrawalTask(t *testing.T) {
 	assert.IsType(t, contracts.TaskPayloadContractWithdrawalRequest{}, task)
 
 	request := task.(contracts.TaskPayloadContractWithdrawalRequest)
-	assert.Equal(t, uint8(V1), request.Version)
+	assert.Equal(t, uint8(types.V1), request.Version)
 	assert.Equal(t, uint8(types.TaskTypeWithdrawal), request.TaskType)
 	assert.Equal(t, "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8", request.TxHash)
 }
 
 func TestEncodeCreateWalletResult(t *testing.T) {
 	task := contracts.TaskPayloadContractWalletCreationResult{
-		Version:       uint8(V1),
+		Version:       uint8(types.V1),
 		Success:       true,
-		ErrorCode:     uint8(SUCCESS),
+		ErrorCode:     uint8(types.SUCCESS),
 		ErrorMsg:      "",
 		WalletAddress: "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 	}

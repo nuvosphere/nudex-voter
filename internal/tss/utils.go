@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
@@ -171,27 +170,6 @@ func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
 	binary.BigEndian.PutUint64(nonceBytes, nonce)
 
 	return append(append(nonceBytes, lengthBytes...), data...), nil
-}
-
-func getRequestId(task *db.Task) string {
-	buf := bytes.NewReader(task.Context)
-
-	var taskType int32
-	_ = binary.Read(buf, binary.LittleEndian, &taskType)
-
-	switch taskType {
-	case types.TaskTypeUnknown:
-		return ""
-	case types.TaskTypeCreateWallet:
-		return fmt.Sprintf("TSS_SIGN:CREATE_WALLET:%d", task.TaskId)
-	case types.TaskTypeDeposit:
-		return fmt.Sprintf("TSS_SIGN:DEPOSIT:%d", task.TaskId)
-	case types.TaskTypeWithdrawal:
-		return fmt.Sprintf("TSS_SIGN:WITHDRAWAL:%d", task.TaskId)
-	default:
-	}
-
-	return ""
 }
 
 func getCoinTypeByChain(chain uint8) int {

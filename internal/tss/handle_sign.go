@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"math/big"
 	"reflect"
 	"time"
@@ -37,7 +38,13 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 	}
 	switch taskRequest := task.(type) {
 	case *contracts.TaskPayloadContractWalletCreationRequest:
-		return taskRequest, nonce, nil, err
+		result := contracts.TaskPayloadContractWalletCreationResult{}
+		bytes, err := utils.EncodeTaskResult(types.TaskTypeCreateWallet, result)
+		if err != nil {
+			return taskRequest, nonce, bytes, err
+		}
+		serialized, err := serializeMessageToBeSigned(nonce.Uint64(), bytes)
+		return taskRequest, nonce, serialized, err
 	}
 
 	return task, nonce, nil, err

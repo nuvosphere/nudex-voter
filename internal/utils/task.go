@@ -1,4 +1,4 @@
-package task
+package utils
 
 import (
 	"fmt"
@@ -77,7 +77,7 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 	return bytes, err
 }
 
-func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err error) {
+func EncodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("failed to encode task result: %v", r)
