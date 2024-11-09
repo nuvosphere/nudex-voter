@@ -38,7 +38,25 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 	}
 	switch taskRequest := task.(type) {
 	case *contracts.TaskPayloadContractWalletCreationRequest:
-		result := contracts.TaskPayloadContractWalletCreationResult{}
+		coinType := getCoinTypeByChain(taskRequest.Chain)
+		if coinType == -1 {
+			// @todo send sign failed proposal
+			return task, nonce, nil, fmt.Errorf("chain %d not supported", taskRequest.Chain)
+		}
+		address := wallet.GenerateAddressByPath(
+			*(t.localPartySaveData.ECDSAPub.ToECDSAPubKey()),
+			uint32(coinType),
+			taskRequest.Account,
+			taskRequest.Index,
+		)
+		log.Infof("user account address: %s", address)
+		result := contracts.TaskPayloadContractWalletCreationResult{
+			Version:       types.TaskVersionV1,
+			Success:       true,
+			ErrorCode:     types.TaskErrorCodeSuccess,
+			ErrorMsg:      "",
+			WalletAddress: address.Hex(),
+		}
 		bytes, err := utils.EncodeTaskResult(types.TaskTypeCreateWallet, result)
 		if err != nil {
 			return taskRequest, nonce, bytes, err
