@@ -82,4 +82,5 @@ const (
 
 const (
 	TaskErrorCodeSuccess = iota
+	TaskErrorCodeChainNotSupported
 )

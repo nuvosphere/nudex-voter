@@ -39,29 +39,36 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 	switch taskRequest := task.(type) {
 	case *contracts.TaskPayloadContractWalletCreationRequest:
 		coinType := getCoinTypeByChain(taskRequest.Chain)
+		var result contracts.TaskPayloadContractWalletCreationResult
 		if coinType == -1 {
-			// @todo send sign failed proposal
-			return task, nonce, nil, fmt.Errorf("chain %d not supported", taskRequest.Chain)
+			result = contracts.TaskPayloadContractWalletCreationResult{
+				Version:       types.TaskVersionV1,
+				Success:       false,
+				ErrorCode:     types.TaskErrorCodeChainNotSupported,
+				ErrorMsg:      "",
+				WalletAddress: "",
+			}
+		} else {
+			address := wallet.GenerateAddressByPath(
+				*(t.localPartySaveData.ECDSAPub.ToECDSAPubKey()),
+				uint32(coinType),
+				taskRequest.Account,
+				taskRequest.Index,
+			)
+			log.Infof("Generated address: %s for task: %d", address, dbTask.TaskId)
+			result = contracts.TaskPayloadContractWalletCreationResult{
+				Version:       types.TaskVersionV1,
+				Success:       true,
+				ErrorCode:     types.TaskErrorCodeSuccess,
+				ErrorMsg:      "",
+				WalletAddress: address.Hex(),
+			}
 		}
-		address := wallet.GenerateAddressByPath(
-			*(t.localPartySaveData.ECDSAPub.ToECDSAPubKey()),
-			uint32(coinType),
-			taskRequest.Account,
-			taskRequest.Index,
-		)
-		log.Infof("user account address: %s", address)
-		result := contracts.TaskPayloadContractWalletCreationResult{
-			Version:       types.TaskVersionV1,
-			Success:       true,
-			ErrorCode:     types.TaskErrorCodeSuccess,
-			ErrorMsg:      "",
-			WalletAddress: address.Hex(),
-		}
-		bytes, err := utils.EncodeTaskResult(types.TaskTypeCreateWallet, result)
+		resultBytes, err := utils.EncodeTaskResult(types.TaskTypeCreateWallet, result)
 		if err != nil {
-			return taskRequest, nonce, bytes, err
+			return taskRequest, nonce, resultBytes, err
 		}
-		serialized, err := serializeMessageToBeSigned(nonce.Uint64(), bytes)
+		serialized, err := serializeMessageToBeSigned(nonce.Uint64(), resultBytes)
 		return taskRequest, nonce, serialized, err
 	}
 
