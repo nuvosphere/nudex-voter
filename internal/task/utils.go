@@ -22,7 +22,7 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WalletCreationRequest",
-			uint8(types.V1),
+			uint8(types.TaskVersionV1),
 			taskType,
 			common.HexToAddress(t.User),
 			t.Account,
@@ -35,7 +35,7 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"DepositRequest",
-			uint8(types.V1),
+			uint8(types.TaskVersionV1),
 			taskType,
 			t.TargetAddress,
 			t.Amount,
@@ -54,7 +54,7 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WithdrawalRequest",
-			uint8(types.V1),
+			uint8(types.TaskVersionV1),
 			taskType,
 			t.TargetAddress,
 			t.Amount,
