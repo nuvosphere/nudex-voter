@@ -76,3 +76,31 @@ func encodeTask(taskType int, task interface{}) (bytes []byte, err error) {
 
 	return bytes, err
 }
+
+func encodeTaskResult(taskType int, result interface{}) (bytes []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("failed to encode task result: %v", r)
+			bytes = nil
+		}
+	}()
+
+	switch taskType {
+	case types.TaskTypeCreateWallet:
+		t := result.(contracts.TaskPayloadContractWalletCreationResult)
+		bytes = contracts.PackEvent(
+			contracts.TaskPayloadContractMetaData,
+			"WalletCreationResult",
+			t.Version,
+			t.Success,
+			t.ErrorCode,
+			t.ErrorMsg,
+			t.WalletAddress,
+		)
+	default:
+		err = fmt.Errorf("unsupported task type: %v", taskType)
+		bytes = nil
+	}
+
+	return bytes, err
+}

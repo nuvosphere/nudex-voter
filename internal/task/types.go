@@ -34,3 +34,9 @@ const (
 	INITIAL Version = iota
 	V1
 )
+
+type ErrorCode uint32
+
+const (
+	SUCCESS ErrorCode = iota
+)

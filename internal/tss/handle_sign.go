@@ -33,8 +33,13 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 	}
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {
-		return task, nonce, nil, err
+		return task, nonce, nil, fmt.Errorf("get nonce error for task %x, error: %v", dbTask.Context, err)
 	}
+	switch taskRequest := task.(type) {
+	case *contracts.TaskPayloadContractWalletCreationRequest:
+		return taskRequest, nonce, nil, err
+	}
+
 	return task, nonce, nil, err
 }
 
