@@ -6,16 +6,16 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"math/big"
 	"reflect"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -32,14 +32,18 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("parse task %x error: %v", dbTask.Context, err)
 	}
+
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {
 		return task, nonce, nil, fmt.Errorf("get nonce error for task %x, error: %v", dbTask.Context, err)
 	}
+
 	switch taskRequest := task.(type) {
 	case *contracts.TaskPayloadContractWalletCreationRequest:
 		coinType := getCoinTypeByChain(taskRequest.Chain)
+
 		var result contracts.TaskPayloadContractWalletCreationResult
+
 		if coinType == -1 {
 			result = contracts.TaskPayloadContractWalletCreationResult{
 				Version:       types.TaskVersionV1,
@@ -62,11 +66,14 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 				WalletAddress: address.Hex(),
 			}
 		}
+
 		resultBytes, err := utils.EncodeTaskResult(types.TaskTypeCreateWallet, result)
 		if err != nil {
 			return taskRequest, nonce, resultBytes, err
 		}
+
 		serialized, err := serializeMessageToBeSigned(nonce.Uint64(), resultBytes)
+
 		return taskRequest, nonce, serialized, err
 	}
 
@@ -105,6 +112,7 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, dbTask db.Task) erro
 		DataType:    DataTypeSignCreateWallet,
 		Data:        reqMessage,
 	}
+
 	return nil
 }
 

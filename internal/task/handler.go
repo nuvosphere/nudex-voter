@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"errors"
+
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -38,9 +39,11 @@ func (ts *TaskService) checkTasks(ctx context.Context) {
 	}
 
 	ts.state.TssState.CurrentTask = &dbTask
+
 	err = ts.Tss.HandleSignPrepare(ctx, dbTask)
 	if err != nil {
 		log.Errorf("Handle sign prepare error for task %x err: %v", dbTask.Context, err)
+
 		ts.state.TssState.CurrentTask = nil
 	}
 }

@@ -2,6 +2,7 @@ package tss
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -31,5 +32,6 @@ func ParseTask(context []byte) (interface{}, error) {
 
 		return request, err
 	}
+
 	return nil, fmt.Errorf("unknown task type: %v", eventHash)
 }
