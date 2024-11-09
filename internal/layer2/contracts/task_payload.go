@@ -31,7 +31,7 @@ var (
 
 // TaskPayloadContractMetaData contains all meta data concerning the TaskPayloadContract contract.
 var TaskPayloadContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"event\",\"name\":\"DepositRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"taskType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"targetAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DepositResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"taskType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"index\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"walletAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"taskType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"targetAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"fee\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"errorMsg\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false}]",
+	ABI: "[{\"type\":\"event\",\"name\":\"DepositRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"taskType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"targetAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DepositResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"taskType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"index\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WalletCreationResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"walletAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRequest\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"taskType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"targetAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"amount\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.Chain\"},{\"name\":\"chainId\",\"type\":\"uint32\",\"indexed\":false,\"internalType\":\"uint32\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"txHash\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"assetType\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumTaskPayload.AssetType\"},{\"name\":\"decimal\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"fee\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalResult\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"success\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"},{\"name\":\"errorCode\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"}],\"anonymous\":false}]",
 }
 
 // TaskPayloadContractABI is the input ABI used to generate the binding from.
@@ -397,13 +397,12 @@ type TaskPayloadContractDepositResult struct {
 	Version   uint8
 	Success   bool
 	ErrorCode uint8
-	ErrorMsg  string
 	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterDepositResult is a free log retrieval operation binding the contract event 0xabb6358fa4da58d4806718669745538593e39fad49018da3205fabb88969da69.
+// FilterDepositResult is a free log retrieval operation binding the contract event 0xae9e6016838d9912f513c2adb0656673485ababaddbf853b28d121bf2ce24b9e.
 //
-// Solidity: event DepositResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event DepositResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterDepositResult(opts *bind.FilterOpts) (*TaskPayloadContractDepositResultIterator, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "DepositResult")
@@ -413,9 +412,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterDepositResult(opt
 	return &TaskPayloadContractDepositResultIterator{contract: _TaskPayloadContract.contract, event: "DepositResult", logs: logs, sub: sub}, nil
 }
 
-// WatchDepositResult is a free log subscription operation binding the contract event 0xabb6358fa4da58d4806718669745538593e39fad49018da3205fabb88969da69.
+// WatchDepositResult is a free log subscription operation binding the contract event 0xae9e6016838d9912f513c2adb0656673485ababaddbf853b28d121bf2ce24b9e.
 //
-// Solidity: event DepositResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event DepositResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchDepositResult(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractDepositResult) (event.Subscription, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "DepositResult")
@@ -450,9 +449,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchDepositResult(opts
 	}), nil
 }
 
-// ParseDepositResult is a log parse operation binding the contract event 0xabb6358fa4da58d4806718669745538593e39fad49018da3205fabb88969da69.
+// ParseDepositResult is a log parse operation binding the contract event 0xae9e6016838d9912f513c2adb0656673485ababaddbf853b28d121bf2ce24b9e.
 //
-// Solidity: event DepositResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event DepositResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseDepositResult(log types.Log) (*TaskPayloadContractDepositResult, error) {
 	event := new(TaskPayloadContractDepositResult)
 	if err := _TaskPayloadContract.contract.UnpackLog(event, "DepositResult", log); err != nil {
@@ -534,13 +533,12 @@ type TaskPayloadContractTaskResult struct {
 	Version   uint8
 	Success   bool
 	ErrorCode uint8
-	ErrorMsg  string
 	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterTaskResult is a free log retrieval operation binding the contract event 0x4ec8edffe62c94150b6ba2ba4c947b6e6258a50e9f687a324655e90d32968482.
+// FilterTaskResult is a free log retrieval operation binding the contract event 0x168d1dedeecc1984c4fb8e094dadd280c50fcd66b8f07b73148cd62f65e847c6.
 //
-// Solidity: event TaskResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event TaskResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterTaskResult(opts *bind.FilterOpts) (*TaskPayloadContractTaskResultIterator, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "TaskResult")
@@ -550,9 +548,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterTaskResult(opts *
 	return &TaskPayloadContractTaskResultIterator{contract: _TaskPayloadContract.contract, event: "TaskResult", logs: logs, sub: sub}, nil
 }
 
-// WatchTaskResult is a free log subscription operation binding the contract event 0x4ec8edffe62c94150b6ba2ba4c947b6e6258a50e9f687a324655e90d32968482.
+// WatchTaskResult is a free log subscription operation binding the contract event 0x168d1dedeecc1984c4fb8e094dadd280c50fcd66b8f07b73148cd62f65e847c6.
 //
-// Solidity: event TaskResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event TaskResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchTaskResult(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractTaskResult) (event.Subscription, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "TaskResult")
@@ -587,9 +585,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchTaskResult(opts *b
 	}), nil
 }
 
-// ParseTaskResult is a log parse operation binding the contract event 0x4ec8edffe62c94150b6ba2ba4c947b6e6258a50e9f687a324655e90d32968482.
+// ParseTaskResult is a log parse operation binding the contract event 0x168d1dedeecc1984c4fb8e094dadd280c50fcd66b8f07b73148cd62f65e847c6.
 //
-// Solidity: event TaskResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event TaskResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseTaskResult(log types.Log) (*TaskPayloadContractTaskResult, error) {
 	event := new(TaskPayloadContractTaskResult)
 	if err := _TaskPayloadContract.contract.UnpackLog(event, "TaskResult", log); err != nil {
@@ -810,14 +808,13 @@ type TaskPayloadContractWalletCreationResult struct {
 	Version       uint8
 	Success       bool
 	ErrorCode     uint8
-	ErrorMsg      string
 	WalletAddress string
 	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterWalletCreationResult is a free log retrieval operation binding the contract event 0xfc42400625461f74f98c81475863afad0fd34555d3045e603a4b8358d0c68cdf.
+// FilterWalletCreationResult is a free log retrieval operation binding the contract event 0x440691550bb1f6d18c60b1a17fff36325a996ba3ab5917f3003445984c5302cf.
 //
-// Solidity: event WalletCreationResult(uint8 version, bool success, uint8 errorCode, string errorMsg, string walletAddress)
+// Solidity: event WalletCreationResult(uint8 version, bool success, uint8 errorCode, string walletAddress)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWalletCreationResult(opts *bind.FilterOpts) (*TaskPayloadContractWalletCreationResultIterator, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "WalletCreationResult")
@@ -827,9 +824,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWalletCreationRes
 	return &TaskPayloadContractWalletCreationResultIterator{contract: _TaskPayloadContract.contract, event: "WalletCreationResult", logs: logs, sub: sub}, nil
 }
 
-// WatchWalletCreationResult is a free log subscription operation binding the contract event 0xfc42400625461f74f98c81475863afad0fd34555d3045e603a4b8358d0c68cdf.
+// WatchWalletCreationResult is a free log subscription operation binding the contract event 0x440691550bb1f6d18c60b1a17fff36325a996ba3ab5917f3003445984c5302cf.
 //
-// Solidity: event WalletCreationResult(uint8 version, bool success, uint8 errorCode, string errorMsg, string walletAddress)
+// Solidity: event WalletCreationResult(uint8 version, bool success, uint8 errorCode, string walletAddress)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWalletCreationResult(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractWalletCreationResult) (event.Subscription, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "WalletCreationResult")
@@ -864,9 +861,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWalletCreationResu
 	}), nil
 }
 
-// ParseWalletCreationResult is a log parse operation binding the contract event 0xfc42400625461f74f98c81475863afad0fd34555d3045e603a4b8358d0c68cdf.
+// ParseWalletCreationResult is a log parse operation binding the contract event 0x440691550bb1f6d18c60b1a17fff36325a996ba3ab5917f3003445984c5302cf.
 //
-// Solidity: event WalletCreationResult(uint8 version, bool success, uint8 errorCode, string errorMsg, string walletAddress)
+// Solidity: event WalletCreationResult(uint8 version, bool success, uint8 errorCode, string walletAddress)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseWalletCreationResult(log types.Log) (*TaskPayloadContractWalletCreationResult, error) {
 	event := new(TaskPayloadContractWalletCreationResult)
 	if err := _TaskPayloadContract.contract.UnpackLog(event, "WalletCreationResult", log); err != nil {
@@ -1094,13 +1091,12 @@ type TaskPayloadContractWithdrawalResult struct {
 	Version   uint8
 	Success   bool
 	ErrorCode uint8
-	ErrorMsg  string
 	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterWithdrawalResult is a free log retrieval operation binding the contract event 0xfa4f7299837c3fe10b920386d0a26e730d06c3714c6dc0483285b5dd4ae8d59b.
+// FilterWithdrawalResult is a free log retrieval operation binding the contract event 0x9a474499969867585df13ccda2ed8f3f9ad89cd1704e038cb941e1fbdc1c08fe.
 //
-// Solidity: event WithdrawalResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event WithdrawalResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWithdrawalResult(opts *bind.FilterOpts) (*TaskPayloadContractWithdrawalResultIterator, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.FilterLogs(opts, "WithdrawalResult")
@@ -1110,9 +1106,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) FilterWithdrawalResult(
 	return &TaskPayloadContractWithdrawalResultIterator{contract: _TaskPayloadContract.contract, event: "WithdrawalResult", logs: logs, sub: sub}, nil
 }
 
-// WatchWithdrawalResult is a free log subscription operation binding the contract event 0xfa4f7299837c3fe10b920386d0a26e730d06c3714c6dc0483285b5dd4ae8d59b.
+// WatchWithdrawalResult is a free log subscription operation binding the contract event 0x9a474499969867585df13ccda2ed8f3f9ad89cd1704e038cb941e1fbdc1c08fe.
 //
-// Solidity: event WithdrawalResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event WithdrawalResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWithdrawalResult(opts *bind.WatchOpts, sink chan<- *TaskPayloadContractWithdrawalResult) (event.Subscription, error) {
 
 	logs, sub, err := _TaskPayloadContract.contract.WatchLogs(opts, "WithdrawalResult")
@@ -1147,9 +1143,9 @@ func (_TaskPayloadContract *TaskPayloadContractFilterer) WatchWithdrawalResult(o
 	}), nil
 }
 
-// ParseWithdrawalResult is a log parse operation binding the contract event 0xfa4f7299837c3fe10b920386d0a26e730d06c3714c6dc0483285b5dd4ae8d59b.
+// ParseWithdrawalResult is a log parse operation binding the contract event 0x9a474499969867585df13ccda2ed8f3f9ad89cd1704e038cb941e1fbdc1c08fe.
 //
-// Solidity: event WithdrawalResult(uint8 version, bool success, uint8 errorCode, string errorMsg)
+// Solidity: event WithdrawalResult(uint8 version, bool success, uint8 errorCode)
 func (_TaskPayloadContract *TaskPayloadContractFilterer) ParseWithdrawalResult(log types.Log) (*TaskPayloadContractWithdrawalResult, error) {
 	event := new(TaskPayloadContractWithdrawalResult)
 	if err := _TaskPayloadContract.contract.UnpackLog(event, "WithdrawalResult", log); err != nil {

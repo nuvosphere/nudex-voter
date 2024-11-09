@@ -45,7 +45,6 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 				Version:       types.TaskVersionV1,
 				Success:       false,
 				ErrorCode:     types.TaskErrorCodeChainNotSupported,
-				ErrorMsg:      "",
 				WalletAddress: "",
 			}
 		} else {
@@ -60,7 +59,6 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 				Version:       types.TaskVersionV1,
 				Success:       true,
 				ErrorCode:     types.TaskErrorCodeSuccess,
-				ErrorMsg:      "",
 				WalletAddress: address.Hex(),
 			}
 		}

@@ -94,7 +94,6 @@ func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 			t.Version,
 			t.Success,
 			t.ErrorCode,
-			t.ErrorMsg,
 			t.WalletAddress,
 		)
 	default:

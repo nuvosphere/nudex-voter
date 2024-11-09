@@ -24,9 +24,9 @@ var (
 	WalletCreationRequestTopic = crypto.Keccak256Hash([]byte(`WalletCreationRequest(uint8,uint8,address,uint32,uint8,uint8)`))                                            // TopicPayloadContract
 	DepositRequestTopic        = crypto.Keccak256Hash([]byte(`DepositRequest(uint8,uint8,string,uint64,uint8,uint32,uint64,string,string,string,uint8,uint8)`))           // TopicPayloadContract
 	WithdrawalRequestTopic     = crypto.Keccak256Hash([]byte(`WithdrawalRequest(uint8,uint8,string,uint64,uint8,uint32,uint64,string,string,string,uint8,uint8,uint64)`)) // TopicPayloadContract
-	WalletCreationResultTopic  = crypto.Keccak256Hash([]byte(`WalletCreationResult(uint8,bool,uint8,string,string)`))                                                     // TopicPayloadContract
-	DepositResultTopic         = crypto.Keccak256Hash([]byte(`DepositResult(uint8,bool,uint8,string)`))                                                                   // TopicPayloadContract
-	WithdrawalResultTopic      = crypto.Keccak256Hash([]byte(`WithdrawalResult(uint8,bool,uint8,string)`))                                                                // TopicPayloadContract
+	WalletCreationResultTopic  = crypto.Keccak256Hash([]byte(`WalletCreationResult(uint8,bool,uint8,string)`))                                                            // TopicPayloadContract
+	DepositResultTopic         = crypto.Keccak256Hash([]byte(`DepositResult(uint8,bool,uint8)`))                                                                          // TopicPayloadContract
+	WithdrawalResultTopic      = crypto.Keccak256Hash([]byte(`WithdrawalResult(uint8,bool,uint8)`))                                                                       // TopicPayloadContract
 )
 
 var topics = [][]common.Hash{
