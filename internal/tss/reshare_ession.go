@@ -12,6 +12,8 @@ import (
 	"github.com/samber/lo"
 )
 
+var _ Session[any] = &ReShareGroupSession[any, any, any]{}
+
 type ReShareGroupSession[T, M, D any] struct {
 	oldSession *sessionTransport[T, M, D]
 	newSession *sessionTransport[T, M, D]
