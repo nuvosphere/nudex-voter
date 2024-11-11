@@ -14,6 +14,15 @@ import (
 )
 
 func (t *TSSService) handleSessionMsg(msg SessionMessage[int64]) error {
+	// todo
+	if t.IsCompleted(msg.TaskID) {
+		return fmt.Errorf("task already completed")
+	}
+
+	//if msg.TaskID < t.currentDoingTaskID {
+	//	return fmt.Errorf("task already in progress")
+	//}
+
 	session := t.scheduler.GetSession(msg.SessionID)
 	if session != nil {
 		from := session.PartyID(msg.FromPartyId)
