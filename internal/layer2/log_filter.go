@@ -137,26 +137,28 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 }
 
 func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
-	addressRegistered := contracts.AccountManagerContractAddressRegistered{}
+	if vLog.Topics[0] == AddressRegisteredTopic {
+		addressRegistered := contracts.AccountManagerContractAddressRegistered{}
 
-	err := contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
-	if err != nil {
-		return err
-	}
+		err := contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
+		if err != nil {
+			return err
+		}
 
-	account := db.Account{
-		User:    addressRegistered.User.Hex(),
-		Account: addressRegistered.Account.Uint64(),
-		ChainId: addressRegistered.ChainId,
-		Index:   addressRegistered.Index.Uint64(),
-		Address: addressRegistered.NewAddress.Hex(),
-	}
+		account := db.Account{
+			User:    addressRegistered.User.Hex(),
+			Account: addressRegistered.Account.Uint64(),
+			ChainId: addressRegistered.ChainId,
+			Index:   addressRegistered.Index.Uint64(),
+			Address: addressRegistered.NewAddress.Hex(),
+		}
 
-	err = l.db.GetRelayerDB().Create(&account).Error
-	if err != nil {
-		log.Fatalf("Error adding address: %v", err)
-	} else {
-		log.Infof("localAddress %s registered for user: %s, chain: %d", account.Address, account.User, account.ChainId)
+		err = l.db.GetRelayerDB().Create(&account).Error
+		if err != nil {
+			log.Fatalf("Error adding address: %v", err)
+		} else {
+			log.Infof("localAddress %s registered for user: %s, chain: %d", account.Address, account.User, account.ChainId)
+		}
 	}
 
 	return nil
