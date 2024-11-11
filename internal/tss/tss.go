@@ -27,14 +27,14 @@ type TSSService struct {
 	localAddress common.Address    // submit = partyID
 	proposer     common.Address    // current submitter
 
-	p2p       p2p.P2PService
-	state     *state.State
-	scheduler *Scheduler[int64]
-	cache     *cache.Cache
+	p2p                p2p.P2PService
+	state              *state.State
+	scheduler          *Scheduler[int64]
+	cache              *cache.Cache
+	currentDoingTaskID int64
 
 	layer2Listener *layer2.Layer2Listener
 	dbm            *db.DatabaseManager
-	taskReceive    chan any // task
 	threshold      *atomic.Int64
 	partners       []common.Address
 	// eventbus channel
@@ -44,12 +44,12 @@ type TSSService struct {
 	rw sync.RWMutex
 }
 
-func (t *TSSService) IsCompleted(taskID int32) bool {
+func (t *TSSService) IsCompleted(taskID int64) bool {
 	_, ok := t.cache.Get(fmt.Sprintf("%d", taskID))
 	return ok
 }
 
-func (t *TSSService) AddCompletedTask(taskID int32) {
+func (t *TSSService) AddCompletedTask(taskID int64) {
 	t.cache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
 }
 
@@ -59,10 +59,6 @@ func (t *TSSService) LocalSubmitter() common.Address {
 
 func (t *TSSService) IsPrepared() bool {
 	return t.isPrepared.Load()
-}
-
-func (t *TSSService) PostTask(task any) {
-	t.taskReceive <- task
 }
 
 func (t *TSSService) sigEndLoop(ctx context.Context) {
@@ -77,19 +73,9 @@ func (t *TSSService) sigEndLoop(ctx context.Context) {
 			if result.Err != nil {
 				log.Errorf("%s, result error:%v", info, result.Err)
 			} else {
+				t.AddCompletedTask(result.TaskID)
 				t.handleSigFinish(ctx, result.Data)
 			}
-		}
-	}
-}
-
-func (t *TSSService) taskLoop(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("TSS task loop stopped")
-		case task := <-t.taskReceive:
-			log.Info("TSS task receive", task)
 		}
 	}
 }
@@ -108,7 +94,6 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		layer2Listener: layer2Listener,
 		scheduler:      NewScheduler[int64](p, int64(config.AppConfig.TssThreshold), localAddress, proposer),
 		cache:          cache.New(time.Minute*10, time.Minute),
-		taskReceive:    make(chan any, 256),
 	}
 }
 
