@@ -28,7 +28,18 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 	}
 
 	params, partyIdMap := NewParam(m.localSubmitter, threshold, allPartners)
-	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](m.p2p, m, helper.SenateGroupID, helper.SenateSessionID, proposer, taskID, msg, threshold, GenKeySessionType, allPartners)
+	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](
+		m.p2p,
+		m,
+		helper.SenateGroupID,
+		helper.SenateSessionID,
+		proposer,
+		taskID,
+		msg,
+		threshold,
+		GenKeySessionType,
+		allPartners,
+	)
 	party, endCh, errCh := helper.RunKeyGen(m.ctx, preParams, params, s) // todo
 	s.party = party
 	s.partyIdMap = partyIdMap
