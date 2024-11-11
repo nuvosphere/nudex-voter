@@ -53,7 +53,7 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 			}
 		} else {
 			address := wallet.GenerateAddressByPath(
-				*(t.localPartySaveData.ECDSAPub.ToECDSAPubKey()),
+				*(t.scheduler.MasterPublicKey()),
 				uint32(coinType),
 				taskRequest.Account,
 				taskRequest.Index,
@@ -179,7 +179,7 @@ func (t *TSSService) handleSigFinish(ctx context.Context, signatureData *common.
 			// @todo
 			// generate wallet and send to chain
 			address := wallet.GenerateAddressByPath(
-				*(t.localPartySaveData.ECDSAPub.ToECDSAPubKey()),
+				*(t.scheduler.MasterPublicKey()),
 				uint32(coinType),
 				createWalletTask.Account,
 				createWalletTask.Index,

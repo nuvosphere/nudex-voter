@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -29,28 +30,39 @@ type Scheduler[T comparable] struct {
 	cancel             context.CancelFunc
 	localPartySaveData *keygen.LocalPartySaveData
 	threshold          *atomic.Int64
-	Proposer           common.Address // current proposer(submitter)
+	localSubmitter     common.Address
+	proposer           common.Address // current proposer(submitter)
+	pendingProposal    chan any
+	notify             chan struct{}
 }
 
-func NewScheduler[T comparable](p p2p.P2PService, threshold int64) *Scheduler[T] {
+func NewScheduler[T comparable](p p2p.P2PService, threshold int64, localSubmitter, proposer common.Address) *Scheduler[T] {
 	t := &atomic.Int64{}
 	t.Store(threshold)
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Scheduler[T]{
-		p2p:           p,
-		srw:           sync.RWMutex{},
-		grw:           sync.RWMutex{},
-		groups:        make(map[helper.GroupID]*helper.Group),
-		sessions:      make(map[helper.SessionID]Session[T]),
-		sessionTasks:  make(map[T]Session[T]),
-		sigInToOut:    make(chan *SessionResult[T, *tsscommon.SignatureData], 1024),
-		senateInToOut: make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
-		threshold:     t,
+		p2p:             p,
+		srw:             sync.RWMutex{},
+		grw:             sync.RWMutex{},
+		groups:          make(map[helper.GroupID]*helper.Group),
+		sessions:        make(map[helper.SessionID]Session[T]),
+		sessionTasks:    make(map[T]Session[T]),
+		sigInToOut:      make(chan *SessionResult[T, *tsscommon.SignatureData], 1024),
+		senateInToOut:   make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
+		threshold:       t,
+		ctx:             ctx,
+		cancel:          cancel,
+		localSubmitter:  localSubmitter,
+		proposer:        proposer,
+		pendingProposal: make(chan any, 1024),
+		notify:          make(chan struct{}, 1024),
 	}
 }
 
 func (m *Scheduler[T]) Start() {
-	m.waitForThreshold()
+	m.DetectionThreshold()
 
 	is := m.IsGenesis()
 	if is {
@@ -96,14 +108,14 @@ func (m *Scheduler[T]) IsGenesis() bool {
 	return false
 }
 
-func (m *Scheduler[T]) waitForThreshold() {
-	count := m.p2p.OnlinePeerCount()
+func (m *Scheduler[T]) DetectionThreshold() {
 L:
 	for {
 		select {
 		case <-m.ctx.Done():
-			log.Info("waitForThreshold context done")
+			log.Info("DetectionThreshold context done")
 		default:
+			count := m.p2p.OnlinePeerCount()
 			if int64(count) >= m.threshold.Load() {
 				break L
 			}
@@ -192,6 +204,10 @@ func (m *Scheduler[T]) SessionRelease(session helper.SessionID) {
 		delete(m.sessions, session)
 		delete(m.sessionTasks, s.TaskID())
 		s.Release()
+
+		if len(m.sessions) == 0 {
+			m.notify <- struct{}{}
+		}
 	}
 }
 
@@ -208,4 +224,31 @@ func (m *Scheduler[T]) Release() {
 	m.sessionTasks = make(map[T]Session[T])
 	m.srw.Unlock()
 	close(m.sigInToOut)
+}
+
+func (m *Scheduler[T]) SubmitProposal(proposal any) {
+	m.pendingProposal <- proposal
+}
+
+func (m *Scheduler[T]) approveProposal() {
+	go func() {
+		select {
+		case <-m.ctx.Done():
+			log.Info("approve proposal done")
+		case <-m.notify:
+			select {
+			case <-m.ctx.Done():
+				log.Info("approve proposal done")
+			case proposal := <-m.pendingProposal:
+				// todo
+				// signature and re-share
+				log.Info("doing approve proposal", proposal)
+				m.DetectionThreshold()
+			}
+		}
+	}()
+}
+
+func (m *Scheduler[T]) MasterPublicKey() *ecdsa.PublicKey {
+	return m.localPartySaveData.ECDSAPub.ToECDSAPubKey()
 }

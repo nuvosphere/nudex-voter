@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -26,7 +25,7 @@ type TSSService struct {
 	isPrepared   atomic.Bool
 	privateKey   *ecdsa.PrivateKey // submit
 	localAddress common.Address    // submit = partyID
-	proposer     common.Address
+	proposer     common.Address    // current submitter
 
 	p2p       p2p.P2PService
 	state     *state.State
@@ -36,12 +35,8 @@ type TSSService struct {
 	layer2Listener *layer2.Layer2Listener
 	dbm            *db.DatabaseManager
 	taskReceive    chan any // task
-
-	threshold          *atomic.Int64
-	partners           []common.Address
-	localParty         *keygen.LocalParty
-	localPartySaveData *keygen.LocalPartySaveData
-
+	threshold      *atomic.Int64
+	partners       []common.Address
 	// eventbus channel
 	tssMsgCh       <-chan any
 	partyAddOrRmCh <-chan any
@@ -100,6 +95,9 @@ func (t *TSSService) taskLoop(ctx context.Context) {
 }
 
 func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State, layer2Listener *layer2.Layer2Listener) *TSSService {
+	localAddress := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
+	proposer := common.Address{} // todo
+
 	return &TSSService{
 		isPrepared:     atomic.Bool{},
 		privateKey:     config.AppConfig.L2PrivateKey,
@@ -108,7 +106,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		dbm:            dbm,
 		state:          state,
 		layer2Listener: layer2Listener,
-		scheduler:      NewScheduler[int64](p, int64(config.AppConfig.TssThreshold)),
+		scheduler:      NewScheduler[int64](p, int64(config.AppConfig.TssThreshold), localAddress, proposer),
 		cache:          cache.New(time.Minute*10, time.Minute),
 		taskReceive:    make(chan any, 256),
 	}
@@ -168,22 +166,6 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 }
 
 func (t *TSSService) Stop() {}
-
-func (t *TSSService) waitForThreshold(ctx context.Context) {
-	count := t.p2p.OnlinePeerCount()
-L:
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("waitForThreshold context done")
-		default:
-			if int64(count) >= t.threshold.Load() {
-				break L
-			}
-			time.Sleep(time.Second)
-		}
-	}
-}
 
 func (t *TSSService) oldPartners() []common.Address {
 	return t.partners
