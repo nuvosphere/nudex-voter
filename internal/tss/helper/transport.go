@@ -12,7 +12,7 @@ type Transporter interface {
 	Send(context.Context, []byte, *tss.MessageRouting, bool) error
 	// Receive returns a channel that will be read by the local tss party. This
 	// consists of ReceivedPartyState messages received from other parties.
-	Receive() chan *ReceivedPartyState
+	Receive(partyID string) chan *ReceivedPartyState
 
 	Post(*ReceivedPartyState)
 

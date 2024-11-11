@@ -5,13 +5,13 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"slices"
 
 	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
+	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
@@ -22,7 +22,7 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 	session := t.scheduler.GetSession(msg.SessionID)
 	if session != nil {
 		from := session.PartyID(msg.FromPartyId)
-		if from != nil && from != session.Party().PartyID() && (msg.IsBroadcast || slices.Contains(msg.ToPartyIds, t.localAddress.Hex())) {
+		if from != nil && !session.Equal(from.Id) && (msg.IsBroadcast || session.Included(msg.ToPartyIds)) {
 			session.Post(msg.State(from))
 		}
 
@@ -34,19 +34,36 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 
 	switch msg.Type {
 	case GenKeySessionType:
-		_ = t.scheduler.NewGenerateKeySession(t.p2p, t.LocalSubmitter(), msg.TaskID, new(big.Int).SetBytes(txHash.Bytes()), int(t.threshold.Load()), t.partners)
+		_ = t.scheduler.NewGenerateKeySession(
+			t.proposer,
+			msg.TaskID,
+			new(big.Int).SetBytes(txHash.Bytes()),
+			int(t.threshold.Load()),
+			t.partners,
+		)
 	case ReShareGroupSessionType:
 		// todo
-		_ = t.scheduler.NewReShareGroupSession(t.p2p, t.LocalSubmitter(), msg.TaskID, new(big.Int).SetBytes(txHash.Bytes()), int(t.threshold.Load()), t.partners)
+		newThreshold := 0
+
+		var newPartners []common.Address
+		_ = t.scheduler.NewReShareGroupSession(
+			t.localAddress,
+			int32(helper.SenateTaskID),
+			new(big.Int).SetBytes(txHash.Bytes()),
+			t.proposer,
+			int(t.threshold.Load()),
+			t.partners,
+			newThreshold,
+			newPartners,
+		)
 	case SignSessionType:
 		keyDerivationDelta := &big.Int{} // todo
 		localPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
 
 		_ = t.scheduler.NewSignSession(
-			t.p2p,
 			msg.GroupID,
-			msg.Sponsor,
+			msg.Proposer,
 			msg.TaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
 			int(t.threshold.Load()),

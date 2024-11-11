@@ -21,7 +21,7 @@ func (t *TSSService) startReSharing(newAddressList []common.Address, threshold i
 	newPeerCtx := tsslib.NewPeerContext(newPartyIDs)
 	newPartyID := newPartyIDs.FindByKey(new(big.Int).SetBytes(t.localAddress.Bytes()))
 
-	currentParams := tsslib.NewReSharingParameters(
+	oldParams := tsslib.NewReSharingParameters(
 		tsslib.S256(),
 		oldPeerCtx,
 		newPeerCtx,
@@ -31,7 +31,7 @@ func (t *TSSService) startReSharing(newAddressList []common.Address, threshold i
 		len(newAddressList),
 		threshold,
 	)
-	oldParty := resharing.NewLocalParty(currentParams, *t.localPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
+	oldParty := resharing.NewLocalParty(oldParams, *t.localPartySaveData, t.reSharingOutCh, t.reSharingEndCh).(*resharing.LocalParty)
 
 	go func() {
 		if err := oldParty.Start(); err != nil {
@@ -48,7 +48,7 @@ func (t *TSSService) startReSharing(newAddressList []common.Address, threshold i
 		newPeerCtx,
 		newPartyID,
 		len(t.oldPartners()),
-		threshold,
+		config.AppConfig.TssThreshold,
 		len(newAddressList),
 		threshold,
 	)

@@ -14,10 +14,11 @@ type Session[T any] interface {
 	SessionID
 	GroupID
 	TaskID[T]
-	Sponsor
+	Proposer
 	Threshold
 	PartyID
-	Party
+	Equal
+	Included
 	Run
 }
 
@@ -45,16 +46,20 @@ type TaskID[T any] interface {
 	TaskID() T
 }
 
-type Sponsor interface {
-	Sponsor() common.Address
+type Proposer interface {
+	Proposer() common.Address
 }
 
 type PartyID interface {
 	PartyID(id string) *tss.PartyID
 }
 
-type Party interface {
-	Party() tss.Party
+type Included interface {
+	Included(ids []string) bool
+}
+
+type Equal interface {
+	Equal(id string) bool
 }
 
 type Threshold interface {

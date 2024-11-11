@@ -3,48 +3,121 @@ package tss
 import (
 	"context"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
+	log "github.com/sirupsen/logrus"
 )
 
-// Releaser is the interface that wraps the basic Release method.
-type Releaser interface {
-	// Release releases associated resources. Release should always success
-	// and can be called multiple times without causing error.
-	Release()
-}
-
-type SessionReleaser interface {
-	SessionRelease(session helper.SessionID)
-}
-
 type Scheduler[T comparable] struct {
-	grw                 sync.RWMutex
-	groups              map[helper.GroupID]*helper.Group
-	srw                 sync.RWMutex
-	sessions            map[helper.SessionID]Session[T]
-	sessionTasks        map[T]Session[T]
-	sigInToOut          chan *SessionResult[T, *tsscommon.SignatureData]
-	genKeyInToOut       chan *SessionResult[T, *keygen.LocalPartySaveData]
-	reShareGroupInToOut chan *SessionResult[T, *keygen.LocalPartySaveData]
-	ctx                 context.Context
-	cancel              context.CancelFunc
+	p2p                p2p.P2PService
+	grw                sync.RWMutex
+	groups             map[helper.GroupID]*helper.Group
+	srw                sync.RWMutex
+	sessions           map[helper.SessionID]Session[T]
+	sessionTasks       map[T]Session[T]
+	sigInToOut         chan *SessionResult[T, *tsscommon.SignatureData]
+	senateInToOut      chan *SessionResult[T, *keygen.LocalPartySaveData]
+	ctx                context.Context
+	cancel             context.CancelFunc
+	localPartySaveData *keygen.LocalPartySaveData
+	threshold          *atomic.Int64
+	Proposer           common.Address // current proposer(submitter)
 }
 
-func NewScheduler[T comparable]() *Scheduler[T] {
+func NewScheduler[T comparable](p p2p.P2PService, threshold int64) *Scheduler[T] {
+	t := &atomic.Int64{}
+	t.Store(threshold)
+
 	return &Scheduler[T]{
-		srw:                 sync.RWMutex{},
-		grw:                 sync.RWMutex{},
-		groups:              make(map[helper.GroupID]*helper.Group),
-		sessions:            make(map[helper.SessionID]Session[T]),
-		sessionTasks:        make(map[T]Session[T]),
-		sigInToOut:          make(chan *SessionResult[T, *tsscommon.SignatureData], 1024),
-		genKeyInToOut:       make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
-		reShareGroupInToOut: make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
+		p2p:           p,
+		srw:           sync.RWMutex{},
+		grw:           sync.RWMutex{},
+		groups:        make(map[helper.GroupID]*helper.Group),
+		sessions:      make(map[helper.SessionID]Session[T]),
+		sessionTasks:  make(map[T]Session[T]),
+		sigInToOut:    make(chan *SessionResult[T, *tsscommon.SignatureData], 1024),
+		senateInToOut: make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
+		threshold:     t,
 	}
+}
+
+func (m *Scheduler[T]) Start() {
+	m.waitForThreshold()
+
+	is := m.IsGenesis()
+	if is {
+		m.Genesis() // build senate session
+
+		sessionResult := <-m.senateInToOut
+		if sessionResult.Err != nil {
+			panic(sessionResult.Err)
+		}
+
+		err := saveTSSData(sessionResult.Data)
+		utils.Assert(err)
+
+		m.localPartySaveData = sessionResult.Data
+	}
+}
+
+func (m *Scheduler[T]) Stop() {
+	m.cancel()
+}
+
+func (m *Scheduler[T]) Genesis() {
+	// todo
+	log.Info("TSS keygen process started")
+}
+
+func (m *Scheduler[T]) IsGenesis() bool {
+	if m.localPartySaveData != nil && m.localPartySaveData.ECDSAPub != nil {
+		return false
+	}
+
+	localPartySaveData, err := LoadTSSData()
+	if err != nil {
+		log.Errorf("Failed to load TSS data: %v", err)
+	}
+
+	if localPartySaveData == nil {
+		return true
+	}
+
+	m.localPartySaveData = localPartySaveData
+
+	return false
+}
+
+func (m *Scheduler[T]) waitForThreshold() {
+	count := m.p2p.OnlinePeerCount()
+L:
+	for {
+		select {
+		case <-m.ctx.Done():
+			log.Info("waitForThreshold context done")
+		default:
+			if int64(count) >= m.threshold.Load() {
+				break L
+			}
+			time.Sleep(time.Second)
+		}
+	}
+}
+
+func (m *Scheduler[T]) Threshold() int64 {
+	return m.threshold.Load()
+}
+
+func (m *Scheduler[T]) SetThreshold(threshold int64) {
+	m.threshold.Store(threshold)
 }
 
 func (m *Scheduler[T]) AddGroup(group *helper.Group) {
@@ -55,7 +128,7 @@ func (m *Scheduler[T]) AddGroup(group *helper.Group) {
 
 func (m *Scheduler[T]) AddSession(session Session[T]) bool {
 	m.grw.Lock()
-	_, ok := m.groups[session.GroupID()]
+	_, ok := m.groups[session.GroupID()] // todo
 	m.grw.Unlock()
 
 	if ok {

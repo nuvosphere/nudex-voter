@@ -51,6 +51,22 @@ func createPartyIDsByAddress(addressList []common.Address) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
+func createOldPartyIDsByAddress(addressList []common.Address) tss.SortedPartyIDs {
+	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
+
+	for i, address := range addressList {
+		key := new(big.Int).SetBytes(address.Bytes())
+		key = new(big.Int).Add(key, big.NewInt(1)) // key + 1
+		tssAllPartyIDs[i] = tss.NewPartyID(
+			key.Text(16),
+			key.Text(16),
+			key,
+		)
+	}
+
+	return tss.SortPartyIDs(tssAllPartyIDs)
+}
+
 func saveTSSData(data interface{}) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {

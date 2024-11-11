@@ -48,7 +48,7 @@ func RunParty(
 
 	// Process outgoing and incoming messages
 	go func() {
-		incomingMsgCh := transport.Receive()
+		incomingMsgCh := transport.Receive(party.PartyID().Id)
 
 		log.Debug("Starting out/in message loop")
 

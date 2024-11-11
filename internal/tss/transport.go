@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"slices"
 	"sync"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 )
 
@@ -28,8 +28,8 @@ type SessionMessage[T any] struct {
 	Type                    string           `json:"type"`
 	GroupID                 helper.GroupID   `json:"groupID,omitempty"`
 	SessionID               helper.SessionID `json:"sessionID,omitempty"`
-	Sponsor                 common.Address   `json:"sponsor,omitempty"` // current submitter
-	TaskID                  T                `json:"taskID,omitempty"`  // msg id
+	Proposer                common.Address   `json:"proposer,omitempty"` // current submitter
+	TaskID                  T                `json:"taskID,omitempty"`   // msg id
 	FromPartyId             string           `json:"from_party_id"`
 	ToPartyIds              []string         `json:"to_party_ids"`
 	IsBroadcast             bool             `json:"is_broadcast"`
@@ -52,7 +52,6 @@ func (s *SessionMessage[T]) State(from *tss.PartyID) *helper.ReceivedPartyState 
 type sessionTransport[T, M, D any] struct {
 	broadcaster    p2p.P2PService                  // send data
 	recvChan       chan *helper.ReceivedPartyState // receive data
-	partyIDStore   *helper.PartyIDStore
 	session        helper.Session[T, M]
 	sessionRelease SessionReleaser
 	ty             string
@@ -77,12 +76,12 @@ type GenerateKeySession[T, M, D any] struct {
 }
 
 func NewParam(
-	sponsor common.Address, // current submitter
+	proposer common.Address, // current submitter
 	threshold int,
 	allPartners []common.Address,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
 	partyIDs := createPartyIDsByAddress(allPartners)
-	partyID := partyIDs.FindByKey(new(big.Int).SetBytes(sponsor.Bytes()))
+	partyID := partyIDs.FindByKey(new(big.Int).SetBytes(proposer.Bytes()))
 	peerCtx := tss.NewPeerContext(partyIDs)
 	params := tss.NewParameters(tss.S256(), peerCtx, partyID, len(partyIDs), threshold)
 	partyIdMap := lo.SliceToMap(partyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
@@ -93,8 +92,7 @@ func NewParam(
 }
 
 func (m *Scheduler[T]) NewGenerateKeySession(
-	p p2p.P2PService,
-	sponsor common.Address, // current submitter
+	proposer common.Address, // current submitter
 	taskID T, // msg id
 	msg *big.Int,
 	threshold int,
@@ -105,78 +103,27 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 		panic(err)
 	}
 
-	params, partyIdMap := NewParam(sponsor, threshold, allPartners)
-	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](p, m, helper.SenateGroupID, helper.SenateSessionID, sponsor, taskID, msg, threshold, GenKeySessionType, allPartners)
+	params, partyIdMap := NewParam(proposer, threshold, allPartners)
+	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](m.p2p, m, helper.SenateGroupID, helper.SenateSessionID, proposer, taskID, msg, threshold, GenKeySessionType, allPartners)
 	party, endCh, errCh := helper.RunKeyGen(context.Background(), preParams, params, s) // todo
 	s.party = party
 	s.partyIdMap = partyIdMap
-	s.inToOut = m.genKeyInToOut
+	s.inToOut = m.senateInToOut
 	s.errCH = errCh
 	s.endCh = endCh
+	s.Run()
 	session := &GenerateKeySession[T, *big.Int, *keygen.LocalPartySaveData]{sessionTransport: s}
 	m.AddSession(session)
-	session.Run()
 
 	return session.SessionID()
 }
 
 func (m *GenerateKeySession[T, M, D]) Release() {
 	m.sessionTransport.Release()
-	close(m.endCh)
-	close(m.errCH)
-}
-
-func (m *GenerateKeySession[T, M, D]) Run() {
-	go func() {
-		defer m.Release()
-		select {
-		case <-m.ctx.Done():
-		case data := <-m.endCh:
-			err := saveTSSData(data)
-			utils.Assert(err)
-		case err := <-m.errCH:
-			panic(err)
-		}
-	}()
-}
-
-type ReShareGroupSession[T, M, D any] struct {
-	*GenerateKeySession[T, M, D]
-}
-
-func (m *Scheduler[T]) NewReShareGroupSession(
-	p p2p.P2PService,
-	sponsor common.Address, // current submitter
-	taskID T, // msg id
-	msg *big.Int,
-	threshold int,
-	allPartners []common.Address,
-) helper.SessionID {
-	// return newSession(p, m, groupID, helper.SenateSessionID, sponsor, taskID, msg, threshold, ReShareGroupSessionType, allPartners)
-	return helper.SessionID{}
 }
 
 type SignSession[T, M, D any] struct {
 	*sessionTransport[T, M, D]
-}
-
-func (m *SignSession[T, M, D]) Release() {
-	m.sessionTransport.Release()
-	close(m.endCh)
-	close(m.errCH)
-}
-
-func (m *SignSession[T, M, D]) Run() {
-	go func() {
-		defer m.Release()
-		select {
-		case <-m.ctx.Done():
-		case data := <-m.endCh:
-			m.inToOut <- m.newDataResult(data)
-		case err := <-m.errCH:
-			m.inToOut <- m.newErrResult(err)
-		}
-	}()
 }
 
 func RandSessionID() helper.SessionID {
@@ -187,9 +134,8 @@ func RandSessionID() helper.SessionID {
 }
 
 func (m *Scheduler[T]) NewSignSession(
-	p p2p.P2PService,
 	groupID helper.GroupID,
-	sponsor common.Address,
+	proposer common.Address,
 	taskID T,
 	msg *big.Int,
 	threshold int,
@@ -197,8 +143,19 @@ func (m *Scheduler[T]) NewSignSession(
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
-	params, partyIdMap := NewParam(sponsor, threshold, allPartners)
-	innerSession := newSession[T, *big.Int, *tsscommon.SignatureData](p, m, groupID, RandSessionID(), sponsor, taskID, msg, threshold, GenKeySessionType, allPartners)
+	params, partyIdMap := NewParam(proposer, threshold, allPartners)
+	innerSession := newSession[T, *big.Int, *tsscommon.SignatureData](
+		m.p2p,
+		m,
+		groupID,
+		RandSessionID(),
+		proposer,
+		taskID,
+		msg,
+		threshold,
+		SignSessionType,
+		allPartners,
+	)
 	party, endCh, errCh := helper.Run(context.Background(), msg, params, key, innerSession, keyDerivationDelta) // todo
 	innerSession.party = party
 	innerSession.partyIdMap = partyIdMap
@@ -208,8 +165,8 @@ func (m *Scheduler[T]) NewSignSession(
 	session := &SignSession[T, *big.Int, *tsscommon.SignatureData]{
 		sessionTransport: innerSession,
 	}
-	m.AddSession(session)
 	session.Run()
+	m.AddSession(session)
 
 	return session.SessionID()
 }
@@ -219,7 +176,7 @@ func newSession[T comparable, M, D any](
 	m *Scheduler[T],
 	groupID helper.GroupID,
 	sessionID helper.SessionID,
-	sponsor common.Address, // current submitter
+	proposer common.Address, // current submitter
 	taskID T, // msg id
 	msg M,
 	threshold int,
@@ -232,16 +189,18 @@ func newSession[T comparable, M, D any](
 		broadcaster: p,
 		recvChan:    recvChan,
 		session: helper.Session[T, M]{
-			GroupID:   groupID,
+			Group: helper.Group{
+				AllPartners: allPartners,
+				GroupID:     groupID,
+			},
 			SessionID: sessionID,
-			Sponsor:   sponsor,
+			Proposer:  proposer,
 			TaskID:    taskID,
 			Msg:       msg,
 			Threshold: threshold,
 		},
 		sessionRelease: m,
 		ty:             ty,
-		partyIDStore:   helper.NewPartyIDStore(),
 		partyIdMap:     make(map[string]*tss.PartyID),
 		rw:             sync.RWMutex{},
 	}
@@ -264,11 +223,15 @@ func (s *sessionTransport[T, M, D]) Name() string {
 }
 
 func (s *sessionTransport[T, M, D]) PartyID(id string) *tss.PartyID {
-	return s.party.PartyID()
+	return s.partyIdMap[id]
 }
 
-func (s *sessionTransport[T, M, D]) Party() tss.Party {
-	return s.party
+func (s *sessionTransport[T, M, D]) Equal(id string) bool {
+	return s.party.PartyID().Id == id
+}
+
+func (s *sessionTransport[T, M, D]) Included(ids []string) bool {
+	return slices.Contains(ids, s.party.PartyID().Id)
 }
 
 func (s *sessionTransport[T, M, D]) SessionID() helper.SessionID {
@@ -283,8 +246,8 @@ func (s *sessionTransport[T, M, D]) TaskID() T {
 	return s.session.TaskID
 }
 
-func (s *sessionTransport[T, M, D]) Sponsor() common.Address {
-	return s.session.Sponsor
+func (s *sessionTransport[T, M, D]) Proposer() common.Address {
+	return s.session.Proposer
 }
 
 func (s *sessionTransport[T, M, D]) Threshold() int {
@@ -295,6 +258,8 @@ func (s *sessionTransport[T, M, D]) Release() {
 	s.sessionRelease.SessionRelease(s.SessionID())
 	s.cancel()
 	close(s.recvChan)
+	close(s.endCh)
+	close(s.errCH)
 }
 
 func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {
@@ -306,7 +271,7 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 			Type:                    s.Type(),
 			GroupID:                 s.GroupID(),
 			SessionID:               s.SessionID(),
-			Sponsor:                 s.Sponsor(),
+			Proposer:                s.Proposer(),
 			TaskID:                  s.TaskID(),
 			FromPartyId:             routing.From.Id,
 			ToPartyIds:              lo.Map(routing.To, func(to *tss.PartyID, _ int) string { return to.Id }),
@@ -320,12 +285,25 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 	return s.broadcaster.PublishMessage(ctx, msg)
 }
 
-func (s *sessionTransport[T, M, D]) Receive() chan *helper.ReceivedPartyState {
+func (s *sessionTransport[T, M, D]) Receive(_ string) chan *helper.ReceivedPartyState {
 	return s.recvChan
 }
 
 func (s *sessionTransport[T, M, D]) Post(data *helper.ReceivedPartyState) {
 	s.recvChan <- data
+}
+
+func (s *sessionTransport[T, M, D]) Run() {
+	go func() {
+		defer s.Release()
+		select {
+		case <-s.ctx.Done():
+		case data := <-s.endCh:
+			s.inToOut <- s.newDataResult(data)
+		case err := <-s.errCH:
+			s.inToOut <- s.newErrResult(err)
+		}
+	}()
 }
 
 func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {

@@ -27,6 +27,7 @@ type TSSService struct {
 	isPrepared   atomic.Bool
 	privateKey   *ecdsa.PrivateKey // submit
 	localAddress common.Address    // submit = partyID
+	proposer     common.Address
 
 	p2p       p2p.P2PService
 	state     *state.State
@@ -115,7 +116,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		dbm:            dbm,
 		state:          state,
 		layer2Listener: layer2Listener,
-		scheduler:      NewScheduler[int32](),
+		scheduler:      NewScheduler[int32](p, int64(config.AppConfig.TssThreshold)),
 		cache:          cache.New(time.Minute*10, time.Minute),
 		reSharingOutCh: make(chan tsslib.Message),
 		reSharingEndCh: make(chan *keygen.LocalPartySaveData),
@@ -125,19 +126,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 
 func (t *TSSService) Start(ctx context.Context) {
 	t.eventLoop(ctx)
-	t.waitForThreshold(ctx)
-
-	is := t.IsGenesis()
-	if is {
-		t.Genesis(ctx)
-
-		sessionResult := <-t.scheduler.genKeyInToOut
-		if sessionResult.Err != nil {
-			panic(sessionResult.Err)
-		}
-
-		t.localPartySaveData = sessionResult.Data
-	}
+	t.scheduler.Start()
 
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
