@@ -1,21 +1,16 @@
 package tss
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 
-	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
-	log "github.com/sirupsen/logrus"
 )
 
 func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
@@ -76,59 +71,6 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 	}
 
 	return nil
-}
-
-func (t *TSSService) sendTssMsg(ctx context.Context, dataType string, event tsslib.Message) (*p2p.Message[types.TssMessage], error) {
-	if event.GetFrom().Id != t.localParty.PartyID().Id {
-		return nil, fmt.Errorf("sendTssMsg error, event %v, not self", event)
-	}
-
-	msgWireBytes, _, err := event.WireBytes()
-	if err != nil {
-		return nil, fmt.Errorf("sendTssMsg parse wire bytes error, event %v", event)
-	}
-
-	msg := types.TssMessage{
-		FromPartyId:  event.GetFrom().GetId(),
-		ToPartyIds:   extractToIds(event),
-		IsBroadcast:  event.IsBroadcast(),
-		MsgWireBytes: msgWireBytes,
-	}
-
-	requestId := fmt.Sprintf("TSS_UPDATE:%s", event.GetFrom().GetId())
-
-	p2pMsg := p2p.Message[types.TssMessage]{
-		MessageType: p2p.MessageTypeTssMsg,
-		RequestId:   requestId,
-		DataType:    dataType,
-		Data:        msg,
-	}
-
-	return &p2pMsg, t.p2p.PublishMessage(ctx, p2pMsg)
-}
-
-func (t *TSSService) IsGenesis() bool {
-	if t.localPartySaveData != nil && t.localPartySaveData.ECDSAPub != nil {
-		return false
-	}
-
-	localPartySaveData, err := LoadTSSData()
-	if err != nil {
-		log.Errorf("Failed to load TSS data: %v", err)
-	}
-
-	if localPartySaveData == nil {
-		return true
-	}
-
-	t.localPartySaveData = localPartySaveData
-
-	return false
-}
-
-func (t *TSSService) Genesis(ctx context.Context) {
-	// todo
-	log.Info("TSS keygen process started")
 }
 
 func (t *TSSService) Partners() []common.Address {
