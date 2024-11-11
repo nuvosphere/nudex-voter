@@ -2,15 +2,11 @@ package tss
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"math/big"
 	"slices"
 	"sync"
-	"time"
 
-	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
@@ -18,11 +14,7 @@ import (
 	"github.com/samber/lo"
 )
 
-var (
-	_ Session[any] = &GenerateKeySession[any, any, any]{}
-	_ Session[any] = &ReShareGroupSession[any, any, any]{}
-	_ Session[any] = &SignSession[any, any, any]{}
-)
+var _ Session[any] = &sessionTransport[any, any, any]{}
 
 type SessionMessage[T any] struct {
 	Type                    string           `json:"type"`
@@ -71,10 +63,6 @@ const (
 	SignSessionType         = "SignSession"
 )
 
-type GenerateKeySession[T, M, D any] struct {
-	*sessionTransport[T, M, D]
-}
-
 func NewParam(
 	proposer common.Address, // current submitter
 	threshold int,
@@ -89,86 +77,6 @@ func NewParam(
 	})
 
 	return params, partyIdMap
-}
-
-func (m *Scheduler[T]) NewGenerateKeySession(
-	proposer, localSubmitter common.Address, // current submitter
-	taskID T, // msg id
-	msg *big.Int,
-	threshold int,
-	allPartners []common.Address,
-) helper.SessionID {
-	preParams, err := keygen.GeneratePreParams(1 * time.Minute)
-	if err != nil {
-		panic(err)
-	}
-
-	params, partyIdMap := NewParam(localSubmitter, threshold, allPartners)
-	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](m.p2p, m, helper.SenateGroupID, helper.SenateSessionID, proposer, taskID, msg, threshold, GenKeySessionType, allPartners)
-	party, endCh, errCh := helper.RunKeyGen(context.Background(), preParams, params, s) // todo
-	s.party = party
-	s.partyIdMap = partyIdMap
-	s.inToOut = m.senateInToOut
-	s.errCH = errCh
-	s.endCh = endCh
-	s.Run()
-	session := &GenerateKeySession[T, *big.Int, *keygen.LocalPartySaveData]{sessionTransport: s}
-	m.AddSession(session)
-
-	return session.SessionID()
-}
-
-func (m *GenerateKeySession[T, M, D]) Release() {
-	m.sessionTransport.Release()
-}
-
-type SignSession[T, M, D any] struct {
-	*sessionTransport[T, M, D]
-}
-
-func RandSessionID() helper.SessionID {
-	b := make([]byte, 32)
-	_, _ = rand.Read(b)
-
-	return common.BytesToHash(b[:])
-}
-
-func (m *Scheduler[T]) NewSignSession(
-	groupID helper.GroupID,
-	proposer, localSubmitter common.Address,
-	taskID T,
-	msg *big.Int,
-	threshold int,
-	allPartners []common.Address,
-	key keygen.LocalPartySaveData,
-	keyDerivationDelta *big.Int,
-) helper.SessionID {
-	params, partyIdMap := NewParam(localSubmitter, threshold, allPartners)
-	innerSession := newSession[T, *big.Int, *tsscommon.SignatureData](
-		m.p2p,
-		m,
-		groupID,
-		RandSessionID(),
-		proposer,
-		taskID,
-		msg,
-		threshold,
-		SignSessionType,
-		allPartners,
-	)
-	party, endCh, errCh := helper.Run(context.Background(), msg, params, key, innerSession, keyDerivationDelta) // todo
-	innerSession.party = party
-	innerSession.partyIdMap = partyIdMap
-	innerSession.endCh = endCh
-	innerSession.errCH = errCh
-	innerSession.inToOut = m.sigInToOut
-	session := &SignSession[T, *big.Int, *tsscommon.SignatureData]{
-		sessionTransport: innerSession,
-	}
-	session.Run()
-	m.AddSession(session)
-
-	return session.SessionID()
 }
 
 func newSession[T comparable, M, D any](

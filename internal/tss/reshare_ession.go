@@ -12,16 +12,17 @@ import (
 	"github.com/samber/lo"
 )
 
+var _ Session[any] = &ReShareGroupSession[any, any, any]{}
+
 type ReShareGroupSession[T, M, D any] struct {
 	oldSession *sessionTransport[T, M, D]
 	newSession *sessionTransport[T, M, D]
 }
 
 func (m *Scheduler[T]) NewReShareGroupSession(
-	localAddress common.Address,
+	localAddress, proposer common.Address,
 	taskID T, // msg id
 	msg *big.Int,
-	proposer common.Address, // current submitter
 	threshold int,
 	allPartners []common.Address,
 	newThreshold int,

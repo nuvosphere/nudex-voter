@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -26,22 +25,18 @@ type TSSService struct {
 	isPrepared   atomic.Bool
 	privateKey   *ecdsa.PrivateKey // submit
 	localAddress common.Address    // submit = partyID
-	proposer     common.Address
+	proposer     common.Address    // current submitter
 
-	p2p       p2p.P2PService
-	state     *state.State
-	scheduler *Scheduler[int64]
-	cache     *cache.Cache
+	p2p                p2p.P2PService
+	state              *state.State
+	scheduler          *Scheduler[int64]
+	cache              *cache.Cache
+	currentDoingTaskID int64
 
 	layer2Listener *layer2.Layer2Listener
 	dbm            *db.DatabaseManager
-	taskReceive    chan any // task
-
-	threshold          *atomic.Int64
-	partners           []common.Address
-	localParty         *keygen.LocalParty
-	localPartySaveData *keygen.LocalPartySaveData
-
+	threshold      *atomic.Int64
+	partners       []common.Address
 	// eventbus channel
 	tssMsgCh       <-chan any
 	partyAddOrRmCh <-chan any
@@ -49,12 +44,12 @@ type TSSService struct {
 	rw sync.RWMutex
 }
 
-func (t *TSSService) IsCompleted(taskID int32) bool {
+func (t *TSSService) IsCompleted(taskID int64) bool {
 	_, ok := t.cache.Get(fmt.Sprintf("%d", taskID))
 	return ok
 }
 
-func (t *TSSService) AddCompletedTask(taskID int32) {
+func (t *TSSService) AddCompletedTask(taskID int64) {
 	t.cache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
 }
 
@@ -64,10 +59,6 @@ func (t *TSSService) LocalSubmitter() common.Address {
 
 func (t *TSSService) IsPrepared() bool {
 	return t.isPrepared.Load()
-}
-
-func (t *TSSService) PostTask(task any) {
-	t.taskReceive <- task
 }
 
 func (t *TSSService) sigEndLoop(ctx context.Context) {
@@ -82,24 +73,17 @@ func (t *TSSService) sigEndLoop(ctx context.Context) {
 			if result.Err != nil {
 				log.Errorf("%s, result error:%v", info, result.Err)
 			} else {
+				t.AddCompletedTask(result.TaskID)
 				t.handleSigFinish(ctx, result.Data)
 			}
 		}
 	}
 }
 
-func (t *TSSService) taskLoop(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("TSS task loop stopped")
-		case task := <-t.taskReceive:
-			log.Info("TSS task receive", task)
-		}
-	}
-}
-
 func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State, layer2Listener *layer2.Layer2Listener) *TSSService {
+	localAddress := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
+	proposer := common.Address{} // todo
+
 	return &TSSService{
 		isPrepared:     atomic.Bool{},
 		privateKey:     config.AppConfig.L2PrivateKey,
@@ -108,9 +92,8 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		dbm:            dbm,
 		state:          state,
 		layer2Listener: layer2Listener,
-		scheduler:      NewScheduler[int64](p, int64(config.AppConfig.TssThreshold)),
+		scheduler:      NewScheduler[int64](p, int64(config.AppConfig.TssThreshold), localAddress, proposer),
 		cache:          cache.New(time.Minute*10, time.Minute),
-		taskReceive:    make(chan any, 256),
 	}
 }
 
@@ -153,9 +136,9 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 					var newPartners []common.Address
 					_ = t.scheduler.NewReShareGroupSession(
 						t.localAddress,
+						t.proposer,
 						helper.SenateTaskID,
 						helper.SenateSessionID.Big(),
-						t.proposer,
 						int(t.threshold.Load()),
 						t.partners,
 						newThreshold,
@@ -169,26 +152,6 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 
 func (t *TSSService) Stop() {}
 
-func (t *TSSService) waitForThreshold(ctx context.Context) {
-	count := t.p2p.OnlinePeerCount()
-L:
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("waitForThreshold context done")
-		default:
-			if int64(count) >= t.threshold.Load() {
-				break L
-			}
-			time.Sleep(time.Second)
-		}
-	}
-}
-
 func (t *TSSService) oldPartners() []common.Address {
 	return t.partners
-}
-
-func (t *TSSService) newPartners() []common.Address {
-	return nil // todo
 }

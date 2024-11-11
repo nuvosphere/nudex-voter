@@ -31,7 +31,6 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int64]) error {
 	case GenKeySessionType:
 		_ = t.scheduler.NewGenerateKeySession(
 			t.proposer,
-			t.localAddress,
 			msg.TaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
 			int(t.threshold.Load()),
@@ -44,9 +43,9 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int64]) error {
 		var newPartners []common.Address
 		_ = t.scheduler.NewReShareGroupSession(
 			t.localAddress,
+			t.proposer,
 			helper.SenateTaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
-			t.proposer,
 			int(t.threshold.Load()),
 			t.partners,
 			newThreshold,
