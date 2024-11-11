@@ -96,6 +96,24 @@ func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 			t.ErrorCode,
 			t.WalletAddress,
 		)
+	case types.TaskTypeDeposit:
+		t := result.(contracts.TaskPayloadContractDepositResult)
+		bytes = contracts.PackEvent(
+			contracts.TaskPayloadContractMetaData,
+			"DepositResult",
+			t.Version,
+			t.Success,
+			t.ErrorCode,
+		)
+	case types.TaskTypeWithdrawal:
+		t := result.(contracts.TaskPayloadContractWithdrawalResult)
+		bytes = contracts.PackEvent(
+			contracts.TaskPayloadContractMetaData,
+			"WithdrawalResult",
+			t.Version,
+			t.Success,
+			t.ErrorCode,
+		)
 	default:
 		err = fmt.Errorf("unsupported task type: %v", taskType)
 		bytes = nil
