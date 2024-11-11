@@ -20,10 +20,9 @@ type ReShareGroupSession[T, M, D any] struct {
 }
 
 func (m *Scheduler[T]) NewReShareGroupSession(
-	localAddress common.Address,
+	localAddress, proposer common.Address,
 	taskID T, // msg id
 	msg *big.Int,
-	proposer common.Address, // current submitter
 	threshold int,
 	allPartners []common.Address,
 	newThreshold int,

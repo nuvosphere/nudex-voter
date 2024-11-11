@@ -151,9 +151,9 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 					var newPartners []common.Address
 					_ = t.scheduler.NewReShareGroupSession(
 						t.localAddress,
+						t.proposer,
 						helper.SenateTaskID,
 						helper.SenateSessionID.Big(),
-						t.proposer,
 						int(t.threshold.Load()),
 						t.partners,
 						newThreshold,
@@ -169,8 +169,4 @@ func (t *TSSService) Stop() {}
 
 func (t *TSSService) oldPartners() []common.Address {
 	return t.partners
-}
-
-func (t *TSSService) newPartners() []common.Address {
-	return nil // todo
 }

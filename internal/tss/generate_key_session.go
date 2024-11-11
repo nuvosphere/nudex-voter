@@ -16,7 +16,7 @@ type GenerateKeySession[T, M, D any] struct {
 }
 
 func (m *Scheduler[T]) NewGenerateKeySession(
-	proposer, localSubmitter common.Address, // current submitter
+	proposer common.Address, // current submitter
 	taskID T, // msg id
 	msg *big.Int,
 	threshold int,
@@ -27,7 +27,7 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 		panic(err)
 	}
 
-	params, partyIdMap := NewParam(localSubmitter, threshold, allPartners)
+	params, partyIdMap := NewParam(m.localSubmitter, threshold, allPartners)
 	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](m.p2p, m, helper.SenateGroupID, helper.SenateSessionID, proposer, taskID, msg, threshold, GenKeySessionType, allPartners)
 	party, endCh, errCh := helper.RunKeyGen(m.ctx, preParams, params, s) // todo
 	s.party = party

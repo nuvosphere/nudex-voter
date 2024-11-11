@@ -29,6 +29,7 @@ type Scheduler[T comparable] struct {
 	ctx                context.Context
 	cancel             context.CancelFunc
 	localPartySaveData *keygen.LocalPartySaveData
+	masterPubKey       *ecdsa.PublicKey
 	threshold          *atomic.Int64
 	localSubmitter     common.Address
 	proposer           common.Address // current proposer(submitter)
@@ -78,6 +79,11 @@ func (m *Scheduler[T]) Start() {
 
 		m.localPartySaveData = sessionResult.Data
 	}
+
+	m.masterPubKey = m.localPartySaveData.ECDSAPub.ToECDSAPubKey()
+
+	// loop approveProposal
+	m.loopApproveProposal()
 }
 
 func (m *Scheduler[T]) Stop() {
@@ -230,7 +236,7 @@ func (m *Scheduler[T]) SubmitProposal(proposal any) {
 	m.pendingProposal <- proposal
 }
 
-func (m *Scheduler[T]) approveProposal() {
+func (m *Scheduler[T]) loopApproveProposal() {
 	go func() {
 		select {
 		case <-m.ctx.Done():
@@ -250,5 +256,5 @@ func (m *Scheduler[T]) approveProposal() {
 }
 
 func (m *Scheduler[T]) MasterPublicKey() *ecdsa.PublicKey {
-	return m.localPartySaveData.ECDSAPub.ToECDSAPubKey()
+	return m.masterPubKey
 }
