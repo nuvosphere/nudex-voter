@@ -1,6 +1,7 @@
 package contracts
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 )
@@ -124,4 +126,42 @@ func EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte
 
 func EncodeSubmitTaskReceipt(taskId *big.Int, result []byte, signature []byte) []byte {
 	return EncodeFun(VotingManagerContractABI, "submitTaskReceipt", taskId, result, signature)
+}
+
+var (
+	errNoEventSignature       = errors.New("no event signature")
+	errEventSignatureMismatch = errors.New("event signature mismatch")
+)
+
+// UnpackEventLog unpacks a retrieved log into the provided output structure.
+func UnpackEventLog(meta *bind.MetaData, out interface{}, event string, log types.Log) error {
+	a, err := meta.GetAbi()
+	if err != nil {
+		return err
+	}
+
+	// Anonymous events are not supported.
+	if len(log.Topics) == 0 {
+		return errNoEventSignature
+	}
+
+	if log.Topics[0] != a.Events[event].ID {
+		return errEventSignatureMismatch
+	}
+
+	if len(log.Data) > 0 {
+		if err := a.UnpackIntoInterface(out, event, log.Data); err != nil {
+			return err
+		}
+	}
+
+	var indexed abi.Arguments
+
+	for _, arg := range a.Events[event].Inputs {
+		if arg.Indexed {
+			indexed = append(indexed, arg)
+		}
+	}
+
+	return abi.ParseTopics(out, indexed, log.Topics[1:])
 }

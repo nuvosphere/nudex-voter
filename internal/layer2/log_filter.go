@@ -35,11 +35,11 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case SubmitterChosenTopic:
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterChosen{}
-		err = UnpackLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
+		err = contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
 		submitter = submitterChosenEvent.NewSubmitter.Hex()
 	case SubmitterRotationRequestedTopic:
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
-		err = UnpackLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
+		err = contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
 	}
 
@@ -73,7 +73,7 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 	case TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 
-		err := UnpackLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
+		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
 		if err != nil {
 			return err
 		}
@@ -106,7 +106,7 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 	case TaskCompletedTopic:
 		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
 
-		err := UnpackLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
+		err := contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
 func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 	addressRegistered := contracts.AccountManagerContractAddressRegistered{}
 
-	err := UnpackLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
+	err := contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 	case ParticipantAddedTopic:
 		eventParticipantAdded := contracts.ParticipantManagerContractParticipantAdded{}
 
-		err := UnpackLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
+		err := contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
 		if err != nil {
 			return err
 		}
@@ -193,7 +193,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 	case ParticipantRemovedTopic:
 		participantRemovedEvent := contracts.ParticipantManagerContractParticipantRemoved{}
 
-		err := UnpackLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
+		err := contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
 		if err != nil {
 			return err
 		}
@@ -226,7 +226,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	case DepositRecordedTopic:
 		depositRecorded := contracts.DepositManagerContractDepositRecorded{}
 
-		err := UnpackLog(contracts.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
+		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
 		if err != nil {
 			return err
 		}
@@ -245,7 +245,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	case WithdrawalRecordedTopic:
 		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
 
-		err := UnpackLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
+		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
 		if err != nil {
 			return err
 		}
