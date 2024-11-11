@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
-	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -19,6 +17,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
@@ -43,18 +42,11 @@ type TSSService struct {
 	localParty         *keygen.LocalParty
 	localPartySaveData *keygen.LocalPartySaveData
 
-	// resharing channel
-	reSharingOutCh chan tsslib.Message
-	reSharingEndCh chan *keygen.LocalPartySaveData
-	reLocalParty   *resharing.LocalParty
-
 	// eventbus channel
 	tssMsgCh       <-chan any
 	partyAddOrRmCh <-chan any
 
 	rw sync.RWMutex
-
-	once sync.Once
 }
 
 func (t *TSSService) IsCompleted(taskID int32) bool {
@@ -118,8 +110,6 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		layer2Listener: layer2Listener,
 		scheduler:      NewScheduler[int32](p, int64(config.AppConfig.TssThreshold)),
 		cache:          cache.New(time.Minute*10, time.Minute),
-		reSharingOutCh: make(chan tsslib.Message),
-		reSharingEndCh: make(chan *keygen.LocalPartySaveData),
 		taskReceive:    make(chan any, 256),
 	}
 }
@@ -131,28 +121,6 @@ func (t *TSSService) Start(ctx context.Context) {
 	<-ctx.Done()
 	log.Info("TSSService is stopping...")
 	t.Stop()
-}
-
-func (t *TSSService) tssLoop(ctx context.Context) {
-	// t re-share
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				log.Info("t loop stopping...")
-				return
-			case msg := <-t.reSharingOutCh:
-				log.Debugf("Received t re-sharing event")
-
-				err := t.handleTssReSharingOut(ctx, msg)
-				if err != nil {
-					log.Warnf("handle t keyOut error, msg: %v, %v", msg, err)
-				}
-			case <-t.reSharingEndCh:
-				log.Debugf("Received t re-sharing event")
-			}
-		}
-	}()
 }
 
 func (t *TSSService) eventLoop(ctx context.Context) {
@@ -178,21 +146,28 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 			case <-t.partyAddOrRmCh: // from layer2 log scan
 				log.Debugf("Received t add or remove participant event")
 
-				err := t.startReSharing(t.state.TssState.Participants, config.AppConfig.TssThreshold) // todo
-				if err != nil {
-					log.Warnf("handle t add or remove participant event error, %v", err)
+				if t.localAddress == t.proposer {
+					// todo
+					newThreshold := 0
+
+					var newPartners []common.Address
+					_ = t.scheduler.NewReShareGroupSession(
+						t.localAddress,
+						int32(helper.SenateTaskID),
+						helper.SenateSessionID.Big(),
+						t.proposer,
+						int(t.threshold.Load()),
+						t.partners,
+						newThreshold,
+						newPartners,
+					)
 				}
 			}
 		}
 	}()
 }
 
-func (t *TSSService) Stop() {
-	t.once.Do(func() {
-		close(t.reSharingEndCh)
-		close(t.reSharingOutCh)
-	})
-}
+func (t *TSSService) Stop() {}
 
 func (t *TSSService) waitForThreshold(ctx context.Context) {
 	count := t.p2p.OnlinePeerCount()
