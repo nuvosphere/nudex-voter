@@ -89,8 +89,7 @@ func (t *TSSService) sigEndLoop(ctx context.Context) {
 			if result.Err != nil {
 				log.Errorf("%s, result error:%v", info, result.Err)
 			} else {
-				// todo
-				log.Info(info)
+				t.handleSigFinish(ctx, result.Data)
 			}
 		}
 	}
