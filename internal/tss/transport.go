@@ -92,7 +92,7 @@ func NewParam(
 }
 
 func (m *Scheduler[T]) NewGenerateKeySession(
-	proposer common.Address, // current submitter
+	proposer, localSubmitter common.Address, // current submitter
 	taskID T, // msg id
 	msg *big.Int,
 	threshold int,
@@ -103,7 +103,7 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 		panic(err)
 	}
 
-	params, partyIdMap := NewParam(proposer, threshold, allPartners)
+	params, partyIdMap := NewParam(localSubmitter, threshold, allPartners)
 	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](m.p2p, m, helper.SenateGroupID, helper.SenateSessionID, proposer, taskID, msg, threshold, GenKeySessionType, allPartners)
 	party, endCh, errCh := helper.RunKeyGen(context.Background(), preParams, params, s) // todo
 	s.party = party
@@ -135,7 +135,7 @@ func RandSessionID() helper.SessionID {
 
 func (m *Scheduler[T]) NewSignSession(
 	groupID helper.GroupID,
-	proposer common.Address,
+	proposer, localSubmitter common.Address,
 	taskID T,
 	msg *big.Int,
 	threshold int,
@@ -143,7 +143,7 @@ func (m *Scheduler[T]) NewSignSession(
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
-	params, partyIdMap := NewParam(proposer, threshold, allPartners)
+	params, partyIdMap := NewParam(localSubmitter, threshold, allPartners)
 	innerSession := newSession[T, *big.Int, *tsscommon.SignatureData](
 		m.p2p,
 		m,

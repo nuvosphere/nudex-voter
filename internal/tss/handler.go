@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
+func (t *TSSService) handleSessionMsg(msg SessionMessage[int64]) error {
 	session := t.scheduler.GetSession(msg.SessionID)
 	if session != nil {
 		from := session.PartyID(msg.FromPartyId)
@@ -31,6 +31,7 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 	case GenKeySessionType:
 		_ = t.scheduler.NewGenerateKeySession(
 			t.proposer,
+			t.localAddress,
 			msg.TaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
 			int(t.threshold.Load()),
@@ -43,7 +44,7 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 		var newPartners []common.Address
 		_ = t.scheduler.NewReShareGroupSession(
 			t.localAddress,
-			int32(helper.SenateTaskID),
+			helper.SenateTaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
 			t.proposer,
 			int(t.threshold.Load()),
@@ -59,6 +60,7 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int32]) error {
 		_ = t.scheduler.NewSignSession(
 			msg.GroupID,
 			msg.Proposer,
+			t.localAddress,
 			msg.TaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
 			int(t.threshold.Load()),

@@ -30,7 +30,7 @@ type TSSService struct {
 
 	p2p       p2p.P2PService
 	state     *state.State
-	scheduler *Scheduler[int32]
+	scheduler *Scheduler[int64]
 	cache     *cache.Cache
 
 	layer2Listener *layer2.Layer2Listener
@@ -108,7 +108,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		dbm:            dbm,
 		state:          state,
 		layer2Listener: layer2Listener,
-		scheduler:      NewScheduler[int32](p, int64(config.AppConfig.TssThreshold)),
+		scheduler:      NewScheduler[int64](p, int64(config.AppConfig.TssThreshold)),
 		cache:          cache.New(time.Minute*10, time.Minute),
 		taskReceive:    make(chan any, 256),
 	}
@@ -139,7 +139,7 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 
 				e := event.(p2p.Message[json.RawMessage])
 
-				err := t.handleSessionMsg(convertMsgData(e).(SessionMessage[int32]))
+				err := t.handleSessionMsg(convertMsgData(e).(SessionMessage[int64]))
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
@@ -153,7 +153,7 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 					var newPartners []common.Address
 					_ = t.scheduler.NewReShareGroupSession(
 						t.localAddress,
-						int32(helper.SenateTaskID),
+						helper.SenateTaskID,
 						helper.SenateSessionID.Big(),
 						t.proposer,
 						int(t.threshold.Load()),
