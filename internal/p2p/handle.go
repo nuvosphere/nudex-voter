@@ -18,7 +18,7 @@ import (
 
 var ErrHandshake = errors.New("hand shake error")
 
-func (lp *LibP2PService) handleReadHandshake(s network.Stream, self host.Host) (*HandshakeMessage, error) {
+func (lp *Service) handleReadHandshake(s network.Stream, self host.Host) (*HandshakeMessage, error) {
 	buf := make([]byte, 1024)
 
 	n, err := s.Read(buf)
@@ -48,7 +48,7 @@ func (lp *LibP2PService) handleReadHandshake(s network.Stream, self host.Host) (
 	return &handShake, nil
 }
 
-func (lp *LibP2PService) handleWriteHandshake(s network.Stream, self host.Host) error {
+func (lp *Service) handleWriteHandshake(s network.Stream, self host.Host) error {
 	handshakeMsg := lp.handshakeMessage()
 
 	_, err := s.Write(handshakeMsg)
@@ -60,7 +60,7 @@ func (lp *LibP2PService) handleWriteHandshake(s network.Stream, self host.Host) 
 }
 
 // handleHandshake: echo.
-func (lp *LibP2PService) handleHandshake(s network.Stream, self host.Host) error {
+func (lp *Service) handleHandshake(s network.Stream, self host.Host) error {
 	handShake, err := lp.handleReadHandshake(s, self)
 	if err != nil {
 		return err
@@ -79,11 +79,11 @@ func (lp *LibP2PService) handleHandshake(s network.Stream, self host.Host) error
 	return nil
 }
 
-func (lp *LibP2PService) Bind(msgType MessageType, event state.Event) {
+func (lp *Service) Bind(msgType MessageType, event state.Event) {
 	lp.typeBindEvent.Store(msgType, event)
 }
 
-func (lp *LibP2PService) PublishMessage(ctx context.Context, msg any) error {
+func (lp *Service) PublishMessage(ctx context.Context, msg any) error {
 	msgBytes, err := json.Marshal(msg)
 	if err != nil {
 		return errors.New("failed to marshal message")
@@ -103,7 +103,7 @@ func (lp *LibP2PService) PublishMessage(ctx context.Context, msg any) error {
 	return lp.messageTopic.Publish(ctx, msgBytes)
 }
 
-func (lp *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription) {
+func (lp *Service) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscription) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -144,7 +144,7 @@ func (lp *LibP2PService) handlePubSubMessages(ctx context.Context, sub *pubsub.S
 	}
 }
 
-func (lp *LibP2PService) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription) {
+func (lp *Service) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subscription) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -174,7 +174,7 @@ func (lp *LibP2PService) handleHeartbeatMessages(ctx context.Context, sub *pubsu
 	}
 }
 
-func (lp *LibP2PService) startHeartbeat(ctx context.Context, topic *pubsub.Topic) {
+func (lp *Service) startHeartbeat(ctx context.Context, topic *pubsub.Topic) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 

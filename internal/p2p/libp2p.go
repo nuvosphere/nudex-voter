@@ -43,7 +43,7 @@ type P2PService interface {
 	IsOnline(partyID string) bool
 }
 
-type LibP2PService struct {
+type Service struct {
 	messageTopic  *pubsub.Topic
 	state         *state.State
 	typeBindEvent sync.Map
@@ -56,8 +56,8 @@ type LibP2PService struct {
 	selfPeerID        peer.ID
 }
 
-func NewLibP2PService(state *state.State, localSubmitter common.Address) *LibP2PService {
-	return &LibP2PService{
+func NewLibP2PService(state *state.State, localSubmitter common.Address) *Service {
+	return &Service{
 		state:             state,
 		typeBindEvent:     sync.Map{},
 		partyIDBindPeerID: make(map[string]peer.ID),
@@ -68,7 +68,7 @@ func NewLibP2PService(state *state.State, localSubmitter common.Address) *LibP2P
 }
 
 // addPeerInfo: submitter == partyID.
-func (lp *LibP2PService) addPeerInfo(peerID peer.ID, partyID string) {
+func (lp *Service) addPeerInfo(peerID peer.ID, partyID string) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
 	lp.partyIDBindPeerID[partyID] = peerID
@@ -76,13 +76,13 @@ func (lp *LibP2PService) addPeerInfo(peerID peer.ID, partyID string) {
 	lp.onlineList[peerID] = true
 }
 
-func (lp *LibP2PService) OnlinePeerCount() int {
+func (lp *Service) OnlinePeerCount() int {
 	defer lp.rw.RUnlock()
 	lp.rw.RLock()
 	return len(lp.onlineList)
 }
 
-func (lp *LibP2PService) IsOnline(partyID string) bool {
+func (lp *Service) IsOnline(partyID string) bool {
 	defer lp.rw.RUnlock()
 	lp.rw.RLock()
 
@@ -95,19 +95,19 @@ func (lp *LibP2PService) IsOnline(partyID string) bool {
 	return false
 }
 
-func (lp *LibP2PService) online(remotePeerID peer.ID) {
+func (lp *Service) online(remotePeerID peer.ID) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
 	lp.onlineList[remotePeerID] = true
 }
 
-func (lp *LibP2PService) offline(remotePeerID peer.ID) {
+func (lp *Service) offline(remotePeerID peer.ID) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
 	delete(lp.onlineList, remotePeerID)
 }
 
-func (lp *LibP2PService) removePeer(remotePeerID peer.ID) {
+func (lp *Service) removePeer(remotePeerID peer.ID) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
 
@@ -119,7 +119,7 @@ func (lp *LibP2PService) removePeer(remotePeerID peer.ID) {
 	}
 }
 
-func (lp *LibP2PService) Start(ctx context.Context) {
+func (lp *Service) Start(ctx context.Context) {
 	self, ps, err := createNodeWithPubSub(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create libp2p self: %v", err)
@@ -189,7 +189,7 @@ func (lp *LibP2PService) Start(ctx context.Context) {
 	log.Info("LibP2PService has stopped.")
 }
 
-func (lp *LibP2PService) connectToBootNodes(ctx context.Context, self host.Host) {
+func (lp *Service) connectToBootNodes(ctx context.Context, self host.Host) {
 	bootNodeAddList := lo.FilterMap(
 		strings.Split(config.AppConfig.Libp2pBootNodes, ","),
 		func(addr string, index int) (*peer.AddrInfo, bool) {
@@ -236,7 +236,7 @@ func (lp *LibP2PService) connectToBootNodes(ctx context.Context, self host.Host)
 	wg.Wait()
 }
 
-func (lp *LibP2PService) connectToBootNode(ctx context.Context, self host.Host, peerInfo *peer.AddrInfo) error {
+func (lp *Service) connectToBootNode(ctx context.Context, self host.Host, peerInfo *peer.AddrInfo) error {
 	if err := self.Connect(ctx, *peerInfo); err != nil {
 		return fmt.Errorf("failed to connect to bootnode %s: %v", peerInfo, err)
 	}
@@ -255,7 +255,7 @@ func (lp *LibP2PService) connectToBootNode(ctx context.Context, self host.Host, 
 	return nil
 }
 
-func (lp *LibP2PService) monitorConnection(ctx context.Context, self host.Host, addr *peer.AddrInfo) {
+func (lp *Service) monitorConnection(ctx context.Context, self host.Host, addr *peer.AddrInfo) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -292,7 +292,7 @@ func parseAddr(addrStr string) (*peer.AddrInfo, error) {
 	return peer.AddrInfoFromP2pAddr(addr)
 }
 
-func (lp *LibP2PService) handshakeMessage() []byte {
+func (lp *Service) handshakeMessage() []byte {
 	msg := HandshakeMessage{
 		PeerID:    lp.selfPeerID.String(),
 		Submitter: lp.localSubmitter.Hex(),
@@ -305,7 +305,7 @@ func (lp *LibP2PService) handshakeMessage() []byte {
 	return handshakeMsg
 }
 
-func (lp *LibP2PService) sendHandshake(s network.Stream, self host.Host) error {
+func (lp *Service) sendHandshake(s network.Stream, self host.Host) error {
 	err := lp.handleWriteHandshake(s, self)
 	if err != nil {
 		return err

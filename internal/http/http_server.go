@@ -14,12 +14,12 @@ import (
 )
 
 type HTTPServer struct {
-	libp2p *p2p.LibP2PService
+	libp2p *p2p.Service
 	db     *db.DatabaseManager
 	state  *state.State
 }
 
-func NewHTTPServer(libp2p *p2p.LibP2PService, state *state.State, db *db.DatabaseManager) *HTTPServer {
+func NewHTTPServer(libp2p *p2p.Service, state *state.State, db *db.DatabaseManager) *HTTPServer {
 	return &HTTPServer{
 		libp2p: libp2p,
 		db:     db,

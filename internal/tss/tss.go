@@ -21,7 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type TSSService struct {
+type Service struct {
 	isPrepared   atomic.Bool
 	privateKey   *ecdsa.PrivateKey // submit
 	localAddress common.Address    // submit = partyID
@@ -44,24 +44,24 @@ type TSSService struct {
 	rw sync.RWMutex
 }
 
-func (t *TSSService) IsCompleted(taskID int64) bool {
+func (t *Service) IsCompleted(taskID int64) bool {
 	_, ok := t.cache.Get(fmt.Sprintf("%d", taskID))
 	return ok
 }
 
-func (t *TSSService) AddCompletedTask(taskID int64) {
+func (t *Service) AddCompletedTask(taskID int64) {
 	t.cache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
 }
 
-func (t *TSSService) LocalSubmitter() common.Address {
+func (t *Service) LocalSubmitter() common.Address {
 	return t.localAddress
 }
 
-func (t *TSSService) IsPrepared() bool {
+func (t *Service) IsPrepared() bool {
 	return t.isPrepared.Load()
 }
 
-func (t *TSSService) sigEndLoop(ctx context.Context) {
+func (t *Service) sigEndLoop(ctx context.Context) {
 	out := t.scheduler.sigInToOut
 
 	for {
@@ -80,11 +80,11 @@ func (t *TSSService) sigEndLoop(ctx context.Context) {
 	}
 }
 
-func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State, layer2Listener *layer2.Layer2Listener) *TSSService {
+func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State, layer2Listener *layer2.Layer2Listener) *Service {
 	localAddress := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
 	proposer := common.Address{} // todo
 
-	return &TSSService{
+	return &Service{
 		isPrepared:     atomic.Bool{},
 		privateKey:     config.AppConfig.L2PrivateKey,
 		localAddress:   crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
@@ -97,7 +97,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 	}
 }
 
-func (t *TSSService) Start(ctx context.Context) {
+func (t *Service) Start(ctx context.Context) {
 	t.eventLoop(ctx)
 	t.scheduler.Start()
 
@@ -106,7 +106,7 @@ func (t *TSSService) Start(ctx context.Context) {
 	t.Stop()
 }
 
-func (t *TSSService) eventLoop(ctx context.Context) {
+func (t *Service) eventLoop(ctx context.Context) {
 	t.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
 	t.tssMsgCh = t.state.EventBus.Subscribe(state.EventTssMsg{})
 	t.partyAddOrRmCh = t.state.EventBus.Subscribe(state.EventParticipantAddedOrRemoved{})
@@ -150,8 +150,8 @@ func (t *TSSService) eventLoop(ctx context.Context) {
 	}()
 }
 
-func (t *TSSService) Stop() {}
+func (t *Service) Stop() {}
 
-func (t *TSSService) oldPartners() []common.Address {
+func (t *Service) oldPartners() []common.Address {
 	return t.partners
 }

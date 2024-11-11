@@ -6,8 +6,8 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 )
 
-type TaskService struct {
+type Service struct {
 	state *state.State
 	dbm   *db.DatabaseManager
-	Tss   *tss.TSSService
+	Tss   *tss.Service
 }

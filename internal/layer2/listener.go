@@ -25,7 +25,7 @@ import (
 )
 
 type Layer2Listener struct {
-	p2p             *p2p.LibP2PService
+	p2p             *p2p.Service
 	db              *db.DatabaseManager
 	state           *state.State
 	ethClient       *ethclient.Client
@@ -40,7 +40,7 @@ func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContrac
 	return l.contractVotingManager
 }
 
-func NewLayer2Listener(p *p2p.LibP2PService, state *state.State, db *db.DatabaseManager) *Layer2Listener {
+func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManager) *Layer2Listener {
 	ethClient, err := DialEthClient()
 	if err != nil {
 		log.Fatalf("Error creating Layer2 EVM RPC client: %v", err)

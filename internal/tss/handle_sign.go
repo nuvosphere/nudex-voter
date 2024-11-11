@@ -27,7 +27,7 @@ var taskPrefix = map[reflect.Type]string{
 	reflect.TypeOf(&contracts.TaskPayloadContractWithdrawalRequest{}):     "WITHDRAWAL",
 }
 
-func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (interface{}, *big.Int, []byte, error) {
+func (t *Service) HandleSignCheck(ctx context.Context, dbTask db.Task) (interface{}, *big.Int, []byte, error) {
 	task, err := ParseTask(dbTask.Context)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("parse task %x error: %v", dbTask.Context, err)
@@ -80,7 +80,7 @@ func (t *TSSService) HandleSignCheck(ctx context.Context, dbTask db.Task) (inter
 	return task, nonce, nil, err
 }
 
-func (t *TSSService) HandleSignPrepare(ctx context.Context, dbTask db.Task) error {
+func (t *Service) HandleSignPrepare(ctx context.Context, dbTask db.Task) error {
 	task, nonce, taskResult, err := t.HandleSignCheck(ctx, dbTask)
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func (t *TSSService) HandleSignPrepare(ctx context.Context, dbTask db.Task) erro
 	return nil
 }
 
-func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) error {
+func (t *Service) handleSignStart(ctx context.Context, e types.SignMessage) error {
 	if t.localAddress.Hex() == e.BaseSignMsg.VoterAddress {
 		log.Debugf("ignoring sign create wallet start, proposer self")
 		return nil
@@ -149,7 +149,7 @@ func (t *TSSService) handleSignStart(ctx context.Context, e types.SignMessage) e
 	return nil
 }
 
-func (t *TSSService) handleSigFinish(ctx context.Context, signatureData *common.SignatureData) {
+func (t *Service) handleSigFinish(ctx context.Context, signatureData *common.SignatureData) {
 	t.rw.Lock()
 
 	log.Infof("sig finish, taskId:%d, R:%x, S:%x, V:%x", t.state.TssState.CurrentTask.TaskId, signatureData.R, signatureData.S, signatureData.SignatureRecovery)

@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func (t *TSSService) handleSessionMsg(msg SessionMessage[int64]) error {
+func (t *Service) handleSessionMsg(msg SessionMessage[int64]) error {
 	// todo
 	if t.IsCompleted(msg.TaskID) {
 		return fmt.Errorf("task already completed")
@@ -83,7 +83,7 @@ func (t *TSSService) handleSessionMsg(msg SessionMessage[int64]) error {
 	return nil
 }
 
-func (t *TSSService) Partners() []common.Address {
+func (t *Service) Partners() []common.Address {
 	// todo online contact get address list
 	return lo.Map(
 		config.AppConfig.TssPublicKeys,

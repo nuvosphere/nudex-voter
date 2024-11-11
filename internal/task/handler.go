@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (ts *TaskService) checkTasks(ctx context.Context) {
+func (ts *Service) checkTasks(ctx context.Context) {
 	if !ts.Tss.IsPrepared() {
 		log.Debug("Party not init, skip task check")
 		return

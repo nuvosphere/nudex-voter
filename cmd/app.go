@@ -23,11 +23,11 @@ import (
 type Application struct {
 	DatabaseManager *db.DatabaseManager
 	State           *state.State
-	LibP2PService   *p2p.LibP2PService
+	LibP2PService   *p2p.Service
 	Layer2Listener  *layer2.Layer2Listener
 	BTCListener     *btc.BTCListener
-	TssService      *tss.TSSService
-	TaskService     *task.TaskService
+	TssService      *tss.Service
+	TaskService     *task.Service
 	HTTPServer      *http.HTTPServer
 }
 

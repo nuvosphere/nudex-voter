@@ -12,14 +12,14 @@ import (
 )
 
 type BTCListener struct {
-	libp2p *p2p.LibP2PService
+	libp2p *p2p.Service
 	dbm    *db.DatabaseManager
 	state  *state.State
 
 	notifier *BTCNotifier
 }
 
-func NewBTCListener(libp2p *p2p.LibP2PService, state *state.State, dbm *db.DatabaseManager) *BTCListener {
+func NewBTCListener(libp2p *p2p.Service, state *state.State, dbm *db.DatabaseManager) *BTCListener {
 	db := dbm.GetBtcCacheDB()
 	cache := NewBTCCache(db)
 	poller := NewBTCPoller(state, db)
