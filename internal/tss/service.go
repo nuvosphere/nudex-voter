@@ -133,14 +133,19 @@ func (t *Service) eventLoop(ctx context.Context) {
 
 				switch v := data.(type) {
 				case *db.Task:
-					if t.localAddress == t.proposer {
+					if t.isCanProposal() {
 						// todo
 						log.Info(v)
+
+						err := t.HandleSignTaskSession(*v)
+						if err != nil {
+							log.Warnf("handle session msg error, %v", err)
+						}
 					}
 				case *task.SubmitterChosenPair:
-
+					// todo
 				case *task.ParticipantPair:
-					if t.localAddress == t.proposer {
+					if t.isCanProposal() {
 						// todo
 						newThreshold := 0
 
@@ -160,6 +165,10 @@ func (t *Service) eventLoop(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func (t *Service) isCanProposal() bool {
+	return t.localAddress == t.proposer
 }
 
 func (t *Service) Stop() {}

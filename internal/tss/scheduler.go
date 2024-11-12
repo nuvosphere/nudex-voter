@@ -18,23 +18,23 @@ import (
 )
 
 type Scheduler[T comparable] struct {
-	p2p                p2p.P2PService
-	grw                sync.RWMutex
-	groups             map[helper.GroupID]*helper.Group
-	srw                sync.RWMutex
-	sessions           map[helper.SessionID]Session[T]
-	sessionTasks       map[T]Session[T]
-	sigInToOut         chan *SessionResult[T, *tsscommon.SignatureData]
-	senateInToOut      chan *SessionResult[T, *keygen.LocalPartySaveData]
-	ctx                context.Context
-	cancel             context.CancelFunc
-	localPartySaveData *keygen.LocalPartySaveData
-	masterPubKey       *ecdsa.PublicKey
-	threshold          *atomic.Int64
-	localSubmitter     common.Address
-	proposer           common.Address // current proposer(submitter)
-	pendingProposal    chan any
-	notify             chan struct{}
+	p2p                      p2p.P2PService
+	grw                      sync.RWMutex
+	groups                   map[helper.GroupID]*helper.Group
+	srw                      sync.RWMutex
+	sessions                 map[helper.SessionID]Session[T]
+	sessionTasks             map[T]Session[T]
+	sigInToOut               chan *SessionResult[T, *tsscommon.SignatureData]
+	senateInToOut            chan *SessionResult[T, *keygen.LocalPartySaveData]
+	ctx                      context.Context
+	cancel                   context.CancelFunc
+	masterLocalPartySaveData *keygen.LocalPartySaveData
+	masterPubKey             *ecdsa.PublicKey
+	threshold                *atomic.Int64
+	localSubmitter           common.Address
+	proposer                 common.Address // current proposer(submitter)
+	pendingProposal          chan any
+	notify                   chan struct{}
 }
 
 func NewScheduler[T comparable](p p2p.P2PService, threshold int64, localSubmitter, proposer common.Address) *Scheduler[T] {
@@ -77,10 +77,10 @@ func (m *Scheduler[T]) Start() {
 		err := saveTSSData(sessionResult.Data)
 		utils.Assert(err)
 
-		m.localPartySaveData = sessionResult.Data
+		m.masterLocalPartySaveData = sessionResult.Data
 	}
 
-	m.masterPubKey = m.localPartySaveData.ECDSAPub.ToECDSAPubKey()
+	m.masterPubKey = m.masterLocalPartySaveData.ECDSAPub.ToECDSAPubKey()
 
 	// loop approveProposal
 	m.loopApproveProposal()
@@ -96,7 +96,7 @@ func (m *Scheduler[T]) Genesis() {
 }
 
 func (m *Scheduler[T]) IsGenesis() bool {
-	if m.localPartySaveData != nil && m.localPartySaveData.ECDSAPub != nil {
+	if m.masterLocalPartySaveData != nil && m.masterLocalPartySaveData.ECDSAPub != nil {
 		return false
 	}
 
@@ -109,7 +109,7 @@ func (m *Scheduler[T]) IsGenesis() bool {
 		return true
 	}
 
-	m.localPartySaveData = localPartySaveData
+	m.masterLocalPartySaveData = localPartySaveData
 
 	return false
 }

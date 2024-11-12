@@ -4,35 +4,31 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"reflect"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	tasks "github.com/nuvosphere/nudex-voter/internal/task"
+	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
 )
 
-var taskPrefix = map[reflect.Type]string{
-	reflect.TypeOf(&contracts.TaskPayloadContractWalletCreationRequest{}): "CREATE_WALLET",
-	reflect.TypeOf(&contracts.TaskPayloadContractDepositRequest{}):        "DEPOSIT",
-	reflect.TypeOf(&contracts.TaskPayloadContractWithdrawalRequest{}):     "WITHDRAWAL",
-}
-
-func (t *Service) HandleSignCheck(ctx context.Context, dbTask db.Task) (interface{}, *big.Int, []byte, error) {
+func (t *Service) HandleSignTaskSession(dbTask db.Task) error {
 	task, err := tasks.ParseTask(dbTask.Context)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("parse task %x error: %v", dbTask.Context, err)
+		return fmt.Errorf("parse task %x error: %v", dbTask.Context, err)
 	}
 
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {
-		return task, nonce, nil, fmt.Errorf("get nonce error for task %x, error: %v", dbTask.Context, err)
+		return fmt.Errorf("get nonce error for task %x, error: %v", dbTask.Context, err)
 	}
 
 	switch taskRequest := task.(type) {
-	case *contracts.TaskPayloadContractWalletCreationRequest:
+	case contracts.TaskPayloadContractWalletCreationRequest:
 		coinType := getCoinTypeByChain(taskRequest.Chain)
 
 		var result contracts.TaskPayloadContractWalletCreationResult
@@ -62,16 +58,43 @@ func (t *Service) HandleSignCheck(ctx context.Context, dbTask db.Task) (interfac
 
 		resultBytes, err := tasks.EncodeTaskResult(tasks.TaskTypeCreateWallet, result)
 		if err != nil {
-			return taskRequest, nonce, resultBytes, err
+			return err
 		}
 
-		///todo
-		serialized, err := serializeMessageToBeSigned(nonce.Uint64(), resultBytes)
+		// todo
+		_, err = serializeMessageToBeSigned(nonce.Uint64(), resultBytes)
+		if err != nil {
+			return err
+		}
 
-		return taskRequest, nonce, serialized, err
+		path := wallet.Bip44DerivationPath(uint32(coinType), taskRequest.Account, taskRequest.Index)
+		param, err := path.ToParams()
+		utils.Assert(err)
+		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(*t.scheduler.MasterPublicKey(), param.Indexes())
+		utils.Assert(err)
+		localPartySaveData, err := LoadTSSData()
+		utils.Assert(err)
+		err = wallet.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, localPartySaveData, &extendedChildPk.PublicKey, tss.S256())
+		utils.Assert(err)
+
+		t.scheduler.NewSignSession(
+			helper.SenateGroupID,
+			t.proposer,
+			t.localAddress,
+			helper.SenateTaskID,
+			new(big.Int),
+			int(t.threshold.Load()),
+			t.partners,
+			*localPartySaveData,
+			keyDerivationDelta,
+		)
+
+		return err
+	case contracts.TaskPayloadContractDepositRequest:
+	case contracts.TaskPayloadContractWithdrawalRequest:
 	}
 
-	return task, nonce, nil, err
+	return nil
 }
 
 func (t *Service) handleSigFinish(ctx context.Context, signatureData *common.SignatureData) {

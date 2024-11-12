@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/hmac"
 	"crypto/sha512"
 	"fmt"
@@ -9,7 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
 )
@@ -188,4 +191,25 @@ func DerivingPubKeyFromPath(masterPub ecdsa.PublicKey, path []uint32) (*big.Int,
 	ec := btcec.S256()
 
 	return ckd.DeriveChildKeyFromHierarchy(path, extendedParentPk, ec.Params().N, ec)
+}
+
+func UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta *big.Int, key *keygen.LocalPartySaveData, extendedChildPk *ecdsa.PublicKey, ec elliptic.Curve) error {
+	var err error
+
+	gDelta := crypto.ScalarBaseMult(ec, keyDerivationDelta)
+
+	key.ECDSAPub, err = crypto.NewECPoint(ec, extendedChildPk.X, extendedChildPk.Y)
+	if err != nil {
+		return fmt.Errorf("error creating new extended child public key: %w", err)
+	}
+	// Suppose X_j has shamir shares X_j0,     X_j1,     ..., X_jn
+	// So X_j + D has shamir shares  X_j0 + D, X_j1 + D, ..., X_jn + D
+	for j := range key.BigXj {
+		key.BigXj[j], err = key.BigXj[j].Add(gDelta)
+		if err != nil {
+			return fmt.Errorf("error in delta operation: %w", err)
+		}
+	}
+
+	return nil
 }
