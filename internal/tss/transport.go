@@ -16,6 +16,11 @@ import (
 
 var _ Session[any] = &sessionTransport[any, any, any]{}
 
+type (
+	TaskId = int64
+	Msg    = big.Int
+)
+
 type SessionMessage[T, M any] struct {
 	Type                    string           `json:"type"`
 	GroupID                 helper.GroupID   `json:"groupID,omitempty"`

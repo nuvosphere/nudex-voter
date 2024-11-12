@@ -3,7 +3,6 @@ package tss
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -24,7 +23,7 @@ func convertMsgData(msg p2p.Message[json.RawMessage]) any {
 	case DataTypeTssKeygenMsg, DataTypeTssReSharingMsg, DataTypeTssSignMsg:
 		return unmarshal[types.TssMessage](msg.Data)
 	case GenKeySessionType, SignSessionType, ReShareGroupSessionType:
-		return unmarshal[SessionMessage[int64, big.Int]](msg.Data)
+		return unmarshal[SessionMessage[TaskId, Msg]](msg.Data)
 	case DataTypeSignCreateWallet:
 		return unmarshal[types.SignMessage](msg.Data)
 	}

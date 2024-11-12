@@ -5,8 +5,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-type TaskID = common.Hash
-
 type SessionID = common.Hash
 
 type GroupID = common.Address
