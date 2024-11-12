@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -122,7 +123,7 @@ func (t *Service) eventLoop(ctx context.Context) {
 
 				e := event.(p2p.Message[json.RawMessage])
 
-				err := t.handleSessionMsg(convertMsgData(e).(SessionMessage[int64]))
+				err := t.handleSessionMsg(convertMsgData(e).(SessionMessage[int64, big.Int]))
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}

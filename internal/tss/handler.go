@@ -13,7 +13,8 @@ import (
 	"github.com/samber/lo"
 )
 
-func (t *Service) handleSessionMsg(msg SessionMessage[int64]) error {
+// handleSessionMsg handler received msg from other node.
+func (t *Service) handleSessionMsg(msg SessionMessage[int64, big.Int]) error {
 	// todo
 	if t.IsCompleted(msg.TaskID) {
 		return fmt.Errorf("task already completed")

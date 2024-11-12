@@ -16,12 +16,13 @@ import (
 
 var _ Session[any] = &sessionTransport[any, any, any]{}
 
-type SessionMessage[T any] struct {
+type SessionMessage[T, M any] struct {
 	Type                    string           `json:"type"`
 	GroupID                 helper.GroupID   `json:"groupID,omitempty"`
 	SessionID               helper.SessionID `json:"sessionID,omitempty"`
 	Proposer                common.Address   `json:"proposer,omitempty"` // current submitter
 	TaskID                  T                `json:"taskID,omitempty"`   // msg id
+	Msg                     M                `json:"msg,omitempty"`
 	FromPartyId             string           `json:"from_party_id"`
 	ToPartyIds              []string         `json:"to_party_ids"`
 	IsBroadcast             bool             `json:"is_broadcast"`
@@ -30,7 +31,7 @@ type SessionMessage[T any] struct {
 	MsgWireBytes            []byte           `json:"msg_wire_bytes"`
 }
 
-func (s *SessionMessage[T]) State(from *tss.PartyID) *helper.ReceivedPartyState {
+func (s *SessionMessage[T, M]) State(from *tss.PartyID) *helper.ReceivedPartyState {
 	return &helper.ReceivedPartyState{
 		WireBytes:               s.MsgWireBytes,
 		From:                    from,
@@ -175,12 +176,13 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 		MessageType: p2p.MessageTypeTssMsg,
 		RequestId:   fmt.Sprintf("%v", s.TaskID()), // todo taskID
 		DataType:    s.Type(),                      // todo
-		Data: SessionMessage[T]{
+		Data: SessionMessage[T, M]{
 			Type:                    s.Type(),
 			GroupID:                 s.GroupID(),
 			SessionID:               s.SessionID(),
 			Proposer:                s.Proposer(),
 			TaskID:                  s.TaskID(),
+			Msg:                     s.session.Msg,
 			FromPartyId:             routing.From.Id,
 			ToPartyIds:              lo.Map(routing.To, func(to *tss.PartyID, _ int) string { return to.Id }),
 			IsBroadcast:             routing.IsBroadcast,
