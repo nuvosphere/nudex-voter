@@ -68,7 +68,7 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	return nil
 }
 
-func (l *Layer2Listener) processOperationsLog(vLog types.Log) error {
+func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}

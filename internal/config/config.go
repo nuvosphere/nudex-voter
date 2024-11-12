@@ -43,7 +43,7 @@ type Config struct {
 	VotingContract      string
 	AccountContract     string
 	WithdrawContract    string
-	OperationsContract  string
+	TaskManagerContract string
 	ParticipantContract string
 	DepositContract     string
 	L2PrivateKey        *ecdsa.PrivateKey
@@ -133,7 +133,7 @@ func InitConfig() {
 		VotingContract:      viper.GetString("VOTING_CONTRACT"),
 		AccountContract:     viper.GetString("ACCOUNT_CONTRACT"),
 		ParticipantContract: viper.GetString("PARTICIPANT_CONTRACT"),
-		OperationsContract:  viper.GetString("OPERATIONS_CONTRACT"),
+		TaskManagerContract: viper.GetString("TASK_CONTRACT"),
 		DepositContract:     viper.GetString("DEPOSIT_CONTRACT"),
 		L2PrivateKey:        l2PrivateKey,
 		L2ChainId:           big.NewInt(l2ChainId),

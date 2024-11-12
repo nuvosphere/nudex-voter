@@ -58,7 +58,7 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		contracts.VotingAddress:      self.processVotingLog,
 		contracts.AccountAddress:     self.processAccountLog,
 		contracts.ParticipantAddress: self.processParticipantLog,
-		contracts.OperationsAddress:  self.processOperationsLog,
+		contracts.TaskAddress:        self.processTaskLog,
 		contracts.DepositAddress:     self.processDepositLog,
 	}
 	self.contractAddress = lo.MapToSlice(

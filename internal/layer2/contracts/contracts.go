@@ -17,7 +17,7 @@ import (
 var (
 	VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
 	AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
-	OperationsAddress  = common.HexToAddress(config.AppConfig.OperationsContract)
+	TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
 	ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
 	DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
 )
