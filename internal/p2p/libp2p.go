@@ -62,6 +62,7 @@ func NewLibP2PService(state *state.State, localSubmitter common.Address) *Servic
 		typeBindEvent:     sync.Map{},
 		partyIDBindPeerID: make(map[string]peer.ID),
 		peerIDBindPartyID: make(map[peer.ID]string),
+		onlineList:        make(map[peer.ID]bool),
 		rw:                sync.RWMutex{},
 		localSubmitter:    localSubmitter,
 	}
