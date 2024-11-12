@@ -93,16 +93,17 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		if result.Error == nil {
 			return nil
 		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			task := db.Task{
+			task := &db.Task{
 				TaskId:      uint32(taskSubmitted.TaskId.Uint64()),
 				Context:     taskSubmitted.Context,
 				Submitter:   taskSubmitted.Submitter.Hex(),
 				IsCompleted: false,
 				BlockHeight: vLog.BlockNumber,
 				CreatedAt:   time.Now(),
+				Status:      0,
 			}
 
-			err = l.db.GetRelayerDB().Create(&task).Error
+			err = l.db.GetRelayerDB().Create(task).Error
 			if err != nil {
 				return err
 			}

@@ -16,6 +16,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/task"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
@@ -38,9 +39,8 @@ type Service struct {
 	threshold      *atomic.Int64
 	partners       []common.Address
 	// eventbus channel
-	tssMsgCh       <-chan any
-	partyAddOrRmCh <-chan any
-	pendingTask    <-chan any
+	tssMsgCh    <-chan any
+	pendingTask <-chan any
 
 	rw sync.RWMutex
 }
@@ -110,7 +110,6 @@ func (t *Service) Start(ctx context.Context) {
 func (t *Service) eventLoop(ctx context.Context) {
 	t.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
 	t.tssMsgCh = t.state.EventBus.Subscribe(state.EventTssMsg{})
-	t.partyAddOrRmCh = t.state.EventBus.Subscribe(state.EventParticipantAddedOrRemoved{})
 	t.pendingTask = t.state.EventBus.Subscribe(state.EventTask{})
 
 	go func() {
@@ -128,28 +127,35 @@ func (t *Service) eventLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
-			case task := <-t.pendingTask:
-				log.Info("task", task)
+			case data := <-t.pendingTask: // from layer2 log scan
+				log.Info("task", data)
 				// todo tss task
 
-			case <-t.partyAddOrRmCh: // from layer2 log scan
-				log.Debugf("Received t add or remove participant event")
+				switch v := data.(type) {
+				case *db.Task:
+					if t.localAddress == t.proposer {
+						// todo
+						log.Info(v)
+					}
+				case *task.SubmitterChosenPair:
 
-				if t.localAddress == t.proposer {
-					// todo
-					newThreshold := 0
+				case *task.ParticipantPair:
+					if t.localAddress == t.proposer {
+						// todo
+						newThreshold := 0
 
-					var newPartners []common.Address
-					_ = t.scheduler.NewReShareGroupSession(
-						t.localAddress,
-						t.proposer,
-						helper.SenateTaskID,
-						helper.SenateSessionID.Big(),
-						int(t.threshold.Load()),
-						t.partners,
-						newThreshold,
-						newPartners,
-					)
+						var newPartners []common.Address
+						_ = t.scheduler.NewReShareGroupSession(
+							t.localAddress,
+							t.proposer,
+							helper.SenateTaskID,
+							helper.SenateSessionID.Big(),
+							int(t.threshold.Load()),
+							t.partners,
+							newThreshold,
+							newPartners,
+						)
+					}
 				}
 			}
 		}
