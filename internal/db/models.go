@@ -71,6 +71,7 @@ type Task struct {
 	IsCompleted bool      `gorm:"not null"        json:"is_completed"`
 	CreatedAt   time.Time `gorm:"not null"        json:"created_at"`
 	CompletedAt time.Time `json:"completed_at"`
+	Status      int       `gorm:"not null"        json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
 }
 
 type BtcBlock struct {

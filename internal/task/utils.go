@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 )
 
@@ -16,17 +15,17 @@ func ParseTask(context []byte) (interface{}, error) {
 
 	eventHash := common.BytesToHash(context[:32])
 	switch eventHash {
-	case layer2.WalletCreationRequestTopic:
+	case contracts.WalletCreationRequestTopic:
 		request := contracts.TaskPayloadContractWalletCreationRequest{}
 		err = parsedABI.UnpackIntoInterface(&request, "WalletCreationRequest", context[32:])
 
 		return request, err
-	case layer2.DepositRequestTopic:
+	case contracts.DepositRequestTopic:
 		request := contracts.TaskPayloadContractDepositRequest{}
 		err = parsedABI.UnpackIntoInterface(&request, "DepositRequest", context[32:])
 
 		return request, err
-	case layer2.WithdrawalRequestTopic:
+	case contracts.WithdrawalRequestTopic:
 		request := contracts.TaskPayloadContractWithdrawalRequest{}
 		err = parsedABI.UnpackIntoInterface(&request, "WithdrawalRequest", context[32:])
 

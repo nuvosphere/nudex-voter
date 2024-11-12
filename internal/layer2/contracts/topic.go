@@ -1,4 +1,4 @@
-package layer2
+package contracts
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -24,7 +24,7 @@ var (
 	WithdrawalResultTopic      = crypto.Keccak256Hash([]byte(`WithdrawalResult(uint8,bool,uint8)`))                                                                       // TopicPayloadContract
 )
 
-var topics = [][]common.Hash{
+var Topics = [][]common.Hash{
 	{SubmitterRotationRequestedTopic},
 	{SubmitterChosenTopic},
 	{TaskSubmittedTopic},

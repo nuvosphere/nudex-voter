@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
-	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/task"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -33,11 +33,11 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	)
 
 	switch vLog.Topics[0] {
-	case SubmitterChosenTopic:
+	case contracts.SubmitterChosenTopic:
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterChosen{}
 		err = contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
 		submitter = submitterChosenEvent.NewSubmitter.Hex()
-	case SubmitterRotationRequestedTopic:
+	case contracts.SubmitterRotationRequestedTopic:
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
 		err = contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
@@ -55,6 +55,15 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 			submitterChosen.BlockNumber = vLog.BlockNumber
 			submitterChosen.Submitter = submitter
 
+			t := &task.SubmitterChosenPair{
+				Old: db.SubmitterChosen{
+					BlockNumber: l.state.TssState.BlockNumber,
+					Submitter:   l.state.TssState.CurrentSubmitter.Hex(),
+				},
+				New: submitterChosen,
+			}
+			l.postTask(t)
+
 			err = l.db.GetRelayerDB().Create(&submitterChosen).Error
 			if err != nil {
 				l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
@@ -70,7 +79,7 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 
 func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
-	case TaskSubmittedTopic:
+	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 
 		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
@@ -98,12 +107,14 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 				return err
 			}
 
+			l.postTask(task)
+
 			return nil
 		} else {
 			return result.Error
 		}
 
-	case TaskCompletedTopic:
+	case contracts.TaskCompletedTopic:
 		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
 
 		err := contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
@@ -137,7 +148,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 }
 
 func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
-	if vLog.Topics[0] == AddressRegisteredTopic {
+	if vLog.Topics[0] == contracts.AddressRegisteredTopic {
 		addressRegistered := contracts.AccountManagerContractAddressRegistered{}
 
 		err := contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
@@ -166,7 +177,7 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 
 func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
-	case ParticipantAddedTopic:
+	case contracts.ParticipantAddedTopic:
 		eventParticipantAdded := contracts.ParticipantManagerContractParticipantAdded{}
 
 		err := contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
@@ -189,10 +200,12 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		log.Infof("Participant added: %s", newParticipant)
 
 		if !slices.Contains(l.state.TssState.Participants, newParticipant) {
+			pair := &task.ParticipantPair{Old: l.state.TssState.Participants}
 			l.state.TssState.Participants = append(l.state.TssState.Participants, newParticipant)
-			l.state.EventBus.Publish(state.EventParticipantAddedOrRemoved{}, l.state.TssState.Participants)
+			pair.New = l.state.TssState.Participants
+			l.postTask(pair)
 		}
-	case ParticipantRemovedTopic:
+	case contracts.ParticipantRemovedTopic:
 		participantRemovedEvent := contracts.ParticipantManagerContractParticipantRemoved{}
 
 		err := contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
@@ -215,8 +228,10 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 
 		index := slices.Index(l.state.TssState.Participants, common.HexToAddress(removedParticipant))
 		if index >= 0 {
+			pair := &task.ParticipantPair{Old: l.state.TssState.Participants}
 			l.state.TssState.Participants = slices.Delete(l.state.TssState.Participants, index, index)
-			l.state.EventBus.Publish(state.EventParticipantAddedOrRemoved{}, l.state.TssState.Participants)
+			pair.New = l.state.TssState.Participants
+			l.postTask(pair)
 		}
 	}
 
@@ -225,7 +240,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 
 func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
-	case DepositRecordedTopic:
+	case contracts.DepositRecordedTopic:
 		depositRecorded := contracts.DepositManagerContractDepositRecorded{}
 
 		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
@@ -244,7 +259,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 		return l.db.GetRelayerDB().FirstOrCreate(&depositRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
 			depositRecorded.TargetAddress.Hex(), depositRecorded.Amount.Uint64(), depositRecorded.ChainId.Uint64(), depositRecorded.TxInfo,
 		).Error
-	case WithdrawalRecordedTopic:
+	case contracts.WithdrawalRecordedTopic:
 		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
 
 		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)

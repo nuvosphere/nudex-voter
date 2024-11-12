@@ -1,4 +1,4 @@
-package layer2
+package contracts
 
 import (
 	"testing"

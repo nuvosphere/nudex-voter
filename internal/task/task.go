@@ -1,5 +1,10 @@
 package task
 
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/db"
+)
+
 const (
 	TaskTypeUnknown = iota
 	TaskTypeCreateWallet
@@ -84,3 +89,13 @@ const (
 	TaskErrorCodeSuccess = iota
 	TaskErrorCodeChainNotSupported
 )
+
+type ParticipantPair struct {
+	Old []common.Address
+	New []common.Address
+}
+
+type SubmitterChosenPair struct {
+	Old db.SubmitterChosen
+	New db.SubmitterChosen
+}
