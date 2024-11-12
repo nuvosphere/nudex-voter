@@ -4,9 +4,37 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 )
+
+func ParseTask(context []byte) (interface{}, error) {
+	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
+	if err != nil {
+		return nil, err
+	}
+
+	eventHash := common.BytesToHash(context[:32])
+	switch eventHash {
+	case layer2.WalletCreationRequestTopic:
+		request := contracts.TaskPayloadContractWalletCreationRequest{}
+		err = parsedABI.UnpackIntoInterface(&request, "WalletCreationRequest", context[32:])
+
+		return request, err
+	case layer2.DepositRequestTopic:
+		request := contracts.TaskPayloadContractDepositRequest{}
+		err = parsedABI.UnpackIntoInterface(&request, "DepositRequest", context[32:])
+
+		return request, err
+	case layer2.WithdrawalRequestTopic:
+		request := contracts.TaskPayloadContractWithdrawalRequest{}
+		err = parsedABI.UnpackIntoInterface(&request, "WithdrawalRequest", context[32:])
+
+		return request, err
+	}
+
+	return nil, fmt.Errorf("unknown task type: %v", eventHash)
+}
 
 func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 	defer func() {
@@ -17,12 +45,12 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 	}()
 
 	switch taskType {
-	case types.TaskTypeCreateWallet:
-		t := task.(types.CreateWalletTask)
+	case TaskTypeCreateWallet:
+		t := task.(CreateWalletTask)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WalletCreationRequest",
-			uint8(types.TaskVersionV1),
+			uint8(TaskVersionV1),
 			taskType,
 			common.HexToAddress(t.User),
 			t.Account,
@@ -30,12 +58,12 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 			t.Index,
 		)
 
-	case types.TaskTypeDeposit:
-		t := task.(types.DepositTask)
+	case TaskTypeDeposit:
+		t := task.(DepositTask)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"DepositRequest",
-			uint8(types.TaskVersionV1),
+			uint8(TaskVersionV1),
 			taskType,
 			t.TargetAddress,
 			t.Amount,
@@ -49,12 +77,12 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 			t.Decimal,
 		)
 
-	case types.TaskTypeWithdrawal:
-		t := task.(types.WithdrawalTask)
+	case TaskTypeWithdrawal:
+		t := task.(WithdrawalTask)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WithdrawalRequest",
-			uint8(types.TaskVersionV1),
+			uint8(TaskVersionV1),
 			taskType,
 			t.TargetAddress,
 			t.Amount,
@@ -77,7 +105,7 @@ func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 	return bytes, err
 }
 
-func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err error) {
+func EncodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("failed to encode task result: %v", r)
@@ -86,7 +114,7 @@ func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 	}()
 
 	switch taskType {
-	case types.TaskTypeCreateWallet:
+	case TaskTypeCreateWallet:
 		t := result.(contracts.TaskPayloadContractWalletCreationResult)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
@@ -96,7 +124,7 @@ func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 			t.ErrorCode,
 			t.WalletAddress,
 		)
-	case types.TaskTypeDeposit:
+	case TaskTypeDeposit:
 		t := result.(contracts.TaskPayloadContractDepositResult)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
@@ -105,7 +133,7 @@ func encodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 			t.Success,
 			t.ErrorCode,
 		)
-	case types.TaskTypeWithdrawal:
+	case TaskTypeWithdrawal:
 		t := result.(contracts.TaskPayloadContractWithdrawalResult)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,

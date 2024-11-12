@@ -18,14 +18,6 @@ type BtcHeadState struct {
 	SigQueue       []*db.BtcBlock // status in 'signing', 'pending'
 }
 
-type TssState struct {
-	BlockNumber      uint64
-	CurrentSubmitter common.Address
-	Participants     []common.Address
-
-	CurrentTask *db.Task
-}
-
 type State struct {
 	EventBus Bus
 
@@ -135,4 +127,14 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 			BlockNumber:      L2BlockNumber,
 		},
 	}
+}
+
+type TssState struct {
+	rw sync.RWMutex
+
+	BlockNumber      uint64         // charge submitter height
+	CurrentSubmitter common.Address // charge submitter
+
+	Participants []common.Address // re-share
+	CurrentTask  *db.Task         // task
 }

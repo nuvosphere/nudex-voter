@@ -14,7 +14,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
-	"github.com/nuvosphere/nudex-voter/internal/task"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/samber/lo/parallel"
 	log "github.com/sirupsen/logrus"
@@ -27,7 +26,6 @@ type Application struct {
 	Layer2Listener  *layer2.Layer2Listener
 	BTCListener     *btc.BTCListener
 	TssService      *tss.Service
-	TaskService     *task.Service
 	HTTPServer      *http.HTTPServer
 }
 
@@ -40,7 +38,6 @@ func NewApplication() *Application {
 	layer2Listener := layer2.NewLayer2Listener(libP2PService, state, dbm)
 	btcListener := btc.NewBTCListener(libP2PService, state, dbm)
 	tssService := tss.NewTssService(libP2PService, dbm, state, layer2Listener)
-	taskService := task.NewTaskService(state, dbm, tssService)
 	httpServer := http.NewHTTPServer(libP2PService, state, dbm)
 
 	return &Application{
@@ -50,7 +47,6 @@ func NewApplication() *Application {
 		Layer2Listener:  layer2Listener,
 		BTCListener:     btcListener,
 		TssService:      tssService,
-		TaskService:     taskService,
 		HTTPServer:      httpServer,
 	}
 }
@@ -71,7 +67,6 @@ func (app *Application) Run() {
 		app.LibP2PService,
 		app.BTCListener,
 		app.TssService,
-		app.TaskService,
 		app.HTTPServer,
 	}
 	moules = append(moules, otherModules...)

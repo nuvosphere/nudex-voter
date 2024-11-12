@@ -25,15 +25,17 @@ import (
 )
 
 type Layer2Listener struct {
-	p2p             *p2p.Service
-	db              *db.DatabaseManager
-	state           *state.State
-	ethClient       *ethclient.Client
-	contractAddress []common.Address
-	addressBind     map[common.Address]func(types.Log) error
-
+	p2p                   *p2p.Service
+	db                    *db.DatabaseManager
+	state                 *state.State
+	ethClient             *ethclient.Client
+	contractAddress       []common.Address
+	addressBind           map[common.Address]func(types.Log) error
 	contractVotingManager *contracts.VotingManagerContract
-	sigFinishChan         chan interface{}
+}
+
+func (l *Layer2Listener) postTask(task any) {
+	l.state.Bus().Publish(state.EventTask{}, task)
 }
 
 func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContract {
@@ -47,11 +49,10 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 	}
 
 	self := &Layer2Listener{
-		p2p:           p,
-		db:            db,
-		state:         state,
-		ethClient:     ethClient,
-		sigFinishChan: make(chan interface{}, 256),
+		p2p:       p,
+		db:        db,
+		state:     state,
+		ethClient: ethClient,
 	}
 
 	self.addressBind = map[common.Address]func(types.Log) error{

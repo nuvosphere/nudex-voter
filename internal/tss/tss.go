@@ -40,6 +40,7 @@ type Service struct {
 	// eventbus channel
 	tssMsgCh       <-chan any
 	partyAddOrRmCh <-chan any
+	pendingTask    <-chan any
 
 	rw sync.RWMutex
 }
@@ -110,6 +111,7 @@ func (t *Service) eventLoop(ctx context.Context) {
 	t.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
 	t.tssMsgCh = t.state.EventBus.Subscribe(state.EventTssMsg{})
 	t.partyAddOrRmCh = t.state.EventBus.Subscribe(state.EventParticipantAddedOrRemoved{})
+	t.pendingTask = t.state.EventBus.Subscribe(state.EventTask{})
 
 	go func() {
 		for {
@@ -126,6 +128,10 @@ func (t *Service) eventLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
+			case task := <-t.pendingTask:
+				log.Info("task", task)
+				// todo tss task
+
 			case <-t.partyAddOrRmCh: // from layer2 log scan
 				log.Debugf("Received t add or remove participant event")
 

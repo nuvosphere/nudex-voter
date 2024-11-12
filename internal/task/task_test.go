@@ -7,22 +7,20 @@ import (
 
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
-	"github.com/nuvosphere/nudex-voter/internal/tss"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEncodeCreateWalletTask(t *testing.T) {
-	task := types.CreateWalletTask{
-		BaseTask: types.BaseTask{
+	task := CreateWalletTask{
+		BaseTask: BaseTask{
 			TaskId: 1,
 		},
 		User:    "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Account: uint32(10001),
-		Chain:   uint8(types.ChainEthereum),
+		Chain:   uint8(ChainEthereum),
 		Index:   uint8(0),
 	}
-	taskBytes, err := encodeTask(types.TaskTypeCreateWallet, task)
+	taskBytes, err := encodeTask(TaskTypeCreateWallet, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -31,22 +29,22 @@ func TestEncodeCreateWalletTask(t *testing.T) {
 }
 
 func TestEncodeDepositTask(t *testing.T) {
-	task := types.DepositTask{
-		BaseTask: types.BaseTask{
+	task := DepositTask{
+		BaseTask: BaseTask{
 			TaskId: 1,
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Amount:          uint64(1000000000000000000),
-		Chain:           uint8(types.ChainEthereum),
+		Chain:           uint8(ChainEthereum),
 		ChainId:         uint32(1),
 		BlockHeight:     uint64(21133979),
 		TxHash:          "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8",
 		ContractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
 		Ticker:          "USDC",
-		AssetType:       uint8(types.AssetTypeErc20),
+		AssetType:       uint8(AssetTypeErc20),
 		Decimal:         uint8(18),
 	}
-	taskBytes, err := encodeTask(types.TaskTypeDeposit, task)
+	taskBytes, err := encodeTask(TaskTypeDeposit, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -55,23 +53,23 @@ func TestEncodeDepositTask(t *testing.T) {
 }
 
 func TestEncodeWithdrawalTask(t *testing.T) {
-	task := types.WithdrawalTask{
-		BaseTask: types.BaseTask{
+	task := WithdrawalTask{
+		BaseTask: BaseTask{
 			TaskId: 1,
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Amount:          uint64(1000000000000000000),
-		Chain:           uint8(types.ChainEthereum),
+		Chain:           uint8(ChainEthereum),
 		ChainId:         uint32(1),
 		BlockHeight:     uint64(21133979),
 		TxHash:          "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8",
 		ContractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
 		Ticker:          "USDC",
-		AssetType:       uint8(types.AssetTypeErc20),
+		AssetType:       uint8(AssetTypeErc20),
 		Decimal:         18,
 		Fee:             uint64(100000000000000),
 	}
-	taskBytes, err := encodeTask(types.TaskTypeWithdrawal, task)
+	taskBytes, err := encodeTask(TaskTypeWithdrawal, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -83,15 +81,15 @@ func TestParseCreateWalletTask(t *testing.T) {
 	context, err := hex.DecodeString("fcfa9d5597fec4480a4a1fdbc38fc3fd82fdc02523a0ab0a2a12efb8dc0baf6f00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000fa0c1810c5853348020e15a9c300c2363b5ebf41000000000000000000000000000000000000000000000000000000000000271100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
 	assert.NoError(t, err)
 
-	task, err := tss.ParseTask(context)
+	task, err := ParseTask(context)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, task)
 	assert.IsType(t, contracts.TaskPayloadContractWalletCreationRequest{}, task)
 
 	request := task.(contracts.TaskPayloadContractWalletCreationRequest)
-	assert.Equal(t, uint8(types.TaskVersionV1), request.Version)
-	assert.Equal(t, uint8(types.TaskTypeCreateWallet), request.TaskType)
+	assert.Equal(t, uint8(TaskVersionV1), request.Version)
+	assert.Equal(t, uint8(TaskTypeCreateWallet), request.TaskType)
 	assert.Equal(t, uint32(10001), request.Account)
 }
 
@@ -99,15 +97,15 @@ func TestParseDepositTask(t *testing.T) {
 	context, err := hex.DecodeString("f26824b39d161a7a9fdacf5c40e9fa65dd2a06d5a5b12719d68e55ae2683491f0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000001800000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000001427a9b00000000000000000000000000000000000000000000000000000000000001e0000000000000000000000000000000000000000000000000000000000000026000000000000000000000000000000000000000000000000000000000000002c000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000002a307846613063313831304335383533333438303230653135613943333030633233363362354542463431000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042307830316366613336663434336263613637373462653831346566363637656164333162653434393363363130316530303933616239613164353134326362356138000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a3078413062383639393163363231386233366331643139443461326539456230634533363036654234380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000045553444300000000000000000000000000000000000000000000000000000000")
 	assert.NoError(t, err)
 
-	task, err := tss.ParseTask(context)
+	task, err := ParseTask(context)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, task)
 	assert.IsType(t, contracts.TaskPayloadContractDepositRequest{}, task)
 
 	request := task.(contracts.TaskPayloadContractDepositRequest)
-	assert.Equal(t, uint8(types.TaskVersionV1), request.Version)
-	assert.Equal(t, uint8(types.TaskTypeDeposit), request.TaskType)
+	assert.Equal(t, uint8(TaskVersionV1), request.Version)
+	assert.Equal(t, uint8(TaskTypeDeposit), request.TaskType)
 	assert.Equal(t, "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8", request.TxHash)
 }
 
@@ -115,26 +113,26 @@ func TestParseWithdrawalTask(t *testing.T) {
 	context, err := hex.DecodeString("4cd151cd1ef25ad1d7498e51a1ba595d51db95d66bfc1611a341aa0662003d840000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000001a00000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000001427a9b0000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028000000000000000000000000000000000000000000000000000000000000002e00000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000005af3107a4000000000000000000000000000000000000000000000000000000000000000002a307846613063313831304335383533333438303230653135613943333030633233363362354542463431000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042307830316366613336663434336263613637373462653831346566363637656164333162653434393363363130316530303933616239613164353134326362356138000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002a3078413062383639393163363231386233366331643139443461326539456230634533363036654234380000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000045553444300000000000000000000000000000000000000000000000000000000")
 	assert.NoError(t, err)
 
-	task, err := tss.ParseTask(context)
+	task, err := ParseTask(context)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, task)
 	assert.IsType(t, contracts.TaskPayloadContractWithdrawalRequest{}, task)
 
 	request := task.(contracts.TaskPayloadContractWithdrawalRequest)
-	assert.Equal(t, uint8(types.TaskVersionV1), request.Version)
-	assert.Equal(t, uint8(types.TaskTypeWithdrawal), request.TaskType)
+	assert.Equal(t, uint8(TaskVersionV1), request.Version)
+	assert.Equal(t, uint8(TaskTypeWithdrawal), request.TaskType)
 	assert.Equal(t, "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8", request.TxHash)
 }
 
 func TestEncodeCreateWalletResult(t *testing.T) {
 	task := contracts.TaskPayloadContractWalletCreationResult{
-		Version:       uint8(types.TaskVersionV1),
+		Version:       uint8(TaskVersionV1),
 		Success:       true,
-		ErrorCode:     uint8(types.TaskErrorCodeSuccess),
+		ErrorCode:     uint8(TaskErrorCodeSuccess),
 		WalletAddress: "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 	}
-	taskBytes, err := encodeTaskResult(types.TaskTypeCreateWallet, task)
+	taskBytes, err := EncodeTaskResult(TaskTypeCreateWallet, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -144,11 +142,11 @@ func TestEncodeCreateWalletResult(t *testing.T) {
 
 func TestEncodeDepositResult(t *testing.T) {
 	task := contracts.TaskPayloadContractDepositResult{
-		Version:   uint8(types.TaskVersionV1),
+		Version:   uint8(TaskVersionV1),
 		Success:   true,
-		ErrorCode: uint8(types.TaskErrorCodeSuccess),
+		ErrorCode: uint8(TaskErrorCodeSuccess),
 	}
-	taskBytes, err := encodeTaskResult(types.TaskTypeDeposit, task)
+	taskBytes, err := EncodeTaskResult(TaskTypeDeposit, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -158,11 +156,11 @@ func TestEncodeDepositResult(t *testing.T) {
 
 func TestEncodeWithdrawResult(t *testing.T) {
 	task := contracts.TaskPayloadContractWithdrawalResult{
-		Version:   uint8(types.TaskVersionV1),
+		Version:   uint8(TaskVersionV1),
 		Success:   true,
-		ErrorCode: uint8(types.TaskErrorCodeSuccess),
+		ErrorCode: uint8(TaskErrorCodeSuccess),
 	}
-	taskBytes, err := encodeTaskResult(types.TaskTypeWithdrawal, task)
+	taskBytes, err := EncodeTaskResult(TaskTypeWithdrawal, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 

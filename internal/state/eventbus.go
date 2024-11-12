@@ -14,6 +14,7 @@ type (
 	EventBlockScanned              struct{}
 	EventWithdrawRequest           struct{}
 	EventParticipantAddedOrRemoved struct{}
+	EventTask                      struct{}
 )
 
 type Event any
