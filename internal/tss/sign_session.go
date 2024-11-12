@@ -25,6 +25,7 @@ func RandSessionID() helper.SessionID {
 
 func (m *Scheduler[T]) NewSignSession(
 	groupID helper.GroupID,
+	sessionID helper.SessionID,
 	proposer, localSubmitter common.Address,
 	taskID T,
 	msg *big.Int,
@@ -38,7 +39,7 @@ func (m *Scheduler[T]) NewSignSession(
 		m.p2p,
 		m,
 		groupID,
-		RandSessionID(),
+		sessionID,
 		proposer,
 		taskID,
 		msg,

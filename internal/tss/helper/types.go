@@ -7,6 +7,8 @@ import (
 
 type SessionID = common.Hash
 
+var ZeroSessionID SessionID
+
 type GroupID = common.Address
 
 var (

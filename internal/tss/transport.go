@@ -97,6 +97,10 @@ func newSession[T comparable, M, D any](
 	ty string,
 	allPartners []common.Address,
 ) *sessionTransport[T, M, D] {
+	if sessionID == helper.ZeroSessionID {
+		sessionID = RandSessionID()
+	}
+
 	recvChan := make(chan *helper.ReceivedPartyState, 1)
 
 	return &sessionTransport[T, M, D]{

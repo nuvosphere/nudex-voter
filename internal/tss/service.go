@@ -137,7 +137,7 @@ func (t *Service) eventLoop(ctx context.Context) {
 						// todo
 						log.Info(v)
 
-						err := t.HandleSignTaskSession(*v)
+						err := t.proposalSignTaskSession(*v)
 						if err != nil {
 							log.Warnf("handle session msg error, %v", err)
 						}
