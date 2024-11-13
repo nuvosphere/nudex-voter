@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -33,10 +34,9 @@ func (s *State) AddUnconfirmBtcBlock(height uint64, hash string) error {
 	}
 
 	btcBlock := &db.BtcBlock{
-		Status:    status,
-		UpdatedAt: time.Now(),
-		Height:    height,
-		Hash:      hash,
+		Status: status,
+		Height: height,
+		Hash:   hash,
 	}
 
 	result := s.dbm.GetBtcLightDB().Save(btcBlock)
@@ -59,12 +59,11 @@ func (s *State) SaveConfirmBtcBlock(height uint64, hash string) error {
 	}
 
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			btcBlock = &db.BtcBlock{
-				Status:    status,
-				UpdatedAt: time.Now(),
-				Height:    height,
-				Hash:      hash,
+				Status: status,
+				Height: height,
+				Hash:   hash,
 			}
 		} else {
 			// DB error
@@ -96,9 +95,8 @@ func (s *State) UpdateProcessedBtcBlock(block uint64, height uint64, hash string
 		// query db failed, update cache
 		// this will happen when L2 scan fast than btc
 		s.btcHeadState.Latest = db.BtcBlock{
-			Height:    height,
-			Hash:      hash,
-			UpdatedAt: time.Now(),
+			Height: height,
+			Hash:   hash,
 		}
 
 		return err

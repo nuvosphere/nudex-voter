@@ -30,7 +30,7 @@ type Service struct {
 
 	p2p                p2p.P2PService
 	state              *state.State
-	scheduler          *Scheduler[int64]
+	scheduler          *Scheduler[TaskId]
 	cache              *cache.Cache
 	currentDoingTaskID int64
 

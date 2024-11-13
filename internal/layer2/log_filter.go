@@ -47,31 +47,22 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 		return err
 	}
 
-	result := l.db.GetRelayerDB().
-		Where("block_number = ? AND submitter = ?", vLog.BlockNumber, submitter).
-		First(&submitterChosen)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			submitterChosen.BlockNumber = vLog.BlockNumber
-			submitterChosen.Submitter = submitter
+	submitterChosen.BlockNumber = vLog.BlockNumber
+	submitterChosen.Submitter = submitter
 
-			t := &task.SubmitterChosenPair{
-				Old: db.SubmitterChosen{
-					BlockNumber: l.state.TssState.BlockNumber,
-					Submitter:   l.state.TssState.CurrentSubmitter.Hex(),
-				},
-				New: submitterChosen,
-			}
-			l.postTask(t)
+	t := &task.SubmitterChosenPair{
+		Old: db.SubmitterChosen{
+			BlockNumber: l.state.TssState.BlockNumber,
+			Submitter:   l.state.TssState.CurrentSubmitter.Hex(),
+		},
+		New: submitterChosen,
+	}
+	l.postTask(t)
 
-			err = l.db.GetRelayerDB().Create(&submitterChosen).Error
-			if err != nil {
-				l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
-				l.state.TssState.BlockNumber = vLog.BlockNumber
-			}
-		} else {
-			return err
-		}
+	err = l.db.GetRelayerDB().Create(&submitterChosen).Error
+	if err != nil {
+		l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
+		l.state.TssState.BlockNumber = vLog.BlockNumber
 	}
 
 	return nil
@@ -87,32 +78,20 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			return err
 		}
 
-		var existingTask db.Task
-		result := l.db.GetRelayerDB().Where("task_id = ?", taskSubmitted.TaskId.Uint64()).First(&existingTask)
+		task := &db.Task{
+			TaskId:      uint32(taskSubmitted.TaskId.Uint64()),
+			Context:     taskSubmitted.Context,
+			Submitter:   taskSubmitted.Submitter.Hex(),
+			BlockHeight: vLog.BlockNumber,
+		}
 
-		if result.Error == nil {
-			return nil
-		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			task := &db.Task{
-				TaskId:      uint32(taskSubmitted.TaskId.Uint64()),
-				Context:     taskSubmitted.Context,
-				Submitter:   taskSubmitted.Submitter.Hex(),
-				IsCompleted: false,
-				BlockHeight: vLog.BlockNumber,
-				CreatedAt:   time.Now(),
-				Status:      0,
-			}
+		result := l.db.GetRelayerDB().Create(task)
+		if result.Error != nil {
+			return err
+		}
 
-			err = l.db.GetRelayerDB().Create(task).Error
-			if err != nil {
-				return err
-			}
-
+		if result.RowsAffected > 0 {
 			l.postTask(task)
-
-			return nil
-		} else {
-			return result.Error
 		}
 
 	case contracts.TaskCompletedTopic:
@@ -127,7 +106,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 		result := l.db.GetRelayerDB().Where("task_id = ?", taskCompleted.TaskId.Uint64()).First(&existingTask)
 		if result.Error == nil {
-			existingTask.IsCompleted = true
+			existingTask.Status = db.Completed
 			existingTask.CompletedAt = time.Unix(taskCompleted.CompletedAt.Int64(), 0)
 			err := l.db.GetRelayerDB().Save(&existingTask).Error
 

@@ -4,10 +4,74 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
+type EVMSyncStatus struct {
+	gorm.Model
+	LastSyncBlock uint64 `gorm:"not null" json:"last_sync_block"`
+}
+
+// SubmitterChosen contains block number and current submitter.
+type SubmitterChosen struct {
+	gorm.Model
+	BlockNumber uint64 `gorm:"index:block_number_submitter,unique;not null" json:"block_number"`
+	Submitter   string `gorm:"index:block_number_submitter,unique;not null" json:"submitter"`
+}
+
+// Participant save all participants.
+type Participant struct {
+	gorm.Model
+	Address string `gorm:"uniqueIndex;not null" json:"address"`
+}
+
+// Account save all accounts.
+type Account struct {
+	gorm.Model
+	User    string `gorm:"not null" json:"user"`
+	Account uint64 `gorm:"not null" json:"account"`
+	ChainId uint8  `gorm:"not null" json:"chain_id"`
+	Index   uint64 `gorm:"not null" json:"index"`
+	Address string `gorm:"not null" json:"address"`
+}
+
+type DepositRecord struct {
+	gorm.Model
+	TargetAddress string `gorm:"not null" json:"target_address"`
+	Amount        uint64 `gorm:"not null" json:"amount"`
+	ChainId       uint64 `gorm:"not null" json:"chain_id"`
+	TxInfo        []byte `gorm:"not null" json:"tx_info"`
+	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
+}
+
+type WithdrawalRecord struct {
+	gorm.Model
+	TargetAddress string `gorm:"not null" json:"target_address"`
+	Amount        uint64 `gorm:"not null" json:"amount"`
+	ChainId       uint64 `gorm:"not null" json:"chain_id"`
+	TxInfo        []byte `gorm:"not null" json:"tx_info"`
+	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
+}
+
+const (
+	New = iota
+	Pending
+	Completed
+	Other
+)
+
+type Task struct {
+	gorm.Model
+	TaskId      uint32    `gorm:"unique;not null"    json:"task_id"`
+	Context     []byte    `gorm:"not null"           json:"Context"`
+	Submitter   string    `gorm:"not null"           json:"submitter"`
+	BlockHeight uint64    `gorm:"not null"           json:"block_height"`
+	CompletedAt time.Time `json:"completed_at"`
+	Status      int       `gorm:"not null;default:0" json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
+}
+
 type BTCTransaction struct {
-	ID          uint      `gorm:"primaryKey"           json:"id"`
+	gorm.Model
 	TxID        string    `gorm:"uniqueIndex;not null" json:"tx_id"`
 	RawTxData   string    `gorm:"type:text;not null"   json:"raw_tx_data"`
 	ReceivedAt  time.Time `gorm:"not null"             json:"received_at"`
@@ -15,82 +79,21 @@ type BTCTransaction struct {
 	ProcessedAt time.Time `json:"processed_at"`
 }
 
-type EVMSyncStatus struct {
-	ID            uint      `gorm:"primaryKey" json:"id"`
-	LastSyncBlock uint64    `gorm:"not null"   json:"last_sync_block"`
-	UpdatedAt     time.Time `gorm:"not null"   json:"updated_at"`
-}
-
-// SubmitterChosen contains block number and current submitter.
-type SubmitterChosen struct {
-	ID          uint64 `gorm:"primaryKey" json:"id"`
-	BlockNumber uint64 `gorm:"not null"   json:"block_number"`
-	Submitter   string `gorm:"not null"   json:"submitter"`
-}
-
-// Participant save all participants.
-type Participant struct {
-	ID      uint64 `gorm:"primaryKey"           json:"id"`
-	Address string `gorm:"uniqueIndex;not null" json:"address"`
-}
-
-// Account save all accounts.
-type Account struct {
-	ID      uint64 `gorm:"primaryKey" json:"id"`
-	User    string `gorm:"not null"   json:"user"`
-	Account uint64 `gorm:"not null"   json:"account"`
-	ChainId uint8  `gorm:"not null"   json:"chain_id"`
-	Index   uint64 `gorm:"not null"   json:"index"`
-	Address string `gorm:"not null"   json:"address"`
-}
-
-type DepositRecord struct {
-	ID            uint64 `gorm:"primaryKey" json:"id"`
-	TargetAddress string `gorm:"not null"   json:"target_address"`
-	Amount        uint64 `gorm:"not null"   json:"amount"`
-	ChainId       uint64 `gorm:"not null"   json:"chain_id"`
-	TxInfo        []byte `gorm:"not null"   json:"tx_info"`
-	ExtraInfo     []byte `gorm:"not null"   json:"extra_info"`
-}
-
-type WithdrawalRecord struct {
-	ID            uint64 `gorm:"primaryKey" json:"id"`
-	TargetAddress string `gorm:"not null"   json:"target_address"`
-	Amount        uint64 `gorm:"not null"   json:"amount"`
-	ChainId       uint64 `gorm:"not null"   json:"chain_id"`
-	TxInfo        []byte `gorm:"not null"   json:"tx_info"`
-	ExtraInfo     []byte `gorm:"not null"   json:"extra_info"`
-}
-
-type Task struct {
-	ID          uint64    `gorm:"primaryKey"      json:"id"`
-	TaskId      uint32    `gorm:"unique;not null" json:"task_id"`
-	Context     []byte    `gorm:"not null"        json:"Context"`
-	Submitter   string    `gorm:"not null"        json:"submitter"`
-	BlockHeight uint64    `gorm:"not null"        json:"block_height"`
-	IsCompleted bool      `gorm:"not null"        json:"is_completed"`
-	CreatedAt   time.Time `gorm:"not null"        json:"created_at"`
-	CompletedAt time.Time `json:"completed_at"`
-	Status      int       `gorm:"not null"        json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
-}
-
 type BtcBlock struct {
-	ID        uint      `gorm:"primaryKey"           json:"id"`
-	Height    uint64    `gorm:"not null;uniqueIndex" json:"height"`
-	Hash      string    `gorm:"not null"             json:"hash"`
-	Status    string    `gorm:"not null"             json:"status"` // "unconfirm", "confirmed", "signing", "pending", "processed"
-	UpdatedAt time.Time `gorm:"not null"             json:"updated_at"`
+	gorm.Model
+	Height uint64 `gorm:"not null;uniqueIndex" json:"height"`
+	Hash   string `gorm:"not null"             json:"hash"`
+	Status string `gorm:"not null"             json:"status"` // "unconfirm", "confirmed", "signing", "pending", "processed"
 }
 
 type BtcSyncStatus struct {
-	ID              uint      `gorm:"primaryKey" json:"id"`
-	UnconfirmHeight int64     `gorm:"not null"   json:"unconfirm_height"`
-	ConfirmedHeight int64     `gorm:"not null"   json:"confirmed_height"`
-	UpdatedAt       time.Time `gorm:"not null"   json:"updated_at"`
+	gorm.Model
+	UnconfirmHeight int64 `gorm:"not null" json:"unconfirm_height"`
+	ConfirmedHeight int64 `gorm:"not null" json:"confirmed_height"`
 }
 
 type BtcBlockData struct {
-	ID           uint   `gorm:"primaryKey"      json:"id"`
+	gorm.Model
 	BlockHeight  uint64 `gorm:"unique;not null" json:"block_height"`
 	BlockHash    string `gorm:"unique;not null" json:"block_hash"`
 	Header       []byte `json:"header"`
@@ -102,7 +105,7 @@ type BtcBlockData struct {
 }
 
 type BtcTXOutput struct {
-	ID       uint   `gorm:"primaryKey"    json:"id"`
+	gorm.Model
 	BlockID  uint   `json:"block_data_id"`
 	TxHash   string `json:"tx_hash"`
 	Value    uint64 `json:"value"`
@@ -110,8 +113,16 @@ type BtcTXOutput struct {
 }
 
 func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &SubmitterChosen{}, &Participant{},
-		&Account{}, &DepositRecord{}, &WithdrawalRecord{}, &Task{}); err != nil {
+	if err := dm.relayerDb.AutoMigrate(
+		&BTCTransaction{},
+		&EVMSyncStatus{},
+		&SubmitterChosen{},
+		&Participant{},
+		&Account{},
+		&DepositRecord{},
+		&WithdrawalRecord{},
+		&Task{},
+	); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}
 
