@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/task"
+	"github.com/nuvosphere/nudex-voter/internal/db/task"
 	log "github.com/sirupsen/logrus"
 )
 

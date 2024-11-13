@@ -3,6 +3,7 @@ package task
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"gorm.io/gorm"
 )
 
 const (
@@ -17,7 +18,8 @@ type Task interface {
 }
 
 type BaseTask struct {
-	TaskId uint32 `json:"task_id"`
+	gorm.Model
+	TaskId uint32 `gorm:"unique;not null" json:"task_id"`
 }
 
 func (t BaseTask) GetTaskID() uint32 {

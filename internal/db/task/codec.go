@@ -7,7 +7,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 )
 
-func ParseTask(context []byte) (interface{}, error) {
+func DecodeTask(context []byte) (interface{}, error) {
 	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func ParseTask(context []byte) (interface{}, error) {
 	return nil, fmt.Errorf("unknown task type: %v", eventHash)
 }
 
-func encodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
+func EncodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("failed to encode task: %v", r)

@@ -12,8 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	tasks "github.com/nuvosphere/nudex-voter/internal/db/task"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
-	tasks "github.com/nuvosphere/nudex-voter/internal/task"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
@@ -102,7 +102,7 @@ func (t *Service) Partners() []common.Address {
 }
 
 func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
-	task, err := tasks.ParseTask(dbTask.Context)
+	task, err := tasks.DecodeTask(dbTask.Context)
 	if err != nil {
 		return fmt.Errorf("parse task %x error: %v", dbTask.Context, err)
 	}
