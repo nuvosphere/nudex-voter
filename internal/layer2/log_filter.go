@@ -1,6 +1,8 @@
 package layer2
 
 import (
+	"context"
+	"errors"
 	"reflect"
 	"slices"
 
@@ -9,7 +11,9 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/task"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func (l *Layer2Listener) processLogs(vLog types.Log) {
@@ -29,19 +33,24 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 		submitter       string
 	)
 
+	eventName := ""
+
 	switch vLog.Topics[0] {
 	case contracts.SubmitterChosenTopic:
+		eventName = "SubmitterChosen"
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterChosen{}
-		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
+		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, eventName, vLog)
 		submitter = submitterChosenEvent.NewSubmitter.Hex()
 	case contracts.SubmitterRotationRequestedTopic:
+		eventName = "SubmitterRotationRequested"
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
-		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
+		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, eventName, vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
 	}
 
 	submitterChosen.BlockNumber = vLog.BlockNumber
 	submitterChosen.Submitter = submitter
+	submitterChosen.LogIndex = l.LogIndex(eventName, vLog)
 
 	t := &task.SubmitterChosenPair{
 		Old: db.SubmitterChosen{
@@ -50,12 +59,12 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 		},
 		New: submitterChosen,
 	}
-	l.postTask(t)
 
 	result := l.db.GetRelayerDB().Create(&submitterChosen)
 	if result.RowsAffected > 0 {
 		l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
 		l.state.TssState.BlockNumber = vLog.BlockNumber
+		l.postTask(t)
 	}
 
 	return result.Error
@@ -71,6 +80,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			Context:     taskSubmitted.Context,
 			Submitter:   taskSubmitted.Submitter.Hex(),
 			BlockHeight: vLog.BlockNumber,
+			LogIndex:    l.LogIndex("TaskSubmitted", vLog),
 		}
 
 		result := l.db.GetRelayerDB().Create(task)
@@ -86,17 +96,17 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
 
-		result := l.db.
-			GetRelayerDB().
-			Model(&db.Task{}).
-			Where("task_id = ?", taskCompleted.TaskId.Uint64()).
-			Update("status", db.Completed)
-		if result.Error != nil {
-			return result.Error
-		}
+		err := l.db.GetRelayerDB().Transaction(func(tx *gorm.DB) error {
+			taskErr := tx.
+				Model(&db.Task{}).
+				Where("task_id = ?", taskCompleted.TaskId.Uint64()).
+				Update("status", db.Completed).Error
+			err := tx.Save(l.LogIndex("TaskCompleted", vLog)).Error
 
-		if result.RowsAffected == 0 {
-			log.Fatalf("Task %d not found for event TaskCompleted: %v", taskCompleted.TaskId.Uint64(), taskCompleted)
+			return errors.Join(taskErr, err)
+		})
+		if err != nil {
+			return err
 		}
 
 		if l.state != nil && l.state.TssState.CurrentTask != nil {
@@ -109,16 +119,36 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	return nil
 }
 
+func (l *Layer2Listener) LogIndex(eventName string, vlog types.Log) db.LogIndex {
+	chainID, err := l.ChainID(context.Background())
+	utils.Assert(err)
+
+	if eventName == "" {
+		eventName = vlog.Topics[0].String()
+	}
+
+	return db.LogIndex{
+		ContractAddress: vlog.Address,
+		EventName:       eventName,
+		Log:             &vlog,
+		TxHash:          vlog.TxHash,
+		ChainId:         chainID.Uint64(),
+		BlockNumber:     vlog.BlockNumber,
+		LogIndex:        uint64(vlog.Index),
+	}
+}
+
 func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 	if vLog.Topics[0] == contracts.AddressRegisteredTopic {
 		addressRegistered := contracts.AccountManagerContractAddressRegistered{}
 		contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
 		account := db.Account{
-			User:    addressRegistered.User.Hex(),
-			Account: addressRegistered.Account.Uint64(),
-			ChainId: addressRegistered.ChainId,
-			Index:   addressRegistered.Index.Uint64(),
-			Address: addressRegistered.NewAddress.Hex(),
+			User:     addressRegistered.User.Hex(),
+			Account:  addressRegistered.Account.Uint64(),
+			ChainId:  addressRegistered.ChainId,
+			Index:    addressRegistered.Index.Uint64(),
+			Address:  addressRegistered.NewAddress.Hex(),
+			LogIndex: l.LogIndex("AddressRegistered", vLog),
 		}
 
 		return l.db.GetRelayerDB().Create(&account).Error
@@ -134,12 +164,17 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
 		newParticipant := eventParticipantAdded.Participant
 		// save locked relayer member from db
-		participant := db.Participant{Address: newParticipant.String()}
+		participant := db.Participant{
+			Address: newParticipant.String(),
+		}
 
 		err := l.db.
-			GetRelayerDB().
-			FirstOrCreate(&participant, "address = ?", participant.Address).
-			Error
+			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
+			err1 := tx.FirstOrCreate(&participant, "address = ?", participant.Address).Error
+			err2 := tx.Save(l.LogIndex("ParticipantAdded", vLog)).Error
+
+			return errors.Join(err1, err2)
+		})
 		if err != nil {
 			return err
 		}
@@ -158,10 +193,14 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		removedParticipant := participantRemovedEvent.Participant.Hex()
 
 		err := l.db.
-			GetRelayerDB().
-			Where("address = ?", removedParticipant).
-			Delete(&db.Participant{}).
-			Error
+			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
+			removedErr := tx.Where("address = ?", removedParticipant).
+				Delete(&db.Participant{}).
+				Error
+			vlogErr := tx.Save(l.LogIndex("ParticipantRemoved", vLog)).Error
+
+			return errors.Join(removedErr, vlogErr)
+		})
 		if err != nil {
 			return err
 		}
@@ -191,11 +230,10 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 			ChainId:       depositRecorded.ChainId.Uint64(),
 			TxInfo:        depositRecorded.TxInfo,
 			ExtraInfo:     depositRecorded.ExtraInfo,
+			LogIndex:      l.LogIndex("DepositRecorded", vLog),
 		}
 
-		return l.db.GetRelayerDB().FirstOrCreate(&depositRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
-			depositRecorded.TargetAddress.Hex(), depositRecorded.Amount.Uint64(), depositRecorded.ChainId.Uint64(), depositRecorded.TxInfo,
-		).Error
+		return l.db.GetRelayerDB().Save(&depositRecord).Error
 	case contracts.WithdrawalRecordedTopic:
 		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
 		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
@@ -205,11 +243,10 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 			ChainId:       withdrawalRecorded.ChainId.Uint64(),
 			TxInfo:        withdrawalRecorded.TxInfo,
 			ExtraInfo:     withdrawalRecorded.ExtraInfo,
+			LogIndex:      l.LogIndex("WithdrawalRecorded", vLog),
 		}
 
-		return l.db.GetRelayerDB().FirstOrCreate(&withdrawalRecord, "target_address = ? and amount = ? and chain_id = ? and tx_info = ?",
-			withdrawalRecorded.TargetAddress.Hex(), withdrawalRecorded.Amount.Uint64(), withdrawalRecorded.ChainId.Uint64(), withdrawalRecorded.TxInfo,
-		).Error
+		return l.db.GetRelayerDB().Save(&withdrawalRecord).Error
 	}
 
 	return nil

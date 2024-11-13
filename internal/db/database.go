@@ -3,6 +3,7 @@ package db
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	log "github.com/sirupsen/logrus"
@@ -24,6 +25,17 @@ func NewDatabaseManager() *DatabaseManager {
 	return dm
 }
 
+func setConnParam(db *gorm.DB) {
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(100)
+	sqlDB.SetConnMaxLifetime(10 * time.Second)
+}
+
 func (dm *DatabaseManager) initDB() {
 	dbDir := config.AppConfig.DbDir
 	if err := os.MkdirAll(dbDir, os.ModePerm); err != nil {
@@ -39,6 +51,7 @@ func (dm *DatabaseManager) initDB() {
 		log.Fatalf("Failed to connect to database 1: %v", err)
 	}
 
+	setConnParam(relayerDb)
 	dm.relayerDb = relayerDb
 
 	log.Debugf("Database 1 connected successfully, path: %s", relayerPath)
@@ -52,6 +65,7 @@ func (dm *DatabaseManager) initDB() {
 		log.Fatalf("Failed to connect to database 2: %v", err)
 	}
 
+	setConnParam(btcLightDb)
 	dm.btcLightDb = btcLightDb
 
 	log.Debugf("Database 2 connected successfully, path: %s", btcLightPath)
@@ -65,6 +79,7 @@ func (dm *DatabaseManager) initDB() {
 		log.Fatalf("Failed to connect to database 3: %v", err)
 	}
 
+	setConnParam(btcCacheDb)
 	dm.btcCacheDb = btcCacheDb
 
 	log.Debugf("Database 3 connected successfully, path: %s", btcCachePath)

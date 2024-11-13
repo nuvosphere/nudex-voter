@@ -3,13 +3,34 @@ package db
 import (
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
+type LogIndex struct {
+	gorm.Model
+	ContractAddress common.Address `gorm:"index;size:160"         json:"contractAddress"`
+	EventName       string         `json:"eventName"`                                 // event name
+	Log             *types.Log     `gorm:"serializer:json"        json:"log"`         // event content
+	TxHash          common.Hash    `gorm:"index;size:256"         json:"txHash"`      // tx hash
+	ChainId         uint64         `gorm:"index:log_index,unique" json:"chainId"`     // chainId
+	BlockNumber     uint64         `gorm:"index:log_index,unique" json:"blockNumber"` // block number of the tx
+	LogIndex        uint64         `gorm:"index:log_index,unique" json:"logIndex"`    // block log index
+}
+
+func (LogIndex) TableName() string {
+	return "log_index"
+}
+
 type EVMSyncStatus struct {
 	gorm.Model
 	LastSyncBlock uint64 `gorm:"not null" json:"last_sync_block"`
+}
+
+func (EVMSyncStatus) TableName() string {
+	return "evm_sync_status"
 }
 
 // SubmitterChosen contains block number and current submitter.
@@ -17,6 +38,12 @@ type SubmitterChosen struct {
 	gorm.Model
 	BlockNumber uint64 `gorm:"index:block_number_submitter,unique;not null" json:"block_number"`
 	Submitter   string `gorm:"index:block_number_submitter,unique;not null" json:"submitter"`
+	LogIndexID  uint
+	LogIndex    LogIndex
+}
+
+func (SubmitterChosen) TableName() string {
+	return "submitter"
 }
 
 // Participant save all participants.
@@ -25,14 +52,24 @@ type Participant struct {
 	Address string `gorm:"uniqueIndex;not null" json:"address"`
 }
 
+func (Participant) TableName() string {
+	return "participant"
+}
+
 // Account save all accounts.
 type Account struct {
 	gorm.Model
-	User    string `gorm:"not null"              json:"user"`
-	Account uint64 `gorm:"not null"              json:"account"`
-	ChainId uint8  `gorm:"not null"              json:"chain_id"`
-	Index   uint64 `gorm:"not null"              json:"index"`
-	Address string `gorm:"uniqueIndex; not null" json:"address"`
+	User       string `gorm:"not null"              json:"user"`
+	Account    uint64 `gorm:"not null"              json:"account"`
+	ChainId    uint8  `gorm:"not null"              json:"chain_id"`
+	Index      uint64 `gorm:"not null"              json:"index"`
+	Address    string `gorm:"uniqueIndex; not null" json:"address"`
+	LogIndexID uint
+	LogIndex   LogIndex
+}
+
+func (Account) TableName() string {
+	return "account"
 }
 
 type DepositRecord struct {
@@ -42,6 +79,12 @@ type DepositRecord struct {
 	ChainId       uint64 `gorm:"not null" json:"chain_id"`
 	TxInfo        []byte `gorm:"not null" json:"tx_info"`
 	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
+	LogIndexID    uint
+	LogIndex      LogIndex
+}
+
+func (DepositRecord) TableName() string {
+	return "deposit_record"
 }
 
 type WithdrawalRecord struct {
@@ -51,6 +94,12 @@ type WithdrawalRecord struct {
 	ChainId       uint64 `gorm:"not null" json:"chain_id"`
 	TxInfo        []byte `gorm:"not null" json:"tx_info"`
 	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
+	LogIndexID    uint
+	LogIndex      LogIndex
+}
+
+func (WithdrawalRecord) TableName() string {
+	return "withdrawal_record"
 }
 
 const (
@@ -67,6 +116,12 @@ type Task struct {
 	Submitter   string `gorm:"not null"           json:"submitter"`
 	BlockHeight uint64 `gorm:"not null"           json:"block_height"`
 	Status      int    `gorm:"not null;default:0" json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
+	LogIndexID  uint
+	LogIndex    LogIndex
+}
+
+func (Task) TableName() string {
+	return "task"
 }
 
 type BTCTransaction struct {
@@ -113,6 +168,7 @@ type BtcTXOutput struct {
 
 func (dm *DatabaseManager) autoMigrate() {
 	if err := dm.relayerDb.AutoMigrate(
+		&LogIndex{},
 		&BTCTransaction{},
 		&EVMSyncStatus{},
 		&SubmitterChosen{},

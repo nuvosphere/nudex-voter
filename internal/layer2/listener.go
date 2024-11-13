@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -29,6 +30,7 @@ type Layer2Listener struct {
 	db                    *db.DatabaseManager
 	state                 *state.State
 	ethClient             *ethclient.Client
+	chainID               atomic.Int64
 	contractAddress       []common.Address
 	addressBind           map[common.Address]func(types.Log) error
 	contractVotingManager *contracts.VotingManagerContract
@@ -53,6 +55,7 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		db:        db,
 		state:     state,
 		ethClient: ethClient,
+		chainID:   atomic.Int64{},
 	}
 
 	var (
@@ -188,3 +191,16 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 //
 //lint:ignore U1000 Ignore unused function
 func (l *Layer2Listener) stop() {}
+
+func (l *Layer2Listener) ChainID(ctx context.Context) (*big.Int, error) {
+	if l.chainID.Load() == 0 {
+		chainID, err := l.ethClient.ChainID(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("chainID error: %w", err)
+		}
+
+		l.chainID.Store(chainID.Int64())
+	}
+
+	return big.NewInt(l.chainID.Load()), nil
+}
