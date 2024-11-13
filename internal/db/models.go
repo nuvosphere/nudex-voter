@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -102,28 +101,6 @@ func (WithdrawalRecord) TableName() string {
 	return "withdrawal_record"
 }
 
-const (
-	New = iota
-	Pending
-	Completed
-	Other
-)
-
-type Task struct {
-	gorm.Model
-	TaskId      uint32 `gorm:"unique;not null"    json:"task_id"`
-	Context     []byte `gorm:"not null"           json:"Context"`
-	Submitter   string `gorm:"not null"           json:"submitter"`
-	BlockHeight uint64 `gorm:"not null"           json:"block_height"`
-	Status      int    `gorm:"not null;default:0" json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
-	LogIndexID  uint
-	LogIndex    LogIndex
-}
-
-func (Task) TableName() string {
-	return "task"
-}
-
 type BTCTransaction struct {
 	gorm.Model
 	TxID        string    `gorm:"uniqueIndex;not null" json:"tx_id"`
@@ -164,28 +141,4 @@ type BtcTXOutput struct {
 	TxHash   string `json:"tx_hash"`
 	Value    uint64 `json:"value"`
 	PkScript []byte `json:"pk_script"`
-}
-
-func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.relayerDb.AutoMigrate(
-		&LogIndex{},
-		&BTCTransaction{},
-		&EVMSyncStatus{},
-		&SubmitterChosen{},
-		&Participant{},
-		&Account{},
-		&DepositRecord{},
-		&WithdrawalRecord{},
-		&Task{},
-	); err != nil {
-		log.Fatalf("Failed to migrate database 1: %v", err)
-	}
-
-	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {
-		log.Fatalf("Failed to migrate database 3: %v", err)
-	}
-
-	if err := dm.btcCacheDb.AutoMigrate(&BtcSyncStatus{}, &BtcBlockData{}, &BtcTXOutput{}); err != nil {
-		log.Fatalf("Failed to migrate database 2: %v", err)
-	}
 }

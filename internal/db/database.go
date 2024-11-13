@@ -99,3 +99,30 @@ func (dm *DatabaseManager) GetBtcLightDB() *gorm.DB {
 func (dm *DatabaseManager) GetBtcCacheDB() *gorm.DB {
 	return dm.btcCacheDb
 }
+
+func (dm *DatabaseManager) autoMigrate() {
+	if err := dm.relayerDb.AutoMigrate(
+		&LogIndex{},
+		&BTCTransaction{},
+		&EVMSyncStatus{},
+		&SubmitterChosen{},
+		&Participant{},
+		&Account{},
+		&DepositRecord{},
+		&WithdrawalRecord{},
+		&Task{},
+		&CreateWalletTask{},
+		&DepositRecord{},
+		&WithdrawalTask{},
+	); err != nil {
+		log.Fatalf("Failed to migrate database 1: %v", err)
+	}
+
+	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {
+		log.Fatalf("Failed to migrate database 3: %v", err)
+	}
+
+	if err := dm.btcCacheDb.AutoMigrate(&BtcSyncStatus{}, &BtcBlockData{}, &BtcTXOutput{}); err != nil {
+		log.Fatalf("Failed to migrate database 2: %v", err)
+	}
+}

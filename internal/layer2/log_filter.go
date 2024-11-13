@@ -74,21 +74,24 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
-		task := &db.Task{
-			TaskId:      uint32(taskSubmitted.TaskId.Uint64()),
+		actualTask := db.DecodeTask(uint32(taskSubmitted.TaskId.Uint64()), taskSubmitted.Context)
+		task := db.Task{
+			TaskId:      actualTask.TaskID(),
+			TaskType:    actualTask.Type(),
 			Context:     taskSubmitted.Context,
 			Submitter:   taskSubmitted.Submitter.Hex(),
 			BlockHeight: vLog.BlockNumber,
 			LogIndex:    l.LogIndex("TaskSubmitted", vLog),
 		}
+		actualTask.SetBaseTask(task)
 
-		result := l.db.GetRelayerDB().Create(task)
+		result := l.db.GetRelayerDB().Create(actualTask)
 		if result.Error != nil {
 			return result.Error
 		}
 
 		if result.RowsAffected > 0 {
-			l.postTask(task)
+			l.postTask(actualTask)
 		}
 
 	case contracts.TaskCompletedTopic:

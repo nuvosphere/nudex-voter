@@ -99,12 +99,10 @@ func (t *Service) Partners() []common.Address {
 	)
 }
 
-func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
-	task := db.DecodeTask(dbTask.TaskId, dbTask.Context)
-
+func (t *Service) proposalSignTaskSession(task db.ITask) error {
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {
-		return fmt.Errorf("get nonce error for task %x, error: %v", dbTask.Context, err)
+		return fmt.Errorf("get nonce error: %v", err)
 	}
 
 	switch taskRequest := task.(type) {

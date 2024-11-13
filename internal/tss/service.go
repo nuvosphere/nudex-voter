@@ -131,12 +131,11 @@ func (t *Service) eventLoop(ctx context.Context) {
 				// todo tss task
 
 				switch v := data.(type) {
-				case *db.Task:
+				case db.ITask:
 					if t.isCanProposal() {
 						// todo
 						log.Info(v)
-
-						err := t.proposalSignTaskSession(*v)
+						err := t.proposalSignTaskSession(v)
 						if err != nil {
 							log.Warnf("handle session msg error, %v", err)
 						}
