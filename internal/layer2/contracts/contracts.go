@@ -125,7 +125,14 @@ var (
 )
 
 // UnpackEventLog unpacks a retrieved log into the provided output structure.
-func UnpackEventLog(meta *bind.MetaData, out interface{}, event string, log types.Log) error {
+func UnpackEventLog(meta *bind.MetaData, out interface{}, event string, log types.Log) {
+	err := unpackEventLog(meta, out, event, log)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func unpackEventLog(meta *bind.MetaData, out interface{}, event string, log types.Log) error {
 	a, err := meta.GetAbi()
 	if err != nil {
 		return err

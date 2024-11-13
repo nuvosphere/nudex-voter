@@ -1,9 +1,8 @@
 package layer2
 
 import (
-	"errors"
+	"reflect"
 	"slices"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -11,7 +10,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/task"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 func (l *Layer2Listener) processLogs(vLog types.Log) {
@@ -19,7 +17,7 @@ func (l *Layer2Listener) processLogs(vLog types.Log) {
 	if ok {
 		err := method(vLog)
 		if err != nil {
-			log.Errorf("Error processing log: %v", err)
+			log.Errorf("call %s processing log: %v", reflect.TypeOf(method).Name(), err)
 		}
 	}
 }
@@ -29,22 +27,17 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	var (
 		submitterChosen db.SubmitterChosen
 		submitter       string
-		err             error
 	)
 
 	switch vLog.Topics[0] {
 	case contracts.SubmitterChosenTopic:
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterChosen{}
-		err = contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
+		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterChosen", vLog)
 		submitter = submitterChosenEvent.NewSubmitter.Hex()
 	case contracts.SubmitterRotationRequestedTopic:
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
-		err = contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
+		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, "SubmitterRotationRequested", vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
-	}
-
-	if err != nil {
-		return err
 	}
 
 	submitterChosen.BlockNumber = vLog.BlockNumber
@@ -59,25 +52,20 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	}
 	l.postTask(t)
 
-	err = l.db.GetRelayerDB().Create(&submitterChosen).Error
-	if err != nil {
+	result := l.db.GetRelayerDB().Create(&submitterChosen)
+	if result.RowsAffected > 0 {
 		l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
 		l.state.TssState.BlockNumber = vLog.BlockNumber
 	}
 
-	return nil
+	return result.Error
 }
 
 func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
-
-		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
-		if err != nil {
-			return err
-		}
-
+		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
 		task := &db.Task{
 			TaskId:      uint32(taskSubmitted.TaskId.Uint64()),
 			Context:     taskSubmitted.Context,
@@ -87,7 +75,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 		result := l.db.GetRelayerDB().Create(task)
 		if result.Error != nil {
-			return err
+			return result.Error
 		}
 
 		if result.RowsAffected > 0 {
@@ -96,31 +84,25 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 	case contracts.TaskCompletedTopic:
 		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
+		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
 
-		err := contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
-		if err != nil {
-			return err
+		result := l.db.
+			GetRelayerDB().
+			Model(&db.Task{}).
+			Where("task_id = ?", taskCompleted.TaskId.Uint64()).
+			Update("status", db.Completed)
+		if result.Error != nil {
+			return result.Error
 		}
 
-		var existingTask db.Task
-
-		result := l.db.GetRelayerDB().Where("task_id = ?", taskCompleted.TaskId.Uint64()).First(&existingTask)
-		if result.Error == nil {
-			existingTask.Status = db.Completed
-			existingTask.CompletedAt = time.Unix(taskCompleted.CompletedAt.Int64(), 0)
-			err := l.db.GetRelayerDB().Save(&existingTask).Error
-
-			if l.state != nil && l.state.TssState.CurrentTask != nil {
-				if uint32(taskCompleted.TaskId.Uint64()) >= l.state.TssState.CurrentTask.TaskId {
-					l.state.TssState.CurrentTask = nil
-				}
-			}
-
-			if err != nil {
-				return err
-			}
-		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		if result.RowsAffected == 0 {
 			log.Fatalf("Task %d not found for event TaskCompleted: %v", taskCompleted.TaskId.Uint64(), taskCompleted)
+		}
+
+		if l.state != nil && l.state.TssState.CurrentTask != nil {
+			if uint32(taskCompleted.TaskId.Uint64()) >= l.state.TssState.CurrentTask.TaskId {
+				l.state.TssState.CurrentTask = nil
+			}
 		}
 	}
 
@@ -130,12 +112,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 	if vLog.Topics[0] == contracts.AddressRegisteredTopic {
 		addressRegistered := contracts.AccountManagerContractAddressRegistered{}
-
-		err := contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
-		if err != nil {
-			return err
-		}
-
+		contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
 		account := db.Account{
 			User:    addressRegistered.User.Hex(),
 			Account: addressRegistered.Account.Uint64(),
@@ -144,12 +121,7 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 			Address: addressRegistered.NewAddress.Hex(),
 		}
 
-		err = l.db.GetRelayerDB().Create(&account).Error
-		if err != nil {
-			log.Fatalf("Error adding address: %v", err)
-		} else {
-			log.Infof("localAddress %s registered for user: %s, chain: %d", account.Address, account.User, account.ChainId)
-		}
+		return l.db.GetRelayerDB().Create(&account).Error
 	}
 
 	return nil
@@ -159,17 +131,12 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case contracts.ParticipantAddedTopic:
 		eventParticipantAdded := contracts.ParticipantManagerContractParticipantAdded{}
-
-		err := contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
-		if err != nil {
-			return err
-		}
-
+		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
 		newParticipant := eventParticipantAdded.Participant
 		// save locked relayer member from db
 		participant := db.Participant{Address: newParticipant.String()}
 
-		err = l.db.
+		err := l.db.
 			GetRelayerDB().
 			FirstOrCreate(&participant, "address = ?", participant.Address).
 			Error
@@ -187,15 +154,10 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		}
 	case contracts.ParticipantRemovedTopic:
 		participantRemovedEvent := contracts.ParticipantManagerContractParticipantRemoved{}
-
-		err := contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
-		if err != nil {
-			return err
-		}
-
+		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
 		removedParticipant := participantRemovedEvent.Participant.Hex()
 
-		err = l.db.
+		err := l.db.
 			GetRelayerDB().
 			Where("address = ?", removedParticipant).
 			Delete(&db.Participant{}).
@@ -222,12 +184,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case contracts.DepositRecordedTopic:
 		depositRecorded := contracts.DepositManagerContractDepositRecorded{}
-
-		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
-		if err != nil {
-			return err
-		}
-
+		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
 		depositRecord := db.DepositRecord{
 			TargetAddress: depositRecorded.TargetAddress.Hex(),
 			Amount:        depositRecorded.Amount.Uint64(),
@@ -241,12 +198,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 		).Error
 	case contracts.WithdrawalRecordedTopic:
 		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
-
-		err := contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
-		if err != nil {
-			return err
-		}
-
+		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
 		withdrawalRecord := db.WithdrawalRecord{
 			TargetAddress: withdrawalRecorded.TargetAddress.Hex(),
 			Amount:        withdrawalRecorded.Amount.Uint64(),

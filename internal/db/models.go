@@ -28,11 +28,11 @@ type Participant struct {
 // Account save all accounts.
 type Account struct {
 	gorm.Model
-	User    string `gorm:"not null" json:"user"`
-	Account uint64 `gorm:"not null" json:"account"`
-	ChainId uint8  `gorm:"not null" json:"chain_id"`
-	Index   uint64 `gorm:"not null" json:"index"`
-	Address string `gorm:"not null" json:"address"`
+	User    string `gorm:"not null"              json:"user"`
+	Account uint64 `gorm:"not null"              json:"account"`
+	ChainId uint8  `gorm:"not null"              json:"chain_id"`
+	Index   uint64 `gorm:"not null"              json:"index"`
+	Address string `gorm:"uniqueIndex; not null" json:"address"`
 }
 
 type DepositRecord struct {
@@ -62,12 +62,11 @@ const (
 
 type Task struct {
 	gorm.Model
-	TaskId      uint32    `gorm:"unique;not null"    json:"task_id"`
-	Context     []byte    `gorm:"not null"           json:"Context"`
-	Submitter   string    `gorm:"not null"           json:"submitter"`
-	BlockHeight uint64    `gorm:"not null"           json:"block_height"`
-	CompletedAt time.Time `json:"completed_at"`
-	Status      int       `gorm:"not null;default:0" json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
+	TaskId      uint32 `gorm:"unique;not null"    json:"task_id"`
+	Context     []byte `gorm:"not null"           json:"Context"`
+	Submitter   string `gorm:"not null"           json:"submitter"`
+	BlockHeight uint64 `gorm:"not null"           json:"block_height"`
+	Status      int    `gorm:"not null;default:0" json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
 }
 
 type BTCTransaction struct {
