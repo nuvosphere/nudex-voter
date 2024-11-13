@@ -55,19 +55,27 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		ethClient: ethClient,
 	}
 
+	var (
+		VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
+		AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
+		TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
+		ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
+		DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
+	)
+
 	self.addressBind = map[common.Address]func(types.Log) error{
-		contracts.VotingAddress:      self.processVotingLog,
-		contracts.AccountAddress:     self.processAccountLog,
-		contracts.ParticipantAddress: self.processParticipantLog,
-		contracts.TaskAddress:        self.processTaskLog,
-		contracts.DepositAddress:     self.processDepositLog,
+		VotingAddress:      self.processVotingLog,
+		AccountAddress:     self.processAccountLog,
+		ParticipantAddress: self.processParticipantLog,
+		TaskAddress:        self.processTaskLog,
+		DepositAddress:     self.processDepositLog,
 	}
 	self.contractAddress = lo.MapToSlice(
 		self.addressBind,
 		func(item common.Address, _ func(log2 types.Log) error) common.Address { return item },
 	)
 
-	contractVotingManager, err := contracts.NewVotingManagerContract(contracts.VotingAddress, ethClient)
+	contractVotingManager, err := contracts.NewVotingManagerContract(VotingAddress, ethClient)
 	if err != nil {
 		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
 	}

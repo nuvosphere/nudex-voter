@@ -11,15 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/nuvosphere/nudex-voter/internal/config"
-)
-
-var (
-	VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
-	AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
-	TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
-	ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
-	DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
 )
 
 func Pack(meta *bind.MetaData, method string, params ...interface{}) []byte {
