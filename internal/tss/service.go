@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/db/task"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
@@ -142,9 +141,9 @@ func (t *Service) eventLoop(ctx context.Context) {
 							log.Warnf("handle session msg error, %v", err)
 						}
 					}
-				case *task.SubmitterChosenPair:
+				case *db.SubmitterChosenPair:
 					// todo
-				case *task.ParticipantPair:
+				case *db.ParticipantPair:
 					if t.isCanProposal() {
 						// todo
 						newThreshold := 0

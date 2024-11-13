@@ -1,8 +1,7 @@
-package task
+package db
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"gorm.io/gorm"
 )
@@ -144,6 +143,6 @@ type ParticipantPair struct {
 }
 
 type SubmitterChosenPair struct {
-	Old db.SubmitterChosen
-	New db.SubmitterChosen
+	Old SubmitterChosen
+	New SubmitterChosen
 }

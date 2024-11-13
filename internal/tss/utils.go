@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/db/task"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -190,13 +190,13 @@ func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
 
 func getCoinTypeByChain(chain uint8) int {
 	switch chain {
-	case task.WalletTypeEVM:
+	case db.WalletTypeEVM:
 		return 60
-	case task.WalletTypeBTC:
+	case db.WalletTypeBTC:
 		return 0
-	case task.WalletTypeSOL:
+	case db.WalletTypeSOL:
 		return 501
-	case task.WalletTypeSUI:
+	case db.WalletTypeSUI:
 		return 784
 	default:
 		return -1

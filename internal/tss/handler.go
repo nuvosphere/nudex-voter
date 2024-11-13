@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
-	tasks "github.com/nuvosphere/nudex-voter/internal/db/task"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -101,7 +100,7 @@ func (t *Service) Partners() []common.Address {
 }
 
 func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
-	task := tasks.DecodeTask(dbTask.TaskId, dbTask.Context)
+	task := db.DecodeTask(dbTask.TaskId, dbTask.Context)
 
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {
@@ -109,7 +108,7 @@ func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
 	}
 
 	switch taskRequest := task.(type) {
-	case *tasks.CreateWalletTask:
+	case *db.CreateWalletTask:
 		coinType := getCoinTypeByChain(taskRequest.Chain)
 
 		var result contracts.TaskPayloadContractWalletCreationResult
@@ -121,7 +120,7 @@ func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
 			taskRequest.Index,
 		)
 
-		resultBytes, err := tasks.EncodeTaskResult(tasks.TaskTypeCreateWallet, result)
+		resultBytes, err := db.EncodeTaskResult(db.TaskTypeCreateWallet, result)
 		if err != nil {
 			return err
 		}
@@ -156,8 +155,8 @@ func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
 		)
 
 		return err
-	case *tasks.DepositTask:
-	case *tasks.WithdrawalTask:
+	case *db.DepositTask:
+	case *db.WithdrawalTask:
 	}
 
 	return nil
