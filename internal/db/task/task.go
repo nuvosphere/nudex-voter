@@ -28,9 +28,10 @@ type CreateWalletTask struct {
 	Index   uint8  `json:"index"`
 }
 
-func NewCreateWalletTask(req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
+func NewCreateWalletTask(taskId uint32, req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
 	return &CreateWalletTask{
 		BaseTask: BaseTask{
+			TaskId:   taskId,
 			TaskType: TaskTypeCreateWallet,
 		},
 		User:    req.User.Hex(),
@@ -54,9 +55,10 @@ type DepositTask struct {
 	Decimal         uint8  `json:"decimal"`
 }
 
-func NewDepositTask(req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
+func NewDepositTask(taskId uint32, req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
 	return &DepositTask{
 		BaseTask: BaseTask{
+			TaskId:   taskId,
 			TaskType: TaskTypeDeposit,
 		},
 		TargetAddress:   req.TargetAddress,
@@ -87,9 +89,10 @@ type WithdrawalTask struct {
 	Fee             uint64 `json:"fee"`
 }
 
-func NewWithdrawalTask(req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
+func NewWithdrawalTask(taskId uint32, req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
 	return &WithdrawalTask{
 		BaseTask: BaseTask{
+			TaskId:   taskId,
 			TaskType: TaskTypeWithdrawal,
 		},
 		TargetAddress:   req.TargetAddress,

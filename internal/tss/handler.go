@@ -18,7 +18,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
-	log "github.com/sirupsen/logrus"
 )
 
 // handleSessionMsg handler received msg from other node.
@@ -102,7 +101,7 @@ func (t *Service) Partners() []common.Address {
 }
 
 func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
-	task := tasks.DecodeTask(dbTask.Context)
+	task := tasks.DecodeTask(dbTask.TaskId, dbTask.Context)
 
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {
@@ -110,33 +109,17 @@ func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
 	}
 
 	switch taskRequest := task.(type) {
-	case contracts.TaskPayloadContractWalletCreationRequest:
+	case *tasks.CreateWalletTask:
 		coinType := getCoinTypeByChain(taskRequest.Chain)
 
 		var result contracts.TaskPayloadContractWalletCreationResult
 
-		if coinType == -1 {
-			result = contracts.TaskPayloadContractWalletCreationResult{
-				Version:       tasks.TaskVersionV1,
-				Success:       false,
-				ErrorCode:     tasks.TaskErrorCodeChainNotSupported,
-				WalletAddress: "",
-			}
-		} else {
-			address := wallet.GenerateAddressByPath(
-				*(t.scheduler.MasterPublicKey()),
-				uint32(coinType),
-				taskRequest.Account,
-				taskRequest.Index,
-			)
-			log.Infof("Generated address: %s for task: %d", address, dbTask.TaskId)
-			result = contracts.TaskPayloadContractWalletCreationResult{
-				Version:       tasks.TaskVersionV1,
-				Success:       true,
-				ErrorCode:     tasks.TaskErrorCodeSuccess,
-				WalletAddress: address.Hex(),
-			}
-		}
+		_ = wallet.GenerateAddressByPath(
+			*(t.scheduler.MasterPublicKey()),
+			uint32(coinType),
+			taskRequest.Account,
+			taskRequest.Index,
+		)
 
 		resultBytes, err := tasks.EncodeTaskResult(tasks.TaskTypeCreateWallet, result)
 		if err != nil {
@@ -173,8 +156,8 @@ func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
 		)
 
 		return err
-	case contracts.TaskPayloadContractDepositRequest:
-	case contracts.TaskPayloadContractWithdrawalRequest:
+	case *tasks.DepositTask:
+	case *tasks.WithdrawalTask:
 	}
 
 	return nil

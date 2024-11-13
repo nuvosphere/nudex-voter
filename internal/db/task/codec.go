@@ -8,7 +8,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
-func DecodeTask(context []byte) any {
+func DecodeTask(taskId uint32, context []byte) any {
 	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
 	utils.Assert(err)
 
@@ -19,19 +19,19 @@ func DecodeTask(context []byte) any {
 		err = parsedABI.UnpackIntoInterface(request, "WalletCreationRequest", context[32:])
 		utils.Assert(err)
 
-		return NewCreateWalletTask(request)
+		return NewCreateWalletTask(taskId, request)
 	case contracts.DepositRequestTopic:
 		request := &contracts.TaskPayloadContractDepositRequest{}
 		err = parsedABI.UnpackIntoInterface(request, "DepositRequest", context[32:])
 		utils.Assert(err)
 
-		return NewDepositTask(request)
+		return NewDepositTask(taskId, request)
 	case contracts.WithdrawalRequestTopic:
 		request := &contracts.TaskPayloadContractWithdrawalRequest{}
 		err = parsedABI.UnpackIntoInterface(request, "WithdrawalRequest", context[32:])
 		utils.Assert(err)
 
-		return NewWithdrawalTask(request)
+		return NewWithdrawalTask(taskId, request)
 	}
 
 	return nil
