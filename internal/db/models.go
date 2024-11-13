@@ -10,13 +10,13 @@ import (
 
 type LogIndex struct {
 	gorm.Model
-	ContractAddress common.Address `gorm:"index;size:160"         json:"contractAddress"`
-	EventName       string         `json:"eventName"`                                 // event name
-	Log             *types.Log     `gorm:"serializer:json"        json:"log"`         // event content
-	TxHash          common.Hash    `gorm:"index;size:256"         json:"txHash"`      // tx hash
-	ChainId         uint64         `gorm:"index:log_index,unique" json:"chainId"`     // chainId
-	BlockNumber     uint64         `gorm:"index:log_index,unique" json:"blockNumber"` // block number of the tx
-	LogIndex        uint64         `gorm:"index:log_index,unique" json:"logIndex"`    // block log index
+	ContractAddress common.Address `gorm:"index;size:160"                json:"contractAddress"`
+	EventName       string         `json:"eventName"`                                        // event name
+	Log             *types.Log     `gorm:"serializer:json"               json:"log"`         // event content
+	TxHash          common.Hash    `gorm:"index;size:256"                json:"txHash"`      // tx hash
+	ChainId         uint64         `gorm:"index:log_index_unique,unique" json:"chainId"`     // chainId
+	BlockNumber     uint64         `gorm:"index:log_index_unique,unique" json:"blockNumber"` // block number of the tx
+	LogIndex        uint64         `gorm:"index:log_index_unique,unique" json:"logIndex"`    // block log index
 }
 
 func (LogIndex) TableName() string {

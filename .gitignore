@@ -4,7 +4,7 @@
 *.so
 *.dylib
 nudex-voter
-
+*.db
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
