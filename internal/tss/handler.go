@@ -102,10 +102,7 @@ func (t *Service) Partners() []common.Address {
 }
 
 func (t *Service) proposalSignTaskSession(dbTask db.Task) error {
-	task, err := tasks.DecodeTask(dbTask.Context)
-	if err != nil {
-		return fmt.Errorf("parse task %x error: %v", dbTask.Context, err)
-	}
+	task := tasks.DecodeTask(dbTask.Context)
 
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {

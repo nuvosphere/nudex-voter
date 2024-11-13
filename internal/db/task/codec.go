@@ -5,37 +5,39 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
-func DecodeTask(context []byte) (interface{}, error) {
+func DecodeTask(context []byte) any {
 	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
-	if err != nil {
-		return nil, err
-	}
+	utils.Assert(err)
 
 	eventHash := common.BytesToHash(context[:32])
 	switch eventHash {
 	case contracts.WalletCreationRequestTopic:
-		request := contracts.TaskPayloadContractWalletCreationRequest{}
-		err = parsedABI.UnpackIntoInterface(&request, "WalletCreationRequest", context[32:])
+		request := &contracts.TaskPayloadContractWalletCreationRequest{}
+		err = parsedABI.UnpackIntoInterface(request, "WalletCreationRequest", context[32:])
+		utils.Assert(err)
 
-		return request, err
+		return NewCreateWalletTask(request)
 	case contracts.DepositRequestTopic:
-		request := contracts.TaskPayloadContractDepositRequest{}
-		err = parsedABI.UnpackIntoInterface(&request, "DepositRequest", context[32:])
+		request := &contracts.TaskPayloadContractDepositRequest{}
+		err = parsedABI.UnpackIntoInterface(request, "DepositRequest", context[32:])
+		utils.Assert(err)
 
-		return request, err
+		return NewDepositTask(request)
 	case contracts.WithdrawalRequestTopic:
-		request := contracts.TaskPayloadContractWithdrawalRequest{}
-		err = parsedABI.UnpackIntoInterface(&request, "WithdrawalRequest", context[32:])
+		request := &contracts.TaskPayloadContractWithdrawalRequest{}
+		err = parsedABI.UnpackIntoInterface(request, "WithdrawalRequest", context[32:])
+		utils.Assert(err)
 
-		return request, err
+		return NewWithdrawalTask(request)
 	}
 
-	return nil, fmt.Errorf("unknown task type: %v", eventHash)
+	return nil
 }
 
-func EncodeTask(taskType uint8, task interface{}) (bytes []byte, err error) {
+func EncodeTask(taskType uint8, task any) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("failed to encode task: %v", r)

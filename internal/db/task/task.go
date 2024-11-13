@@ -3,6 +3,7 @@ package task
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"gorm.io/gorm"
 )
 
@@ -13,17 +14,10 @@ const (
 	TaskTypeWithdrawal
 )
 
-type Task interface {
-	GetTaskID() uint32
-}
-
 type BaseTask struct {
 	gorm.Model
-	TaskId uint32 `gorm:"unique;not null" json:"task_id"`
-}
-
-func (t BaseTask) GetTaskID() uint32 {
-	return t.TaskId
+	TaskId   uint32 `gorm:"unique;not null" json:"task_id"`
+	TaskType int    `gorm:"not null"        json:"task_type"`
 }
 
 type CreateWalletTask struct {
@@ -32,6 +26,18 @@ type CreateWalletTask struct {
 	Account uint32 `json:"account"`
 	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
 	Index   uint8  `json:"index"`
+}
+
+func NewCreateWalletTask(req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
+	return &CreateWalletTask{
+		BaseTask: BaseTask{
+			TaskType: TaskTypeCreateWallet,
+		},
+		User:    req.User.Hex(),
+		Account: req.Account,
+		Chain:   req.Chain,
+		Index:   req.Index,
+	}
 }
 
 type DepositTask struct {
@@ -48,6 +54,24 @@ type DepositTask struct {
 	Decimal         uint8  `json:"decimal"`
 }
 
+func NewDepositTask(req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
+	return &DepositTask{
+		BaseTask: BaseTask{
+			TaskType: TaskTypeDeposit,
+		},
+		TargetAddress:   req.TargetAddress,
+		Amount:          req.Amount,
+		Chain:           req.Chain,
+		ChainId:         req.ChainId,
+		BlockHeight:     req.BlockHeight,
+		TxHash:          req.TxHash,
+		ContractAddress: req.ContractAddress,
+		Ticker:          req.Ticker,
+		AssetType:       req.AssetType,
+		Decimal:         req.Decimal,
+	}
+}
+
 type WithdrawalTask struct {
 	BaseTask
 	TargetAddress   string `json:"target_address"`
@@ -61,6 +85,25 @@ type WithdrawalTask struct {
 	AssetType       uint8  `json:"asset_type"`
 	Decimal         uint8  `json:"decimal"`
 	Fee             uint64 `json:"fee"`
+}
+
+func NewWithdrawalTask(req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
+	return &WithdrawalTask{
+		BaseTask: BaseTask{
+			TaskType: TaskTypeWithdrawal,
+		},
+		TargetAddress:   req.TargetAddress,
+		Amount:          req.Amount,
+		Chain:           req.Chain,
+		ChainId:         req.ChainId,
+		BlockHeight:     req.BlockHeight,
+		TxHash:          req.TxHash,
+		ContractAddress: req.ContractAddress,
+		Ticker:          req.Ticker,
+		AssetType:       req.AssetType,
+		Decimal:         req.Decimal,
+		Fee:             req.Fee,
+	}
 }
 
 const (
