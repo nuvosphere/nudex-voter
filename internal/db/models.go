@@ -55,6 +55,19 @@ func (Participant) TableName() string {
 	return "participant"
 }
 
+// ParticipantEvent save all participants.
+type ParticipantEvent struct {
+	gorm.Model
+	EventName  string `json:"eventName"` // event name
+	Address    string `gorm:"index;not null" json:"address"`
+	LogIndexID uint
+	LogIndex   LogIndex
+}
+
+func (ParticipantEvent) TableName() string {
+	return "participant_event"
+}
+
 // Account save all accounts.
 type Account struct {
 	gorm.Model

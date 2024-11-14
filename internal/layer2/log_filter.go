@@ -173,7 +173,11 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		err := l.db.
 			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
 			err1 := tx.FirstOrCreate(&participant, "address = ?", participant.Address).Error
-			err2 := tx.Save(l.LogIndex("ParticipantAdded", vLog)).Error
+			err2 := tx.Save(&db.ParticipantEvent{
+				EventName: "ParticipantAdded",
+				Address:   participant.Address,
+				LogIndex:  l.LogIndex("ParticipantAdded", vLog),
+			}).Error
 
 			return errors.Join(err1, err2)
 		})
@@ -199,7 +203,11 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 			removedErr := tx.Where("address = ?", removedParticipant).
 				Delete(&db.Participant{}).
 				Error
-			vlogErr := tx.Save(l.LogIndex("ParticipantRemoved", vLog)).Error
+			vlogErr := tx.Save(&db.ParticipantEvent{
+				EventName: "ParticipantRemoved",
+				Address:   removedParticipant,
+				LogIndex:  l.LogIndex("ParticipantRemoved", vLog),
+			}).Error
 
 			return errors.Join(removedErr, vlogErr)
 		})
