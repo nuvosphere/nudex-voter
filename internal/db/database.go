@@ -45,7 +45,8 @@ func (dm *DatabaseManager) initDB() {
 	relayerPath := filepath.Join(dbDir, "relayer_data.db")
 
 	relayerDb, err := gorm.Open(sqlite.Open(relayerPath), &gorm.Config{
-		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+		Logger:         gormlogger.Default.LogMode(gormlogger.Warn),
+		TranslateError: true, // https://gorm.golang.ac.cn/docs/error_handling.html
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database 1: %v", err)
@@ -59,7 +60,8 @@ func (dm *DatabaseManager) initDB() {
 	btcLightPath := filepath.Join(dbDir, "btc_light.db")
 
 	btcLightDb, err := gorm.Open(sqlite.Open(btcLightPath), &gorm.Config{
-		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+		Logger:         gormlogger.Default.LogMode(gormlogger.Warn),
+		TranslateError: true, // https://gorm.golang.ac.cn/docs/error_handling.html
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database 2: %v", err)
@@ -73,7 +75,8 @@ func (dm *DatabaseManager) initDB() {
 	btcCachePath := filepath.Join(dbDir, "btc_cache.db")
 
 	btcCacheDb, err := gorm.Open(sqlite.Open(btcCachePath), &gorm.Config{
-		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+		Logger:         gormlogger.Default.LogMode(gormlogger.Warn),
+		TranslateError: true, // https://gorm.golang.ac.cn/docs/error_handling.html
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database 3: %v", err)
@@ -112,7 +115,7 @@ func (dm *DatabaseManager) autoMigrate() {
 		&WithdrawalRecord{},
 		&Task{},
 		&CreateWalletTask{},
-		&DepositRecord{},
+		&DepositTask{},
 		&WithdrawalTask{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)

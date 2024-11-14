@@ -28,17 +28,17 @@ type ITask interface {
 
 type Task struct {
 	gorm.Model
-	TaskId            uint32             `gorm:"unique;not null"                     json:"task_id"`
-	TaskType          int                `gorm:"not null;default:0"                  json:"task_type"`
-	Context           []byte             `gorm:"not null"                            json:"Context"`
-	Submitter         string             `gorm:"not null"                            json:"submitter"`
-	BlockHeight       uint64             `gorm:"not null"                            json:"block_height"`
-	Status            int                `gorm:"not null;default:0"                  json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
-	CreateWalletTasks []CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
-	DepositTasks      []DepositTask      `gorm:"foreignKey:TaskId;references:TaskId"`
-	WithdrawalTasks   []CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
-	LogIndexID        uint
-	LogIndex          LogIndex
+	TaskId           uint32            `gorm:"unique;not null"                     json:"task_id"`
+	TaskType         int               `gorm:"not null;default:0"                  json:"task_type"`
+	Context          []byte            `gorm:"not null"                            json:"Context"`
+	Submitter        string            `gorm:"not null"                            json:"submitter"`
+	BlockHeight      uint64            `gorm:"not null"                            json:"block_height"`
+	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
+	CreateWalletTask *CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
+	DepositTask      *DepositTask      `gorm:"foreignKey:TaskId;references:TaskId"`
+	WithdrawalTask   *WithdrawalTask   `gorm:"foreignKey:TaskId;references:TaskId"`
+	LogIndexID       uint
+	LogIndex         LogIndex
 }
 
 func (Task) TableName() string {
@@ -73,6 +73,7 @@ type CreateWalletTask struct {
 	Account uint32 `json:"account"`
 	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
 	Index   uint8  `json:"index"`
+	Address string `json:"address"` // new create bip44 address
 }
 
 func (CreateWalletTask) TableName() string {
