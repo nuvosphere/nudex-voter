@@ -68,7 +68,6 @@ abi: ## generate abi go file
 	abigen --abi internal/layer2/abis/erc1155.json --pkg contracts --type ERC1155 --out internal/layer2/contracts/erc1155.go
 	abigen --abi internal/layer2/abis/multicall3.json --pkg contracts --type Multicall3 --out internal/layer2/contracts/multicall3.go
 	abigen --abi internal/layer2/abis/AccountManager.json --pkg contracts --type AccountManagerContract --out internal/layer2/contracts/account_manager.go
-	#abigen --abi internal/layer2/abis/NuDexOperations.json --pkg contracts --type NuDexOperationsContract --out internal/layer2/contracts/nudex_operations.go
 	abigen --abi internal/layer2/abis/TaskManager.json --pkg contracts --type TaskManagerContract --out internal/layer2/contracts/task_manager.go
 	abigen --abi internal/layer2/abis/AssetManager.json --pkg contracts --type AssetManagerContract --out internal/layer2/contracts/asset_manager.go
 	abigen --abi internal/layer2/abis/ParticipantManager.json --pkg contracts --type ParticipantManagerContract --out internal/layer2/contracts/participant_manager.go

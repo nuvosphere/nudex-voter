@@ -53,7 +53,6 @@ func EncodeTask(taskType uint8, task any) (bytes []byte, err error) {
 			"WalletCreationRequest",
 			uint8(TaskVersionV1),
 			taskType,
-			common.HexToAddress(t.User),
 			t.Account,
 			t.Chain,
 			t.Index,

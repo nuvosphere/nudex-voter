@@ -145,12 +145,6 @@
         "internalType": "uint8"
       },
       {
-        "name": "user",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
         "name": "account",
         "type": "uint32",
         "indexed": false,

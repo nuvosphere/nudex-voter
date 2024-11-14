@@ -38,7 +38,6 @@ func TestTask(t *testing.T) {
 				},
 			},
 		},
-		User:    "12",
 		Account: 0,
 		Chain:   0,
 		Index:   0,

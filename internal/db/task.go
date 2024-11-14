@@ -70,7 +70,6 @@ func (t *BaseTask) SetBaseTask(task Task) {
 
 type CreateWalletTask struct {
 	BaseTask
-	User    string `json:"user"`
 	Account uint32 `json:"account"`
 	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
 	Index   uint8  `json:"index"`
@@ -86,7 +85,6 @@ func NewCreateWalletTask(taskId uint32, req *contracts.TaskPayloadContractWallet
 			TaskId:   taskId,
 			TaskType: TaskTypeCreateWallet,
 		},
-		User:    req.User.Hex(),
 		Account: req.Account,
 		Chain:   req.Chain,
 		Index:   req.Index,

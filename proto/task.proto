@@ -13,10 +13,9 @@ message TaskRequest {
 }
 
 message WalletCreationRequest {
-  bytes user = 1;
-  uint64 account = 2;
-  Chain chain = 3;
-  uint32 index = 4;
+  uint64 account = 1;
+  Chain chain = 2;
+  uint32 index = 3;
 }
 
 message DepositRequest {
