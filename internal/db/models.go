@@ -17,6 +17,7 @@ type LogIndex struct {
 	ChainId         uint64         `gorm:"index:log_index_unique,unique" json:"chainId"`     // chainId
 	BlockNumber     uint64         `gorm:"index:log_index_unique,unique" json:"blockNumber"` // block number of the tx
 	LogIndex        uint64         `gorm:"index:log_index_unique,unique" json:"logIndex"`    // block log index
+	ForeignID       uint           `gorm:"index;not null"                json:"foreignID"`   // task table ID;submitter table ID;participant_event table ID;...
 }
 
 func (LogIndex) TableName() string {
@@ -35,10 +36,9 @@ func (EVMSyncStatus) TableName() string {
 // SubmitterChosen contains block number and current submitter.
 type SubmitterChosen struct {
 	gorm.Model
-	BlockNumber uint64 `gorm:"index:block_number_submitter,unique;not null" json:"block_number"`
-	Submitter   string `gorm:"index:block_number_submitter,unique;not null" json:"submitter"`
-	LogIndexID  uint
-	LogIndex    LogIndex
+	BlockNumber uint64   `gorm:"index:block_number_submitter,unique;not null" json:"block_number"`
+	Submitter   string   `gorm:"index:block_number_submitter,unique;not null" json:"submitter"`
+	LogIndex    LogIndex `gorm:"foreignKey:foreignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (SubmitterChosen) TableName() string {
@@ -58,10 +58,9 @@ func (Participant) TableName() string {
 // ParticipantEvent save all participants.
 type ParticipantEvent struct {
 	gorm.Model
-	EventName  string `json:"eventName"` // event name
-	Address    string `gorm:"index;not null" json:"address"`
-	LogIndexID uint
-	LogIndex   LogIndex
+	EventName string   `json:"eventName"` // event name
+	Address   string   `gorm:"index;not null"       json:"address"`
+	LogIndex  LogIndex `gorm:"foreignKey:foreignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (ParticipantEvent) TableName() string {
@@ -71,13 +70,12 @@ func (ParticipantEvent) TableName() string {
 // Account save all accounts.
 type Account struct {
 	gorm.Model
-	User       string `gorm:"not null"              json:"user"`
-	Account    uint64 `gorm:"not null"              json:"account"`
-	ChainId    uint8  `gorm:"not null"              json:"chain_id"`
-	Index      uint64 `gorm:"not null"              json:"index"`
-	Address    string `gorm:"uniqueIndex; not null" json:"address"`
-	LogIndexID uint
-	LogIndex   LogIndex
+	User     string   `gorm:"not null"              json:"user"`
+	Account  uint64   `gorm:"not null"              json:"account"`
+	ChainId  uint8    `gorm:"not null"              json:"chain_id"`
+	Index    uint64   `gorm:"not null"              json:"index"`
+	Address  string   `gorm:"uniqueIndex; not null" json:"address"`
+	LogIndex LogIndex `gorm:"foreignKey:foreignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (Account) TableName() string {
@@ -86,13 +84,12 @@ func (Account) TableName() string {
 
 type DepositRecord struct {
 	gorm.Model
-	TargetAddress string `gorm:"not null" json:"target_address"`
-	Amount        uint64 `gorm:"not null" json:"amount"`
-	ChainId       uint64 `gorm:"not null" json:"chain_id"`
-	TxInfo        []byte `gorm:"not null" json:"tx_info"`
-	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
-	LogIndexID    uint
-	LogIndex      LogIndex
+	TargetAddress string   `gorm:"not null"             json:"target_address"`
+	Amount        uint64   `gorm:"not null"             json:"amount"`
+	ChainId       uint64   `gorm:"not null"             json:"chain_id"`
+	TxInfo        []byte   `gorm:"not null"             json:"tx_info"`
+	ExtraInfo     []byte   `gorm:"not null"             json:"extra_info"`
+	LogIndex      LogIndex `gorm:"foreignKey:foreignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (DepositRecord) TableName() string {
@@ -101,13 +98,12 @@ func (DepositRecord) TableName() string {
 
 type WithdrawalRecord struct {
 	gorm.Model
-	TargetAddress string `gorm:"not null" json:"target_address"`
-	Amount        uint64 `gorm:"not null" json:"amount"`
-	ChainId       uint64 `gorm:"not null" json:"chain_id"`
-	TxInfo        []byte `gorm:"not null" json:"tx_info"`
-	ExtraInfo     []byte `gorm:"not null" json:"extra_info"`
-	LogIndexID    uint
-	LogIndex      LogIndex
+	TargetAddress string   `gorm:"not null"             json:"target_address"`
+	Amount        uint64   `gorm:"not null"             json:"amount"`
+	ChainId       uint64   `gorm:"not null"             json:"chain_id"`
+	TxInfo        []byte   `gorm:"not null"             json:"tx_info"`
+	ExtraInfo     []byte   `gorm:"not null"             json:"extra_info"`
+	LogIndex      LogIndex `gorm:"foreignKey:foreignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (WithdrawalRecord) TableName() string {

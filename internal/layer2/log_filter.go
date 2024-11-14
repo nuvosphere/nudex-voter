@@ -13,6 +13,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (l *Layer2Listener) processLogs(vLog types.Log) {
@@ -59,7 +60,10 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 		New: submitterChosen,
 	}
 
-	result := l.db.GetRelayerDB().Create(&submitterChosen)
+	result := l.db.GetRelayerDB().Clauses(clause.OnConflict{
+		// OnConstraint: clause.PrimaryKey,
+		// DoNothing:    true,
+	}).Create(&submitterChosen)
 	if result.RowsAffected > 0 {
 		l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
 		l.state.TssState.BlockNumber = vLog.BlockNumber

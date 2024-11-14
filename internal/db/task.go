@@ -34,11 +34,10 @@ type Task struct {
 	Submitter        string            `gorm:"not null"                            json:"submitter"`
 	BlockHeight      uint64            `gorm:"not null"                            json:"block_height"`
 	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
+	LogIndex         LogIndex          `gorm:"foreignKey:foreignID"`                              // has one https://gorm.io/zh_CN/docs/has_one.html
 	CreateWalletTask *CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
 	DepositTask      *DepositTask      `gorm:"foreignKey:TaskId;references:TaskId"`
 	WithdrawalTask   *WithdrawalTask   `gorm:"foreignKey:TaskId;references:TaskId"`
-	LogIndexID       uint
-	LogIndex         LogIndex
 }
 
 func (Task) TableName() string {
