@@ -20,7 +20,7 @@ func (l *Layer2Listener) Proposer() common.Address {
 	return proposer
 }
 
-func (l *Layer2Listener) EncodeSignatureMsg(contractAddress common.Address, calldata []byte, taskID *big.Int) common.Hash {
+func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(contractAddress common.Address, calldata []byte, taskID *big.Int) common.Hash {
 	nonce, err := l.contractVotingManager.TssNonce(nil)
 	utils.Assert(err)
 	nonce.Add(nonce, big.NewInt(1))
