@@ -72,7 +72,6 @@ type CreateWalletTask struct {
 	Account uint32 `json:"account"`
 	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
 	Index   uint8  `json:"index"`
-	Address string `json:"address"` // new create bip44 address
 }
 
 func (CreateWalletTask) TableName() string {
