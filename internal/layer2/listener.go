@@ -161,21 +161,34 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 
 		log.WithFields(log.Fields{"fromBlock": fromBlock, "toBlock": toBlock}).Info("Syncing L2 nudex events")
 
-		filterQuery := ethereum.FilterQuery{
-			FromBlock: big.NewInt(int64(fromBlock)),
-			ToBlock:   big.NewInt(int64(toBlock)),
-			Addresses: l.contractAddress,
-			Topics:    contracts.Topics,
+		topicBatchSize := 4
+		var batches [][][]common.Hash
+		for i := 0; i < len(contracts.Topics); i += topicBatchSize {
+			end := i + topicBatchSize
+			if end > len(contracts.Topics) {
+				end = len(contracts.Topics)
+			}
+			batches = append(batches, contracts.Topics[i:end])
 		}
 
-		logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)
-		if err != nil {
-			return false, fmt.Errorf("failed to filter logs: %w", err)
+		for _, batch := range batches {
+			filterQuery := ethereum.FilterQuery{
+				FromBlock: big.NewInt(int64(fromBlock)),
+				ToBlock:   big.NewInt(int64(toBlock)),
+				Addresses: l.contractAddress,
+				Topics:    batch,
+			}
+
+			logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)
+			if err != nil {
+				return false, fmt.Errorf("failed to filter logs: %w", err)
+			}
+
+			for _, vLog := range logs {
+				l.processLogs(vLog)
+			}
 		}
 
-		for _, vLog := range logs {
-			l.processLogs(vLog)
-		}
 		// Save sync status
 		syncStatus.LastSyncBlock = toBlock
 		syncStatus.UpdatedAt = time.Now()
