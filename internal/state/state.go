@@ -20,19 +20,15 @@ type BtcHeadState struct {
 }
 
 type State struct {
-	EventBus eventbus.Bus
-
-	dbm *db.DatabaseManager
-
-	btcHeadMu sync.RWMutex
-
+	eventBus     eventbus.Bus
+	dbm          *db.DatabaseManager
+	TssState     TssState
+	btcHeadMu    sync.RWMutex
 	btcHeadState BtcHeadState
-
-	TssState TssState
 }
 
 func (s *State) Bus() eventbus.Bus {
-	return s.EventBus
+	return s.eventBus
 }
 
 // InitializeState initializes the state by reading from the DB.
@@ -114,7 +110,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 	wg.Wait()
 
 	return &State{
-		EventBus: eventbus.NewBus(),
+		eventBus: eventbus.NewBus(),
 		dbm:      dbm,
 
 		btcHeadState: BtcHeadState{
@@ -128,14 +124,4 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 			BlockNumber:      L2BlockNumber,
 		},
 	}
-}
-
-type TssState struct {
-	rw sync.RWMutex
-
-	BlockNumber      uint64         // charge submitter height
-	CurrentSubmitter common.Address // charge submitter
-
-	Participants []common.Address // re-share
-	CurrentTask  *db.Task         // task
 }

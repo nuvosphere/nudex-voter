@@ -202,13 +202,15 @@ const (
 )
 
 type ParticipantPair struct {
-	Type    int
-	Address common.Address
-	Old     []common.Address
-	New     []common.Address
+	Type         int
+	Address      common.Address
+	CurrentParts []common.Address
+	OldEvent     *ParticipantEvent
+	NewParts     []common.Address
+	NewEvent     *ParticipantEvent
 }
 
 type SubmitterChosenPair struct {
-	Old *SubmitterChosen
-	New *SubmitterChosen
+	Current *SubmitterChosen
+	New     *SubmitterChosen
 }

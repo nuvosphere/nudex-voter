@@ -136,7 +136,7 @@ func (lp *Service) handlePubSubMessages(ctx context.Context, sub *pubsub.Subscri
 
 			event, ok := lp.typeBindEvent.Load(receivedMsg.MessageType)
 			if ok {
-				lp.state.EventBus.Publish(event, receivedMsg)
+				lp.state.Bus().Publish(event, receivedMsg)
 			} else {
 				log.Warnf("Unknown message type: %d", receivedMsg.MessageType)
 			}

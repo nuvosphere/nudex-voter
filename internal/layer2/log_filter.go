@@ -52,7 +52,7 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	submitterChosen.LogIndex = l.LogIndex(eventName, vLog)
 
 	submitterPair := &db.SubmitterChosenPair{
-		Old: &db.SubmitterChosen{
+		Current: &db.SubmitterChosen{
 			BlockNumber: l.state.TssState.BlockNumber,
 			Submitter:   l.state.TssState.CurrentSubmitter.Hex(),
 		},
@@ -187,13 +187,13 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 
 		if !slices.Contains(l.state.TssState.Participants, newParticipant) {
 			pair := &db.ParticipantPair{
-				Type:    db.ParticipantAdded,
-				Address: newParticipant,
-				Old:     l.state.TssState.Participants,
+				Type:         db.ParticipantAdded,
+				Address:      newParticipant,
+				CurrentParts: l.state.TssState.Participants,
 			}
 
 			l.state.TssState.Participants = append(l.state.TssState.Participants, newParticipant)
-			pair.New = l.state.TssState.Participants
+			pair.NewParts = l.state.TssState.Participants
 			l.postTask(pair)
 		}
 	case contracts.ParticipantRemovedTopic:
@@ -223,12 +223,12 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		index := slices.Index(l.state.TssState.Participants, common.HexToAddress(removedParticipant))
 		if index >= 0 {
 			pair := &db.ParticipantPair{
-				Type:    db.ParticipantRemoved,
-				Address: participantRemovedEvent.Participant,
-				Old:     l.state.TssState.Participants,
+				Type:         db.ParticipantRemoved,
+				Address:      participantRemovedEvent.Participant,
+				CurrentParts: l.state.TssState.Participants,
 			}
 			l.state.TssState.Participants = slices.Delete(l.state.TssState.Participants, index, index)
-			pair.New = l.state.TssState.Participants
+			pair.NewParts = l.state.TssState.Participants
 			l.postTask(pair)
 		}
 	}

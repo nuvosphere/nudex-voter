@@ -111,8 +111,8 @@ func (t *Service) Start(ctx context.Context) {
 
 func (t *Service) eventLoop(ctx context.Context) {
 	t.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
-	t.tssMsgCh = t.state.EventBus.Subscribe(eventbus.EventTssMsg{})
-	t.pendingTask = t.state.EventBus.Subscribe(eventbus.EventTask{})
+	t.tssMsgCh = t.state.Bus().Subscribe(eventbus.EventTssMsg{})
+	t.pendingTask = t.state.Bus().Subscribe(eventbus.EventTask{})
 
 	go func() {
 		for {
@@ -149,8 +149,8 @@ func (t *Service) eventLoop(ctx context.Context) {
 							t.proposer,
 							helper.SenateTaskID,
 							helper.SenateTaskMsg,
-							v.Old,
-							v.New,
+							v.CurrentParts,
+							v.NewParts,
 						)
 					}
 				case *db.SubmitterChosenPair:
