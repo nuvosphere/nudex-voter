@@ -37,13 +37,21 @@ func (t *Service) Validate(msg SessionMessage[TaskId, Msg]) error {
 		return fmt.Errorf("taskID:%v, %w", msg.TaskID, ErrTaskCompleted)
 	}
 
+	if msg.Proposer != t.proposer {
+		return fmt.Errorf("proposer:(%v, %v), %w", msg.Proposer, t.proposer, ErrProposerWrong)
+	}
+
 	return nil
 }
 
 func (t *Service) GetTask(taskID int64) (*db.Task, error) {
 	task := &db.Task{}
 
-	err := t.dbm.GetRelayerDB().Preload(clause.Associations).Where("task_id", taskID).Last(task).Error
+	err := t.dbm.GetRelayerDB().
+		Preload(clause.Associations).
+		Where("task_id", taskID).
+		Last(task).
+		Error
 	if err != nil {
 		return nil, fmt.Errorf("taskID:%v, %w", taskID, err)
 	}
@@ -51,11 +59,23 @@ func (t *Service) GetTask(taskID int64) (*db.Task, error) {
 	return task, err
 }
 
+func (t *Service) GenKeyUnSignMsg(task *db.Task) Msg {
+	return big.Int{} // todo
+}
+
+func (t *Service) ReShareGroupUnSignMsg(task *db.Task) Msg {
+	return big.Int{} // todo
+}
+
+func (t *Service) TaskUnSignMsg(task *db.Task) Msg {
+	return big.Int{} // todo
+}
+
 // handleSessionMsg handler received msg from other node.
 func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
-	// todo
-	if t.IsCompleted(msg.TaskID) {
-		return fmt.Errorf("task already completed")
+	task, err := t.GetTask(msg.TaskID)
+	if err != nil {
+		return err
 	}
 
 	//if msg.TaskID < t.currentDoingTaskID {
@@ -72,15 +92,18 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		return nil
 	}
 	// build new session
-	// todo to validator msg field
-	txHash := common.Hash{} // todo
-
 	switch msg.Type {
 	case GenKeySessionType:
 		// check groupID
-		// check taskID
-		// check proposer
+		if msg.GroupID != helper.SenateGroupID {
+			return fmt.Errorf("GenKeySessionType: %w", ErrGroupIdWrong)
+		}
 		// check msg
+		unSignMsg := t.GenKeyUnSignMsg(task)
+		if unSignMsg.String() != msg.Msg.String() {
+			return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
+		}
+
 		_ = t.scheduler.NewGenerateKeySession(
 			t.proposer,
 			msg.TaskID,
@@ -88,12 +111,22 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			t.partners,
 		)
 	case ReShareGroupSessionType:
-		var newPartners Participants
+		var newPartners Participants // todo
+		// check groupID
+		if msg.GroupID != helper.SenateGroupID {
+			return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
+		}
+		// check msg
+		unSignMsg := t.ReShareGroupUnSignMsg(task)
+		if unSignMsg.String() != msg.Msg.String() {
+			return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
+		}
+
 		_ = t.scheduler.NewReShareGroupSession(
 			t.localAddress,
 			t.proposer,
 			helper.SenateTaskID,
-			new(big.Int).SetBytes(txHash.Bytes()),
+			&msg.Msg,
 			t.partners,
 			newPartners,
 		)
@@ -102,13 +135,18 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		localPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
 
+		unSignMsg := t.TaskUnSignMsg(task)
+		if unSignMsg.String() != msg.Msg.String() {
+			return fmt.Errorf("SignSessionType: %w", ErrTaskSignatureMsgWrong)
+		}
+
 		_ = t.scheduler.NewSignSession(
 			msg.GroupID,
 			msg.SessionID,
 			msg.Proposer,
 			t.localAddress,
 			msg.TaskID,
-			new(big.Int).SetBytes(txHash.Bytes()),
+			&msg.Msg,
 			t.partners,
 			*localPartySaveData,
 			keyDerivationDelta,
@@ -141,7 +179,7 @@ func (t *Service) proposalTaskSession(task db.ITask) error {
 		var result contracts.TaskPayloadContractWalletCreationResult
 
 		_ = wallet.GenerateAddressByPath(
-			*(t.scheduler.MasterPublicKey()),
+			t.scheduler.MasterPublicKey(),
 			uint32(coinType),
 			taskRequest.Account,
 			taskRequest.Index,
@@ -161,7 +199,7 @@ func (t *Service) proposalTaskSession(task db.ITask) error {
 		path := wallet.Bip44DerivationPath(uint32(coinType), taskRequest.Account, taskRequest.Index)
 		param, err := path.ToParams()
 		utils.Assert(err)
-		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(*t.scheduler.MasterPublicKey(), param.Indexes())
+		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(t.scheduler.MasterPublicKey(), param.Indexes())
 		utils.Assert(err)
 		localPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
@@ -174,7 +212,7 @@ func (t *Service) proposalTaskSession(task db.ITask) error {
 			t.proposer,
 			t.localAddress,
 			helper.SenateTaskID,
-			new(big.Int),
+			new(big.Int), // todo
 			t.partners,
 			*localPartySaveData,
 			keyDerivationDelta,
@@ -182,6 +220,7 @@ func (t *Service) proposalTaskSession(task db.ITask) error {
 
 		return err
 	case *db.DepositTask:
+
 	case *db.WithdrawalTask:
 	}
 

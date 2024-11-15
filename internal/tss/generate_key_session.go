@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -18,7 +17,7 @@ type GenerateKeySession[T, M, D any] struct {
 func (m *Scheduler[T]) NewGenerateKeySession(
 	proposer common.Address, // current submitter
 	taskID T, // msg id
-	msg *big.Int,
+	msg *Msg,
 	allPartners Participants,
 ) helper.SessionID {
 	preParams, err := keygen.GeneratePreParams(1 * time.Minute)
@@ -27,7 +26,7 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 	}
 
 	params, partyIdMap := NewParam(m.localSubmitter, allPartners.Threshold(), allPartners)
-	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](
+	s := newSession[T, *Msg, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
 		helper.SenateGroupID,
@@ -45,7 +44,7 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 	s.errCH = errCh
 	s.endCh = endCh
 	s.Run()
-	session := &GenerateKeySession[T, *big.Int, *keygen.LocalPartySaveData]{sessionTransport: s}
+	session := &GenerateKeySession[T, *Msg, *keygen.LocalPartySaveData]{sessionTransport: s}
 	m.AddSession(session)
 
 	return session.SessionID()

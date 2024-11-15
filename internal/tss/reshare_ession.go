@@ -22,11 +22,11 @@ type ReShareGroupSession[T, M, D any] struct {
 func (m *Scheduler[T]) NewReShareGroupSession(
 	localAddress, proposer common.Address,
 	taskID T, // msg id
-	msg *big.Int,
+	msg *Msg,
 	oldPartners Participants,
 	newPartners Participants,
 ) helper.SessionID {
-	reShareSession := &ReShareGroupSession[T, *big.Int, *keygen.LocalPartySaveData]{}
+	reShareSession := &ReShareGroupSession[T, *Msg, *keygen.LocalPartySaveData]{}
 
 	oldPartyIDs := createOldPartyIDsByAddress(oldPartners)
 	oldPeerCtx := tss.NewPeerContext(oldPartyIDs)
@@ -53,7 +53,7 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 		newPartners.Threshold(),
 	)
 
-	oldInnerSession := newSession[T, *big.Int, *keygen.LocalPartySaveData](
+	oldInnerSession := newSession[T, *Msg, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
 		helper.SenateGroupID,
@@ -66,7 +66,7 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 	)
 	reShareSession.oldSession = oldInnerSession
 
-	party, endCh, errCh := helper.RunReshare(m.ctx, oldParams, *m.masterLocalPartySaveData, reShareSession) // todo
+	party, endCh, errCh := helper.RunReshare(m.ctx, oldParams, m.masterLocalPartySaveData, reShareSession) // todo
 	oldInnerSession.party = party
 	oldInnerSession.partyIdMap = oldPartyIdMap
 	oldInnerSession.endCh = endCh
@@ -84,7 +84,7 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 		newPartners.Threshold(),
 	)
 
-	newInnerSession := newSession[T, *big.Int, *keygen.LocalPartySaveData](
+	newInnerSession := newSession[T, *Msg, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
 		helper.SenateGroupID,
@@ -97,7 +97,7 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 	)
 	reShareSession.newSession = newInnerSession
 
-	party, endCh, errCh = helper.RunReshare(m.ctx, newParams, *m.masterLocalPartySaveData, reShareSession)
+	party, endCh, errCh = helper.RunReshare(m.ctx, newParams, m.masterLocalPartySaveData, reShareSession)
 	newInnerSession.party = party
 	newInnerSession.partyIdMap = newPartyIdMap
 	newInnerSession.endCh = endCh

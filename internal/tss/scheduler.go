@@ -28,8 +28,8 @@ type Scheduler[T comparable] struct {
 	senateInToOut            chan *SessionResult[T, *keygen.LocalPartySaveData]
 	ctx                      context.Context
 	cancel                   context.CancelFunc
-	masterLocalPartySaveData *keygen.LocalPartySaveData
-	masterPubKey             *ecdsa.PublicKey
+	masterLocalPartySaveData keygen.LocalPartySaveData
+	masterPubKey             ecdsa.PublicKey
 	threshold                *atomic.Int64
 	localSubmitter           common.Address
 	proposer                 common.Address // current proposer(submitter)
@@ -77,10 +77,10 @@ func (m *Scheduler[T]) Start() {
 		err := saveTSSData(sessionResult.Data)
 		utils.Assert(err)
 
-		m.masterLocalPartySaveData = sessionResult.Data
+		m.masterLocalPartySaveData = *sessionResult.Data
 	}
 
-	m.masterPubKey = m.masterLocalPartySaveData.ECDSAPub.ToECDSAPubKey()
+	m.masterPubKey = *m.masterLocalPartySaveData.ECDSAPub.ToECDSAPubKey()
 
 	// loop approveProposal
 	m.loopApproveProposal()
@@ -96,7 +96,7 @@ func (m *Scheduler[T]) Genesis() {
 }
 
 func (m *Scheduler[T]) IsGenesis() bool {
-	if m.masterLocalPartySaveData != nil && m.masterLocalPartySaveData.ECDSAPub != nil {
+	if m.masterLocalPartySaveData.ECDSAPub != nil {
 		return false
 	}
 
@@ -109,7 +109,7 @@ func (m *Scheduler[T]) IsGenesis() bool {
 		return true
 	}
 
-	m.masterLocalPartySaveData = localPartySaveData
+	m.masterLocalPartySaveData = *localPartySaveData
 
 	return false
 }
@@ -255,6 +255,6 @@ func (m *Scheduler[T]) loopApproveProposal() {
 	}()
 }
 
-func (m *Scheduler[T]) MasterPublicKey() *ecdsa.PublicKey {
+func (m *Scheduler[T]) MasterPublicKey() ecdsa.PublicKey {
 	return m.masterPubKey
 }

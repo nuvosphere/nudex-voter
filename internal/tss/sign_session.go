@@ -28,13 +28,13 @@ func (m *Scheduler[T]) NewSignSession(
 	sessionID helper.SessionID,
 	proposer, localSubmitter common.Address,
 	taskID T,
-	msg *big.Int,
+	msg *Msg,
 	allPartners Participants,
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
 	params, partyIdMap := NewParam(localSubmitter, allPartners.Threshold(), allPartners)
-	innerSession := newSession[T, *big.Int, *tsscommon.SignatureData](
+	innerSession := newSession[T, *Msg, *tsscommon.SignatureData](
 		m.p2p,
 		m,
 		groupID,
@@ -51,7 +51,7 @@ func (m *Scheduler[T]) NewSignSession(
 	innerSession.endCh = endCh
 	innerSession.errCH = errCh
 	innerSession.inToOut = m.sigInToOut
-	session := &SignSession[T, *big.Int, *tsscommon.SignatureData]{
+	session := &SignSession[T, *Msg, *tsscommon.SignatureData]{
 		sessionTransport: innerSession,
 	}
 	session.Run()
