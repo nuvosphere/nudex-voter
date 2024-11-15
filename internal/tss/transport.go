@@ -67,7 +67,8 @@ type sessionTransport[T, M, D any] struct {
 const (
 	GenKeySessionType       = "GenerateKeySession"
 	ReShareGroupSessionType = "ReShareGroupSession"
-	SignSessionType         = "SignSession"
+	SignTaskSessionType     = "SignTaskSession"
+	TxSignatureSessionType  = "TxSignatureSession"
 )
 
 func NewParam(

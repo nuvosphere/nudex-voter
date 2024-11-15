@@ -113,6 +113,7 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			t.partners,
 		)
 	case ReShareGroupSessionType:
+		// todo How find new part?
 		var newPartners types.Participants // todo
 		// check groupID
 		if msg.GroupID != helper.SenateGroupID {
@@ -132,15 +133,26 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			t.partners,
 			newPartners,
 		)
-	case SignSessionType:
-		localPartySaveData, err := LoadTSSData()
+	case SignTaskSessionType:
+		masterLocalPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
-
-		keyDerivationDelta := &big.Int{} // todo
 
 		unSignMsg := t.TaskUnSignMsg(task)
 		if unSignMsg.String() != msg.Msg.String() {
-			return fmt.Errorf("SignSessionType: %w", ErrTaskSignatureMsgWrong)
+			return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
+		}
+
+		var keyDerivationDelta *big.Int
+
+		switch task.TaskType {
+		case db.TaskTypeCreateWallet:
+
+		case db.TaskTypeDeposit:
+
+		case db.TaskTypeWithdrawal:
+
+		default:
+			return fmt.Errorf("taskID %d: %w: %v", task.TaskId, ErrTaskIdWrong, task.TaskType)
 		}
 
 		_ = t.scheduler.NewSignSession(
@@ -151,9 +163,12 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			msg.TaskID,
 			&msg.Msg,
 			t.partners,
-			*localPartySaveData,
+			*masterLocalPartySaveData,
 			keyDerivationDelta,
 		)
+	case TxSignatureSessionType: // blockchain wallet tx signature
+	// todo
+
 	default:
 		return fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}

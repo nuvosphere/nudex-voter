@@ -43,7 +43,7 @@ func (m *Scheduler[T]) NewSignSession(
 		proposer,
 		taskID,
 		msg,
-		SignSessionType,
+		SignTaskSessionType,
 		allPartners,
 	)
 	party, endCh, errCh := helper.Run(m.ctx, msg, params, key, innerSession, keyDerivationDelta) // todo
