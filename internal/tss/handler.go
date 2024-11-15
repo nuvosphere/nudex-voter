@@ -14,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
@@ -112,7 +113,7 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			t.partners,
 		)
 	case ReShareGroupSessionType:
-		var newPartners Participants // todo
+		var newPartners types.Participants // todo
 		// check groupID
 		if msg.GroupID != helper.SenateGroupID {
 			return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
@@ -160,7 +161,7 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 	return nil
 }
 
-func (t *Service) Partners() Participants {
+func (t *Service) Partners() types.Participants {
 	// todo online contact get address list
 	return lo.Map(
 		config.AppConfig.TssPublicKeys,

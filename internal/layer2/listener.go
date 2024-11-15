@@ -196,7 +196,7 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 			FromBlock: big.NewInt(int64(fromBlock)),
 			ToBlock:   big.NewInt(int64(toBlock)),
 			Addresses: l.contractAddress,
-			//Topics:    batch,
+			// Topics:    batch,
 		}
 
 		logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)

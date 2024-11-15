@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -36,7 +37,7 @@ func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func createPartyIDsByAddress(addressList Participants) tss.SortedPartyIDs {
+func createPartyIDsByAddress(addressList types.Participants) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	for i, address := range addressList {
@@ -51,7 +52,7 @@ func createPartyIDsByAddress(addressList Participants) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func createOldPartyIDsByAddress(addressList Participants) tss.SortedPartyIDs {
+func createOldPartyIDsByAddress(addressList types.Participants) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	for i, address := range addressList {
@@ -153,7 +154,7 @@ func CompareStrings(a, b []string) bool {
 	return true
 }
 
-func AddressIndex(addressList Participants, tssAddress common.Address) int {
+func AddressIndex(addressList types.Participants, tssAddress common.Address) int {
 	for i, address := range addressList {
 		if address == tssAddress {
 			return i // Return the index if a match is found

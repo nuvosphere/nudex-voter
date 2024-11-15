@@ -6,6 +6,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 var _ Session[any] = &GenerateKeySession[any, any, any]{}
@@ -18,7 +19,7 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 	proposer common.Address, // current submitter
 	taskID T, // msg id
 	msg *Msg,
-	allPartners Participants,
+	allPartners types.Participants,
 ) helper.SessionID {
 	preParams, err := keygen.GeneratePreParams(1 * time.Minute)
 	if err != nil {

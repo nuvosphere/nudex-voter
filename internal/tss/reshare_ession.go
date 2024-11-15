@@ -9,6 +9,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/samber/lo"
 )
 
@@ -23,8 +24,8 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 	localAddress, proposer common.Address,
 	taskID T, // msg id
 	msg *Msg,
-	oldPartners Participants,
-	newPartners Participants,
+	oldPartners types.Participants,
+	newPartners types.Participants,
 ) helper.SessionID {
 	reShareSession := &ReShareGroupSession[T, *Msg, *keygen.LocalPartySaveData]{}
 

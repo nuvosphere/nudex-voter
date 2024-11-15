@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -17,23 +18,25 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/patrickmn/go-cache"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 )
 
 type Service struct {
-	isPrepared          atomic.Bool
-	privateKey          *ecdsa.PrivateKey // submit
-	localAddress        common.Address    // submit = partyID
-	proposer            common.Address    // current submitter
-	p2p                 p2p.P2PService
-	state               *state.State
-	scheduler           *Scheduler[TaskId]
-	cache               *cache.Cache
-	layer2Listener      *layer2.Layer2Listener
-	dbm                 *db.DatabaseManager
-	partners            Participants
-	submitterChosenPair *db.SubmitterChosenPair
+	isPrepared      atomic.Bool
+	privateKey      *ecdsa.PrivateKey // submit
+	localAddress    common.Address    // submit = partyID
+	proposer        common.Address    // current submitter
+	p2p             p2p.P2PService
+	state           *state.State
+	scheduler       *Scheduler[TaskId]
+	cache           *cache.Cache
+	layer2Listener  *layer2.Layer2Listener
+	dbm             *db.DatabaseManager
+	partners        types.Participants
+	submitterChosen *db.SubmitterChosen
 	// eventbus channel
 	tssMsgCh    <-chan any
 	pendingTask <-chan any
@@ -80,7 +83,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 	// proposer := layer2Listener.Proposer()
 	threshold := config.AppConfig.TssThreshold
 
-	var parts Participants = layer2Listener.Participants()
+	var parts types.Participants = layer2Listener.Participants()
 
 	if parts.Threshold() > 0 {
 		threshold = parts.Threshold()
@@ -142,19 +145,36 @@ func (t *Service) eventLoop(ctx context.Context) {
 							log.Warnf("handle session msg error, %v", err)
 						}
 					}
-				case *db.ParticipantPair:
-					if t.isCanProposal() {
+				case *db.ParticipantEvent:
+					party := common.HexToAddress(v.Address)
+
+					var newNewParts types.Participants
+
+					switch v.EventName {
+					case layer2.ParticipantAdded:
+						if !slices.Contains(t.partners, party) {
+							newNewParts = append(t.partners, party)
+						}
+					case layer2.ParticipantRemoved:
+						newNewParts = lo.Filter(t.partners, func(item common.Address, index int) bool { return item != party })
+					}
+
+					if t.isCanProposal() && len(newNewParts) > 0 && len(newNewParts) != len(t.partners) {
 						_ = t.scheduler.NewReShareGroupSession(
 							t.localAddress,
 							t.proposer,
 							helper.SenateTaskID,
 							helper.SenateTaskMsg,
-							v.CurrentParts,
-							v.NewParts,
+							t.partners,
+							newNewParts,
 						)
 					}
-				case *db.SubmitterChosenPair:
-					t.submitterChosenPair = v
+
+				case *db.SubmitterChosen:
+					t.submitterChosen = v
+
+				case *db.TaskCompletedEvent:
+					log.Infof("taskID: %d completed on blockchain", v.TaskId)
 				}
 			}
 		}
@@ -168,10 +188,6 @@ func (t *Service) isCanProposal() bool {
 
 func (t *Service) Stop() {}
 
-func (t *Service) oldPartners() Participants {
-	return t.partners
-}
-
 func (t *Service) Threshold() int {
-	return CalculateThreshold(len(t.partners))
+	return t.partners.Threshold()
 }

@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
-	"slices"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -47,23 +45,12 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
 	}
 
-	submitterChosen.BlockNumber = vLog.BlockNumber
 	submitterChosen.Submitter = submitter
 	submitterChosen.LogIndex = l.LogIndex(eventName, vLog)
 
-	submitterPair := &db.SubmitterChosenPair{
-		Current: &db.SubmitterChosen{
-			BlockNumber: l.state.TssState.BlockNumber,
-			Submitter:   l.state.TssState.CurrentSubmitter.Hex(),
-		},
-		New: &submitterChosen,
-	}
-
 	result := l.db.GetRelayerDB().Create(&submitterChosen)
 	if result.RowsAffected > 0 {
-		l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
-		l.state.TssState.BlockNumber = vLog.BlockNumber
-		l.postTask(submitterPair)
+		l.postTask(submitterChosen)
 	}
 
 	return result.Error
@@ -76,12 +63,11 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
 		actualTask := db.DecodeTask(uint32(taskSubmitted.TaskId.Uint64()), taskSubmitted.Context)
 		task := db.Task{
-			TaskId:      actualTask.TaskID(),
-			TaskType:    actualTask.Type(),
-			Context:     taskSubmitted.Context,
-			Submitter:   taskSubmitted.Submitter.Hex(),
-			BlockHeight: vLog.BlockNumber,
-			LogIndex:    l.LogIndex("TaskSubmitted", vLog),
+			TaskId:    actualTask.TaskID(),
+			TaskType:  actualTask.Type(),
+			Context:   taskSubmitted.Context,
+			Submitter: taskSubmitted.Submitter.Hex(),
+			LogIndex:  l.LogIndex("TaskSubmitted", vLog),
 		}
 		actualTask.SetBaseTask(task)
 
@@ -98,12 +84,22 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
 
+		var taskCompletedEvent *db.TaskCompletedEvent
+
 		err := l.db.GetRelayerDB().Transaction(func(tx *gorm.DB) error {
 			taskErr := tx.
 				Model(&db.Task{}).
 				Where("task_id = ?", taskCompleted.TaskId.Uint64()).
 				Update("status", db.Completed).Error
-			err := tx.Save(l.LogIndex("TaskCompleted", vLog)).Error
+
+			taskCompletedEvent = &db.TaskCompletedEvent{
+				TaskId:      uint32(taskCompleted.TaskId.Uint64()),
+				Submitter:   taskCompleted.Submitter.Hex(),
+				CompletedAt: taskCompleted.CompletedAt.Int64(),
+				Result:      taskCompleted.Result,
+				LogIndex:    l.LogIndex("TaskCompleted", vLog),
+			}
+			err := tx.Save(taskCompletedEvent).Error
 
 			return errors.Join(taskErr, err)
 		})
@@ -111,10 +107,8 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			return err
 		}
 
-		if l.state != nil && l.state.TssState.CurrentTask != nil {
-			if uint32(taskCompleted.TaskId.Uint64()) >= l.state.TssState.CurrentTask.TaskId {
-				l.state.TssState.CurrentTask = nil
-			}
+		if taskCompletedEvent != nil {
+			l.postTask(taskCompletedEvent)
 		}
 	}
 
@@ -159,78 +153,64 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 	return nil
 }
 
+const (
+	ParticipantAdded   = "ParticipantAdded"
+	ParticipantRemoved = "ParticipantRemoved"
+)
+
 func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
+	var (
+		participantEvent *db.ParticipantEvent
+		err              error
+	)
+
 	switch vLog.Topics[0] {
 	case contracts.ParticipantAddedTopic:
 		eventParticipantAdded := contracts.ParticipantManagerContractParticipantAdded{}
-		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
+		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, ParticipantAdded, vLog)
 		newParticipant := eventParticipantAdded.Participant
 		// save locked relayer member from db
 		participant := db.Participant{Address: newParticipant.String()}
-
-		err := l.db.
+		err = l.db.
 			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
 			err1 := tx.FirstOrCreate(&participant, "address = ?", participant.Address).Error
-			err2 := tx.Save(&db.ParticipantEvent{
+			participantEvent = &db.ParticipantEvent{
 				EventName: "ParticipantAdded",
 				Address:   participant.Address,
-				LogIndex:  l.LogIndex("ParticipantAdded", vLog),
-			}).Error
+				LogIndex:  l.LogIndex(ParticipantAdded, vLog),
+			}
+			err2 := tx.Save(participantEvent).Error
 
 			return errors.Join(err1, err2)
 		})
-		if err != nil {
-			return err
-		}
-
-		log.Infof("Participant added: %s", newParticipant)
-
-		if !slices.Contains(l.state.TssState.Participants, newParticipant) {
-			pair := &db.ParticipantPair{
-				Type:         db.ParticipantAdded,
-				Address:      newParticipant,
-				CurrentParts: l.state.TssState.Participants,
-			}
-
-			l.state.TssState.Participants = append(l.state.TssState.Participants, newParticipant)
-			pair.NewParts = l.state.TssState.Participants
-			l.postTask(pair)
-		}
 	case contracts.ParticipantRemovedTopic:
 		participantRemovedEvent := contracts.ParticipantManagerContractParticipantRemoved{}
-		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, "ParticipantRemoved", vLog)
+		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &participantRemovedEvent, ParticipantRemoved, vLog)
 		removedParticipant := participantRemovedEvent.Participant.Hex()
 
-		err := l.db.
+		err = l.db.
 			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
 			removedErr := tx.Where("address = ?", removedParticipant).
 				Delete(&db.Participant{}).
 				Error
-			vlogErr := tx.Save(&db.ParticipantEvent{
+			participantEvent := &db.ParticipantEvent{
 				EventName: "ParticipantRemoved",
 				Address:   removedParticipant,
-				LogIndex:  l.LogIndex("ParticipantRemoved", vLog),
-			}).Error
+				LogIndex:  l.LogIndex(ParticipantRemoved, vLog),
+			}
+			vlogErr := tx.Save(participantEvent).Error
 
 			return errors.Join(removedErr, vlogErr)
 		})
-		if err != nil {
-			return err
-		}
+	}
 
-		log.Infof("Participant removed: %s", removedParticipant)
+	if err != nil {
+		return err
+	}
 
-		index := slices.Index(l.state.TssState.Participants, common.HexToAddress(removedParticipant))
-		if index >= 0 {
-			pair := &db.ParticipantPair{
-				Type:         db.ParticipantRemoved,
-				Address:      participantRemovedEvent.Participant,
-				CurrentParts: l.state.TssState.Participants,
-			}
-			l.state.TssState.Participants = slices.Delete(l.state.TssState.Participants, index, index)
-			pair.NewParts = l.state.TssState.Participants
-			l.postTask(pair)
-		}
+	if participantEvent != nil {
+		l.postTask(participantEvent)
+		log.Infof("Participant %s: %s", participantEvent.EventName, participantEvent.Address)
 	}
 
 	return nil

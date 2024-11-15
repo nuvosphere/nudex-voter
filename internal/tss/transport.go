@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/samber/lo"
 )
 
@@ -72,7 +73,7 @@ const (
 func NewParam(
 	proposer common.Address, // current submitter
 	threshold int,
-	allPartners Participants,
+	allPartners types.Participants,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
 	partyIDs := createPartyIDsByAddress(allPartners)
 	partyID := partyIDs.FindByKey(new(big.Int).SetBytes(proposer.Bytes()))
@@ -94,7 +95,7 @@ func newSession[T comparable, M, D any](
 	taskID T, // msg id
 	msg M,
 	ty string,
-	allPartners Participants,
+	allPartners types.Participants,
 ) *sessionTransport[T, M, D] {
 	if sessionID == helper.ZeroSessionID {
 		sessionID = RandSessionID()

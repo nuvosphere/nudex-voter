@@ -8,6 +8,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 var _ Session[any] = &SignSession[any, any, any]{}
@@ -29,7 +30,7 @@ func (m *Scheduler[T]) NewSignSession(
 	proposer, localSubmitter common.Address,
 	taskID T,
 	msg *Msg,
-	allPartners Participants,
+	allPartners types.Participants,
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {

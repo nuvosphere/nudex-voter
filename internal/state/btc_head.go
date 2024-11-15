@@ -19,7 +19,7 @@ func (s *State) AddUnconfirmBtcBlock(height uint64, hash string) error {
 
 	// check if exist, if not save to db
 	_, err := s.queryBtcBlockByHeigh(height)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
 

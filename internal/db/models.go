@@ -36,9 +36,8 @@ func (EVMSyncStatus) TableName() string {
 // SubmitterChosen contains block number and current submitter.
 type SubmitterChosen struct {
 	gorm.Model
-	BlockNumber uint64   `gorm:"index:block_number_submitter,unique;not null" json:"block_number"`
-	Submitter   string   `gorm:"index:block_number_submitter,unique;not null" json:"submitter"`
-	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	Submitter string   `gorm:"uniqueIndex"          json:"submitter"`
+	LogIndex  LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (SubmitterChosen) TableName() string {

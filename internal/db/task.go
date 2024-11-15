@@ -1,7 +1,6 @@
 package db
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"gorm.io/gorm"
 )
@@ -32,7 +31,6 @@ type Task struct {
 	TaskType         int               `gorm:"not null;default:0"                  json:"task_type"`
 	Context          []byte            `gorm:"not null"                            json:"Context"`
 	Submitter        string            `gorm:"not null"                            json:"submitter"`
-	BlockHeight      uint64            `gorm:"not null"                            json:"block_height"`
 	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
 	LogIndex         LogIndex          `gorm:"foreignKey:ForeignID"`                              // has one https://gorm.io/zh_CN/docs/has_one.html
 	CreateWalletTask *CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
@@ -72,6 +70,7 @@ type CreateWalletTask struct {
 	Account uint32 `json:"account"`
 	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
 	Index   uint8  `json:"index"`
+	Address string `json:"address"` // new create bip44 address
 }
 
 func (CreateWalletTask) TableName() string {
@@ -195,21 +194,12 @@ const (
 	TaskErrorCodeChainNotSupported
 )
 
-const (
-	ParticipantAdded = iota
-	ParticipantRemoved
-)
-
-type ParticipantPair struct {
-	Type         int
-	Address      common.Address
-	CurrentParts []common.Address
-	OldEvent     *ParticipantEvent
-	NewParts     []common.Address
-	NewEvent     *ParticipantEvent
-}
-
-type SubmitterChosenPair struct {
-	Current *SubmitterChosen
-	New     *SubmitterChosen
+type TaskCompletedEvent struct {
+	gorm.Model
+	TaskId      uint32   `gorm:"unique;not null"                     json:"task_id"`
+	Submitter   string   `gorm:"not null"                            json:"submitter"`
+	CompletedAt int64    `gorm:"unique;not null"                     json:"completedAt"`
+	Result      []byte   `json:"result"`
+	Task        Task     `gorm:"foreignKey:TaskId;references:TaskId"`
+	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
