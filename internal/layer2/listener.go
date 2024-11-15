@@ -20,9 +20,18 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+)
+
+var (
+	VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
+	AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
+	TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
+	ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
+	DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
 )
 
 type Layer2Listener struct {
@@ -34,6 +43,7 @@ type Layer2Listener struct {
 	contractAddress       []common.Address
 	addressBind           map[common.Address]func(types.Log) error
 	contractVotingManager *contracts.VotingManagerContract
+	participantManager    *contracts.ParticipantManagerContract
 }
 
 func (l *Layer2Listener) postTask(task any) {
@@ -42,6 +52,34 @@ func (l *Layer2Listener) postTask(task any) {
 
 func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContract {
 	return l.contractVotingManager
+}
+
+func (l *Layer2Listener) Proposer() common.Address {
+	proposer, err := l.contractVotingManager.NextSubmitter(nil)
+	utils.Assert(err)
+
+	return proposer
+}
+
+func (l *Layer2Listener) Participants() []common.Address {
+	participants, err := l.participantManager.GetParticipants(nil)
+	utils.Assert(err)
+
+	return participants
+}
+
+func (l *Layer2Listener) IsParticipant(participant common.Address) bool {
+	is, err := l.participantManager.IsParticipant(nil, participant)
+	utils.Assert(err)
+
+	return is
+}
+
+func (l *Layer2Listener) GetRandomParticipant(participant common.Address) common.Address {
+	nextSubmitter, err := l.participantManager.GetRandomParticipant(nil, participant)
+	utils.Assert(err)
+
+	return nextSubmitter
 }
 
 func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManager) *Layer2Listener {
@@ -58,14 +96,6 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		chainID:   atomic.Int64{},
 	}
 
-	var (
-		VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
-		AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
-		TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
-		ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
-		DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
-	)
-
 	self.addressBind = map[common.Address]func(types.Log) error{
 		VotingAddress:      self.processVotingLog,
 		AccountAddress:     self.processAccountLog,
@@ -78,12 +108,23 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		func(item common.Address, _ func(log2 types.Log) error) common.Address { return item },
 	)
 
+	_, err = self.ChainID(context.Background())
+	if err != nil {
+		log.Fatalf("Error getting chain ID: %v", err)
+	}
+
 	contractVotingManager, err := contracts.NewVotingManagerContract(VotingAddress, ethClient)
 	if err != nil {
 		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
 	}
 
+	participantManager, err := contracts.NewParticipantManagerContract(ParticipantAddress, ethClient)
+	if err != nil {
+		log.Fatalf("Failed to instantiate contract participantManager: %v", err)
+	}
+
 	self.contractVotingManager = contractVotingManager
+	self.participantManager = participantManager
 
 	return self
 }
