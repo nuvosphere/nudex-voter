@@ -27,14 +27,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
-	AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
-	TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
-	ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
-	DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
-)
-
 type Layer2Listener struct {
 	p2p                   *p2p.Service
 	db                    *db.DatabaseManager
@@ -85,6 +77,14 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		ethClient: ethClient,
 		chainID:   atomic.Int64{},
 	}
+
+	var (
+		VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
+		AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
+		TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
+		ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
+		DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
+	)
 
 	self.addressBind = map[common.Address]func(types.Log) error{
 		VotingAddress:      self.processVotingLog,
