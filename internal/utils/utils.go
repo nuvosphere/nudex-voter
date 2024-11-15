@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/chenzhijie/go-web3/utils"
 )
 
 // Contains checks if the slice contains the given value.
@@ -103,4 +105,10 @@ func ContainErr(err, subErr error) bool {
 	}
 
 	return strings.Contains(err.Error(), subErr.Error())
+}
+
+// AbiEncodePacked Equal to solidity `abi.encodePacked(args)`
+// args type is bool、*big.Int、common.Hash、[]byte、common.Address.
+func AbiEncodePacked(args ...interface{}) ([]byte, error) {
+	return utils.NewUtils().AbiEncodePacked(args...)
 }

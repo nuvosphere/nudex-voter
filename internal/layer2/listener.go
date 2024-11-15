@@ -50,17 +50,6 @@ func (l *Layer2Listener) postTask(task any) {
 	l.state.Bus().Publish(state.EventTask{}, task)
 }
 
-func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContract {
-	return l.contractVotingManager
-}
-
-func (l *Layer2Listener) Proposer() common.Address {
-	proposer, err := l.contractVotingManager.NextSubmitter(nil)
-	utils.Assert(err)
-
-	return proposer
-}
-
 func (l *Layer2Listener) Participants() []common.Address {
 	participants, err := l.participantManager.GetParticipants(nil)
 	utils.Assert(err)
