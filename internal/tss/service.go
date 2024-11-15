@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,8 +39,6 @@ type Service struct {
 	// eventbus channel
 	tssMsgCh    <-chan any
 	pendingTask <-chan any
-
-	rw sync.RWMutex
 }
 
 func (t *Service) IsCompleted(taskID int64) bool {
@@ -136,13 +133,11 @@ func (t *Service) eventLoop(ctx context.Context) {
 						// todo
 						log.Info(v)
 
-						err := t.proposalSignTaskSession(v)
+						err := t.proposalTaskSession(v)
 						if err != nil {
 							log.Warnf("handle session msg error, %v", err)
 						}
 					}
-				case *db.SubmitterChosenPair:
-					// todo
 				case *db.ParticipantPair:
 					if t.isCanProposal() {
 						// todo
@@ -160,6 +155,7 @@ func (t *Service) eventLoop(ctx context.Context) {
 							newPartners,
 						)
 					}
+				case *db.SubmitterChosenPair: // todo
 				}
 			}
 		}

@@ -99,7 +99,7 @@ func (t *Service) Partners() []common.Address {
 	)
 }
 
-func (t *Service) proposalSignTaskSession(task db.ITask) error {
+func (t *Service) proposalTaskSession(task db.ITask) error {
 	nonce, err := t.layer2Listener.ContractVotingManager().TssNonce(nil)
 	if err != nil {
 		return fmt.Errorf("get nonce error: %v", err)

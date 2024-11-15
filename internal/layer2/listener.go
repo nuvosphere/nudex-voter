@@ -162,12 +162,15 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 		log.WithFields(log.Fields{"fromBlock": fromBlock, "toBlock": toBlock}).Info("Syncing L2 nudex events")
 
 		topicBatchSize := 4
+
 		var batches [][][]common.Hash
+
 		for i := 0; i < len(contracts.Topics); i += topicBatchSize {
 			end := i + topicBatchSize
 			if end > len(contracts.Topics) {
 				end = len(contracts.Topics)
 			}
+
 			batches = append(batches, contracts.Topics[i:end])
 		}
 

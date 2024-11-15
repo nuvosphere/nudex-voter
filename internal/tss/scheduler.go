@@ -63,7 +63,7 @@ func NewScheduler[T comparable](p p2p.P2PService, threshold int64, localSubmitte
 }
 
 func (m *Scheduler[T]) Start() {
-	m.DetectionThreshold()
+	m.BlockDetectionThreshold()
 
 	is := m.IsGenesis()
 	if is {
@@ -114,7 +114,7 @@ func (m *Scheduler[T]) IsGenesis() bool {
 	return false
 }
 
-func (m *Scheduler[T]) DetectionThreshold() {
+func (m *Scheduler[T]) BlockDetectionThreshold() {
 L:
 	for {
 		select {
@@ -249,7 +249,7 @@ func (m *Scheduler[T]) loopApproveProposal() {
 				// todo
 				// signature and re-share
 				log.Info("doing approve proposal", proposal)
-				m.DetectionThreshold()
+				m.BlockDetectionThreshold()
 			}
 		}
 	}()
