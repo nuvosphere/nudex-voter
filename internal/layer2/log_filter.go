@@ -73,7 +73,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
-		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
+		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
 		actualTask := db.DecodeTask(uint32(taskSubmitted.TaskId.Uint64()), taskSubmitted.Context)
 		task := db.Task{
 			TaskId:      actualTask.TaskID(),
