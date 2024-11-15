@@ -121,7 +121,8 @@ func TestSubmitterChosenUniqueTask(t *testing.T) {
 	dbm.initDB()
 
 	s := SubmitterChosen{
-		Submitter: "122",
+		BlockNumber: 12,
+		Submitter:   "122",
 	}
 	db := dbm.GetRelayerDB().Debug()
 	db.DryRun = true

@@ -110,6 +110,7 @@ func (dm *DatabaseManager) autoMigrate() {
 		&EVMSyncStatus{},
 		&SubmitterChosen{},
 		&Participant{},
+		&ParticipantEvent{},
 		&Account{},
 		&DepositRecord{},
 		&WithdrawalRecord{},
@@ -117,6 +118,7 @@ func (dm *DatabaseManager) autoMigrate() {
 		&CreateWalletTask{},
 		&DepositTask{},
 		&WithdrawalTask{},
+		&TaskCompletedEvent{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}

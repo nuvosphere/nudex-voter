@@ -34,18 +34,19 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 
 	switch vLog.Topics[0] {
 	case contracts.SubmitterChosenTopic:
-		eventName = "SubmitterChosen"
+		eventName = SubmitterChosen
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterChosen{}
 		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, eventName, vLog)
 		submitter = submitterChosenEvent.NewSubmitter.Hex()
 	case contracts.SubmitterRotationRequestedTopic:
-		eventName = "SubmitterRotationRequested"
+		eventName = SubmitterRotationRequested
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
 		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, eventName, vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
 	}
 
 	submitterChosen.Submitter = submitter
+	submitterChosen.BlockNumber = vLog.BlockNumber
 	submitterChosen.LogIndex = l.LogIndex(eventName, vLog)
 
 	result := l.db.GetRelayerDB().Create(&submitterChosen)
@@ -60,14 +61,14 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
-		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, "TaskSubmitted", vLog)
+		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, TaskSubmitted, vLog)
 		actualTask := db.DecodeTask(uint32(taskSubmitted.TaskId.Uint64()), taskSubmitted.Context)
 		task := db.Task{
 			TaskId:    actualTask.TaskID(),
 			TaskType:  actualTask.Type(),
 			Context:   taskSubmitted.Context,
 			Submitter: taskSubmitted.Submitter.Hex(),
-			LogIndex:  l.LogIndex("TaskSubmitted", vLog),
+			LogIndex:  l.LogIndex(TaskSubmitted, vLog),
 		}
 		actualTask.SetBaseTask(task)
 
@@ -82,7 +83,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 	case contracts.TaskCompletedTopic:
 		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
-		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, "TaskCompleted", vLog)
+		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, TaskCompleted, vLog)
 
 		var taskCompletedEvent *db.TaskCompletedEvent
 
@@ -97,7 +98,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 				Submitter:   taskCompleted.Submitter.Hex(),
 				CompletedAt: taskCompleted.CompletedAt.Int64(),
 				Result:      taskCompleted.Result,
-				LogIndex:    l.LogIndex("TaskCompleted", vLog),
+				LogIndex:    l.LogIndex(TaskCompleted, vLog),
 			}
 			err := tx.Save(taskCompletedEvent).Error
 
@@ -137,14 +138,14 @@ func (l *Layer2Listener) LogIndex(eventName string, vlog types.Log) db.LogIndex 
 func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 	if vLog.Topics[0] == contracts.AddressRegisteredTopic {
 		addressRegistered := contracts.AccountManagerContractAddressRegistered{}
-		contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, "AddressRegistered", vLog)
+		contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, AddressRegistered, vLog)
 		account := db.Account{
 			User:     addressRegistered.User.Hex(),
 			Account:  addressRegistered.Account.Uint64(),
 			ChainId:  addressRegistered.ChainId,
 			Index:    addressRegistered.Index.Uint64(),
 			Address:  addressRegistered.NewAddress.Hex(),
-			LogIndex: l.LogIndex("AddressRegistered", vLog),
+			LogIndex: l.LogIndex(AddressRegistered, vLog),
 		}
 
 		return l.db.GetRelayerDB().Create(&account).Error
@@ -152,11 +153,6 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 
 	return nil
 }
-
-const (
-	ParticipantAdded   = "ParticipantAdded"
-	ParticipantRemoved = "ParticipantRemoved"
-)
 
 func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 	var (
@@ -175,9 +171,10 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
 			err1 := tx.FirstOrCreate(&participant, "address = ?", participant.Address).Error
 			participantEvent = &db.ParticipantEvent{
-				EventName: "ParticipantAdded",
-				Address:   participant.Address,
-				LogIndex:  l.LogIndex(ParticipantAdded, vLog),
+				EventName:   ParticipantAdded,
+				Address:     participant.Address,
+				BlockNumber: vLog.BlockNumber,
+				LogIndex:    l.LogIndex(ParticipantAdded, vLog),
 			}
 			err2 := tx.Save(participantEvent).Error
 
@@ -194,9 +191,10 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 				Delete(&db.Participant{}).
 				Error
 			participantEvent := &db.ParticipantEvent{
-				EventName: "ParticipantRemoved",
-				Address:   removedParticipant,
-				LogIndex:  l.LogIndex(ParticipantRemoved, vLog),
+				EventName:   ParticipantRemoved,
+				Address:     removedParticipant,
+				BlockNumber: vLog.BlockNumber,
+				LogIndex:    l.LogIndex(ParticipantRemoved, vLog),
 			}
 			vlogErr := tx.Save(participantEvent).Error
 
@@ -220,27 +218,27 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case contracts.DepositRecordedTopic:
 		depositRecorded := contracts.DepositManagerContractDepositRecorded{}
-		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, "DepositRecorded", vLog)
+		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, DepositRecorded, vLog)
 		depositRecord := db.DepositRecord{
 			TargetAddress: depositRecorded.TargetAddress.Hex(),
 			Amount:        depositRecorded.Amount.Uint64(),
 			ChainId:       depositRecorded.ChainId.Uint64(),
 			TxInfo:        depositRecorded.TxInfo,
 			ExtraInfo:     depositRecorded.ExtraInfo,
-			LogIndex:      l.LogIndex("DepositRecorded", vLog),
+			LogIndex:      l.LogIndex(DepositRecorded, vLog),
 		}
 
 		return l.db.GetRelayerDB().Save(&depositRecord).Error
 	case contracts.WithdrawalRecordedTopic:
 		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
-		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, "WithdrawalRecorded", vLog)
+		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, WithdrawalRecorded, vLog)
 		withdrawalRecord := db.WithdrawalRecord{
 			TargetAddress: withdrawalRecorded.TargetAddress.Hex(),
 			Amount:        withdrawalRecorded.Amount.Uint64(),
 			ChainId:       withdrawalRecorded.ChainId.Uint64(),
 			TxInfo:        withdrawalRecorded.TxInfo,
 			ExtraInfo:     withdrawalRecorded.ExtraInfo,
-			LogIndex:      l.LogIndex("WithdrawalRecorded", vLog),
+			LogIndex:      l.LogIndex(WithdrawalRecorded, vLog),
 		}
 
 		return l.db.GetRelayerDB().Save(&withdrawalRecord).Error

@@ -36,8 +36,9 @@ func (EVMSyncStatus) TableName() string {
 // SubmitterChosen contains block number and current submitter.
 type SubmitterChosen struct {
 	gorm.Model
-	Submitter string   `gorm:"uniqueIndex"          json:"submitter"`
-	LogIndex  LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	Submitter   string   `gorm:"index:submitter_block_number_unique,unique" json:"submitter"`
+	BlockNumber uint64   `gorm:"index:submitter_block_number_unique,unique" json:"blockNumber"`
+	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (SubmitterChosen) TableName() string {
@@ -57,9 +58,10 @@ func (Participant) TableName() string {
 // ParticipantEvent save all participants.
 type ParticipantEvent struct {
 	gorm.Model
-	EventName string   `json:"eventName"` // event name
-	Address   string   `gorm:"index;not null"       json:"address"`
-	LogIndex  LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	EventName   string   `json:"eventName"` // event name
+	Address     string   `gorm:"index;not null"       json:"address"`
+	BlockNumber uint64   `gorm:"index;not null"       json:"blockNumber"`
+	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (ParticipantEvent) TableName() string {

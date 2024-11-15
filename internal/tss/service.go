@@ -172,6 +172,7 @@ func (t *Service) eventLoop(ctx context.Context) {
 
 				case *db.SubmitterChosen:
 					t.submitterChosen = v
+					t.proposer = common.HexToAddress(v.Submitter)
 
 				case *db.TaskCompletedEvent:
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
