@@ -32,12 +32,11 @@ type Scheduler[T comparable] struct {
 	masterPubKey             ecdsa.PublicKey
 	threshold                *atomic.Int64
 	localSubmitter           common.Address
-	proposer                 common.Address // current proposer(submitter)
 	pendingProposal          chan any
 	notify                   chan struct{}
 }
 
-func NewScheduler[T comparable](p p2p.P2PService, threshold int64, localSubmitter, proposer common.Address) *Scheduler[T] {
+func NewScheduler[T comparable](p p2p.P2PService, threshold int64, localSubmitter common.Address) *Scheduler[T] {
 	t := &atomic.Int64{}
 	t.Store(threshold)
 
@@ -56,7 +55,6 @@ func NewScheduler[T comparable](p p2p.P2PService, threshold int64, localSubmitte
 		ctx:             ctx,
 		cancel:          cancel,
 		localSubmitter:  localSubmitter,
-		proposer:        proposer,
 		pendingProposal: make(chan any, 1024),
 		notify:          make(chan struct{}, 1024),
 	}
@@ -70,20 +68,25 @@ func (m *Scheduler[T]) Start() {
 		m.Genesis() // build senate session
 
 		sessionResult := <-m.senateInToOut
-		if sessionResult.Err != nil {
-			panic(sessionResult.Err)
-		}
-
-		err := saveTSSData(sessionResult.Data)
-		utils.Assert(err)
-
-		m.masterLocalPartySaveData = *sessionResult.Data
+		m.SaveSenateSessionResult(sessionResult)
 	}
 
 	m.masterPubKey = *m.masterLocalPartySaveData.ECDSAPub.ToECDSAPubKey()
 
+	m.LoopReShareGroupResult()
 	// loop approveProposal
 	m.loopApproveProposal()
+}
+
+func (m *Scheduler[T]) SaveSenateSessionResult(sessionResult *SessionResult[T, *keygen.LocalPartySaveData]) {
+	if sessionResult.Err != nil {
+		panic(sessionResult.Err)
+	}
+
+	err := saveTSSData(sessionResult.Data)
+	utils.Assert(err)
+
+	m.masterLocalPartySaveData = *sessionResult.Data
 }
 
 func (m *Scheduler[T]) Stop() {
@@ -257,4 +260,18 @@ func (m *Scheduler[T]) loopApproveProposal() {
 
 func (m *Scheduler[T]) MasterPublicKey() ecdsa.PublicKey {
 	return m.masterPubKey
+}
+
+func (m *Scheduler[T]) LoopReShareGroupResult() {
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("loopReShareGroupResult done")
+			case sessionResult := <-m.senateInToOut:
+				// todo update threshold
+				m.SaveSenateSessionResult(sessionResult)
+			}
+		}
+	}()
 }

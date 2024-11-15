@@ -21,17 +21,18 @@ import (
 )
 
 type Service struct {
-	isPrepared     atomic.Bool
-	privateKey     *ecdsa.PrivateKey // submit
-	localAddress   common.Address    // submit = partyID
-	proposer       common.Address    // current submitter
-	p2p            p2p.P2PService
-	state          *state.State
-	scheduler      *Scheduler[TaskId]
-	cache          *cache.Cache
-	layer2Listener *layer2.Layer2Listener
-	dbm            *db.DatabaseManager
-	partners       Participants
+	isPrepared          atomic.Bool
+	privateKey          *ecdsa.PrivateKey // submit
+	localAddress        common.Address    // submit = partyID
+	proposer            common.Address    // current submitter
+	p2p                 p2p.P2PService
+	state               *state.State
+	scheduler           *Scheduler[TaskId]
+	cache               *cache.Cache
+	layer2Listener      *layer2.Layer2Listener
+	dbm                 *db.DatabaseManager
+	partners            Participants
+	submitterChosenPair *db.SubmitterChosenPair
 	// eventbus channel
 	tssMsgCh    <-chan any
 	pendingTask <-chan any
@@ -75,7 +76,14 @@ func (t *Service) sigEndLoop(ctx context.Context) {
 
 func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State, layer2Listener *layer2.Layer2Listener) *Service {
 	localAddress := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
-	proposer := common.Address{} // todo
+	// proposer := layer2Listener.Proposer()
+	threshold := config.AppConfig.TssThreshold
+
+	var parts Participants = layer2Listener.Participants()
+
+	if parts.Threshold() > 0 {
+		threshold = parts.Threshold()
+	}
 
 	return &Service{
 		isPrepared:     atomic.Bool{},
@@ -85,8 +93,9 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, state *state.State
 		dbm:            dbm,
 		state:          state,
 		layer2Listener: layer2Listener,
-		scheduler:      NewScheduler[int64](p, int64(config.AppConfig.TssThreshold), localAddress, proposer),
+		scheduler:      NewScheduler[int64](p, int64(threshold), localAddress),
 		cache:          cache.New(time.Minute*10, time.Minute),
+		partners:       parts,
 	}
 }
 
@@ -121,13 +130,11 @@ func (t *Service) eventLoop(ctx context.Context) {
 				}
 			case data := <-t.pendingTask: // from layer2 log scan
 				log.Info("task", data)
-				// todo tss task
 
 				switch v := data.(type) {
 				case db.ITask:
 					if t.isCanProposal() {
-						// todo
-						log.Info(v)
+						log.Info("proposal task", v)
 
 						err := t.proposalTaskSession(v)
 						if err != nil {
@@ -140,12 +147,13 @@ func (t *Service) eventLoop(ctx context.Context) {
 							t.localAddress,
 							t.proposer,
 							helper.SenateTaskID,
-							helper.SenateSessionID.Big(), // todo
+							helper.SenateTaskMsg,
 							v.Old,
 							v.New,
 						)
 					}
-				case *db.SubmitterChosenPair: // todo
+				case *db.SubmitterChosenPair:
+					t.submitterChosenPair = v
 				}
 			}
 		}
@@ -153,6 +161,7 @@ func (t *Service) eventLoop(ctx context.Context) {
 }
 
 func (t *Service) isCanProposal() bool {
+	t.scheduler.BlockDetectionThreshold()
 	return t.localAddress == t.proposer
 }
 

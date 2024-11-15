@@ -14,6 +14,7 @@ var (
 	ZeroSessionID   SessionID
 	SenateSessionID = crypto.Keccak256Hash([]byte("The voter senate session，one and only one"))
 	SenateGroupID   = common.BytesToAddress(SenateSessionID.Bytes())
+	SenateTaskMsg   = SenateSessionID.Big()
 	SenateTaskID    = SenateSessionID.Big().Int64()
 )
 

@@ -13,7 +13,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func (l *Layer2Listener) processLogs(vLog types.Log) {
@@ -53,17 +52,14 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	submitterChosen.LogIndex = l.LogIndex(eventName, vLog)
 
 	submitterPair := &db.SubmitterChosenPair{
-		Old: db.SubmitterChosen{
+		Old: &db.SubmitterChosen{
 			BlockNumber: l.state.TssState.BlockNumber,
 			Submitter:   l.state.TssState.CurrentSubmitter.Hex(),
 		},
-		New: submitterChosen,
+		New: &submitterChosen,
 	}
 
-	result := l.db.GetRelayerDB().Clauses(clause.OnConflict{
-		// OnConstraint: clause.PrimaryKey,
-		// DoNothing:    true,
-	}).Create(&submitterChosen)
+	result := l.db.GetRelayerDB().Create(&submitterChosen)
 	if result.RowsAffected > 0 {
 		l.state.TssState.CurrentSubmitter = common.HexToAddress(submitter)
 		l.state.TssState.BlockNumber = vLog.BlockNumber
@@ -170,9 +166,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &eventParticipantAdded, "ParticipantAdded", vLog)
 		newParticipant := eventParticipantAdded.Participant
 		// save locked relayer member from db
-		participant := db.Participant{
-			Address: newParticipant.String(),
-		}
+		participant := db.Participant{Address: newParticipant.String()}
 
 		err := l.db.
 			GetRelayerDB().Transaction(func(tx *gorm.DB) error {

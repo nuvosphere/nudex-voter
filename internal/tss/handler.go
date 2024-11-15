@@ -60,15 +60,16 @@ func (t *Service) GetTask(taskID int64) (*db.Task, error) {
 }
 
 func (t *Service) GenKeyUnSignMsg(task *db.Task) Msg {
-	return big.Int{} // todo
+	return *helper.SenateTaskMsg
 }
 
 func (t *Service) ReShareGroupUnSignMsg(task *db.Task) Msg {
-	return big.Int{} // todo
+	return *helper.SenateTaskMsg
 }
 
 func (t *Service) TaskUnSignMsg(task *db.Task) Msg {
-	return big.Int{} // todo
+	// todo
+	return big.Int{}
 }
 
 // handleSessionMsg handler received msg from other node.
@@ -131,9 +132,10 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			newPartners,
 		)
 	case SignSessionType:
-		keyDerivationDelta := &big.Int{} // todo
 		localPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
+
+		keyDerivationDelta := &big.Int{} // todo
 
 		unSignMsg := t.TaskUnSignMsg(task)
 		if unSignMsg.String() != msg.Msg.String() {

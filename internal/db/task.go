@@ -209,6 +209,6 @@ type ParticipantPair struct {
 }
 
 type SubmitterChosenPair struct {
-	Old SubmitterChosen
-	New SubmitterChosen
+	Old *SubmitterChosen
+	New *SubmitterChosen
 }
