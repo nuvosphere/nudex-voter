@@ -21,6 +21,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
@@ -37,7 +38,7 @@ const (
 )
 
 type P2PService interface {
-	Bind(msgType MessageType, event state.Event)
+	Bind(msgType MessageType, event eventbus.Event)
 	PublishMessage(ctx context.Context, msg any) error
 	OnlinePeerCount() int
 	IsOnline(partyID string) bool

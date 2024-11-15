@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
@@ -109,9 +110,9 @@ func (t *Service) Start(ctx context.Context) {
 }
 
 func (t *Service) eventLoop(ctx context.Context) {
-	t.p2p.Bind(p2p.MessageTypeTssMsg, state.EventTssMsg{})
-	t.tssMsgCh = t.state.EventBus.Subscribe(state.EventTssMsg{})
-	t.pendingTask = t.state.EventBus.Subscribe(state.EventTask{})
+	t.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
+	t.tssMsgCh = t.state.EventBus.Subscribe(eventbus.EventTssMsg{})
+	t.pendingTask = t.state.EventBus.Subscribe(eventbus.EventTask{})
 
 	go func() {
 		for {

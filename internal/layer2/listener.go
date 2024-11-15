@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
@@ -47,7 +48,7 @@ type Layer2Listener struct {
 }
 
 func (l *Layer2Listener) postTask(task any) {
-	l.state.Bus().Publish(state.EventTask{}, task)
+	l.state.Bus().Publish(eventbus.EventTask{}, task)
 }
 
 func (l *Layer2Listener) Participants() []common.Address {

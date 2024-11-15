@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ type BtcHeadState struct {
 }
 
 type State struct {
-	EventBus Bus
+	EventBus eventbus.Bus
 
 	dbm *db.DatabaseManager
 
@@ -30,7 +31,7 @@ type State struct {
 	TssState TssState
 }
 
-func (s *State) Bus() Bus {
+func (s *State) Bus() eventbus.Bus {
 	return s.EventBus
 }
 
@@ -113,7 +114,7 @@ func InitializeState(dbm *db.DatabaseManager) *State {
 	wg.Wait()
 
 	return &State{
-		EventBus: NewBus(),
+		EventBus: eventbus.NewBus(),
 		dbm:      dbm,
 
 		btcHeadState: BtcHeadState{

@@ -11,7 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -79,7 +79,7 @@ func (lp *Service) handleHandshake(s network.Stream, self host.Host) error {
 	return nil
 }
 
-func (lp *Service) Bind(msgType MessageType, event state.Event) {
+func (lp *Service) Bind(msgType MessageType, event eventbus.Event) {
 	lp.typeBindEvent.Store(msgType, event)
 }
 

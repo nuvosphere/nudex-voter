@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
@@ -146,5 +147,5 @@ func (p *BTCPoller) handleConfirmedBlock(block *types.BtcBlockExt) {
 	}
 
 	// push to event bus
-	p.state.Bus().Publish(state.EventBlockScanned{}, *block)
+	p.state.Bus().Publish(eventbus.EventBlockScanned{}, *block)
 }
