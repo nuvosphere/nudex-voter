@@ -29,12 +29,11 @@ func (m *Scheduler[T]) NewSignSession(
 	proposer, localSubmitter common.Address,
 	taskID T,
 	msg *big.Int,
-	threshold int,
-	allPartners []common.Address,
+	allPartners Participants,
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
-	params, partyIdMap := NewParam(localSubmitter, threshold, allPartners)
+	params, partyIdMap := NewParam(localSubmitter, allPartners.Threshold(), allPartners)
 	innerSession := newSession[T, *big.Int, *tsscommon.SignatureData](
 		m.p2p,
 		m,
@@ -43,7 +42,6 @@ func (m *Scheduler[T]) NewSignSession(
 		proposer,
 		taskID,
 		msg,
-		threshold,
 		SignSessionType,
 		allPartners,
 	)

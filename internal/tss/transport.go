@@ -72,7 +72,7 @@ const (
 func NewParam(
 	proposer common.Address, // current submitter
 	threshold int,
-	allPartners []common.Address,
+	allPartners Participants,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
 	partyIDs := createPartyIDsByAddress(allPartners)
 	partyID := partyIDs.FindByKey(new(big.Int).SetBytes(proposer.Bytes()))
@@ -93,9 +93,8 @@ func newSession[T comparable, M, D any](
 	proposer common.Address, // current submitter
 	taskID T, // msg id
 	msg M,
-	threshold int,
 	ty string,
-	allPartners []common.Address,
+	allPartners Participants,
 ) *sessionTransport[T, M, D] {
 	if sessionID == helper.ZeroSessionID {
 		sessionID = RandSessionID()
@@ -115,7 +114,7 @@ func newSession[T comparable, M, D any](
 			Proposer:  proposer,
 			TaskID:    taskID,
 			Msg:       msg,
-			Threshold: threshold,
+			Threshold: allPartners.Threshold(),
 		},
 		sessionRelease: m,
 		ty:             ty,

@@ -36,7 +36,7 @@ func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func createPartyIDsByAddress(addressList []common.Address) tss.SortedPartyIDs {
+func createPartyIDsByAddress(addressList Participants) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	for i, address := range addressList {
@@ -51,7 +51,7 @@ func createPartyIDsByAddress(addressList []common.Address) tss.SortedPartyIDs {
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func createOldPartyIDsByAddress(addressList []common.Address) tss.SortedPartyIDs {
+func createOldPartyIDsByAddress(addressList Participants) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	for i, address := range addressList {
@@ -153,7 +153,7 @@ func CompareStrings(a, b []string) bool {
 	return true
 }
 
-func AddressIndex(addressList []common.Address, tssAddress common.Address) int {
+func AddressIndex(addressList Participants, tssAddress common.Address) int {
 	for i, address := range addressList {
 		if address == tssAddress {
 			return i // Return the index if a match is found

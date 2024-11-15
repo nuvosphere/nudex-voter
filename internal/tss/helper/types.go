@@ -5,13 +5,13 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-type SessionID = common.Hash
-
-var ZeroSessionID SessionID
-
-type GroupID = common.Address
+type (
+	SessionID = common.Hash
+	GroupID   = common.Address
+)
 
 var (
+	ZeroSessionID   SessionID
 	SenateSessionID = crypto.Keccak256Hash([]byte("The voter senate session，one and only one"))
 	SenateGroupID   = common.BytesToAddress(SenateSessionID.Bytes())
 	SenateTaskID    = SenateSessionID.Big().Int64()

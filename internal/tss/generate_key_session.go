@@ -19,15 +19,14 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 	proposer common.Address, // current submitter
 	taskID T, // msg id
 	msg *big.Int,
-	threshold int,
-	allPartners []common.Address,
+	allPartners Participants,
 ) helper.SessionID {
 	preParams, err := keygen.GeneratePreParams(1 * time.Minute)
 	if err != nil {
 		panic(err)
 	}
 
-	params, partyIdMap := NewParam(m.localSubmitter, threshold, allPartners)
+	params, partyIdMap := NewParam(m.localSubmitter, allPartners.Threshold(), allPartners)
 	s := newSession[T, *big.Int, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
@@ -36,7 +35,6 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 		proposer,
 		taskID,
 		msg,
-		threshold,
 		GenKeySessionType,
 		allPartners,
 	)

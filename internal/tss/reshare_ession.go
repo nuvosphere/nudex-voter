@@ -23,21 +23,19 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 	localAddress, proposer common.Address,
 	taskID T, // msg id
 	msg *big.Int,
-	threshold int,
-	allPartners []common.Address,
-	newThreshold int,
-	newAllPartners []common.Address,
+	oldPartners Participants,
+	newPartners Participants,
 ) helper.SessionID {
 	reShareSession := &ReShareGroupSession[T, *big.Int, *keygen.LocalPartySaveData]{}
 
-	oldPartyIDs := createOldPartyIDsByAddress(allPartners)
+	oldPartyIDs := createOldPartyIDsByAddress(oldPartners)
 	oldPeerCtx := tss.NewPeerContext(oldPartyIDs)
 	oldPartyID := oldPartyIDs.FindByKey(new(big.Int).SetBytes(localAddress.Bytes()))
 	oldPartyIdMap := lo.SliceToMap(oldPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
 		return item.Id, item
 	})
 
-	newPartyIDs := createPartyIDsByAddress(newAllPartners)
+	newPartyIDs := createPartyIDsByAddress(newPartners)
 	newPeerCtx := tss.NewPeerContext(newPartyIDs)
 	newPartyID := newPartyIDs.FindByKey(new(big.Int).SetBytes(localAddress.Bytes()))
 	newPartyIdMap := lo.SliceToMap(newPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
@@ -49,10 +47,10 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 		oldPeerCtx,
 		newPeerCtx,
 		oldPartyID,
-		len(allPartners),
-		threshold,
-		len(newAllPartners),
-		threshold,
+		oldPartners.Len(),
+		oldPartners.Threshold(),
+		newPartners.Len(),
+		newPartners.Threshold(),
 	)
 
 	oldInnerSession := newSession[T, *big.Int, *keygen.LocalPartySaveData](
@@ -63,9 +61,8 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 		proposer,
 		taskID,
 		msg,
-		threshold,
 		ReShareGroupSessionType,
-		allPartners,
+		oldPartners,
 	)
 	reShareSession.oldSession = oldInnerSession
 
@@ -81,10 +78,10 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 		oldPeerCtx,
 		newPeerCtx,
 		newPartyID,
-		len(allPartners),
-		newThreshold,
-		len(newAllPartners),
-		threshold,
+		oldPartners.Len(),
+		oldPartners.Threshold(),
+		newPartners.Len(),
+		newPartners.Threshold(),
 	)
 
 	newInnerSession := newSession[T, *big.Int, *keygen.LocalPartySaveData](
@@ -95,9 +92,8 @@ func (m *Scheduler[T]) NewReShareGroupSession(
 		proposer,
 		taskID,
 		msg,
-		threshold,
 		ReShareGroupSessionType,
-		allPartners,
+		newPartners,
 	)
 	reShareSession.newSession = newInnerSession
 

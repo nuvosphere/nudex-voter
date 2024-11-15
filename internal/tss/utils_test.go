@@ -8,7 +8,7 @@ import (
 )
 
 func TestOldPartyID(t *testing.T) {
-	addressList := []common.Address{
+	addressList := Participants{
 		common.HexToAddress("0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
 		common.HexToAddress("0x33128a8fC17869897dcE68Ed026d694621f6FDfD"),
 		common.HexToAddress("0xc35DADB65012eC5796536bD9864eD8773aBc74C4"),

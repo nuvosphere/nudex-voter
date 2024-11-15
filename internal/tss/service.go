@@ -21,21 +21,17 @@ import (
 )
 
 type Service struct {
-	isPrepared   atomic.Bool
-	privateKey   *ecdsa.PrivateKey // submit
-	localAddress common.Address    // submit = partyID
-	proposer     common.Address    // current submitter
-
-	p2p                p2p.P2PService
-	state              *state.State
-	scheduler          *Scheduler[TaskId]
-	cache              *cache.Cache
-	currentDoingTaskID int64
-
+	isPrepared     atomic.Bool
+	privateKey     *ecdsa.PrivateKey // submit
+	localAddress   common.Address    // submit = partyID
+	proposer       common.Address    // current submitter
+	p2p            p2p.P2PService
+	state          *state.State
+	scheduler      *Scheduler[TaskId]
+	cache          *cache.Cache
 	layer2Listener *layer2.Layer2Listener
 	dbm            *db.DatabaseManager
-	threshold      *atomic.Int64
-	partners       []common.Address
+	partners       Participants
 	// eventbus channel
 	tssMsgCh    <-chan any
 	pendingTask <-chan any
@@ -140,19 +136,13 @@ func (t *Service) eventLoop(ctx context.Context) {
 					}
 				case *db.ParticipantPair:
 					if t.isCanProposal() {
-						// todo
-						newThreshold := 0
-
-						var newPartners []common.Address
 						_ = t.scheduler.NewReShareGroupSession(
 							t.localAddress,
 							t.proposer,
 							helper.SenateTaskID,
-							helper.SenateSessionID.Big(),
-							int(t.threshold.Load()),
-							t.partners,
-							newThreshold,
-							newPartners,
+							helper.SenateSessionID.Big(), // todo
+							v.Old,
+							v.New,
 						)
 					}
 				case *db.SubmitterChosenPair: // todo
@@ -168,6 +158,10 @@ func (t *Service) isCanProposal() bool {
 
 func (t *Service) Stop() {}
 
-func (t *Service) oldPartners() []common.Address {
+func (t *Service) oldPartners() Participants {
 	return t.partners
+}
+
+func (t *Service) Threshold() int {
+	return CalculateThreshold(len(t.partners))
 }

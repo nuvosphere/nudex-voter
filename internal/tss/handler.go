@@ -17,7 +17,39 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+var (
+	ErrTaskNotFound          = gorm.ErrRecordNotFound
+	ErrTaskCompleted         = fmt.Errorf("task already completed")
+	ErrTaskOrderInconsistent = fmt.Errorf("order of the task is inconsistent")
+	ErrTaskIdWrong           = fmt.Errorf("taskId is wrong")
+	ErrTaskSignatureMsgWrong = fmt.Errorf("task signature msg is wrong")
+	ErrGroupIdWrong          = fmt.Errorf("groupId is wrong")
+	ErrSessionIdWrong        = fmt.Errorf("sessionId is wrong")
+	ErrProposerWrong         = fmt.Errorf("task proposer is wrong")
+)
+
+func (t *Service) Validate(msg SessionMessage[TaskId, Msg]) error {
+	if t.IsCompleted(msg.TaskID) {
+		return fmt.Errorf("taskID:%v, %w", msg.TaskID, ErrTaskCompleted)
+	}
+
+	return nil
+}
+
+func (t *Service) GetTask(taskID int64) (*db.Task, error) {
+	task := &db.Task{}
+
+	err := t.dbm.GetRelayerDB().Preload(clause.Associations).Where("task_id", taskID).Last(task).Error
+	if err != nil {
+		return nil, fmt.Errorf("taskID:%v, %w", taskID, err)
+	}
+
+	return task, err
+}
 
 // handleSessionMsg handler received msg from other node.
 func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
@@ -45,26 +77,24 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 
 	switch msg.Type {
 	case GenKeySessionType:
+		// check groupID
+		// check taskID
+		// check proposer
+		// check msg
 		_ = t.scheduler.NewGenerateKeySession(
 			t.proposer,
 			msg.TaskID,
-			new(big.Int).SetBytes(txHash.Bytes()),
-			int(t.threshold.Load()),
+			&msg.Msg,
 			t.partners,
 		)
 	case ReShareGroupSessionType:
-		// todo
-		newThreshold := 0
-
-		var newPartners []common.Address
+		var newPartners Participants
 		_ = t.scheduler.NewReShareGroupSession(
 			t.localAddress,
 			t.proposer,
 			helper.SenateTaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
-			int(t.threshold.Load()),
 			t.partners,
-			newThreshold,
 			newPartners,
 		)
 	case SignSessionType:
@@ -79,7 +109,6 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			t.localAddress,
 			msg.TaskID,
 			new(big.Int).SetBytes(txHash.Bytes()),
-			int(t.threshold.Load()),
 			t.partners,
 			*localPartySaveData,
 			keyDerivationDelta,
@@ -91,7 +120,7 @@ func (t *Service) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 	return nil
 }
 
-func (t *Service) Partners() []common.Address {
+func (t *Service) Partners() Participants {
 	// todo online contact get address list
 	return lo.Map(
 		config.AppConfig.TssPublicKeys,
@@ -146,7 +175,6 @@ func (t *Service) proposalTaskSession(task db.ITask) error {
 			t.localAddress,
 			helper.SenateTaskID,
 			new(big.Int),
-			int(t.threshold.Load()),
 			t.partners,
 			*localPartySaveData,
 			keyDerivationDelta,
