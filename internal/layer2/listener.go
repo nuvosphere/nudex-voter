@@ -21,7 +21,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -41,27 +40,6 @@ type Layer2Listener struct {
 
 func (l *Layer2Listener) postTask(task any) {
 	l.state.Bus().Publish(eventbus.EventTask{}, task)
-}
-
-func (l *Layer2Listener) Participants() []common.Address {
-	participants, err := l.participantManager.GetParticipants(nil)
-	utils.Assert(err)
-
-	return participants
-}
-
-func (l *Layer2Listener) IsParticipant(participant common.Address) bool {
-	is, err := l.participantManager.IsParticipant(nil, participant)
-	utils.Assert(err)
-
-	return is
-}
-
-func (l *Layer2Listener) GetRandomParticipant(participant common.Address) common.Address {
-	nextSubmitter, err := l.participantManager.GetRandomParticipant(nil, participant)
-	utils.Assert(err)
-
-	return nextSubmitter
 }
 
 func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManager) *Layer2Listener {
