@@ -35,8 +35,8 @@ func (m *Scheduler) Validate(msg SessionMessage[TaskId, Msg]) error {
 		return fmt.Errorf("taskID:%v, %w", msg.TaskID, ErrTaskCompleted)
 	}
 
-	if msg.Proposer != m.proposer {
-		return fmt.Errorf("proposer:(%v, %v), %w", msg.Proposer, m.proposer, ErrProposerWrong)
+	if msg.Proposer != m.Proposer() {
+		return fmt.Errorf("proposer:(%v, %v), %w", msg.Proposer, m.Proposer(), ErrProposerWrong)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		}
 
 		_ = m.NewGenerateKeySession(
-			m.proposer,
+			m.Proposer(),
 			msg.TaskID,
 			&msg.Msg,
 			m.partners,
@@ -124,7 +124,7 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 
 		_ = m.NewReShareGroupSession(
 			m.LocalSubmitter(),
-			m.proposer,
+			m.Proposer(),
 			helper.SenateTaskID,
 			&msg.Msg,
 			m.partners,
@@ -206,7 +206,7 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 		m.NewSignSession(
 			helper.SenateGroupID,
 			helper.ZeroSessionID,
-			m.proposer,
+			m.Proposer(),
 			m.LocalSubmitter(),
 			helper.SenateTaskID,
 			new(big.Int), // todo

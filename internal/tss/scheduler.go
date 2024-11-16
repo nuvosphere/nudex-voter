@@ -40,9 +40,9 @@ type Scheduler struct {
 	sigInToOut               chan *SessionResult[TaskId, *tsscommon.SignatureData]
 	senateInToOut            chan *SessionResult[TaskId, *keygen.LocalPartySaveData]
 	masterLocalPartySaveData keygen.LocalPartySaveData
-	localSubmitter           common.Address // submit = partyID
-	proposer                 common.Address // current submitter
-	partners                 types.Participants
+	localSubmitter           common.Address     // submit = partyID
+	proposer                 common.Address     // current submitter
+	partners                 types.Participants // //todo sync.value
 	cache                    *cache.Cache
 	voterContract            layer2.VoterContract
 	stateDB                  *gorm.DB
@@ -113,12 +113,13 @@ func (m *Scheduler) Stop() {
 }
 
 func (m *Scheduler) Genesis() {
-	//_ = m.NewGenerateKeySession(
-	//	m.proposer,
-	//	helper.SenateTaskID,
-	//	helper.SenateTaskMsg,
-	//	t.partners,
-	//)
+	_ = m.NewGenerateKeySession(
+		m.Proposer(),
+		helper.SenateTaskID,
+		helper.SenateTaskMsg,
+		m.partners,
+	)
+
 	log.Info("TSS keygen process started")
 }
 
@@ -309,6 +310,10 @@ func (m *Scheduler) LocalSubmitter() common.Address {
 	return m.localSubmitter
 }
 
+func (m *Scheduler) Proposer() common.Address {
+	return m.proposer
+}
+
 func (m *Scheduler) eventLoop(ctx context.Context) {
 	m.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
 	m.tssMsgCh = m.bus.Subscribe(eventbus.EventTssMsg{})
@@ -359,7 +364,7 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 					if m.isCanProposal() && len(newNewParts) > 0 && len(newNewParts) != len(m.partners) {
 						_ = m.NewReShareGroupSession(
 							m.LocalSubmitter(),
-							m.proposer,
+							m.Proposer(),
 							helper.SenateTaskID,
 							helper.SenateTaskMsg,
 							m.partners,
@@ -369,7 +374,7 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 
 				case *db.SubmitterChosen:
 					m.submitterChosen = v
-					m.proposer = common.HexToAddress(v.Submitter)
+					m.proposer = common.HexToAddress(v.Submitter) // todo
 
 				case *db.TaskCompletedEvent:
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
@@ -381,5 +386,5 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 
 func (m *Scheduler) isCanProposal() bool {
 	m.BlockDetectionThreshold()
-	return m.LocalSubmitter() == m.proposer
+	return m.LocalSubmitter() == m.Proposer()
 }
