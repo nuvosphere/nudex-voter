@@ -4,4 +4,5 @@ type VoterContract interface {
 	ContractVotingManager
 	ParticipantManager
 	TaskManager
+	AccountManager
 }

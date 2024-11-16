@@ -123,7 +123,7 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
 		}
 		// check msg
-		unSignMsg := m.ReShareGroupUnSignMsg(task)
+		unSignMsg := m.ReShareGroupUnSignMsg(task) // todo add or remove address
 		if unSignMsg.String() != msg.Msg.String() {
 			return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 		}

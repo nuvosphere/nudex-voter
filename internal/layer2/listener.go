@@ -38,6 +38,7 @@ type Layer2Listener struct {
 	contractVotingManager *contracts.VotingManagerContract
 	participantManager    *contracts.ParticipantManagerContract
 	taskManager           *contracts.TaskManagerContract
+	accountManager        *contracts.AccountManagerContract
 }
 
 func (l *Layer2Listener) postTask(task any) {
@@ -88,11 +89,15 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 	errs = append(errs, err)
 	taskManager, err := contracts.NewTaskManagerContract(TaskAddress, ethClient)
 	errs = append(errs, err)
+	accountManager, err := contracts.NewAccountManagerContract(TaskAddress, ethClient)
+	errs = append(errs, err)
+
 	utils.Assert(errors.Join(errs...))
 
 	self.taskManager = taskManager
 	self.contractVotingManager = contractVotingManager
 	self.participantManager = participantManager
+	self.accountManager = accountManager
 
 	return self
 }
