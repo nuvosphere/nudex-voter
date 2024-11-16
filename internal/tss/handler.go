@@ -111,7 +111,13 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		)
 	case ReShareGroupSessionType:
 		// todo How find new part?
-		var newPartners types.Participants // todo
+		ng := m.newGroup.Load()
+		if ng == nil {
+			return fmt.Errorf("newGroup: %w", ErrGroupIdWrong)
+		}
+
+		newGroup := ng.(*NewGroup)
+		newPartners := newGroup.NewParts
 		// check groupID
 		if msg.GroupID != helper.SenateGroupID {
 			return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)

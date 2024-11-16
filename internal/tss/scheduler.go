@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
@@ -49,8 +50,9 @@ type Scheduler struct {
 	submitterChosen          *db.SubmitterChosen
 	pendingProposal          chan any
 	notify                   chan struct{}
-	tssMsgCh                 <-chan any // eventbus channel
-	pendingTask              <-chan any // eventbus channel
+	tssMsgCh                 <-chan any   // eventbus channel
+	pendingTask              <-chan any   // eventbus channel
+	newGroup                 atomic.Value // todo NewGroup
 }
 
 func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract) *Scheduler {
@@ -290,8 +292,11 @@ func (m *Scheduler) LoopReShareGroupResult() {
 			case <-m.ctx.Done():
 				log.Info("loopReShareGroupResult done")
 			case sessionResult := <-m.senateInToOut:
-				// todo update threshold
 				m.SaveSenateSessionResult(sessionResult)
+				newGroup := m.newGroup.Load().(*NewGroup)
+				m.partners = newGroup.NewParts
+				newGroup = nil
+				m.newGroup.Store(newGroup)
 			}
 		}
 	}()
@@ -335,7 +340,7 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 					log.Warnf("handle session msg error, %v", err)
 				}
 			case data := <-m.pendingTask: // from layer2 log scan
-				log.Info("task", data)
+				log.Info("received task: ", data)
 
 				switch v := data.(type) {
 				case db.ITask:
@@ -350,33 +355,41 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 				case *db.ParticipantEvent:
 					party := common.HexToAddress(v.Address)
 
-					var newNewParts types.Participants
+					var newParts types.Participants
 
 					switch v.EventName {
 					case layer2.ParticipantAdded:
 						if !slices.Contains(m.partners, party) {
-							newNewParts = append(m.partners, party)
+							newParts = append(m.partners, party)
 						}
 					case layer2.ParticipantRemoved:
-						newNewParts = lo.Filter(m.partners, func(item common.Address, index int) bool { return item != party })
+						newParts = lo.Filter(m.partners, func(item common.Address, index int) bool { return item != party })
 					}
 
-					if m.isCanProposal() && len(newNewParts) > 0 && len(newNewParts) != len(m.partners) {
-						_ = m.NewReShareGroupSession(
-							m.LocalSubmitter(),
-							m.Proposer(),
-							helper.SenateTaskID,
-							helper.SenateTaskMsg,
-							m.partners,
-							newNewParts,
-						)
+					if len(newParts) > 0 && len(newParts) != len(m.partners) {
+						m.newGroup.Store(&NewGroup{
+							Event:    v,
+							NewParts: m.partners,
+							OldParts: newParts,
+						})
+
+						if m.isCanProposal() {
+							_ = m.NewReShareGroupSession(
+								m.LocalSubmitter(),
+								m.Proposer(),
+								helper.SenateTaskID,
+								helper.SenateTaskMsg,
+								m.partners,
+								newParts,
+							)
+						}
 					}
 
 				case *db.SubmitterChosen:
 					m.submitterChosen = v
 					m.proposer = common.HexToAddress(v.Submitter) // todo
 
-				case *db.TaskCompletedEvent:
+				case *db.TaskCompletedEvent: // todo
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
 				}
 			}
@@ -387,4 +400,10 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 func (m *Scheduler) isCanProposal() bool {
 	m.BlockDetectionThreshold()
 	return m.LocalSubmitter() == m.Proposer()
+}
+
+type NewGroup struct {
+	Event    *db.ParticipantEvent
+	NewParts types.Participants
+	OldParts types.Participants
 }
