@@ -47,7 +47,7 @@ type P2PService interface {
 type Service struct {
 	messageTopic  *pubsub.Topic
 	state         *state.State
-	typeBindEvent sync.Map
+	typeBindEvent sync.Map // MessageType:eventbus.Event
 
 	partyIDBindPeerID map[string]peer.ID // partyID:peer.ID
 	peerIDBindPartyID map[peer.ID]string // peer.ID:partyID

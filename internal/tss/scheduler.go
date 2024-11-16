@@ -3,64 +3,85 @@ package tss
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
+	"fmt"
+	"slices"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
-type Scheduler[T comparable] struct {
+type Scheduler struct {
 	p2p                      p2p.P2PService
+	bus                      eventbus.Bus
+	ctx                      context.Context
+	cancel                   context.CancelFunc
 	grw                      sync.RWMutex
 	groups                   map[helper.GroupID]*helper.Group
 	srw                      sync.RWMutex
-	sessions                 map[helper.SessionID]Session[T]
-	sessionTasks             map[T]Session[T]
-	sigInToOut               chan *SessionResult[T, *tsscommon.SignatureData]
-	senateInToOut            chan *SessionResult[T, *keygen.LocalPartySaveData]
-	ctx                      context.Context
-	cancel                   context.CancelFunc
+	sessions                 map[helper.SessionID]Session[TaskId]
+	sessionTasks             map[TaskId]Session[TaskId]
+	sigInToOut               chan *SessionResult[TaskId, *tsscommon.SignatureData]
+	senateInToOut            chan *SessionResult[TaskId, *keygen.LocalPartySaveData]
 	masterLocalPartySaveData keygen.LocalPartySaveData
-	masterPubKey             ecdsa.PublicKey
-	threshold                *atomic.Int64
-	localSubmitter           common.Address
+	localSubmitter           common.Address // submit = partyID
+	proposer                 common.Address // current submitter
+	partners                 types.Participants
+	cache                    *cache.Cache
+	voterContract            layer2.VoterContract
+	stateDB                  *gorm.DB
+	submitterChosen          *db.SubmitterChosen
 	pendingProposal          chan any
 	notify                   chan struct{}
+	tssMsgCh                 <-chan any // eventbus channel
+	pendingTask              <-chan any // eventbus channel
 }
 
-func NewScheduler[T comparable](p p2p.P2PService, threshold int64, localSubmitter common.Address) *Scheduler[T] {
-	t := &atomic.Int64{}
-	t.Store(threshold)
-
+func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
+	localSubmitter := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
 
-	return &Scheduler[T]{
+	return &Scheduler{
 		p2p:             p,
+		bus:             bus,
 		srw:             sync.RWMutex{},
 		grw:             sync.RWMutex{},
 		groups:          make(map[helper.GroupID]*helper.Group),
-		sessions:        make(map[helper.SessionID]Session[T]),
-		sessionTasks:    make(map[T]Session[T]),
-		sigInToOut:      make(chan *SessionResult[T, *tsscommon.SignatureData], 1024),
-		senateInToOut:   make(chan *SessionResult[T, *keygen.LocalPartySaveData]),
-		threshold:       t,
+		sessions:        make(map[helper.SessionID]Session[TaskId]),
+		sessionTasks:    make(map[TaskId]Session[TaskId]),
+		sigInToOut:      make(chan *SessionResult[TaskId, *tsscommon.SignatureData], 1024),
+		senateInToOut:   make(chan *SessionResult[TaskId, *keygen.LocalPartySaveData]),
 		ctx:             ctx,
 		cancel:          cancel,
 		localSubmitter:  localSubmitter,
+		proposer:        voterContract.Proposer(),
+		partners:        voterContract.Participants(),
+		cache:           cache.New(time.Minute*10, time.Minute),
 		pendingProposal: make(chan any, 1024),
 		notify:          make(chan struct{}, 1024),
+		stateDB:         stateDB,
+		voterContract:   voterContract,
 	}
 }
 
-func (m *Scheduler[T]) Start() {
+func (m *Scheduler) Start() {
+	m.eventLoop(m.ctx)
 	m.BlockDetectionThreshold()
 
 	is := m.IsGenesis()
@@ -71,14 +92,12 @@ func (m *Scheduler[T]) Start() {
 		m.SaveSenateSessionResult(sessionResult)
 	}
 
-	m.masterPubKey = *m.masterLocalPartySaveData.ECDSAPub.ToECDSAPubKey()
-
 	m.LoopReShareGroupResult()
 	// loop approveProposal
 	m.loopApproveProposal()
 }
 
-func (m *Scheduler[T]) SaveSenateSessionResult(sessionResult *SessionResult[T, *keygen.LocalPartySaveData]) {
+func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[TaskId, *keygen.LocalPartySaveData]) {
 	if sessionResult.Err != nil {
 		panic(sessionResult.Err)
 	}
@@ -89,16 +108,21 @@ func (m *Scheduler[T]) SaveSenateSessionResult(sessionResult *SessionResult[T, *
 	m.masterLocalPartySaveData = *sessionResult.Data
 }
 
-func (m *Scheduler[T]) Stop() {
+func (m *Scheduler) Stop() {
 	m.cancel()
 }
 
-func (m *Scheduler[T]) Genesis() {
-	// todo
+func (m *Scheduler) Genesis() {
+	//_ = m.NewGenerateKeySession(
+	//	m.proposer,
+	//	helper.SenateTaskID,
+	//	helper.SenateTaskMsg,
+	//	t.partners,
+	//)
 	log.Info("TSS keygen process started")
 }
 
-func (m *Scheduler[T]) IsGenesis() bool {
+func (m *Scheduler) IsGenesis() bool {
 	if m.masterLocalPartySaveData.ECDSAPub != nil {
 		return false
 	}
@@ -117,7 +141,7 @@ func (m *Scheduler[T]) IsGenesis() bool {
 	return false
 }
 
-func (m *Scheduler[T]) BlockDetectionThreshold() {
+func (m *Scheduler) BlockDetectionThreshold() {
 L:
 	for {
 		select {
@@ -125,7 +149,7 @@ L:
 			log.Info("DetectionThreshold context done")
 		default:
 			count := m.p2p.OnlinePeerCount()
-			if int64(count) >= m.threshold.Load() {
+			if count >= m.Threshold() {
 				break L
 			}
 			time.Sleep(time.Second)
@@ -133,21 +157,17 @@ L:
 	}
 }
 
-func (m *Scheduler[T]) Threshold() int64 {
-	return m.threshold.Load()
+func (m *Scheduler) Threshold() int {
+	return m.partners.Threshold()
 }
 
-func (m *Scheduler[T]) SetThreshold(threshold int64) {
-	m.threshold.Store(threshold)
-}
-
-func (m *Scheduler[T]) AddGroup(group *helper.Group) {
+func (m *Scheduler) AddGroup(group *helper.Group) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	m.groups[group.GroupID] = group
 }
 
-func (m *Scheduler[T]) AddSession(session Session[T]) bool {
+func (m *Scheduler) AddSession(session Session[TaskId]) bool {
 	m.grw.Lock()
 	_, ok := m.groups[session.GroupID()] // todo
 	m.grw.Unlock()
@@ -162,21 +182,21 @@ func (m *Scheduler[T]) AddSession(session Session[T]) bool {
 	return ok
 }
 
-func (m *Scheduler[T]) GetGroup(groupID helper.GroupID) *helper.Group {
+func (m *Scheduler) GetGroup(groupID helper.GroupID) *helper.Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
 	return m.groups[groupID]
 }
 
-func (m *Scheduler[T]) GetSession(sessionID helper.SessionID) Session[T] {
+func (m *Scheduler) GetSession(sessionID helper.SessionID) Session[TaskId] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
 	return m.sessions[sessionID]
 }
 
-func (m *Scheduler[T]) IsMeeting(taskID T) bool {
+func (m *Scheduler) IsMeeting(taskID TaskId) bool {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 	_, ok := m.sessionTasks[taskID]
@@ -184,27 +204,27 @@ func (m *Scheduler[T]) IsMeeting(taskID T) bool {
 	return ok
 }
 
-func (m *Scheduler[T]) GetGroups() []*helper.Group {
+func (m *Scheduler) GetGroups() []*helper.Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
 	return lo.MapToSlice(m.groups, func(_ helper.GroupID, group *helper.Group) *helper.Group { return group })
 }
 
-func (m *Scheduler[T]) GetSessions() []Session[T] {
+func (m *Scheduler) GetSessions() []Session[TaskId] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
-	return lo.MapToSlice(m.sessions, func(_ helper.SessionID, session Session[T]) Session[T] { return session })
+	return lo.MapToSlice(m.sessions, func(_ helper.SessionID, session Session[TaskId]) Session[TaskId] { return session })
 }
 
-func (m *Scheduler[T]) ReleaseGroup(groupID helper.GroupID) {
+func (m *Scheduler) ReleaseGroup(groupID helper.GroupID) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	delete(m.groups, groupID)
 }
 
-func (m *Scheduler[T]) SessionRelease(session helper.SessionID) {
+func (m *Scheduler) SessionRelease(session helper.SessionID) {
 	m.srw.Lock()
 	defer m.srw.Unlock()
 
@@ -220,7 +240,7 @@ func (m *Scheduler[T]) SessionRelease(session helper.SessionID) {
 	}
 }
 
-func (m *Scheduler[T]) Release() {
+func (m *Scheduler) Release() {
 	m.grw.Lock()
 	m.groups = make(map[helper.GroupID]*helper.Group)
 	m.grw.Unlock()
@@ -229,17 +249,17 @@ func (m *Scheduler[T]) Release() {
 		s.Release()
 	}
 
-	m.sessions = make(map[helper.SessionID]Session[T])
-	m.sessionTasks = make(map[T]Session[T])
+	m.sessions = make(map[helper.SessionID]Session[TaskId])
+	m.sessionTasks = make(map[TaskId]Session[TaskId])
 	m.srw.Unlock()
 	close(m.sigInToOut)
 }
 
-func (m *Scheduler[T]) SubmitProposal(proposal any) {
+func (m *Scheduler) SubmitProposal(proposal any) {
 	m.pendingProposal <- proposal
 }
 
-func (m *Scheduler[T]) loopApproveProposal() {
+func (m *Scheduler) loopApproveProposal() {
 	go func() {
 		select {
 		case <-m.ctx.Done():
@@ -258,11 +278,11 @@ func (m *Scheduler[T]) loopApproveProposal() {
 	}()
 }
 
-func (m *Scheduler[T]) MasterPublicKey() ecdsa.PublicKey {
-	return m.masterPubKey
+func (m *Scheduler) MasterPublicKey() ecdsa.PublicKey {
+	return *m.masterLocalPartySaveData.ECDSAPub.ToECDSAPubKey()
 }
 
-func (m *Scheduler[T]) LoopReShareGroupResult() {
+func (m *Scheduler) LoopReShareGroupResult() {
 	go func() {
 		for {
 			select {
@@ -274,4 +294,92 @@ func (m *Scheduler[T]) LoopReShareGroupResult() {
 			}
 		}
 	}()
+}
+
+func (m *Scheduler) IsCompleted(taskID int64) bool {
+	_, ok := m.cache.Get(fmt.Sprintf("%d", taskID))
+	return ok
+}
+
+func (m *Scheduler) AddCompletedTask(taskID int64) {
+	m.cache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
+}
+
+func (m *Scheduler) LocalSubmitter() common.Address {
+	return m.localSubmitter
+}
+
+func (m *Scheduler) eventLoop(ctx context.Context) {
+	m.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
+	m.tssMsgCh = m.bus.Subscribe(eventbus.EventTssMsg{})
+	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("Signer stopping...")
+				return
+			case event := <-m.tssMsgCh: // from p2p network
+				log.Debugf("Received m msg event")
+
+				e := event.(p2p.Message[json.RawMessage])
+
+				err := m.handleSessionMsg(convertMsgData(e).(SessionMessage[TaskId, Msg]))
+				if err != nil {
+					log.Warnf("handle session msg error, %v", err)
+				}
+			case data := <-m.pendingTask: // from layer2 log scan
+				log.Info("task", data)
+
+				switch v := data.(type) {
+				case db.ITask:
+					if m.isCanProposal() {
+						log.Info("proposal task", v)
+
+						err := m.proposalTaskSession(v)
+						if err != nil {
+							log.Warnf("handle session msg error, %v", err)
+						}
+					}
+				case *db.ParticipantEvent:
+					party := common.HexToAddress(v.Address)
+
+					var newNewParts types.Participants
+
+					switch v.EventName {
+					case layer2.ParticipantAdded:
+						if !slices.Contains(m.partners, party) {
+							newNewParts = append(m.partners, party)
+						}
+					case layer2.ParticipantRemoved:
+						newNewParts = lo.Filter(m.partners, func(item common.Address, index int) bool { return item != party })
+					}
+
+					if m.isCanProposal() && len(newNewParts) > 0 && len(newNewParts) != len(m.partners) {
+						_ = m.NewReShareGroupSession(
+							m.LocalSubmitter(),
+							m.proposer,
+							helper.SenateTaskID,
+							helper.SenateTaskMsg,
+							m.partners,
+							newNewParts,
+						)
+					}
+
+				case *db.SubmitterChosen:
+					m.submitterChosen = v
+					m.proposer = common.HexToAddress(v.Submitter)
+
+				case *db.TaskCompletedEvent:
+					log.Infof("taskID: %d completed on blockchain", v.TaskId)
+				}
+			}
+		}
+	}()
+}
+
+func (m *Scheduler) isCanProposal() bool {
+	m.BlockDetectionThreshold()
+	return m.LocalSubmitter() == m.proposer
 }

@@ -24,18 +24,18 @@ func RandSessionID() helper.SessionID {
 	return common.BytesToHash(b[:])
 }
 
-func (m *Scheduler[T]) NewSignSession(
+func (m *Scheduler) NewSignSession(
 	groupID helper.GroupID,
 	sessionID helper.SessionID,
 	proposer, localSubmitter common.Address,
-	taskID T,
+	taskID TaskId,
 	msg *Msg,
 	allPartners types.Participants,
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
 	params, partyIdMap := NewParam(localSubmitter, allPartners.Threshold(), allPartners)
-	innerSession := newSession[T, *Msg, *tsscommon.SignatureData](
+	innerSession := newSession[TaskId, *Msg, *tsscommon.SignatureData](
 		m.p2p,
 		m,
 		groupID,
@@ -52,7 +52,7 @@ func (m *Scheduler[T]) NewSignSession(
 	innerSession.endCh = endCh
 	innerSession.errCH = errCh
 	innerSession.inToOut = m.sigInToOut
-	session := &SignSession[T, *Msg, *tsscommon.SignatureData]{
+	session := &SignSession[TaskId, *Msg, *tsscommon.SignatureData]{
 		sessionTransport: innerSession,
 	}
 	session.Run()

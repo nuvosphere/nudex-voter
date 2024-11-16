@@ -9,6 +9,11 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
+type ContractVotingManager interface {
+	Proposer() common.Address
+	GenerateVerifyTaskUnSignMsg(contractAddress common.Address, calldata []byte, taskID *big.Int) common.Hash
+}
+
 func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContract {
 	return l.contractVotingManager
 }

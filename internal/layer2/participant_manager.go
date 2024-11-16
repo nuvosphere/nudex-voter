@@ -2,10 +2,17 @@ package layer2
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
-func (l *Layer2Listener) Participants() []common.Address {
+type ParticipantManager interface {
+	Participants() types.Participants
+	IsParticipant(participant common.Address) bool
+	GetRandomParticipant(participant common.Address) common.Address
+}
+
+func (l *Layer2Listener) Participants() types.Participants {
 	participants, err := l.participantManager.GetParticipants(nil)
 	utils.Assert(err)
 

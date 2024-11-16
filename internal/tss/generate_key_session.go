@@ -15,9 +15,9 @@ type GenerateKeySession[T, M, D any] struct {
 	*sessionTransport[T, M, D]
 }
 
-func (m *Scheduler[T]) NewGenerateKeySession(
+func (m *Scheduler) NewGenerateKeySession(
 	proposer common.Address, // current submitter
-	taskID T, // msg id
+	taskID TaskId, // msg id
 	msg *Msg,
 	allPartners types.Participants,
 ) helper.SessionID {
@@ -26,8 +26,8 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 		panic(err)
 	}
 
-	params, partyIdMap := NewParam(m.localSubmitter, allPartners.Threshold(), allPartners)
-	s := newSession[T, *Msg, *keygen.LocalPartySaveData](
+	params, partyIdMap := NewParam(m.LocalSubmitter(), allPartners.Threshold(), allPartners)
+	s := newSession[TaskId, *Msg, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
 		helper.SenateGroupID,
@@ -45,7 +45,7 @@ func (m *Scheduler[T]) NewGenerateKeySession(
 	s.errCH = errCh
 	s.endCh = endCh
 	s.Run()
-	session := &GenerateKeySession[T, *Msg, *keygen.LocalPartySaveData]{sessionTransport: s}
+	session := &GenerateKeySession[TaskId, *Msg, *keygen.LocalPartySaveData]{sessionTransport: s}
 	m.AddSession(session)
 
 	return session.SessionID()

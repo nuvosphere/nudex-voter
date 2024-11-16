@@ -89,7 +89,7 @@ func NewParam(
 
 func newSession[T comparable, M, D any](
 	p p2p.P2PService,
-	m *Scheduler[T],
+	m *Scheduler,
 	groupID helper.GroupID,
 	sessionID helper.SessionID,
 	proposer common.Address, // current submitter
