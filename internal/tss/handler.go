@@ -192,12 +192,22 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 	case *db.CreateWalletTask:
 		coinType := getCoinTypeByChain(taskData.Chain)
 
-		_ = wallet.GenerateAddressByPath(
+		groupID := wallet.GenerateAddressByPath(
 			m.MasterPublicKey(),
 			uint32(coinType),
 			taskData.Account,
 			taskData.Index,
 		)
+		taskId := big.NewInt(int64(taskData.TaskId))
+		// todo
+		var contractAddress common.Address
+
+		var calldata []byte
+
+		unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(contractAddress, calldata, taskId)
+		if err != nil {
+			return err
+		}
 
 		path := wallet.Bip44DerivationPath(uint32(coinType), taskData.Account, taskData.Index)
 		param, err := path.ToParams()
@@ -210,12 +220,12 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 		utils.Assert(err)
 
 		m.NewSignSession(
-			helper.SenateGroupID,
+			groupID,
 			helper.ZeroSessionID,
 			m.Proposer(),
 			m.LocalSubmitter(),
-			helper.SenateTaskID,
-			new(big.Int), // todo
+			taskId.Int64(),
+			new(big.Int).SetBytes(unSignMsg.Bytes()),
 			m.partners,
 			*localPartySaveData,
 			keyDerivationDelta,

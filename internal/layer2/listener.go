@@ -21,6 +21,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -36,6 +37,7 @@ type Layer2Listener struct {
 	addressBind           map[common.Address]func(types.Log) error
 	contractVotingManager *contracts.VotingManagerContract
 	participantManager    *contracts.ParticipantManagerContract
+	taskManager           *contracts.TaskManagerContract
 }
 
 func (l *Layer2Listener) postTask(task any) {
@@ -76,21 +78,19 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		func(item common.Address, _ func(log2 types.Log) error) common.Address { return item },
 	)
 
+	var errs []error
+
 	_, err = self.ChainID(context.Background())
-	if err != nil {
-		log.Fatalf("Error getting chain ID: %v", err)
-	}
-
+	errs = append(errs, err)
 	contractVotingManager, err := contracts.NewVotingManagerContract(VotingAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
-	}
-
+	errs = append(errs, err)
 	participantManager, err := contracts.NewParticipantManagerContract(ParticipantAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract participantManager: %v", err)
-	}
+	errs = append(errs, err)
+	taskManager, err := contracts.NewTaskManagerContract(TaskAddress, ethClient)
+	errs = append(errs, err)
+	utils.Assert(errors.Join(errs...))
 
+	self.taskManager = taskManager
 	self.contractVotingManager = contractVotingManager
 	self.participantManager = participantManager
 

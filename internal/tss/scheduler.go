@@ -58,6 +58,11 @@ type Scheduler struct {
 func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
 	localSubmitter := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
+	proposer, err := voterContract.Proposer()
+	utils.Assert(err)
+
+	partners, err := voterContract.Participants()
+	utils.Assert(err)
 
 	return &Scheduler{
 		p2p:             p,
@@ -72,8 +77,8 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 		ctx:             ctx,
 		cancel:          cancel,
 		localSubmitter:  localSubmitter,
-		proposer:        voterContract.Proposer(),
-		partners:        voterContract.Participants(),
+		proposer:        proposer,
+		partners:        partners,
 		cache:           cache.New(time.Minute*10, time.Minute),
 		pendingProposal: make(chan any, 1024),
 		notify:          make(chan struct{}, 1024),

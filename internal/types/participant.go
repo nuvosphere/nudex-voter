@@ -5,13 +5,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// CalculateThreshold (threshold + 1) / length >= 2/3
+// CalculateThreshold (threshold + 1) / length >= 2/3.
 func CalculateThreshold(length int) int {
 	threshold := decimal.NewFromUint64(uint64(length)).
 		Mul(decimal.NewFromInt(2)).
 		Div(decimal.NewFromInt(3)).
 		Ceil().
 		IntPart()
+
 	return int(threshold - 1)
 }
 
