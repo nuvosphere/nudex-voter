@@ -3,7 +3,6 @@ package tss
 import (
 	"context"
 	"errors"
-	"math/big"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
@@ -21,24 +20,24 @@ type ReShareGroupSession[T, M, D any] struct {
 }
 
 func (m *Scheduler) NewReShareGroupSession(
-	localAddress, proposer common.Address,
 	taskID TaskId, // msg id
 	msg *Msg,
 	oldPartners types.Participants,
 	newPartners types.Participants,
 ) helper.SessionID {
+	proposer := m.Proposer()
 	reShareSession := &ReShareGroupSession[TaskId, *Msg, *keygen.LocalPartySaveData]{}
 
 	oldPartyIDs := createOldPartyIDsByAddress(oldPartners)
 	oldPeerCtx := tss.NewPeerContext(oldPartyIDs)
-	oldPartyID := oldPartyIDs.FindByKey(new(big.Int).SetBytes(localAddress.Bytes()))
+	oldPartyID := oldPartyIDs.FindByKey(m.LocalSubmitter().Big())
 	oldPartyIdMap := lo.SliceToMap(oldPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
 		return item.Id, item
 	})
 
 	newPartyIDs := createPartyIDsByAddress(newPartners)
 	newPeerCtx := tss.NewPeerContext(newPartyIDs)
-	newPartyID := newPartyIDs.FindByKey(new(big.Int).SetBytes(localAddress.Bytes()))
+	newPartyID := newPartyIDs.FindByKey(m.LocalSubmitter().Big())
 	newPartyIdMap := lo.SliceToMap(newPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
 		return item.Id, item
 	})
@@ -215,4 +214,8 @@ func (r *ReShareGroupSession[T, M, D]) Included(ids []string) bool {
 func (r *ReShareGroupSession[T, M, D]) Run() {
 	r.oldSession.Run()
 	r.newSession.Run()
+}
+
+func (r *ReShareGroupSession[T, M, D]) Participants() types.Participants {
+	return r.newSession.Participants()
 }

@@ -49,6 +49,8 @@ func (t *Service) loop(ctx context.Context) {
 				log.Info("tss signature read result loop stopped")
 			case result := <-out:
 				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.TaskID)
+				t.scheduler.AddDiscussedTask(result.TaskID) // todo
+
 				if result.Err != nil {
 					log.Errorf("%s, result error:%v", info, result.Err)
 				} else {

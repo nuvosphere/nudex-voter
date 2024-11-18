@@ -8,7 +8,6 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 var _ Session[any] = &SignSession[any, any, any]{}
@@ -27,20 +26,19 @@ func RandSessionID() helper.SessionID {
 func (m *Scheduler) NewSignSession(
 	groupID helper.GroupID,
 	sessionID helper.SessionID,
-	proposer, localSubmitter common.Address,
 	taskID TaskId,
 	msg *Msg,
-	allPartners types.Participants,
 	key keygen.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
-	params, partyIdMap := NewParam(localSubmitter, allPartners.Threshold(), allPartners)
+	allPartners := m.Participants()
+	params, partyIdMap := NewParam(m.LocalSubmitter(), allPartners.Threshold(), allPartners)
 	innerSession := newSession[TaskId, *Msg, *tsscommon.SignatureData](
 		m.p2p,
 		m,
 		groupID,
 		sessionID,
-		proposer,
+		m.Proposer(),
 		taskID,
 		msg,
 		SignTaskSessionType,

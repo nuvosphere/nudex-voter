@@ -226,6 +226,10 @@ func (s *sessionTransport[T, M, D]) Run() {
 	}()
 }
 
+func (s *sessionTransport[T, M, D]) Participants() types.Participants {
+	return s.session.AllPartners
+}
+
 func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
 		TaskID:    s.TaskID(),

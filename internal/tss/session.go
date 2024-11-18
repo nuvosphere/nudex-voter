@@ -4,6 +4,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 type Session[T any] interface {
@@ -20,6 +21,7 @@ type Session[T any] interface {
 	Equal
 	Included
 	Run
+	Participants() types.Participants
 }
 
 type Run interface {
@@ -64,4 +66,8 @@ type Equal interface {
 
 type Threshold interface {
 	Threshold() int
+}
+
+type Participants interface {
+	Participants() types.Participants
 }

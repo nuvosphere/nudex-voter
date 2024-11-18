@@ -31,7 +31,7 @@ var (
 )
 
 func (m *Scheduler) Validate(msg SessionMessage[TaskId, Msg]) error {
-	if m.IsCompleted(msg.TaskID) {
+	if m.IsDiscussed(msg.TaskID) {
 		return fmt.Errorf("taskID:%v, %w", msg.TaskID, ErrTaskCompleted)
 	}
 
@@ -104,10 +104,8 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		}
 
 		_ = m.NewGenerateKeySession(
-			m.Proposer(),
 			msg.TaskID,
 			&msg.Msg,
-			m.partners,
 		)
 	case ReShareGroupSessionType:
 		// todo How find new part?
@@ -129,11 +127,9 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		}
 
 		_ = m.NewReShareGroupSession(
-			m.LocalSubmitter(),
-			m.Proposer(),
 			helper.SenateTaskID,
 			&msg.Msg,
-			m.partners,
+			m.Participants(),
 			newPartners,
 		)
 	case SignTaskSessionType:
@@ -161,11 +157,8 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		_ = m.NewSignSession(
 			msg.GroupID,
 			msg.SessionID,
-			msg.Proposer,
-			m.LocalSubmitter(),
 			msg.TaskID,
 			&msg.Msg,
-			m.partners,
 			*masterLocalPartySaveData,
 			keyDerivationDelta,
 		)
@@ -222,11 +215,8 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 		m.NewSignSession(
 			groupID,
 			helper.ZeroSessionID,
-			m.Proposer(),
-			m.LocalSubmitter(),
 			taskId.Int64(),
-			new(big.Int).SetBytes(unSignMsg.Bytes()),
-			m.partners,
+			unSignMsg.Big(),
 			*localPartySaveData,
 			keyDerivationDelta,
 		)

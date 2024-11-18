@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -41,10 +42,10 @@ type Scheduler struct {
 	sigInToOut               chan *SessionResult[TaskId, *tsscommon.SignatureData]
 	senateInToOut            chan *SessionResult[TaskId, *keygen.LocalPartySaveData]
 	masterLocalPartySaveData keygen.LocalPartySaveData
-	localSubmitter           common.Address     // submit = partyID
-	proposer                 common.Address     // current submitter
-	partners                 types.Participants // //todo sync.value
-	cache                    *cache.Cache
+	localSubmitter           common.Address // submit = partyID
+	proposer                 *atomic.Value  // current submitter
+	partners                 *atomic.Value  // types.Participants
+	discussedTaskCache       *cache.Cache
 	voterContract            layer2.VoterContract
 	stateDB                  *gorm.DB
 	submitterChosen          *db.SubmitterChosen
@@ -61,29 +62,35 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 	proposer, err := voterContract.Proposer()
 	utils.Assert(err)
 
+	pp := atomic.Value{}
+	pp.Store(proposer)
+
 	partners, err := voterContract.Participants()
 	utils.Assert(err)
 
+	ps := atomic.Value{}
+	ps.Store(partners)
+
 	return &Scheduler{
-		p2p:             p,
-		bus:             bus,
-		srw:             sync.RWMutex{},
-		grw:             sync.RWMutex{},
-		groups:          make(map[helper.GroupID]*helper.Group),
-		sessions:        make(map[helper.SessionID]Session[TaskId]),
-		sessionTasks:    make(map[TaskId]Session[TaskId]),
-		sigInToOut:      make(chan *SessionResult[TaskId, *tsscommon.SignatureData], 1024),
-		senateInToOut:   make(chan *SessionResult[TaskId, *keygen.LocalPartySaveData]),
-		ctx:             ctx,
-		cancel:          cancel,
-		localSubmitter:  localSubmitter,
-		proposer:        proposer,
-		partners:        partners,
-		cache:           cache.New(time.Minute*10, time.Minute),
-		pendingProposal: make(chan any, 1024),
-		notify:          make(chan struct{}, 1024),
-		stateDB:         stateDB,
-		voterContract:   voterContract,
+		p2p:                p,
+		bus:                bus,
+		srw:                sync.RWMutex{},
+		grw:                sync.RWMutex{},
+		groups:             make(map[helper.GroupID]*helper.Group),
+		sessions:           make(map[helper.SessionID]Session[TaskId]),
+		sessionTasks:       make(map[TaskId]Session[TaskId]),
+		sigInToOut:         make(chan *SessionResult[TaskId, *tsscommon.SignatureData], 1024),
+		senateInToOut:      make(chan *SessionResult[TaskId, *keygen.LocalPartySaveData]),
+		ctx:                ctx,
+		cancel:             cancel,
+		localSubmitter:     localSubmitter,
+		proposer:           &pp,
+		partners:           &ps,
+		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
+		pendingProposal:    make(chan any, 1024),
+		notify:             make(chan struct{}, 1024),
+		stateDB:            stateDB,
+		voterContract:      voterContract,
 	}
 }
 
@@ -121,10 +128,8 @@ func (m *Scheduler) Stop() {
 
 func (m *Scheduler) Genesis() {
 	_ = m.NewGenerateKeySession(
-		m.Proposer(),
 		helper.SenateTaskID,
 		helper.SenateTaskMsg,
-		m.partners,
 	)
 
 	log.Info("TSS keygen process started")
@@ -166,7 +171,7 @@ L:
 }
 
 func (m *Scheduler) Threshold() int {
-	return m.partners.Threshold()
+	return m.Participants().Threshold()
 }
 
 func (m *Scheduler) AddGroup(group *helper.Group) {
@@ -299,21 +304,25 @@ func (m *Scheduler) LoopReShareGroupResult() {
 			case sessionResult := <-m.senateInToOut:
 				m.SaveSenateSessionResult(sessionResult)
 				newGroup := m.newGroup.Load().(*NewGroup)
-				m.partners = newGroup.NewParts
-				newGroup = nil
+				m.partners.Store(newGroup.NewParts)
+				newGroup = nil // todo
 				m.newGroup.Store(newGroup)
 			}
 		}
 	}()
 }
 
-func (m *Scheduler) IsCompleted(taskID int64) bool {
-	_, ok := m.cache.Get(fmt.Sprintf("%d", taskID))
+func (m *Scheduler) IsDiscussed(taskID int64) bool {
+	_, ok := m.discussedTaskCache.Get(fmt.Sprintf("%d", taskID))
+	if !ok {
+		ok, _ = m.voterContract.IsTaskCompleted(big.NewInt(taskID))
+	}
+
 	return ok
 }
 
-func (m *Scheduler) AddCompletedTask(taskID int64) {
-	m.cache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
+func (m *Scheduler) AddDiscussedTask(taskID int64) {
+	m.discussedTaskCache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
 }
 
 func (m *Scheduler) LocalSubmitter() common.Address {
@@ -321,7 +330,14 @@ func (m *Scheduler) LocalSubmitter() common.Address {
 }
 
 func (m *Scheduler) Proposer() common.Address {
-	return m.proposer
+	proposer, err := m.voterContract.Proposer()
+	utils.Assert(err)
+
+	return proposer
+}
+
+func (m *Scheduler) IsProposer() bool {
+	return m.Proposer() == m.LocalSubmitter()
 }
 
 func (m *Scheduler) eventLoop(ctx context.Context) {
@@ -364,27 +380,25 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 
 					switch v.EventName {
 					case layer2.ParticipantAdded:
-						if !slices.Contains(m.partners, party) {
-							newParts = append(m.partners, party)
+						if !slices.Contains(m.Participants(), party) {
+							newParts = append(m.Participants(), party)
 						}
 					case layer2.ParticipantRemoved:
-						newParts = lo.Filter(m.partners, func(item common.Address, index int) bool { return item != party })
+						newParts = lo.Filter(m.Participants(), func(item common.Address, index int) bool { return item != party })
 					}
 
-					if len(newParts) > 0 && len(newParts) != len(m.partners) {
+					if len(newParts) > 0 && len(newParts) != len(m.Participants()) {
 						m.newGroup.Store(&NewGroup{
 							Event:    v,
-							NewParts: m.partners,
+							NewParts: m.Participants(),
 							OldParts: newParts,
 						})
 
 						if m.isCanProposal() {
 							_ = m.NewReShareGroupSession(
-								m.LocalSubmitter(),
-								m.Proposer(),
 								helper.SenateTaskID,
 								helper.SenateTaskMsg,
-								m.partners,
+								m.Participants(),
 								newParts,
 							)
 						}
@@ -392,7 +406,7 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 
 				case *db.SubmitterChosen:
 					m.submitterChosen = v
-					m.proposer = common.HexToAddress(v.Submitter) // todo
+					m.proposer.Store(common.HexToAddress(v.Submitter))
 
 				case *db.TaskCompletedEvent: // todo
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
@@ -407,8 +421,26 @@ func (m *Scheduler) isCanProposal() bool {
 	return m.LocalSubmitter() == m.Proposer()
 }
 
+func (m *Scheduler) Participants() types.Participants {
+	if m.IsProposer() {
+		return m.partners.Load().(types.Participants)
+	}
+
+	partners, err := m.voterContract.Participants()
+	utils.Assert(err)
+	m.partners.Store(partners)
+
+	return partners
+}
+
 type NewGroup struct {
 	Event    *db.ParticipantEvent
 	NewParts types.Participants
 	OldParts types.Participants
+}
+
+type Draft struct {
+	Type    int
+	DraftID int32
+	Extra   any
 }

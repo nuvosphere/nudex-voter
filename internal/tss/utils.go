@@ -41,7 +41,7 @@ func createPartyIDsByAddress(addressList types.Participants) tss.SortedPartyIDs 
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	for i, address := range addressList {
-		key := new(big.Int).SetBytes(address.Bytes())
+		key := address.Big()
 		tssAllPartyIDs[i] = tss.NewPartyID(
 			address.Hex(),
 			address.Hex(),
@@ -56,7 +56,7 @@ func createOldPartyIDsByAddress(addressList types.Participants) tss.SortedPartyI
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	for i, address := range addressList {
-		key := new(big.Int).SetBytes(address.Bytes())
+		key := address.Big()
 		key = new(big.Int).Add(key, big.NewInt(1)) // key + 1
 		tssAllPartyIDs[i] = tss.NewPartyID(
 			key.Text(16),

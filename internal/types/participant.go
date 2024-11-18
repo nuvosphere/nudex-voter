@@ -1,7 +1,10 @@
 package types
 
 import (
+	"slices"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/shopspring/decimal"
 )
 
@@ -24,4 +27,15 @@ func (p Participants) Threshold() int {
 
 func (p Participants) Len() int {
 	return len(p)
+}
+
+func (p Participants) AggregationID() common.Hash {
+	slices.SortStableFunc(p, func(a, b common.Address) int { return a.Big().Cmp(b.Big()) })
+
+	var data []byte
+	for _, a := range p {
+		data = append(data, a.Bytes()...)
+	}
+
+	return crypto.Keccak256Hash(data)
 }
