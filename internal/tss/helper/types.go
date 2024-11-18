@@ -7,7 +7,7 @@ import (
 
 type (
 	SessionID = common.Hash
-	GroupID   = common.Address
+	GroupID   = common.Hash
 )
 
 var (
@@ -30,6 +30,7 @@ type Session[T, M any] struct {
 	Group
 	SessionID SessionID      `json:"sessionID,omitempty"`
 	Proposer  common.Address `json:"proposer,omitempty"` // current submitter
+	Signer    common.Address `json:"signer,omitempty"`   // current signer
 	TaskID    T              `json:"taskID,omitempty"`   // msg id
 	Msg       M              `json:"msg"`
 	Threshold int            `json:"threshold"`

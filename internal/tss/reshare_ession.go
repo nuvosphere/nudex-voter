@@ -56,8 +56,8 @@ func (m *Scheduler) NewReShareGroupSession(
 	oldInnerSession := newSession[TaskId, *Msg, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
-		helper.SenateGroupID,
 		helper.SenateSessionID,
+		m.MasterSigner(),
 		proposer,
 		taskID,
 		msg,
@@ -87,8 +87,8 @@ func (m *Scheduler) NewReShareGroupSession(
 	newInnerSession := newSession[TaskId, *Msg, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
-		helper.SenateGroupID,
 		helper.SenateSessionID,
+		m.MasterSigner(),
 		proposer,
 		taskID,
 		msg,
@@ -218,4 +218,8 @@ func (r *ReShareGroupSession[T, M, D]) Run() {
 
 func (r *ReShareGroupSession[T, M, D]) Participants() types.Participants {
 	return r.newSession.Participants()
+}
+
+func (r *ReShareGroupSession[T, M, D]) Signer() common.Address {
+	return r.newSession.Signer()
 }

@@ -29,7 +29,7 @@ func (p Participants) Len() int {
 	return len(p)
 }
 
-func (p Participants) AggregationID() common.Hash {
+func (p Participants) GroupID() common.Hash {
 	slices.SortStableFunc(p, func(a, b common.Address) int { return a.Big().Cmp(b.Big()) })
 
 	var data []byte

@@ -7,6 +7,7 @@ import (
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 )
 
@@ -24,7 +25,6 @@ func RandSessionID() helper.SessionID {
 }
 
 func (m *Scheduler) NewSignSession(
-	groupID helper.GroupID,
 	sessionID helper.SessionID,
 	taskID TaskId,
 	msg *Msg,
@@ -36,8 +36,8 @@ func (m *Scheduler) NewSignSession(
 	innerSession := newSession[TaskId, *Msg, *tsscommon.SignatureData](
 		m.p2p,
 		m,
-		groupID,
 		sessionID,
+		crypto.PubkeyToAddress(*key.ECDSAPub.ToECDSAPubKey()), // todo
 		m.Proposer(),
 		taskID,
 		msg,

@@ -94,7 +94,7 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 	switch msg.Type {
 	case GenKeySessionType:
 		// check groupID
-		if msg.GroupID != helper.SenateGroupID {
+		if msg.GroupID != m.Participants().GroupID() {
 			return fmt.Errorf("GenKeySessionType: %w", ErrGroupIdWrong)
 		}
 		// check msg
@@ -117,7 +117,7 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		newGroup := ng.(*NewGroup)
 		newPartners := newGroup.NewParts
 		// check groupID
-		if msg.GroupID != helper.SenateGroupID {
+		if msg.GroupID != m.Participants().GroupID() {
 			return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
 		}
 		// check msg
@@ -133,7 +133,7 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			newPartners,
 		)
 	case SignTaskSessionType:
-		masterLocalPartySaveData, err := LoadTSSData()
+		localPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
 
 		unSignMsg := m.TaskUnSignMsg(task)
@@ -155,11 +155,10 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		}
 
 		_ = m.NewSignSession(
-			msg.GroupID,
 			msg.SessionID,
 			msg.TaskID,
 			&msg.Msg,
-			*masterLocalPartySaveData,
+			*localPartySaveData,
 			keyDerivationDelta,
 		)
 	case TxSignatureSessionType: // blockchain wallet tx signature
@@ -185,12 +184,12 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 	case *db.CreateWalletTask:
 		coinType := getCoinTypeByChain(taskData.Chain)
 
-		groupID := wallet.GenerateAddressByPath(
-			m.MasterPublicKey(),
-			uint32(coinType),
-			taskData.Account,
-			taskData.Index,
-		)
+		//signer := wallet.GenerateAddressByPath(
+		//	m.MasterPublicKey(),
+		//	uint32(coinType),
+		//	taskData.Account,
+		//	taskData.Index,
+		//)
 		taskId := big.NewInt(int64(taskData.TaskId))
 		// todo
 		var contractAddress common.Address
@@ -213,7 +212,6 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 		utils.Assert(err)
 
 		m.NewSignSession(
-			groupID,
 			helper.ZeroSessionID,
 			taskId.Int64(),
 			unSignMsg.Big(),

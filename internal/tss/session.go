@@ -21,7 +21,12 @@ type Session[T any] interface {
 	Equal
 	Included
 	Run
-	Participants() types.Participants
+	Participants
+	Signer
+}
+
+type Signer interface {
+	Signer() common.Address
 }
 
 type Run interface {

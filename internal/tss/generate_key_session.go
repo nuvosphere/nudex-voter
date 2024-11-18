@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 )
 
@@ -27,8 +29,8 @@ func (m *Scheduler) NewGenerateKeySession(
 	s := newSession[TaskId, *Msg, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
-		helper.SenateGroupID,
 		helper.SenateSessionID,
+		m.MasterSigner(),
 		m.Proposer(),
 		taskID,
 		msg,
@@ -46,6 +48,10 @@ func (m *Scheduler) NewGenerateKeySession(
 	m.AddSession(session)
 
 	return session.SessionID()
+}
+
+func (m *Scheduler) MasterSigner() common.Address {
+	return crypto.PubkeyToAddress(m.MasterPublicKey())
 }
 
 func (m *GenerateKeySession[T, M, D]) Release() {
