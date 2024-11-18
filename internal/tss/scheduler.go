@@ -2,7 +2,6 @@ package tss
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -12,7 +11,6 @@ import (
 	"time"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -30,18 +28,19 @@ import (
 )
 
 type Scheduler struct {
-	p2p                      p2p.P2PService
-	bus                      eventbus.Bus
-	ctx                      context.Context
-	cancel                   context.CancelFunc
-	grw                      sync.RWMutex
-	groups                   map[helper.GroupID]*helper.Group
-	srw                      sync.RWMutex
-	sessions                 map[helper.SessionID]Session[ProposalID]
-	sessionTasks             map[ProposalID]Session[ProposalID]
-	sigInToOut               chan *SessionResult[ProposalID, *tsscommon.SignatureData]
-	senateInToOut            chan *SessionResult[ProposalID, *keygen.LocalPartySaveData]
-	masterLocalPartySaveData keygen.LocalPartySaveData
+	p2p           p2p.P2PService
+	bus           eventbus.Bus
+	ctx           context.Context
+	cancel        context.CancelFunc
+	grw           sync.RWMutex
+	groups        map[helper.GroupID]*helper.Group
+	srw           sync.RWMutex
+	sessions      map[helper.SessionID]Session[ProposalID]
+	sessionTasks  map[ProposalID]Session[ProposalID]
+	sigInToOut    chan *SessionResult[ProposalID, *tsscommon.SignatureData]
+	senateInToOut chan *SessionResult[ProposalID, *helper.LocalPartySaveData]
+	// masterLocalPartySaveData *atomic.Value  // keygen.LocalPartySaveData
+	masterLocalPartySaveData helper.LocalPartySaveData
 	localSubmitter           common.Address // submit = partyID
 	proposer                 *atomic.Value  // current submitter
 	partners                 *atomic.Value  // types.Participants
@@ -80,7 +79,7 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 		sessions:           make(map[helper.SessionID]Session[ProposalID]),
 		sessionTasks:       make(map[ProposalID]Session[ProposalID]),
 		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
-		senateInToOut:      make(chan *SessionResult[ProposalID, *keygen.LocalPartySaveData]),
+		senateInToOut:      make(chan *SessionResult[ProposalID, *helper.LocalPartySaveData]),
 		ctx:                ctx,
 		cancel:             cancel,
 		localSubmitter:     localSubmitter,
@@ -111,7 +110,7 @@ func (m *Scheduler) Start() {
 	m.loopApproveProposal()
 }
 
-func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *keygen.LocalPartySaveData]) {
+func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *helper.LocalPartySaveData]) {
 	if sessionResult.Err != nil {
 		panic(sessionResult.Err)
 	}
@@ -128,6 +127,7 @@ func (m *Scheduler) Stop() {
 
 func (m *Scheduler) Genesis() {
 	_ = m.NewGenerateKeySession(
+		helper.ECDSA,
 		helper.SenateProposalID,
 		helper.SenateProposal,
 	)
@@ -136,11 +136,10 @@ func (m *Scheduler) Genesis() {
 }
 
 func (m *Scheduler) IsGenesis() bool {
-	if m.masterLocalPartySaveData.ECDSAPub != nil {
-		return false
-	}
-
-	localPartySaveData, err := LoadTSSData()
+	//if m.masterLocalPartySaveData.ECDSAPub != nil {
+	//	return false
+	//}
+	localPartySaveData, err := LoadTSSData(helper.ECDSA)
 	if err != nil {
 		log.Errorf("Failed to load TSS data: %v", err)
 	}
@@ -291,8 +290,11 @@ func (m *Scheduler) loopApproveProposal() {
 	}()
 }
 
-func (m *Scheduler) MasterPublicKey() ecdsa.PublicKey {
-	return *m.masterLocalPartySaveData.ECDSAPub.ToECDSAPubKey()
+func (m *Scheduler) MasterLocalPartySaveData(ec helper.CurveType) helper.LocalPartySaveData {
+	data, err := LoadTSSData(ec)
+	utils.Assert(err)
+
+	return *data
 }
 
 func (m *Scheduler) LoopReShareGroupResult() {
@@ -355,8 +357,9 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 				log.Debugf("Received m msg event")
 
 				e := event.(p2p.Message[json.RawMessage])
+				proposal := convertMsgData(e).(SessionMessage[ProposalID, Proposal])
 
-				err := m.handleSessionMsg(convertMsgData(e).(SessionMessage[ProposalID, Proposal]))
+				err := m.processReceivedProposal(proposal)
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
@@ -367,42 +370,10 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 				case db.ITask:
 					if m.isCanProposal() {
 						log.Info("proposal task", v)
-
-						err := m.proposalTaskSession(v)
-						if err != nil {
-							log.Warnf("handle session msg error, %v", err)
-						}
+						m.processTaskProposal(v)
 					}
 				case *db.ParticipantEvent:
-					party := common.HexToAddress(v.Address)
-
-					var newParts types.Participants
-
-					switch v.EventName {
-					case layer2.ParticipantAdded:
-						if !slices.Contains(m.Participants(), party) {
-							newParts = append(m.Participants(), party)
-						}
-					case layer2.ParticipantRemoved:
-						newParts = lo.Filter(m.Participants(), func(item common.Address, index int) bool { return item != party })
-					}
-
-					if len(newParts) > 0 && len(newParts) != len(m.Participants()) {
-						m.newGroup.Store(&NewGroup{
-							Event:    v,
-							NewParts: m.Participants(),
-							OldParts: newParts,
-						})
-
-						if m.isCanProposal() {
-							_ = m.NewReShareGroupSession(
-								helper.SenateProposalID,
-								helper.SenateProposal,
-								m.Participants(),
-								newParts,
-							)
-						}
-					}
+					m.processReGroupProposal(v)
 
 				case *db.SubmitterChosen:
 					m.submitterChosen = v
@@ -414,6 +385,39 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
+	party := common.HexToAddress(v.Address)
+
+	var newParts types.Participants
+
+	switch v.EventName {
+	case layer2.ParticipantAdded:
+		if !slices.Contains(m.Participants(), party) {
+			newParts = append(m.Participants(), party)
+		}
+	case layer2.ParticipantRemoved:
+		newParts = lo.Filter(m.Participants(), func(item common.Address, index int) bool { return item != party })
+	}
+
+	if len(newParts) > 0 && len(newParts) != len(m.Participants()) {
+		m.newGroup.Store(&NewGroup{
+			Event:    v,
+			NewParts: m.Participants(),
+			OldParts: newParts,
+		})
+
+		if m.isCanProposal() {
+			_ = m.NewReShareGroupSession(
+				helper.ECDSA,
+				helper.SenateProposalID,
+				helper.SenateProposal,
+				m.Participants(),
+				newParts,
+			)
+		}
+	}
 }
 
 func (m *Scheduler) isCanProposal() bool {

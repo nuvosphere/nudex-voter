@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"crypto/elliptic"
 	"fmt"
 	"math/big"
 	"slices"
@@ -73,14 +74,14 @@ const (
 )
 
 func NewParam(
+	ec elliptic.Curve,
 	proposer common.Address, // current submitter
-	threshold int,
 	allPartners types.Participants,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
 	partyIDs := createPartyIDsByAddress(allPartners)
 	partyID := partyIDs.FindByKey(new(big.Int).SetBytes(proposer.Bytes()))
 	peerCtx := tss.NewPeerContext(partyIDs)
-	params := tss.NewParameters(tss.S256(), peerCtx, partyID, len(partyIDs), threshold)
+	params := tss.NewParameters(ec, peerCtx, partyID, len(partyIDs), allPartners.Threshold())
 	partyIdMap := lo.SliceToMap(partyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
 		return item.Id, item
 	})
@@ -89,6 +90,7 @@ func NewParam(
 }
 
 func newSession[T comparable, M, D any](
+	ec helper.CurveType,
 	p p2p.P2PService,
 	m *Scheduler,
 	sessionID helper.SessionID,
@@ -110,6 +112,7 @@ func newSession[T comparable, M, D any](
 		recvChan:    recvChan,
 		session: helper.Session[T, M]{
 			Group: helper.Group{
+				EC:          ec,
 				AllPartners: allPartners,
 				GroupID:     allPartners.GroupID(),
 			},

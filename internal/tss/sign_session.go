@@ -5,9 +5,7 @@ import (
 	"math/big"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 )
 
@@ -25,26 +23,28 @@ func RandSessionID() helper.SessionID {
 }
 
 func (m *Scheduler) NewSignSession(
+	ec helper.CurveType,
 	sessionID helper.SessionID,
 	taskID ProposalID,
 	msg *Proposal,
-	key keygen.LocalPartySaveData,
+	key helper.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
 	allPartners := m.Participants()
-	params, partyIdMap := NewParam(m.LocalSubmitter(), allPartners.Threshold(), allPartners)
+	params, partyIdMap := NewParam(ec.EC(), m.LocalSubmitter(), allPartners)
 	innerSession := newSession[ProposalID, *Proposal, *tsscommon.SignatureData](
+		ec,
 		m.p2p,
 		m,
 		sessionID,
-		crypto.PubkeyToAddress(*key.ECDSAPub.ToECDSAPubKey()), // todo
+		common.HexToAddress(key.Address()), // todo
 		m.Proposer(),
 		taskID,
 		msg,
 		SignTaskSessionType,
 		allPartners,
 	)
-	party, endCh, errCh := helper.Run(m.ctx, msg, params, key, innerSession, keyDerivationDelta) // todo
+	party, endCh, errCh := RunParty(m.ctx, msg, params, key, innerSession, keyDerivationDelta) // todo
 	innerSession.party = party
 	innerSession.partyIdMap = partyIdMap
 	innerSession.endCh = endCh

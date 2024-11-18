@@ -2,6 +2,7 @@ package tss
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"encoding/binary"
 	"encoding/hex"
@@ -11,13 +12,21 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
+	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaResharing "github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
+	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
+	eddsaResharing "github.com/bnb-chain/tss-lib/v2/eddsa/resharing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
@@ -68,16 +77,18 @@ func createOldPartyIDsByAddress(addressList types.Participants) tss.SortedPartyI
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func saveTSSData(data interface{}) error {
-	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		log.Errorf("Unable to serialize TSS data: %v", err)
+func saveTSSData(data *helper.LocalPartySaveData) error {
+	curveType := data.CurveType()
+
+	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data", curveType.CurveName())
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		log.Errorf("Failed to create TSS data directory: %v", err)
 		return err
 	}
 
-	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data")
-	if err := os.MkdirAll(dataDir, 0o755); err != nil {
-		log.Errorf("Failed to create TSS data directory: %v", err)
+	dataBytes, err := json.Marshal(data.GetData())
+	if err != nil {
+		log.Errorf("Unable to serialize TSS data: %v", err)
 		return err
 	}
 
@@ -92,21 +103,32 @@ func saveTSSData(data interface{}) error {
 	return nil
 }
 
-func LoadTSSData() (*keygen.LocalPartySaveData, error) {
-	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data")
-	filePath := filepath.Join(dataDir, "tss_key_data.json")
+func LoadTSSData(ec helper.CurveType) (*helper.LocalPartySaveData, error) {
+	filePath := filepath.Join(config.AppConfig.DbDir, "tss_data", ec.CurveName(), "tss_key_data.json")
 
 	dataBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read TSS data file: %v", err)
 	}
 
-	var data keygen.LocalPartySaveData
-	if err := json.Unmarshal(dataBytes, &data); err != nil {
-		return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
+	switch ec {
+	case helper.ECDSA:
+		var data ecdsaKeygen.LocalPartySaveData
+		if err := json.Unmarshal(dataBytes, &data); err != nil {
+			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
+		}
+
+		return helper.BuildECDSALocalPartySaveData().SetData(&data), nil
+	case helper.EDDSA:
+		var data keygen.LocalPartySaveData
+		if err := json.Unmarshal(dataBytes, &data); err != nil {
+			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
+		}
+
+		return helper.BuildEDDSALocalPartySaveData().SetData(&data), nil
 	}
 
-	return &data, nil
+	return nil, fmt.Errorf("unknown elliptic curve")
 }
 
 func PublicKeysToHex(pubKeys []*ecdsa.PublicKey) []string {
@@ -204,4 +226,163 @@ func getCoinTypeByChain(chain uint8) int {
 	default:
 		panic(ErrCoinType)
 	}
+}
+
+// RunKeyGen starts the local keygen party and handles incoming and outgoing
+// messages to other parties.
+func RunKeyGen(
+	ctx context.Context,
+	ty helper.CurveType,
+	localSubmitter common.Address, // current submitter
+	allPartners types.Participants,
+	transport helper.Transporter,
+) (tss.Party, map[string]*tss.PartyID, chan *helper.LocalPartySaveData, chan *tss.Error) {
+	// outgoing messages to other peers
+	outCh := make(chan tss.Message, 10)
+	// error if keygen fails, contains culprits to blame
+	errCh := make(chan *tss.Error, 10)
+
+	var party tss.Party
+
+	log.Debug("creating new local party")
+
+	outEndCh := make(chan *helper.LocalPartySaveData)
+	// output data when keygen finished
+	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData)
+	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData)
+
+	params, partyIdMap := NewParam(ty.EC(), localSubmitter, allPartners)
+
+	switch ty {
+	case helper.ECDSA:
+		preParams, err := ecdsaKeygen.GeneratePreParams(1 * time.Minute)
+		if err != nil {
+			panic(err)
+		}
+
+		party = ecdsaKeygen.NewLocalParty(params, outCh, ecdsaEndCh, *preParams)
+	case helper.EDDSA:
+		party = eddsaKeygen.NewLocalParty(params, outCh, eddsaEndCh)
+	default:
+		panic("implement me")
+	}
+
+	go func() {
+		defer close(eddsaEndCh)
+		defer close(ecdsaEndCh)
+		select {
+		case <-ctx.Done():
+			return
+		case data := <-ecdsaEndCh:
+			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
+
+			close(ecdsaEndCh)
+		case data := <-eddsaEndCh:
+			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
+
+			close(eddsaEndCh)
+		}
+	}()
+
+	log.Debug("local party created", "partyID", party.PartyID())
+
+	helper.RunParty(ctx, party, errCh, outCh, transport, false)
+
+	return party, partyIdMap, outEndCh, errCh
+}
+
+// RunReshare starts the local reshare party and handles incoming and outgoing
+// messages to other parties.
+func RunReshare(
+	ctx context.Context,
+	params *tss.ReSharingParameters,
+	key helper.LocalPartySaveData,
+	transport helper.Transporter,
+) (tss.Party, chan *helper.LocalPartySaveData, chan *tss.Error) {
+	// outgoing messages to other peers
+	outCh := make(chan tss.Message, 1)
+	// error if reshare fails, contains culprits to blame
+	errCh := make(chan *tss.Error, 1)
+
+	log.Debug("creating new local party")
+
+	outEndCh := make(chan *helper.LocalPartySaveData)
+	// output data when keygen finished
+	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData)
+	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData)
+
+	var party tss.Party
+
+	switch key.CurveType() {
+	case helper.ECDSA:
+		party = ecdsaResharing.NewLocalParty(params, *key.ECDSAData(), outCh, ecdsaEndCh)
+
+	case helper.EDDSA:
+		party = eddsaResharing.NewLocalParty(params, *key.EDDSAData(), outCh, eddsaEndCh)
+
+	default:
+		panic("implement me")
+	}
+
+	go func() {
+		defer close(eddsaEndCh)
+		defer close(ecdsaEndCh)
+		select {
+		case <-ctx.Done():
+			return
+		case data := <-ecdsaEndCh:
+			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
+
+			close(ecdsaEndCh)
+		case data := <-eddsaEndCh:
+			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
+
+			close(eddsaEndCh)
+		}
+	}()
+
+	log.Debug("local resharing party created", "partyID", party.PartyID())
+
+	helper.RunParty(ctx, party, errCh, outCh, transport, true)
+
+	return party, outEndCh, errCh
+}
+
+func RunParty(
+	ctx context.Context,
+	msg *big.Int,
+	params *tss.Parameters,
+	key helper.LocalPartySaveData,
+	transport helper.Transporter,
+	keyDerivationDelta *big.Int,
+) (tss.Party, chan *tsscommon.SignatureData, chan *tss.Error) {
+	// outgoing messages to other peers - not one to not deadlock when a party
+	// round is waiting for outgoing messages channel to clear
+	outCh := make(chan tss.Message, params.PartyCount())
+	// output signature when finished
+	endCh := make(chan *tsscommon.SignatureData, 1)
+	// error if signing fails, contains culprits to blame
+	errCh := make(chan *tss.Error, 1)
+
+	log.Debug("creating new local party")
+
+	var party tss.Party
+
+	switch key.CurveType() {
+	case helper.ECDSA:
+		if keyDerivationDelta != nil {
+			party = signing.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
+		} else {
+			party = signing.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
+		}
+
+	default:
+		panic("implement me")
+	}
+
+	log.Debug("local signing party created", "partyID", party.PartyID())
+
+	helper.RunParty(ctx, party, errCh, outCh, transport, false)
+
+	return party, endCh, errCh
 }

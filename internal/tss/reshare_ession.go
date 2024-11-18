@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
@@ -20,13 +19,14 @@ type ReShareGroupSession[T, M, D any] struct {
 }
 
 func (m *Scheduler) NewReShareGroupSession(
+	ec helper.CurveType,
 	taskID ProposalID, // msg id
 	msg *Proposal,
 	oldPartners types.Participants,
 	newPartners types.Participants,
 ) helper.SessionID {
 	proposer := m.Proposer()
-	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *keygen.LocalPartySaveData]{}
+	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{}
 
 	oldPartyIDs := createOldPartyIDsByAddress(oldPartners)
 	oldPeerCtx := tss.NewPeerContext(oldPartyIDs)
@@ -43,7 +43,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	})
 
 	oldParams := tss.NewReSharingParameters(
-		tss.S256(),
+		ec.EC(),
 		oldPeerCtx,
 		newPeerCtx,
 		oldPartyID,
@@ -53,11 +53,12 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners.Threshold(),
 	)
 
-	oldInnerSession := newSession[ProposalID, *Proposal, *keygen.LocalPartySaveData](
+	oldInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+		ec,
 		m.p2p,
 		m,
 		helper.SenateSessionID,
-		m.MasterSigner(),
+		common.Address{}, // todo
 		proposer,
 		taskID,
 		msg,
@@ -66,15 +67,15 @@ func (m *Scheduler) NewReShareGroupSession(
 	)
 	reShareSession.oldSession = oldInnerSession
 
-	party, endCh, errCh := helper.RunReshare(m.ctx, oldParams, m.masterLocalPartySaveData, reShareSession) // todo
+	party, endCh, errCh := RunReshare(m.ctx, oldParams, m.masterLocalPartySaveData, reShareSession) // todo
 	oldInnerSession.party = party
 	oldInnerSession.partyIdMap = oldPartyIdMap
 	oldInnerSession.endCh = endCh
 	oldInnerSession.errCH = errCh
-	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *keygen.LocalPartySaveData], 1) // todo
+	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *helper.LocalPartySaveData], 1) // todo
 
 	newParams := tss.NewReSharingParameters(
-		tss.S256(),
+		ec.EC(),
 		oldPeerCtx,
 		newPeerCtx,
 		newPartyID,
@@ -84,11 +85,12 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners.Threshold(),
 	)
 
-	newInnerSession := newSession[ProposalID, *Proposal, *keygen.LocalPartySaveData](
+	newInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+		ec,
 		m.p2p,
 		m,
 		helper.SenateSessionID,
-		m.MasterSigner(),
+		common.Address{}, // todo
 		proposer,
 		taskID,
 		msg,
@@ -97,7 +99,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	)
 	reShareSession.newSession = newInnerSession
 
-	party, endCh, errCh = helper.RunReshare(m.ctx, newParams, m.masterLocalPartySaveData, reShareSession)
+	party, endCh, errCh = RunReshare(m.ctx, newParams, m.masterLocalPartySaveData, reShareSession)
 	newInnerSession.party = party
 	newInnerSession.partyIdMap = newPartyIdMap
 	newInnerSession.endCh = endCh

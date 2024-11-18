@@ -16,6 +16,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -85,8 +86,8 @@ func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
 	return big.Int{}
 }
 
-// handleSessionMsg handler received msg from other node.
-func (m *Scheduler) handleSessionMsg(msg SessionMessage[ProposalID, Proposal]) error {
+// processReceivedProposal handler received msg from other node.
+func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
 	task, err := m.GetTask(msg.ProposalID)
 	if err != nil {
 		return err
@@ -119,9 +120,11 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[ProposalID, Proposal]) e
 		}
 
 		_ = m.NewGenerateKeySession(
+			m.CurveType(task),
 			msg.ProposalID,
 			&msg.Proposal,
 		)
+
 	case ReShareGroupSessionType:
 		// todo How find new part?
 		ng := m.newGroup.Load()
@@ -142,13 +145,14 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[ProposalID, Proposal]) e
 		}
 
 		_ = m.NewReShareGroupSession(
-			helper.SenateProposalID,
+			m.CurveType(task),
+			msg.ProposalID,
 			&msg.Proposal,
 			m.Participants(),
 			newPartners,
 		)
 	case SignTaskSessionType:
-		localPartySaveData, err := LoadTSSData()
+		localPartySaveData, err := LoadTSSData(m.CurveType(task))
 		utils.Assert(err)
 
 		unSignMsg := m.TaskProposal(task)
@@ -170,6 +174,7 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[ProposalID, Proposal]) e
 		}
 
 		_ = m.NewSignSession(
+			m.CurveType(task),
 			msg.SessionID,
 			msg.ProposalID,
 			&msg.Proposal,
@@ -194,7 +199,12 @@ func Partners() types.Participants {
 	)
 }
 
-func (m *Scheduler) proposalTaskSession(task db.ITask) error {
+func (m *Scheduler) CurveType(task *db.Task) helper.CurveType {
+	// todo
+	return helper.ECDSA
+}
+
+func (m *Scheduler) processTaskProposal(task db.ITask) {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:
 		coinType := getCoinTypeByChain(taskData.Chain)
@@ -206,32 +216,33 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 
 		unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(contractAddress, calldata, taskId)
 		if err != nil {
-			return err
+			log.Error("GenerateVerifyTaskUnSignMsg error", err)
+			return
 		}
 
 		path := wallet.Bip44DerivationPath(uint32(coinType), taskData.Account, taskData.Index)
 		param, err := path.ToParams()
 		utils.Assert(err)
-		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(m.MasterPublicKey(), param.Indexes())
+		localPartySaveData, err := LoadTSSData(m.CurveType(&taskData.Task))
 		utils.Assert(err)
-		localPartySaveData, err := LoadTSSData()
+
+		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(*localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey(), param.Indexes())
 		utils.Assert(err)
-		err = wallet.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, localPartySaveData, &extendedChildPk.PublicKey, tss.S256())
+
+		// todo
+		err = wallet.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, localPartySaveData.ECDSAData(), &extendedChildPk.PublicKey, tss.S256())
 		utils.Assert(err)
 
 		m.NewSignSession(
+			m.CurveType(&taskData.Task),
 			helper.ZeroSessionID,
 			ProposalID(taskData.TaskId),
 			unSignMsg.Big(),
 			*localPartySaveData,
 			keyDerivationDelta,
 		)
-
-		return err
 	case *db.DepositTask:
 
 	case *db.WithdrawalTask:
 	}
-
-	return nil
 }

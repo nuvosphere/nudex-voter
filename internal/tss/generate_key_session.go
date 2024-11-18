@@ -1,11 +1,7 @@
 package tss
 
 import (
-	"time"
-
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 )
 
@@ -16,42 +12,34 @@ type GenerateKeySession[T, M, D any] struct {
 }
 
 func (m *Scheduler) NewGenerateKeySession(
-	taskID ProposalID, // msg id
+	ec helper.CurveType,
+	proposalID ProposalID, // msg id
 	msg *Proposal,
 ) helper.SessionID {
-	preParams, err := keygen.GeneratePreParams(1 * time.Minute)
-	if err != nil {
-		panic(err)
-	}
-
 	allPartners := m.Participants()
-	params, partyIdMap := NewParam(m.LocalSubmitter(), allPartners.Threshold(), allPartners)
-	s := newSession[ProposalID, *Proposal, *keygen.LocalPartySaveData](
+	s := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+		ec,
 		m.p2p,
 		m,
 		helper.SenateSessionID,
-		m.MasterSigner(),
+		common.Address{},
 		m.Proposer(),
-		taskID,
+		proposalID,
 		msg,
 		GenKeySessionType,
 		allPartners,
 	)
-	party, endCh, errCh := helper.RunKeyGen(m.ctx, preParams, params, s) // todo
+	party, partyIdMap, endCh, errCh := RunKeyGen(m.ctx, ec, m.localSubmitter, allPartners, s) // todo
 	s.party = party
 	s.partyIdMap = partyIdMap
-	s.inToOut = m.senateInToOut
 	s.errCH = errCh
 	s.endCh = endCh
+	s.inToOut = m.senateInToOut
 	s.Run()
-	session := &GenerateKeySession[ProposalID, *Proposal, *keygen.LocalPartySaveData]{sessionTransport: s}
+	session := &GenerateKeySession[ProposalID, *Proposal, *helper.LocalPartySaveData]{sessionTransport: s}
 	m.AddSession(session)
 
 	return session.SessionID()
-}
-
-func (m *Scheduler) MasterSigner() common.Address {
-	return crypto.PubkeyToAddress(m.MasterPublicKey())
 }
 
 func (m *GenerateKeySession[T, M, D]) Release() {
