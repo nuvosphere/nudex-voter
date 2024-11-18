@@ -37,10 +37,10 @@ type Scheduler struct {
 	grw                      sync.RWMutex
 	groups                   map[helper.GroupID]*helper.Group
 	srw                      sync.RWMutex
-	sessions                 map[helper.SessionID]Session[TaskId]
-	sessionTasks             map[TaskId]Session[TaskId]
-	sigInToOut               chan *SessionResult[TaskId, *tsscommon.SignatureData]
-	senateInToOut            chan *SessionResult[TaskId, *keygen.LocalPartySaveData]
+	sessions                 map[helper.SessionID]Session[ProposalID]
+	sessionTasks             map[ProposalID]Session[ProposalID]
+	sigInToOut               chan *SessionResult[ProposalID, *tsscommon.SignatureData]
+	senateInToOut            chan *SessionResult[ProposalID, *keygen.LocalPartySaveData]
 	masterLocalPartySaveData keygen.LocalPartySaveData
 	localSubmitter           common.Address // submit = partyID
 	proposer                 *atomic.Value  // current submitter
@@ -77,10 +77,10 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 		srw:                sync.RWMutex{},
 		grw:                sync.RWMutex{},
 		groups:             make(map[helper.GroupID]*helper.Group),
-		sessions:           make(map[helper.SessionID]Session[TaskId]),
-		sessionTasks:       make(map[TaskId]Session[TaskId]),
-		sigInToOut:         make(chan *SessionResult[TaskId, *tsscommon.SignatureData], 1024),
-		senateInToOut:      make(chan *SessionResult[TaskId, *keygen.LocalPartySaveData]),
+		sessions:           make(map[helper.SessionID]Session[ProposalID]),
+		sessionTasks:       make(map[ProposalID]Session[ProposalID]),
+		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
+		senateInToOut:      make(chan *SessionResult[ProposalID, *keygen.LocalPartySaveData]),
 		ctx:                ctx,
 		cancel:             cancel,
 		localSubmitter:     localSubmitter,
@@ -111,7 +111,7 @@ func (m *Scheduler) Start() {
 	m.loopApproveProposal()
 }
 
-func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[TaskId, *keygen.LocalPartySaveData]) {
+func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *keygen.LocalPartySaveData]) {
 	if sessionResult.Err != nil {
 		panic(sessionResult.Err)
 	}
@@ -128,8 +128,8 @@ func (m *Scheduler) Stop() {
 
 func (m *Scheduler) Genesis() {
 	_ = m.NewGenerateKeySession(
-		helper.SenateTaskID,
-		helper.SenateTaskMsg,
+		helper.SenateProposalID,
+		helper.SenateProposal,
 	)
 
 	log.Info("TSS keygen process started")
@@ -180,7 +180,7 @@ func (m *Scheduler) AddGroup(group *helper.Group) {
 	m.groups[group.GroupID] = group
 }
 
-func (m *Scheduler) AddSession(session Session[TaskId]) bool {
+func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
 	m.grw.Lock()
 	_, ok := m.groups[session.GroupID()] // todo
 	m.grw.Unlock()
@@ -188,7 +188,7 @@ func (m *Scheduler) AddSession(session Session[TaskId]) bool {
 	if ok {
 		m.srw.Lock()
 		m.sessions[session.SessionID()] = session
-		m.sessionTasks[session.TaskID()] = session
+		m.sessionTasks[session.ProposalID()] = session
 		m.srw.Unlock()
 	}
 
@@ -202,14 +202,14 @@ func (m *Scheduler) GetGroup(groupID helper.GroupID) *helper.Group {
 	return m.groups[groupID]
 }
 
-func (m *Scheduler) GetSession(sessionID helper.SessionID) Session[TaskId] {
+func (m *Scheduler) GetSession(sessionID helper.SessionID) Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
 	return m.sessions[sessionID]
 }
 
-func (m *Scheduler) IsMeeting(taskID TaskId) bool {
+func (m *Scheduler) IsMeeting(taskID ProposalID) bool {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 	_, ok := m.sessionTasks[taskID]
@@ -224,11 +224,11 @@ func (m *Scheduler) GetGroups() []*helper.Group {
 	return lo.MapToSlice(m.groups, func(_ helper.GroupID, group *helper.Group) *helper.Group { return group })
 }
 
-func (m *Scheduler) GetSessions() []Session[TaskId] {
+func (m *Scheduler) GetSessions() []Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
-	return lo.MapToSlice(m.sessions, func(_ helper.SessionID, session Session[TaskId]) Session[TaskId] { return session })
+	return lo.MapToSlice(m.sessions, func(_ helper.SessionID, session Session[ProposalID]) Session[ProposalID] { return session })
 }
 
 func (m *Scheduler) ReleaseGroup(groupID helper.GroupID) {
@@ -244,7 +244,7 @@ func (m *Scheduler) SessionRelease(session helper.SessionID) {
 	s, ok := m.sessions[session]
 	if ok {
 		delete(m.sessions, session)
-		delete(m.sessionTasks, s.TaskID())
+		delete(m.sessionTasks, s.ProposalID())
 		s.Release()
 
 		if len(m.sessions) == 0 {
@@ -262,8 +262,8 @@ func (m *Scheduler) Release() {
 		s.Release()
 	}
 
-	m.sessions = make(map[helper.SessionID]Session[TaskId])
-	m.sessionTasks = make(map[TaskId]Session[TaskId])
+	m.sessions = make(map[helper.SessionID]Session[ProposalID])
+	m.sessionTasks = make(map[ProposalID]Session[ProposalID])
 	m.srw.Unlock()
 	close(m.sigInToOut)
 }
@@ -356,7 +356,7 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 
 				e := event.(p2p.Message[json.RawMessage])
 
-				err := m.handleSessionMsg(convertMsgData(e).(SessionMessage[TaskId, Msg]))
+				err := m.handleSessionMsg(convertMsgData(e).(SessionMessage[ProposalID, Proposal]))
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
@@ -396,8 +396,8 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 
 						if m.isCanProposal() {
 							_ = m.NewReShareGroupSession(
-								helper.SenateTaskID,
-								helper.SenateTaskMsg,
+								helper.SenateProposalID,
+								helper.SenateProposal,
 								m.Participants(),
 								newParts,
 							)

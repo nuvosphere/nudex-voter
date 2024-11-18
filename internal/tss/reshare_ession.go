@@ -20,13 +20,13 @@ type ReShareGroupSession[T, M, D any] struct {
 }
 
 func (m *Scheduler) NewReShareGroupSession(
-	taskID TaskId, // msg id
-	msg *Msg,
+	taskID ProposalID, // msg id
+	msg *Proposal,
 	oldPartners types.Participants,
 	newPartners types.Participants,
 ) helper.SessionID {
 	proposer := m.Proposer()
-	reShareSession := &ReShareGroupSession[TaskId, *Msg, *keygen.LocalPartySaveData]{}
+	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *keygen.LocalPartySaveData]{}
 
 	oldPartyIDs := createOldPartyIDsByAddress(oldPartners)
 	oldPeerCtx := tss.NewPeerContext(oldPartyIDs)
@@ -53,7 +53,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners.Threshold(),
 	)
 
-	oldInnerSession := newSession[TaskId, *Msg, *keygen.LocalPartySaveData](
+	oldInnerSession := newSession[ProposalID, *Proposal, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
 		helper.SenateSessionID,
@@ -71,7 +71,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	oldInnerSession.partyIdMap = oldPartyIdMap
 	oldInnerSession.endCh = endCh
 	oldInnerSession.errCH = errCh
-	oldInnerSession.inToOut = make(chan<- *SessionResult[TaskId, *keygen.LocalPartySaveData], 1) // todo
+	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *keygen.LocalPartySaveData], 1) // todo
 
 	newParams := tss.NewReSharingParameters(
 		tss.S256(),
@@ -84,7 +84,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners.Threshold(),
 	)
 
-	newInnerSession := newSession[TaskId, *Msg, *keygen.LocalPartySaveData](
+	newInnerSession := newSession[ProposalID, *Proposal, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
 		helper.SenateSessionID,
@@ -182,8 +182,8 @@ func (r *ReShareGroupSession[T, M, D]) GroupID() helper.GroupID {
 	return r.newSession.GroupID()
 }
 
-func (r *ReShareGroupSession[T, M, D]) TaskID() T {
-	return r.newSession.TaskID()
+func (r *ReShareGroupSession[T, M, D]) ProposalID() T {
+	return r.newSession.ProposalID()
 }
 
 func (r *ReShareGroupSession[T, M, D]) Proposer() common.Address {

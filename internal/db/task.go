@@ -29,7 +29,7 @@ type Task struct {
 	gorm.Model
 	TaskId           uint32            `gorm:"unique;not null"                     json:"task_id"`
 	TaskType         int               `gorm:"not null;default:0"                  json:"task_type"`
-	Context          []byte            `gorm:"not null"                            json:"Context"`
+	Context          []byte            `gorm:"not null"                            json:"context"`
 	Submitter        string            `gorm:"not null"                            json:"submitter"`
 	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
 	LogIndex         LogIndex          `gorm:"foreignKey:ForeignID"`                              // has one https://gorm.io/zh_CN/docs/has_one.html
@@ -198,7 +198,7 @@ type TaskCompletedEvent struct {
 	gorm.Model
 	TaskId      uint32   `gorm:"unique;not null"                     json:"task_id"`
 	Submitter   string   `gorm:"not null"                            json:"submitter"`
-	CompletedAt int64    `gorm:"unique;not null"                     json:"completedAt"`
+	CompletedAt int64    `gorm:"unique;not null"                     json:"completed_at"`
 	Result      []byte   `json:"result"`
 	Task        Task     `gorm:"foreignKey:TaskId;references:TaskId"`
 	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html

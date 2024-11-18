@@ -2,6 +2,7 @@ package tss
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -30,9 +31,9 @@ var (
 	ErrProposerWrong         = fmt.Errorf("task proposer is wrong")
 )
 
-func (m *Scheduler) Validate(msg SessionMessage[TaskId, Msg]) error {
-	if m.IsDiscussed(msg.TaskID) {
-		return fmt.Errorf("taskID:%v, %w", msg.TaskID, ErrTaskCompleted)
+func (m *Scheduler) Validate(msg SessionMessage[ProposalID, Proposal]) error {
+	if m.IsDiscussed(msg.ProposalID) {
+		return fmt.Errorf("taskID:%v, %w", msg.ProposalID, ErrTaskCompleted)
 	}
 
 	if msg.Proposer != m.Proposer() {
@@ -50,6 +51,20 @@ func (m *Scheduler) GetTask(taskID int64) (*db.Task, error) {
 		Where("task_id", taskID).
 		Last(task).
 		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		itask, err := m.voterContract.Tasks(big.NewInt(taskID))
+		if err != nil {
+			return nil, err
+		}
+
+		return &db.Task{
+			TaskId:    uint32(itask.Id.Uint64()),
+			Context:   itask.Context,
+			Submitter: itask.Submitter.Hex(),
+		}, nil
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("taskID:%v, %w", taskID, err)
 	}
@@ -57,27 +72,27 @@ func (m *Scheduler) GetTask(taskID int64) (*db.Task, error) {
 	return task, err
 }
 
-func (m *Scheduler) GenKeyUnSignMsg(task *db.Task) Msg {
-	return *helper.SenateTaskMsg
+func (m *Scheduler) GenKeyProposal(task *db.Task) Proposal {
+	return *helper.SenateProposal
 }
 
-func (m *Scheduler) ReShareGroupUnSignMsg(task *db.Task) Msg {
-	return *helper.SenateTaskMsg
+func (m *Scheduler) ReShareGroupProposal(task *db.Task) Proposal {
+	return *helper.SenateProposal
 }
 
-func (m *Scheduler) TaskUnSignMsg(task *db.Task) Msg {
+func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
 	// todo
 	return big.Int{}
 }
 
 // handleSessionMsg handler received msg from other node.
-func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
-	task, err := m.GetTask(msg.TaskID)
+func (m *Scheduler) handleSessionMsg(msg SessionMessage[ProposalID, Proposal]) error {
+	task, err := m.GetTask(msg.ProposalID)
 	if err != nil {
 		return err
 	}
 
-	//if msg.TaskID < m.currentDoingTaskID {
+	//if msg.ProposalID < m.currentDoingTaskID {
 	//	return fmt.Errorf("task already in progress")
 	//}
 
@@ -98,14 +113,14 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			return fmt.Errorf("GenKeySessionType: %w", ErrGroupIdWrong)
 		}
 		// check msg
-		unSignMsg := m.GenKeyUnSignMsg(task)
-		if unSignMsg.String() != msg.Msg.String() {
+		unSignMsg := m.GenKeyProposal(task)
+		if unSignMsg.String() != msg.Proposal.String() {
 			return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 		}
 
 		_ = m.NewGenerateKeySession(
-			msg.TaskID,
-			&msg.Msg,
+			msg.ProposalID,
+			&msg.Proposal,
 		)
 	case ReShareGroupSessionType:
 		// todo How find new part?
@@ -121,14 +136,14 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 			return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
 		}
 		// check msg
-		unSignMsg := m.ReShareGroupUnSignMsg(task) // todo add or remove address
-		if unSignMsg.String() != msg.Msg.String() {
+		unSignMsg := m.ReShareGroupProposal(task) // todo add or remove address
+		if unSignMsg.String() != msg.Proposal.String() {
 			return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 		}
 
 		_ = m.NewReShareGroupSession(
-			helper.SenateTaskID,
-			&msg.Msg,
+			helper.SenateProposalID,
+			&msg.Proposal,
 			m.Participants(),
 			newPartners,
 		)
@@ -136,8 +151,8 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 		localPartySaveData, err := LoadTSSData()
 		utils.Assert(err)
 
-		unSignMsg := m.TaskUnSignMsg(task)
-		if unSignMsg.String() != msg.Msg.String() {
+		unSignMsg := m.TaskProposal(task)
+		if unSignMsg.String() != msg.Proposal.String() {
 			return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
 		}
 
@@ -156,8 +171,8 @@ func (m *Scheduler) handleSessionMsg(msg SessionMessage[TaskId, Msg]) error {
 
 		_ = m.NewSignSession(
 			msg.SessionID,
-			msg.TaskID,
-			&msg.Msg,
+			msg.ProposalID,
+			&msg.Proposal,
 			*localPartySaveData,
 			keyDerivationDelta,
 		)
@@ -183,13 +198,6 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:
 		coinType := getCoinTypeByChain(taskData.Chain)
-
-		//signer := wallet.GenerateAddressByPath(
-		//	m.MasterPublicKey(),
-		//	uint32(coinType),
-		//	taskData.Account,
-		//	taskData.Index,
-		//)
 		taskId := big.NewInt(int64(taskData.TaskId))
 		// todo
 		var contractAddress common.Address
@@ -213,7 +221,7 @@ func (m *Scheduler) proposalTaskSession(task db.ITask) error {
 
 		m.NewSignSession(
 			helper.ZeroSessionID,
-			taskId.Int64(),
+			ProposalID(taskData.TaskId),
 			unSignMsg.Big(),
 			*localPartySaveData,
 			keyDerivationDelta,

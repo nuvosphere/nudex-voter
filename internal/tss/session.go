@@ -14,7 +14,7 @@ type Session[T any] interface {
 	Type
 	SessionID
 	GroupID
-	TaskID[T]
+	ProposalIdent[T]
 	Proposer
 	Threshold
 	PartyID
@@ -49,8 +49,8 @@ type GroupID interface {
 	GroupID() helper.GroupID
 }
 
-type TaskID[T any] interface {
-	TaskID() T
+type ProposalIdent[T any] interface {
+	ProposalID() T
 }
 
 type Proposer interface {

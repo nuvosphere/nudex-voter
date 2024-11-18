@@ -10,14 +10,14 @@ import (
 
 type LogIndex struct {
 	gorm.Model
-	ContractAddress common.Address `gorm:"index;size:160"                json:"contractAddress"`
-	EventName       string         `json:"eventName"`                                        // event name
-	Log             *types.Log     `gorm:"serializer:json"               json:"log"`         // event content
-	TxHash          common.Hash    `gorm:"index;size:256"                json:"txHash"`      // tx hash
-	ChainId         uint64         `gorm:"index:log_index_unique,unique" json:"chainId"`     // chainId
-	BlockNumber     uint64         `gorm:"index:log_index_unique,unique" json:"blockNumber"` // block number of the tx
-	LogIndex        uint64         `gorm:"index:log_index_unique,unique" json:"logIndex"`    // block log index
-	ForeignID       uint           `gorm:"index"                         json:"foreignID"`   // task table ID;submitter table ID;participant_event table ID;...
+	ContractAddress common.Address `gorm:"index;size:160"                json:"contract_address"`
+	EventName       string         `json:"eventName"`                                         // event name
+	Log             *types.Log     `gorm:"serializer:json"               json:"log"`          // event content
+	TxHash          common.Hash    `gorm:"index;size:256"                json:"tx_hash"`      // tx hash
+	ChainId         uint64         `gorm:"index:log_index_unique,unique" json:"chain_id"`     // chainId
+	BlockNumber     uint64         `gorm:"index:log_index_unique,unique" json:"block_number"` // block number of the tx
+	LogIndex        uint64         `gorm:"index:log_index_unique,unique" json:"log_index"`    // block log index
+	ForeignID       uint           `gorm:"index"                         json:"foreign_id"`   // task table ID;submitter table ID;participant_event table ID;...
 }
 
 func (LogIndex) TableName() string {
@@ -37,7 +37,7 @@ func (EVMSyncStatus) TableName() string {
 type SubmitterChosen struct {
 	gorm.Model
 	Submitter   string   `gorm:"index:submitter_block_number_unique,unique" json:"submitter"`
-	BlockNumber uint64   `gorm:"index:submitter_block_number_unique,unique" json:"blockNumber"`
+	BlockNumber uint64   `gorm:"index:submitter_block_number_unique,unique" json:"block_number"`
 	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
@@ -60,7 +60,7 @@ type ParticipantEvent struct {
 	gorm.Model
 	EventName   string   `json:"eventName"` // event name
 	Address     string   `gorm:"index;not null"       json:"address"`
-	BlockNumber uint64   `gorm:"index;not null"       json:"blockNumber"`
+	BlockNumber uint64   `gorm:"index;not null"       json:"block_number"`
 	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 

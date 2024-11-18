@@ -18,8 +18,8 @@ import (
 var _ Session[any] = &sessionTransport[any, any, any]{}
 
 type (
-	TaskId = int64
-	Msg    = big.Int
+	ProposalID = int64
+	Proposal   = big.Int
 )
 
 type SessionMessage[T, M any] struct {
@@ -27,9 +27,9 @@ type SessionMessage[T, M any] struct {
 	GroupID                 helper.GroupID   `json:"groupID,omitempty"`
 	SessionID               helper.SessionID `json:"sessionID,omitempty"`
 	Signer                  common.Address   `json:"signer,omitempty"`
-	Proposer                common.Address   `json:"proposer,omitempty"` // current submitter
-	TaskID                  T                `json:"taskID,omitempty"`   // msg id
-	Msg                     M                `json:"msg,omitempty"`
+	Proposer                common.Address   `json:"proposer,omitempty"`    // current submitter
+	ProposalID              T                `json:"Proposal_ID,omitempty"` // msg id
+	Proposal                M                `json:"proposal,omitempty"`
 	FromPartyId             string           `json:"from_party_id"`
 	ToPartyIds              []string         `json:"to_party_ids"`
 	IsBroadcast             bool             `json:"is_broadcast"`
@@ -94,8 +94,8 @@ func newSession[T comparable, M, D any](
 	sessionID helper.SessionID,
 	signer common.Address, // current signer
 	proposer common.Address, // current submitter
-	taskID T, // msg id
-	msg M,
+	ProposalId T, // msg id
+	proposal M,
 	ty string,
 	allPartners types.Participants,
 ) *sessionTransport[T, M, D] {
@@ -113,12 +113,12 @@ func newSession[T comparable, M, D any](
 				AllPartners: allPartners,
 				GroupID:     allPartners.GroupID(),
 			},
-			SessionID: sessionID,
-			Signer:    signer,
-			Proposer:  proposer,
-			TaskID:    taskID,
-			Msg:       msg,
-			Threshold: allPartners.Threshold(),
+			SessionID:  sessionID,
+			Signer:     signer,
+			Proposer:   proposer,
+			ProposalID: ProposalId,
+			Proposal:   proposal,
+			Threshold:  allPartners.Threshold(),
 		},
 		sessionRelease: m,
 		ty:             ty,
@@ -137,8 +137,8 @@ func (s *sessionTransport[T, M, D]) Name() string {
 		s.Type(),
 		s.SessionID(),
 		s.GroupID(),
-		s.TaskID(),
-		s.session.Msg,
+		s.ProposalID(),
+		s.session.Proposal,
 		s.Threshold(),
 	)
 }
@@ -163,8 +163,8 @@ func (s *sessionTransport[T, M, D]) GroupID() helper.GroupID {
 	return s.session.GroupID
 }
 
-func (s *sessionTransport[T, M, D]) TaskID() T {
-	return s.session.TaskID
+func (s *sessionTransport[T, M, D]) ProposalID() T {
+	return s.session.ProposalID
 }
 
 func (s *sessionTransport[T, M, D]) Proposer() common.Address {
@@ -186,16 +186,16 @@ func (s *sessionTransport[T, M, D]) Release() {
 func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {
 	msg := p2p.Message[any]{
 		MessageType: p2p.MessageTypeTssMsg,
-		RequestId:   fmt.Sprintf("%v", s.TaskID()), // todo taskID
-		DataType:    s.Type(),                      // todo
+		RequestId:   fmt.Sprintf("%v", s.ProposalID()), // todo taskID
+		DataType:    s.Type(),                          // todo
 		Data: SessionMessage[T, M]{
 			Type:                    s.Type(),
 			GroupID:                 s.GroupID(),
 			SessionID:               s.SessionID(),
 			Signer:                  s.Signer(),
 			Proposer:                s.Proposer(),
-			TaskID:                  s.TaskID(),
-			Msg:                     s.session.Msg,
+			ProposalID:              s.ProposalID(),
+			Proposal:                s.session.Proposal,
 			FromPartyId:             routing.From.Id,
 			ToPartyIds:              lo.Map(routing.To, func(to *tss.PartyID, _ int) string { return to.Id }),
 			IsBroadcast:             routing.IsBroadcast,
@@ -239,27 +239,27 @@ func (s *sessionTransport[T, M, D]) Signer() common.Address {
 
 func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
-		TaskID:    s.TaskID(),
-		SessionID: s.SessionID(),
-		GroupID:   s.GroupID(),
-		Data:      data,
-		Err:       nil,
+		ProposalID: s.ProposalID(),
+		SessionID:  s.SessionID(),
+		GroupID:    s.GroupID(),
+		Data:       data,
+		Err:        nil,
 	}
 }
 
 func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
-		TaskID:    s.TaskID(),
-		SessionID: s.SessionID(),
-		GroupID:   s.GroupID(),
-		Err:       err,
+		ProposalID: s.ProposalID(),
+		SessionID:  s.SessionID(),
+		GroupID:    s.GroupID(),
+		Err:        err,
 	}
 }
 
 type SessionResult[T, D any] struct {
-	TaskID    T
-	SessionID helper.SessionID
-	GroupID   helper.GroupID
-	Data      D
-	Err       error
+	ProposalID T
+	SessionID  helper.SessionID
+	GroupID    helper.GroupID
+	Data       D
+	Err        error
 }

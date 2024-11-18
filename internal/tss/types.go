@@ -23,7 +23,7 @@ func convertMsgData(msg p2p.Message[json.RawMessage]) any {
 	case DataTypeTssKeygenMsg, DataTypeTssReSharingMsg, DataTypeTssSignMsg:
 		return unmarshal[types.TssMessage](msg.Data)
 	case GenKeySessionType, SignTaskSessionType, ReShareGroupSessionType:
-		return unmarshal[SessionMessage[TaskId, Msg]](msg.Data)
+		return unmarshal[SessionMessage[ProposalID, Proposal]](msg.Data)
 	case DataTypeSignCreateWallet:
 		return unmarshal[types.SignMessage](msg.Data)
 	}

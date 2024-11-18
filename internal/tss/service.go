@@ -48,8 +48,8 @@ func (t *Service) loop(ctx context.Context) {
 			case <-ctx.Done():
 				log.Info("tss signature read result loop stopped")
 			case result := <-out:
-				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.TaskID)
-				t.scheduler.AddDiscussedTask(result.TaskID) // todo
+				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.ProposalID)
+				t.scheduler.AddDiscussedTask(result.ProposalID) // todo
 
 				if result.Err != nil {
 					log.Errorf("%s, result error:%v", info, result.Err)
@@ -62,24 +62,10 @@ func (t *Service) loop(ctx context.Context) {
 }
 
 func (t *Service) handleSigFinish(ctx context.Context, signatureData *tsscommon.SignatureData) {
-	//t.rw.Lock()
-	//
-	//log.Infof("sig finish, taskId:%d, R:%x, S:%x, V:%x", t.stateDB.TssState.CurrentTask.TaskId, signatureData.R, signatureData.S, signatureData.SignatureRecovery)
-	//
-	//if t.stateDB.TssState.CurrentTask.Submitter == t.localAddress.Hex() {
-	//	buf := bytes.NewReader(t.stateDB.TssState.CurrentTask.Context)
-	//
-	//		// @todo
-	//		// generate wallet and send to chain
-	//		address := wallet.GenerateAddressByPath(
-	//			*(t.scheduler.MasterPublicKey()),
-	//			uint32(coinType),
-	//			createWalletTask.Account,
-	//			createWalletTask.Index,
-	//		)
-	//		log.Infof("user account address: %s", address)
-	//	}
-	//}
-	//
-	//t.rw.Unlock()
+	// 1. save db
+	// 2. update status
+	if t.scheduler.IsProposer() {
+		// 2. send signature data to blockchain
+		log.Info("proposer submit signature")
+	}
 }

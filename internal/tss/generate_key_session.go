@@ -16,8 +16,8 @@ type GenerateKeySession[T, M, D any] struct {
 }
 
 func (m *Scheduler) NewGenerateKeySession(
-	taskID TaskId, // msg id
-	msg *Msg,
+	taskID ProposalID, // msg id
+	msg *Proposal,
 ) helper.SessionID {
 	preParams, err := keygen.GeneratePreParams(1 * time.Minute)
 	if err != nil {
@@ -26,7 +26,7 @@ func (m *Scheduler) NewGenerateKeySession(
 
 	allPartners := m.Participants()
 	params, partyIdMap := NewParam(m.LocalSubmitter(), allPartners.Threshold(), allPartners)
-	s := newSession[TaskId, *Msg, *keygen.LocalPartySaveData](
+	s := newSession[ProposalID, *Proposal, *keygen.LocalPartySaveData](
 		m.p2p,
 		m,
 		helper.SenateSessionID,
@@ -44,7 +44,7 @@ func (m *Scheduler) NewGenerateKeySession(
 	s.errCH = errCh
 	s.endCh = endCh
 	s.Run()
-	session := &GenerateKeySession[TaskId, *Msg, *keygen.LocalPartySaveData]{sessionTransport: s}
+	session := &GenerateKeySession[ProposalID, *Proposal, *keygen.LocalPartySaveData]{sessionTransport: s}
 	m.AddSession(session)
 
 	return session.SessionID()
