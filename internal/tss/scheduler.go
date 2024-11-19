@@ -28,31 +28,30 @@ import (
 )
 
 type Scheduler struct {
-	p2p           p2p.P2PService
-	bus           eventbus.Bus
-	ctx           context.Context
-	cancel        context.CancelFunc
-	grw           sync.RWMutex
-	groups        map[helper.GroupID]*helper.Group
-	srw           sync.RWMutex
-	sessions      map[helper.SessionID]Session[ProposalID]
-	sessionTasks  map[ProposalID]Session[ProposalID]
-	sigInToOut    chan *SessionResult[ProposalID, *tsscommon.SignatureData]
-	senateInToOut chan *SessionResult[ProposalID, *helper.LocalPartySaveData]
-	// masterLocalPartySaveData *atomic.Value  // keygen.LocalPartySaveData
-	masterLocalPartySaveData helper.LocalPartySaveData
-	localSubmitter           common.Address // submit = partyID
-	proposer                 *atomic.Value  // current submitter
-	partners                 *atomic.Value  // types.Participants
-	discussedTaskCache       *cache.Cache
-	voterContract            layer2.VoterContract
-	stateDB                  *gorm.DB
-	submitterChosen          *db.SubmitterChosen
-	pendingProposal          chan any
-	notify                   chan struct{}
-	tssMsgCh                 <-chan any   // eventbus channel
-	pendingTask              <-chan any   // eventbus channel
-	newGroup                 atomic.Value // todo NewGroup
+	p2p                p2p.P2PService
+	bus                eventbus.Bus
+	ctx                context.Context
+	cancel             context.CancelFunc
+	grw                sync.RWMutex
+	groups             map[helper.GroupID]*helper.Group
+	srw                sync.RWMutex
+	sessions           map[helper.SessionID]Session[ProposalID]
+	sessionTasks       map[ProposalID]Session[ProposalID]
+	sigInToOut         chan *SessionResult[ProposalID, *tsscommon.SignatureData]
+	senateInToOut      chan *SessionResult[ProposalID, *helper.LocalPartySaveData]
+	partyData          *PartyData
+	localSubmitter     common.Address // submit = partyID
+	proposer           *atomic.Value  // current submitter
+	partners           *atomic.Value  // types.Participants
+	discussedTaskCache *cache.Cache
+	voterContract      layer2.VoterContract
+	stateDB            *gorm.DB
+	submitterChosen    *db.SubmitterChosen
+	pendingProposal    chan any
+	notify             chan struct{}
+	tssMsgCh           <-chan any   // eventbus channel
+	pendingTask        <-chan any   // eventbus channel
+	newGroup           atomic.Value // todo NewGroup
 }
 
 func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract) *Scheduler {
@@ -94,18 +93,15 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 }
 
 func (m *Scheduler) Start() {
-	m.eventLoop(m.ctx)
+	m.p2pLoop(m.ctx)
+	m.proposalLoop(m.ctx)
 	m.BlockDetectionThreshold()
 
 	is := m.IsGenesis()
 	if is {
 		m.Genesis() // build senate session
-
-		sessionResult := <-m.senateInToOut
-		m.SaveSenateSessionResult(sessionResult)
 	}
 
-	m.LoopReShareGroupResult()
 	// loop approveProposal
 	m.loopApproveProposal()
 }
@@ -115,10 +111,8 @@ func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[Proposa
 		panic(sessionResult.Err)
 	}
 
-	err := saveTSSData(sessionResult.Data)
+	err := m.partyData.SaveLocalData(sessionResult.Data)
 	utils.Assert(err)
-
-	m.masterLocalPartySaveData = *sessionResult.Data
 }
 
 func (m *Scheduler) Stop() {
@@ -128,29 +122,30 @@ func (m *Scheduler) Stop() {
 func (m *Scheduler) Genesis() {
 	_ = m.NewGenerateKeySession(
 		helper.ECDSA,
-		helper.SenateProposalID,
+		helper.SenateProposalIDOfECDSA,
+		helper.SenateSessionIDOfECDSA,
+		common.Address{},
+		helper.SenateProposal,
+	)
+
+	_ = m.NewGenerateKeySession(
+		helper.ECDSA,
+		helper.SenateProposalIDOfEDDSA,
+		helper.SenateSessionIDOfEDDSA,
+		common.Address{},
 		helper.SenateProposal,
 	)
 
 	log.Info("TSS keygen process started")
+
+	sessionResult := <-m.senateInToOut
+	m.SaveSenateSessionResult(sessionResult)
+	sessionResult = <-m.senateInToOut
+	m.SaveSenateSessionResult(sessionResult)
 }
 
 func (m *Scheduler) IsGenesis() bool {
-	//if m.masterLocalPartySaveData.ECDSAPub != nil {
-	//	return false
-	//}
-	localPartySaveData, err := LoadTSSData(helper.ECDSA)
-	if err != nil {
-		log.Errorf("Failed to load TSS data: %v", err)
-	}
-
-	if localPartySaveData == nil {
-		return true
-	}
-
-	m.masterLocalPartySaveData = *localPartySaveData
-
-	return false
+	return !m.partyData.LoadData()
 }
 
 func (m *Scheduler) BlockDetectionThreshold() {
@@ -245,10 +240,6 @@ func (m *Scheduler) SessionRelease(session helper.SessionID) {
 		delete(m.sessions, session)
 		delete(m.sessionTasks, s.ProposalID())
 		s.Release()
-
-		if len(m.sessions) == 0 {
-			m.notify <- struct{}{}
-		}
 	}
 }
 
@@ -276,40 +267,11 @@ func (m *Scheduler) loopApproveProposal() {
 		select {
 		case <-m.ctx.Done():
 			log.Info("approve proposal done")
-		case <-m.notify:
-			select {
-			case <-m.ctx.Done():
-				log.Info("approve proposal done")
-			case proposal := <-m.pendingProposal:
-				// todo
-				// signature and re-share
-				log.Info("doing approve proposal", proposal)
-				m.BlockDetectionThreshold()
-			}
-		}
-	}()
-}
-
-func (m *Scheduler) MasterLocalPartySaveData(ec helper.CurveType) helper.LocalPartySaveData {
-	data, err := LoadTSSData(ec)
-	utils.Assert(err)
-
-	return *data
-}
-
-func (m *Scheduler) LoopReShareGroupResult() {
-	go func() {
-		for {
-			select {
-			case <-m.ctx.Done():
-				log.Info("loopReShareGroupResult done")
-			case sessionResult := <-m.senateInToOut:
-				m.SaveSenateSessionResult(sessionResult)
-				newGroup := m.newGroup.Load().(*NewGroup)
-				m.partners.Store(newGroup.NewParts)
-				newGroup = nil // todo
-				m.newGroup.Store(newGroup)
-			}
+		case proposal := <-m.pendingProposal:
+			// todo
+			// signature proposal
+			log.Info("doing approve proposal", proposal)
+			m.BlockDetectionThreshold()
 		}
 	}()
 }
@@ -342,10 +304,9 @@ func (m *Scheduler) IsProposer() bool {
 	return m.Proposer() == m.LocalSubmitter()
 }
 
-func (m *Scheduler) eventLoop(ctx context.Context) {
+func (m *Scheduler) p2pLoop(ctx context.Context) {
 	m.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
 	m.tssMsgCh = m.bus.Subscribe(eventbus.EventTssMsg{})
-	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
 
 	go func() {
 		for {
@@ -363,8 +324,22 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
+			}
+		}
+	}()
+}
+
+func (m *Scheduler) proposalLoop(ctx context.Context) {
+	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("proposal loop stopping...")
+				return
 			case data := <-m.pendingTask: // from layer2 log scan
-				log.Info("received task: ", data)
+				log.Info("received task from layer2 log scan: ", data)
 
 				switch v := data.(type) {
 				case db.ITask:
@@ -411,11 +386,27 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 		if m.isCanProposal() {
 			_ = m.NewReShareGroupSession(
 				helper.ECDSA,
-				helper.SenateProposalID,
+				helper.SenateProposalIDOfECDSA,
 				helper.SenateProposal,
 				m.Participants(),
 				newParts,
 			)
+			_ = m.NewReShareGroupSession(
+				helper.EDDSA,
+				helper.SenateProposalIDOfEDDSA,
+				helper.SenateProposal,
+				m.Participants(),
+				newParts,
+			)
+			sessionResult := <-m.senateInToOut
+			m.SaveSenateSessionResult(sessionResult)
+			sessionResult = <-m.senateInToOut
+			m.SaveSenateSessionResult(sessionResult)
+
+			newGroup := m.newGroup.Load().(*NewGroup)
+			m.partners.Store(newGroup.NewParts)
+			newGroup = nil // todo
+			m.newGroup.Store(newGroup)
 		}
 	}
 }

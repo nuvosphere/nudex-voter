@@ -25,11 +25,11 @@ type (
 
 type SessionMessage[T, M any] struct {
 	Type                    string           `json:"type"`
-	GroupID                 helper.GroupID   `json:"groupID,omitempty"`
-	SessionID               helper.SessionID `json:"sessionID,omitempty"`
+	GroupID                 helper.GroupID   `json:"group_id,omitempty"`
+	SessionID               helper.SessionID `json:"session_id,omitempty"`
 	Signer                  common.Address   `json:"signer,omitempty"`
 	Proposer                common.Address   `json:"proposer,omitempty"`    // current submitter
-	ProposalID              T                `json:"Proposal_ID,omitempty"` // msg id
+	ProposalID              T                `json:"proposal_id,omitempty"` // msg id
 	Proposal                M                `json:"proposal,omitempty"`
 	FromPartyId             string           `json:"from_party_id"`
 	ToPartyIds              []string         `json:"to_party_ids"`
