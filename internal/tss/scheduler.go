@@ -93,7 +93,8 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 }
 
 func (m *Scheduler) Start() {
-	m.eventLoop(m.ctx)
+	m.p2pLoop(m.ctx)
+	m.proposalLoop(m.ctx)
 	m.BlockDetectionThreshold()
 
 	is := m.IsGenesis()
@@ -101,7 +102,6 @@ func (m *Scheduler) Start() {
 		m.Genesis() // build senate session
 	}
 
-	m.LoopReShareGroupResult()
 	// loop approveProposal
 	m.loopApproveProposal()
 }
@@ -240,10 +240,6 @@ func (m *Scheduler) SessionRelease(session helper.SessionID) {
 		delete(m.sessions, session)
 		delete(m.sessionTasks, s.ProposalID())
 		s.Release()
-
-		if len(m.sessions) == 0 {
-			m.notify <- struct{}{}
-		}
 	}
 }
 
@@ -271,40 +267,11 @@ func (m *Scheduler) loopApproveProposal() {
 		select {
 		case <-m.ctx.Done():
 			log.Info("approve proposal done")
-		case <-m.notify:
-			select {
-			case <-m.ctx.Done():
-				log.Info("approve proposal done")
-			case proposal := <-m.pendingProposal:
-				// todo
-				// signature and re-share
-				log.Info("doing approve proposal", proposal)
-				m.BlockDetectionThreshold()
-			}
-		}
-	}()
-}
-
-func (m *Scheduler) MasterLocalPartySaveData(ec helper.CurveType) helper.LocalPartySaveData {
-	data, err := LoadTSSData(ec)
-	utils.Assert(err)
-
-	return *data
-}
-
-func (m *Scheduler) LoopReShareGroupResult() {
-	go func() {
-		for {
-			select {
-			case <-m.ctx.Done():
-				log.Info("loopReShareGroupResult done")
-			case sessionResult := <-m.senateInToOut:
-				m.SaveSenateSessionResult(sessionResult)
-				newGroup := m.newGroup.Load().(*NewGroup)
-				m.partners.Store(newGroup.NewParts)
-				newGroup = nil // todo
-				m.newGroup.Store(newGroup)
-			}
+		case proposal := <-m.pendingProposal:
+			// todo
+			// signature proposal
+			log.Info("doing approve proposal", proposal)
+			m.BlockDetectionThreshold()
 		}
 	}()
 }
@@ -337,10 +304,9 @@ func (m *Scheduler) IsProposer() bool {
 	return m.Proposer() == m.LocalSubmitter()
 }
 
-func (m *Scheduler) eventLoop(ctx context.Context) {
+func (m *Scheduler) p2pLoop(ctx context.Context) {
 	m.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
 	m.tssMsgCh = m.bus.Subscribe(eventbus.EventTssMsg{})
-	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
 
 	go func() {
 		for {
@@ -358,8 +324,22 @@ func (m *Scheduler) eventLoop(ctx context.Context) {
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
+			}
+		}
+	}()
+}
+
+func (m *Scheduler) proposalLoop(ctx context.Context) {
+	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("proposal loop stopping...")
+				return
 			case data := <-m.pendingTask: // from layer2 log scan
-				log.Info("received task: ", data)
+				log.Info("received task from layer2 log scan: ", data)
 
 				switch v := data.(type) {
 				case db.ITask:
@@ -418,6 +398,15 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 				m.Participants(),
 				newParts,
 			)
+			sessionResult := <-m.senateInToOut
+			m.SaveSenateSessionResult(sessionResult)
+			sessionResult = <-m.senateInToOut
+			m.SaveSenateSessionResult(sessionResult)
+
+			newGroup := m.newGroup.Load().(*NewGroup)
+			m.partners.Store(newGroup.NewParts)
+			newGroup = nil // todo
+			m.newGroup.Store(newGroup)
 		}
 	}
 }
