@@ -242,6 +242,22 @@ func (m *Scheduler) processTaskProposal(task db.ITask) {
 			keyDerivationDelta,
 		)
 	case *db.DepositTask:
+		account := &db.Account{}
+		err := m.stateDB.
+			Preload(clause.Associations).
+			Where("chain_id = ? AND address = ?", taskData.ChainId, taskData.TargetAddress).
+			Last(account).
+			Error
+		if err != nil {
+			log.Error("db.DepositTask get account error", err)
+			return
+		}
+		switch taskData.AssetType {
+		case db.AssetTypeMain:
+		case db.AssetTypeErc20:
+		default:
+			log.Errorf("unknown asset type: %v", taskData.AssetType)
+		}
 
 	case *db.WithdrawalTask:
 	}
