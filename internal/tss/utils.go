@@ -28,8 +28,17 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 )
+
+func Partners() types.Participants {
+	// todo online contact get address list
+	return lo.Map(
+		config.AppConfig.TssPublicKeys,
+		func(pubKey *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*pubKey) },
+	)
+}
 
 func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(publicKeys))
@@ -77,7 +86,7 @@ func createOldPartyIDsByAddress(addressList types.Participants) tss.SortedPartyI
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func saveTSSData(data *helper.LocalPartySaveData) error {
+func SaveTSSData(data *helper.LocalPartySaveData) error {
 	curveType := data.CurveType()
 
 	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data", curveType.CurveName())

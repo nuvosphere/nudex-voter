@@ -69,5 +69,5 @@ func (p *PartyData) SaveLocalData(data *helper.LocalPartySaveData) error {
 	defer p.rw.Unlock()
 	p.datas[data.CurveType()] = data
 
-	return saveTSSData(data)
+	return SaveTSSData(data)
 }
