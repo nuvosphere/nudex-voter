@@ -14,6 +14,8 @@ type GenerateKeySession[T, M, D any] struct {
 func (m *Scheduler) NewGenerateKeySession(
 	ec helper.CurveType,
 	proposalID ProposalID, // msg id
+	sessionID helper.SessionID,
+	signer common.Address,
 	msg *Proposal,
 ) helper.SessionID {
 	allPartners := m.Participants()
@@ -21,8 +23,8 @@ func (m *Scheduler) NewGenerateKeySession(
 		ec,
 		m.p2p,
 		m,
-		helper.SenateSessionID,
-		common.Address{},
+		sessionID,
+		signer,
 		m.Proposer(),
 		proposalID,
 		msg,

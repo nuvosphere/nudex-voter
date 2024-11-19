@@ -19,9 +19,9 @@ var (
 	ZeroSessionID           SessionID
 	SenateSessionID         = crypto.Keccak256Hash([]byte("The voter senate session，one and only one"))
 	SenateProposal          = SenateSessionID.Big()
-	SenateProposalID        = SenateSessionID.Big().Int64()
-	SenateProposalIDOfECDSA = SenateProposalID - 1
-	SenateProposalIDOfEDDSA = SenateProposalID - 2
+	senateProposalID        = SenateSessionID.Big().Int64()
+	SenateProposalIDOfECDSA = senateProposalID - 1
+	SenateProposalIDOfEDDSA = senateProposalID - 2
 	SenateSessionIDOfECDSA  = crypto.Keccak256Hash([]byte("ECDSA:The voter senate session，one and only one"))
 	SenateSessionIDOfEDDSA  = crypto.Keccak256Hash([]byte("EDDSA:The voter senate session，one and only one"))
 )

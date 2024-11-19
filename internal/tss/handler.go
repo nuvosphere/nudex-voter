@@ -122,6 +122,8 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		_ = m.NewGenerateKeySession(
 			m.CurveType(task),
 			msg.ProposalID,
+			msg.SessionID,
+			msg.Signer,
 			&msg.Proposal,
 		)
 
