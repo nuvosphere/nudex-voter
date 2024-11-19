@@ -9,6 +9,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -279,6 +280,7 @@ func (m *Scheduler) processTaskProposal(task db.ITask) {
 		)
 	case *db.DepositTask:
 		account := &db.Account{}
+
 		err := m.stateDB.
 			Preload(clause.Associations).
 			Where("chain_id = ? AND address = ?", taskData.ChainId, taskData.TargetAddress).
@@ -288,6 +290,7 @@ func (m *Scheduler) processTaskProposal(task db.ITask) {
 			log.Error("db.DepositTask get account error", err)
 			return
 		}
+
 		switch taskData.AssetType {
 		case db.AssetTypeMain:
 		case db.AssetTypeErc20:
