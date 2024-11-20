@@ -53,16 +53,16 @@ func RunParty(
 		log.Debug("Starting out/in message loop")
 
 		for {
-			log.Debug("waiting for next message...", "partyID", party.PartyID())
+			log.Debug("waiting for next message...", "partyID: ", party.PartyID())
 			select {
 			case outgoingMsg := <-outCh:
-				log.Debug("outgoing message", "GetTo()", outgoingMsg.GetTo())
+				log.Debug("outgoing message", "GetTo(): ", outgoingMsg.GetTo())
 
 				data, routing, err := outgoingMsg.WireBytes()
 				log.Debug(
 					"party outgoing msg write bytes",
-					"partyID", party.PartyID(),
-					"routing", routing,
+					"partyID: ", party.PartyID(),
+					"routing: ", routing,
 				)
 
 				if err != nil {
@@ -77,9 +77,9 @@ func RunParty(
 					// send to other parties
 					if err := transport.Send(ctx, data, routing, isReSharing); err != nil {
 						log.Error(
-							"failed to send output message",
-							"from PartyID", party.PartyID(),
-							"err", err,
+							"failed to send output message: ",
+							"from PartyID: ", party.PartyID(),
+							"err: ", err,
 						)
 						errCh <- party.WrapError(err)
 
@@ -95,11 +95,11 @@ func RunParty(
 				// blocks receiving messages.
 				go func() {
 					log.Debug(
-						"received message",
-						"partyID", party.PartyID(),
-						"from partyID", incomingMsg.From,
-						"isBroadcast", incomingMsg.IsBroadcast,
-						"len(bytes)", len(incomingMsg.WireBytes),
+						"received message: ",
+						"partyID: ", party.PartyID(),
+						"from partyID: ", incomingMsg.From,
+						"isBroadcast: ", incomingMsg.IsBroadcast,
+						"len(bytes): ", len(incomingMsg.WireBytes),
 					)
 
 					// The first return value `ok` is false only when there is

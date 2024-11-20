@@ -12,7 +12,6 @@ import (
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
@@ -28,6 +27,7 @@ import (
 )
 
 type Scheduler struct {
+	isProd             bool
 	p2p                p2p.P2PService
 	bus                eventbus.Bus
 	ctx                context.Context
@@ -54,9 +54,8 @@ type Scheduler struct {
 	newGroup           atomic.Value // todo NewGroup
 }
 
-func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract) *Scheduler {
+func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
-	localSubmitter := crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
 	proposer, err := voterContract.Proposer()
 	utils.Assert(err)
 
@@ -70,6 +69,7 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 	ps.Store(partners)
 
 	return &Scheduler{
+		isProd:             isProd,
 		p2p:                p,
 		bus:                bus,
 		srw:                sync.RWMutex{},
@@ -89,6 +89,7 @@ func NewScheduler(p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterCon
 		notify:             make(chan struct{}, 1024),
 		stateDB:            stateDB,
 		voterContract:      voterContract,
+		partyData:          NewPartyData(config.AppConfig.DbDir),
 	}
 }
 
@@ -99,11 +100,20 @@ func (m *Scheduler) Start() {
 
 	is := m.IsGenesis()
 	if is {
-		m.Genesis() // build senate session
+		if m.isCanProposal() {
+			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			// leader
+			m.Genesis() // build senate session
+		} else {
+			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			// Candidate save data
+			m.saveSenateData()
+		}
 	}
 
 	// loop approveProposal
 	m.loopApproveProposal()
+	m.reGroupResultLoop()
 }
 
 func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *helper.LocalPartySaveData]) {
@@ -128,16 +138,19 @@ func (m *Scheduler) Genesis() {
 		helper.SenateProposal,
 	)
 
-	_ = m.NewGenerateKeySession(
-		helper.ECDSA,
-		helper.SenateProposalIDOfEDDSA,
-		helper.SenateSessionIDOfEDDSA,
-		common.Address{},
-		helper.SenateProposal,
-	)
+	//_ = m.NewGenerateKeySession(
+	//	helper.EDDSA,
+	//	helper.SenateProposalIDOfEDDSA,
+	//	helper.SenateSessionIDOfEDDSA,
+	//	common.Address{},
+	//	helper.SenateProposal,
+	//)
 
-	log.Info("TSS keygen process started")
+	// leader save data
+	m.saveSenateData()
+}
 
+func (m *Scheduler) saveSenateData() {
 	sessionResult := <-m.senateInToOut
 	m.SaveSenateSessionResult(sessionResult)
 	sessionResult = <-m.senateInToOut
@@ -175,18 +188,22 @@ func (m *Scheduler) AddGroup(group *helper.Group) {
 }
 
 func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
-	m.grw.Lock()
-	_, ok := m.groups[session.GroupID()] // todo
-	m.grw.Unlock()
+	//m.grw.Lock()
+	//_, ok := m.groups[session.GroupID()] // todo
+	//m.grw.Unlock()
+	//
+	//if ok {
+	//	m.srw.Lock()
+	//	m.sessions[session.SessionID()] = session
+	//	m.sessionTasks[session.ProposalID()] = session
+	//	m.srw.Unlock()
+	//}
+	m.srw.Lock()
+	m.sessions[session.SessionID()] = session
+	m.sessionTasks[session.ProposalID()] = session
+	m.srw.Unlock()
 
-	if ok {
-		m.srw.Lock()
-		m.sessions[session.SessionID()] = session
-		m.sessionTasks[session.ProposalID()] = session
-		m.srw.Unlock()
-	}
-
-	return ok
+	return true
 }
 
 func (m *Scheduler) GetGroup(groupID helper.GroupID) *helper.Group {
@@ -327,6 +344,7 @@ func (m *Scheduler) p2pLoop(ctx context.Context) {
 			}
 		}
 	}()
+	log.Info("p2p loop started")
 }
 
 func (m *Scheduler) proposalLoop(ctx context.Context) {
@@ -360,6 +378,7 @@ func (m *Scheduler) proposalLoop(ctx context.Context) {
 			}
 		}
 	}()
+	log.Info("proposal loop started")
 }
 
 func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
@@ -398,10 +417,6 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 				m.Participants(),
 				newParts,
 			)
-			sessionResult := <-m.senateInToOut
-			m.SaveSenateSessionResult(sessionResult)
-			sessionResult = <-m.senateInToOut
-			m.SaveSenateSessionResult(sessionResult)
 
 			newGroup := m.newGroup.Load().(*NewGroup)
 			m.partners.Store(newGroup.NewParts)
@@ -409,6 +424,19 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 			m.newGroup.Store(newGroup)
 		}
 	}
+}
+
+func (m *Scheduler) reGroupResultLoop() {
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("reGroup result loop stopping...")
+			case sessionResult := <-m.senateInToOut:
+				m.SaveSenateSessionResult(sessionResult)
+			}
+		}
+	}()
 }
 
 func (m *Scheduler) isCanProposal() bool {

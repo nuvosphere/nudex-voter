@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
@@ -19,10 +21,12 @@ type Service struct {
 func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterContract layer2.VoterContract) *Service {
 	return &Service{
 		scheduler: NewScheduler(
+			true,
 			p,
 			bus,
 			stateDB,
 			voterContract,
+			crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
 		),
 	}
 }

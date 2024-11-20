@@ -70,7 +70,7 @@ func (m *Scheduler) GenKeyProposal() Proposal {
 	return *helper.SenateProposal
 }
 
-func (m *Scheduler) ReShareGroupProposal(task *db.Task) Proposal {
+func (m *Scheduler) ReShareGroupProposal() Proposal {
 	return *helper.SenateProposal
 }
 
@@ -79,31 +79,49 @@ func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
 	return big.Int{}
 }
 
-// processReceivedProposal handler received msg from other node.
-func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
-	task, err := m.GetTask(msg.ProposalID)
-	if err != nil {
-		return err
-	}
-
+func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
 	session := m.GetSession(msg.SessionID)
 	if session != nil {
 		from := session.PartyID(msg.FromPartyId)
-		if from != nil && !session.Equal(from.Id) && (msg.IsBroadcast || session.Included(msg.ToPartyIds)) {
+		// && !session.Equal(msg.FromPartyId)
+		if from != nil && (msg.IsBroadcast || session.Included(msg.ToPartyIds)) {
 			session.Post(msg.State(from))
 		}
 
+		return true
+	}
+
+	return false
+}
+
+// processReceivedProposal handler received msg from other node.
+func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
+	log.Debug("process received proposal id", msg.ProposalID)
+
+	ok := m.OpenSession(msg)
+	if ok {
 		return nil
 	}
+
 	// build new session
 	switch msg.Type {
 	case GenKeySessionType:
 		return m.JoinGenKeySession(msg)
 	case ReShareGroupSessionType:
-		return m.JoinReShareGroupSession(msg, task)
+		return m.JoinReShareGroupSession(msg)
 	case SignTaskSessionType:
+		task, err := m.GetTask(msg.ProposalID)
+		if err != nil {
+			return err
+		}
+
 		return m.JoinSignTaskSession(msg, task)
 	case TxSignatureSessionType: // blockchain wallet tx signature
+		task, err := m.GetTask(msg.ProposalID)
+		if err != nil {
+			return err
+		}
+
 		return m.JoinTxSignatureSession(msg, task)
 	default:
 		return fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
@@ -136,10 +154,12 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 		&msg.Proposal,
 	)
 
+	m.OpenSession(msg)
+
 	return nil
 }
 
-func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal], task *db.Task) error {
+func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal]) error {
 	// todo How find new part?
 	ng := m.newGroup.Load()
 	if ng == nil {
@@ -153,7 +173,7 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 		return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
 	}
 	// check msg
-	unSignMsg := m.ReShareGroupProposal(task) // todo add or remove address
+	unSignMsg := m.ReShareGroupProposal() // todo add or remove address
 	if unSignMsg.String() != msg.Proposal.String() {
 		return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 	}
@@ -172,6 +192,8 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 		m.Participants(),
 		newPartners,
 	)
+
+	m.OpenSession(msg)
 
 	return nil
 }

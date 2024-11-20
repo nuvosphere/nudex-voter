@@ -3,6 +3,7 @@ package tss
 import (
 	"context"
 	"errors"
+	"math/big"
 
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
@@ -25,19 +26,23 @@ func (m *Scheduler) NewReShareGroupSession(
 	oldPartners types.Participants,
 	newPartners types.Participants,
 ) helper.SessionID {
-	proposer := m.Proposer()
+	localSubmitter := m.LocalSubmitter()
 	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{}
 
-	oldPartyIDs := createOldPartyIDsByAddress(oldPartners)
+	oldPartyIDs := createOldPartyIDsByGroup(ec, oldPartners)
 	oldPeerCtx := tss.NewPeerContext(oldPartyIDs)
-	oldPartyID := oldPartyIDs.FindByKey(m.LocalSubmitter().Big())
+	part := new(big.Int).SetBytes(localSubmitter.Bytes())
+	part = new(big.Int).Add(part, big.NewInt(int64(ec)+1)) // todo
+	oldPartyID := oldPartyIDs.FindByKey(part)
 	oldPartyIdMap := lo.SliceToMap(oldPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
 		return item.Id, item
 	})
 
-	newPartyIDs := createPartyIDsByAddress(newPartners)
+	newPartyIDs := createPartyIDsByGroup(ec, newPartners)
 	newPeerCtx := tss.NewPeerContext(newPartyIDs)
-	newPartyID := newPartyIDs.FindByKey(m.LocalSubmitter().Big())
+	part = new(big.Int).SetBytes(localSubmitter.Bytes())
+	part = new(big.Int).Add(part, big.NewInt(int64(ec)))
+	newPartyID := newPartyIDs.FindByKey(part)
 	newPartyIdMap := lo.SliceToMap(newPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
 		return item.Id, item
 	})
@@ -59,7 +64,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		m,
 		helper.SenateSessionID,
 		common.Address{}, // todo
-		proposer,
+		localSubmitter,
 		taskID,
 		msg,
 		ReShareGroupSessionType,
@@ -91,7 +96,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		m,
 		helper.SenateSessionID,
 		common.Address{}, // todo
-		proposer,
+		localSubmitter,
 		taskID,
 		msg,
 		ReShareGroupSessionType,

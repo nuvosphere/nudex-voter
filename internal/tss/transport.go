@@ -2,7 +2,6 @@ package tss
 
 import (
 	"context"
-	"crypto/elliptic"
 	"fmt"
 	"math/big"
 	"slices"
@@ -74,14 +73,16 @@ const (
 )
 
 func NewParam(
-	ec elliptic.Curve,
-	proposer common.Address, // current submitter
+	ec helper.CurveType,
+	localSubmitter common.Address,
 	allPartners types.Participants,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
-	partyIDs := createPartyIDsByAddress(allPartners)
-	partyID := partyIDs.FindByKey(new(big.Int).SetBytes(proposer.Bytes()))
+	partyIDs := createPartyIDsByGroup(ec, allPartners)
+	part := new(big.Int).SetBytes(localSubmitter.Bytes())
+	part = new(big.Int).Add(part, big.NewInt(int64(ec)))
+	partyID := partyIDs.FindByKey(part)
 	peerCtx := tss.NewPeerContext(partyIDs)
-	params := tss.NewParameters(ec, peerCtx, partyID, len(partyIDs), allPartners.Threshold())
+	params := tss.NewParameters(ec.EC(), peerCtx, partyID, len(partyIDs), allPartners.Threshold())
 	partyIdMap := lo.SliceToMap(partyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
 		return item.Id, item
 	})
@@ -106,6 +107,7 @@ func newSession[T comparable, M, D any](
 	}
 
 	recvChan := make(chan *helper.ReceivedPartyState, 1)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	return &sessionTransport[T, M, D]{
 		broadcaster: p,
@@ -127,6 +129,8 @@ func newSession[T comparable, M, D any](
 		ty:             ty,
 		partyIdMap:     make(map[string]*tss.PartyID),
 		rw:             sync.RWMutex{},
+		ctx:            ctx,
+		cancel:         cancel,
 	}
 }
 

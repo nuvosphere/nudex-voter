@@ -5,17 +5,13 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/binary"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math/big"
-	"os"
-	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	ecdsaResharing "github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
@@ -28,6 +24,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 )
@@ -40,14 +37,30 @@ func Partners() types.Participants {
 	)
 }
 
-func createPartyIDs(publicKeys []*ecdsa.PublicKey) tss.SortedPartyIDs {
-	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(publicKeys))
+func createPartyIDsByGroup(ec helper.CurveType, addressList types.Participants) tss.SortedPartyIDs {
+	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
-	for i, publicKey := range publicKeys {
-		key, _ := new(big.Int).SetString(ConvertPubKeyToHex(publicKey), 16)
+	for i, address := range addressList {
+		key := new(big.Int).Add(address.Big(), big.NewInt(int64(ec)))
 		tssAllPartyIDs[i] = tss.NewPartyID(
-			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
-			crypto.PubkeyToAddress(*publicKeys[i]).Hex(),
+			strings.ToLower(key.Text(16)),
+			strings.ToLower(key.Text(16))+"-"+ec.CurveName(),
+			key,
+		)
+	}
+
+	return tss.SortPartyIDs(tssAllPartyIDs)
+}
+
+func createOldPartyIDsByGroup(ec helper.CurveType, addressList types.Participants) tss.SortedPartyIDs {
+	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
+
+	for i, address := range addressList {
+		key := new(big.Int).Add(address.Big(), big.NewInt(int64(ec)))
+		key = new(big.Int).Add(key, big.NewInt(1)) // key + 1
+		tssAllPartyIDs[i] = tss.NewPartyID(
+			strings.ToLower(key.Text(16)),
+			strings.ToLower(key.Text(16))+"-"+ec.CurveName(),
 			key,
 		)
 	}
@@ -61,8 +74,8 @@ func createPartyIDsByAddress(addressList types.Participants) tss.SortedPartyIDs 
 	for i, address := range addressList {
 		key := address.Big()
 		tssAllPartyIDs[i] = tss.NewPartyID(
-			address.Hex(),
-			address.Hex(),
+			strings.ToLower(address.String()),
+			strings.ToLower(address.String()),
 			key,
 		)
 	}
@@ -77,95 +90,13 @@ func createOldPartyIDsByAddress(addressList types.Participants) tss.SortedPartyI
 		key := address.Big()
 		key = new(big.Int).Add(key, big.NewInt(1)) // key + 1
 		tssAllPartyIDs[i] = tss.NewPartyID(
-			key.Text(16),
-			key.Text(16),
+			strings.ToLower(key.Text(16)),
+			strings.ToLower(key.Text(16)),
 			key,
 		)
 	}
 
 	return tss.SortPartyIDs(tssAllPartyIDs)
-}
-
-func SaveTSSData(data *helper.LocalPartySaveData) error {
-	curveType := data.CurveType()
-
-	dataDir := filepath.Join(config.AppConfig.DbDir, "tss_data", curveType.CurveName())
-	if err := os.MkdirAll(dataDir, 0o755); err != nil {
-		log.Errorf("Failed to create TSS data directory: %v", err)
-		return err
-	}
-
-	dataBytes, err := json.Marshal(data.GetData())
-	if err != nil {
-		log.Errorf("Unable to serialize TSS data: %v", err)
-		return err
-	}
-
-	filePath := filepath.Join(dataDir, "tss_key_data.json")
-	if err := os.WriteFile(filePath, dataBytes, 0o600); err != nil {
-		log.Errorf("Failed to save TSS data to file: %v", err)
-		return err
-	}
-
-	log.Infof("TSS data successfully saved to: %s", filePath)
-
-	return nil
-}
-
-func LoadTSSData(ec helper.CurveType) (*helper.LocalPartySaveData, error) {
-	filePath := filepath.Join(config.AppConfig.DbDir, "tss_data", ec.CurveName(), "tss_key_data.json")
-
-	dataBytes, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read TSS data file: %v", err)
-	}
-
-	switch ec {
-	case helper.ECDSA:
-		var data ecdsaKeygen.LocalPartySaveData
-		if err := json.Unmarshal(dataBytes, &data); err != nil {
-			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
-		}
-
-		return helper.BuildECDSALocalPartySaveData().SetData(&data), nil
-	case helper.EDDSA:
-		var data keygen.LocalPartySaveData
-		if err := json.Unmarshal(dataBytes, &data); err != nil {
-			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
-		}
-
-		return helper.BuildEDDSALocalPartySaveData().SetData(&data), nil
-	}
-
-	return nil, fmt.Errorf("unknown elliptic curve")
-}
-
-func PublicKeysToHex(pubKeys []*ecdsa.PublicKey) []string {
-	hexStrings := make([]string, len(pubKeys))
-	for i, pubKey := range pubKeys {
-		hexStrings[i] = ConvertPubKeyToHex(pubKey)
-	}
-
-	return hexStrings
-}
-
-func ConvertPubKeyToHex(pubKey *ecdsa.PublicKey) string {
-	if pubKey == nil {
-		return ""
-	}
-
-	var prefix byte
-	if pubKey.Y.Bit(0) == 0 {
-		prefix = 0x02 // Even Y-coordinate
-	} else {
-		prefix = 0x03 // Odd Y-coordinate
-	}
-
-	// Create the public key byte slice with the prefix
-	pubKeyBytes := append([]byte{prefix}, pubKey.X.Bytes()...)
-
-	// Convert to hex string
-	return hex.EncodeToString(pubKeyBytes)
 }
 
 func CompareStrings(a, b []string) bool {
@@ -193,18 +124,6 @@ func AddressIndex(addressList types.Participants, tssAddress common.Address) int
 	}
 
 	return -1 // Return -1 if not found
-}
-
-func extractToIds(message tss.Message) []string {
-	recipients := message.GetTo()
-
-	ids := make([]string, len(recipients))
-
-	for i, recipient := range recipients {
-		ids[i] = recipient.GetId()
-	}
-
-	return ids
 }
 
 func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
@@ -241,6 +160,7 @@ func getCoinTypeByChain(chain uint8) int {
 // messages to other parties.
 func RunKeyGen(
 	ctx context.Context,
+	isProd bool,
 	ty helper.CurveType,
 	localSubmitter common.Address, // current submitter
 	allPartners types.Participants,
@@ -260,16 +180,21 @@ func RunKeyGen(
 	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData)
 	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData)
 
-	params, partyIdMap := NewParam(ty.EC(), localSubmitter, allPartners)
+	params, partyIdMap := NewParam(ty, localSubmitter, allPartners)
 
 	switch ty {
 	case helper.ECDSA:
-		preParams, err := ecdsaKeygen.GeneratePreParams(1 * time.Minute)
-		if err != nil {
-			panic(err)
+		// prod
+		if isProd {
+			preParams, err := ecdsaKeygen.GeneratePreParams(2 * time.Minute)
+			utils.Assert(err)
+
+			party = ecdsaKeygen.NewLocalParty(params, outCh, ecdsaEndCh, *preParams)
+		} else {
+			// dev
+			party = ecdsaKeygen.NewLocalParty(params, outCh, ecdsaEndCh)
 		}
 
-		party = ecdsaKeygen.NewLocalParty(params, outCh, ecdsaEndCh, *preParams)
 	case helper.EDDSA:
 		party = eddsaKeygen.NewLocalParty(params, outCh, eddsaEndCh)
 	default:
@@ -285,11 +210,8 @@ func RunKeyGen(
 		case data := <-ecdsaEndCh:
 			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
 
-			close(ecdsaEndCh)
 		case data := <-eddsaEndCh:
 			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
-
-			close(eddsaEndCh)
 		}
 	}()
 

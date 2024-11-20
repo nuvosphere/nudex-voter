@@ -25,13 +25,13 @@ func RandSessionID() helper.SessionID {
 func (m *Scheduler) NewSignSession(
 	ec helper.CurveType,
 	sessionID helper.SessionID,
-	taskID ProposalID,
+	proposalID ProposalID,
 	msg *Proposal,
 	key helper.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
 	allPartners := m.Participants()
-	params, partyIdMap := NewParam(ec.EC(), m.LocalSubmitter(), allPartners)
+	params, partyIdMap := NewParam(ec, m.LocalSubmitter(), allPartners)
 	innerSession := newSession[ProposalID, *Proposal, *tsscommon.SignatureData](
 		ec,
 		m.p2p,
@@ -39,7 +39,7 @@ func (m *Scheduler) NewSignSession(
 		sessionID,
 		common.HexToAddress(key.Address()), // todo
 		m.Proposer(),
-		taskID,
+		proposalID,
 		msg,
 		SignTaskSessionType,
 		allPartners,

@@ -25,7 +25,7 @@ func NewDatabaseManager() *DatabaseManager {
 	return dm
 }
 
-func setConnParam(db *gorm.DB) {
+func SetConnParam(db *gorm.DB) {
 	sqlDB, err := db.DB()
 	if err != nil {
 		panic(err)
@@ -52,7 +52,7 @@ func (dm *DatabaseManager) initDB() {
 		log.Fatalf("Failed to connect to database 1: %v", err)
 	}
 
-	setConnParam(relayerDb)
+	SetConnParam(relayerDb)
 	dm.relayerDb = relayerDb
 
 	log.Debugf("Database 1 connected successfully, path: %s", relayerPath)
@@ -67,7 +67,7 @@ func (dm *DatabaseManager) initDB() {
 		log.Fatalf("Failed to connect to database 2: %v", err)
 	}
 
-	setConnParam(btcLightDb)
+	SetConnParam(btcLightDb)
 	dm.btcLightDb = btcLightDb
 
 	log.Debugf("Database 2 connected successfully, path: %s", btcLightPath)
@@ -82,7 +82,7 @@ func (dm *DatabaseManager) initDB() {
 		log.Fatalf("Failed to connect to database 3: %v", err)
 	}
 
-	setConnParam(btcCacheDb)
+	SetConnParam(btcCacheDb)
 	dm.btcCacheDb = btcCacheDb
 
 	log.Debugf("Database 3 connected successfully, path: %s", btcCachePath)
