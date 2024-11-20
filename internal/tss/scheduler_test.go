@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"context"
 	"encoding/hex"
 	"os"
 	"path/filepath"
@@ -89,7 +90,7 @@ func TestScheduler(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)
 
-	ss := make([]*Scheduler, len(accounts))
+	ss := make([]*Scheduler, 0, len(accounts))
 
 	bus := eventbus.NewBus()
 	p2pMocker := NewP2PMocker(bus)
@@ -117,7 +118,6 @@ func TestScheduler(t *testing.T) {
 
 	for i, submitter := range submitters {
 		d := createDB(t, i)
-		// submitter := submitters[i]
 		t.Logf("index: %d submitter: %v, submitter:%v", i, submitters[i], submitter)
 		s := NewScheduler(false, p2pMocker, bus, d, voterContractMocker, submitter)
 		basePath := filepath.Join("./", strconv.Itoa(i))
@@ -134,4 +134,42 @@ func TestScheduler(t *testing.T) {
 
 	time.Sleep(10 * time.Minute)
 	lo.ForEach(ss, func(item *Scheduler, index int) { item.Stop() })
+}
+
+func TestContext(t *testing.T) {
+	utils.SkipCI(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	for i := 0; i < testutil.TestPartyCount; i++ {
+		go func() {
+			<-ctx.Done()
+			t.Logf("i := %d", i)
+		}()
+	}
+
+	t.Log("---------1")
+	time.Sleep(10 * time.Second)
+	t.Log("---------2")
+	cancel()
+	t.Log("---------3")
+	time.Sleep(10 * time.Second)
+
+	ticker := time.NewTicker(1 * time.Second)
+
+	go func() {
+	L:
+		for {
+			select {
+			case <-ctx.Done():
+				t.Log("---------Done")
+				break L
+			case <-ticker.C:
+				t.Log("---------ticker")
+			}
+		}
+	}()
+	time.Sleep(10 * time.Second)
+	cancel()
+	time.Sleep(10 * time.Second)
 }

@@ -31,7 +31,7 @@ func (m *Scheduler) NewGenerateKeySession(
 		GenKeySessionType,
 		allPartners,
 	)
-	party, partyIdMap, endCh, errCh := RunKeyGen(m.ctx, m.isProd, ec, m.LocalSubmitter(), allPartners, s) // todo
+	party, partyIdMap, endCh, errCh := RunKeyGen(s.ctx, m.isProd, ec, m.LocalSubmitter(), allPartners, s) // todo
 	s.party = party
 	s.partyIdMap = partyIdMap
 	s.errCH = errCh

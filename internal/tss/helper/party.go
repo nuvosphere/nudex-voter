@@ -28,33 +28,28 @@ func RunParty(
 		}
 	}()
 
-	go func() {
-		for {
-			var partyIDkeys []string
-
-			for _, partyID := range party.WaitingFor() {
-				partyIDkeys = append(partyIDkeys, hex.EncodeToString(partyID.Key))
-			}
-
-			log.Debugf(
-				"party %v waiting for %v",
-				party.PartyID(),
-				partyIDkeys,
-			)
-
-			time.Sleep(10 * time.Second)
-		}
-	}()
-
 	// Process outgoing and incoming messages
 	go func() {
 		incomingMsgCh := transport.Receive(party.PartyID().Id)
 
 		log.Debug("Starting out/in message loop")
 
+		ticker := time.NewTicker(10 * time.Second)
+
 		for {
 			log.Debug("waiting for next message...", "partyID: ", party.PartyID())
 			select {
+			case <-ctx.Done():
+				log.Infof("party done:%v ", party.PartyID())
+				return
+
+			case <-ticker.C:
+				var partyIDkeys []string
+				for _, partyID := range party.WaitingFor() {
+					partyIDkeys = append(partyIDkeys, hex.EncodeToString(partyID.Key))
+				}
+
+				log.Debugf("party %v waiting for %v", party.PartyID(), partyIDkeys)
 			case outgoingMsg := <-outCh:
 				log.Debug("outgoing message", "GetTo(): ", outgoingMsg.GetTo())
 
@@ -89,6 +84,10 @@ func RunParty(
 					log.Debug("done sending outgoing message", "partyID", party.PartyID())
 				}()
 			case incomingMsg := <-incomingMsgCh:
+				if incomingMsg == nil {
+					log.Debug("done incoming message", "partyID", party.PartyID())
+					return
+				}
 				// Receive => party
 				// Running in goroutine prevents blocking when channels get
 				// filled up. This may deadlock if not run in a goroutine and
@@ -123,8 +122,6 @@ func RunParty(
 						incomingMsg.From,
 					)
 				}()
-			case <-ctx.Done():
-				return
 			}
 		}
 	}()

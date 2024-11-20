@@ -28,3 +28,4 @@ logs/
 # Application specific
 .env
 data/
+tss_key_data.json

@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/samber/lo"
+	log "github.com/sirupsen/logrus"
 )
 
 var _ Session[any] = &sessionTransport[any, any, any]{}
@@ -54,6 +56,7 @@ type sessionTransport[T, M, D any] struct {
 	recvChan       chan *helper.ReceivedPartyState // receive data
 	session        helper.Session[T, M]
 	sessionRelease SessionReleaser
+	isReleased     atomic.Bool
 	ty             string
 	party          tss.Party
 	partyIdMap     map[string]*tss.PartyID
@@ -183,11 +186,14 @@ func (s *sessionTransport[T, M, D]) Threshold() int {
 }
 
 func (s *sessionTransport[T, M, D]) Release() {
-	s.sessionRelease.SessionRelease(s.SessionID())
-	s.cancel()
-	close(s.recvChan)
-	close(s.endCh)
-	close(s.errCH)
+	if !s.isReleased.Swap(true) {
+		log.Infof("release session : %v, party id:%v", s.Name(), s.party.PartyID())
+		s.sessionRelease.SessionRelease(s.SessionID())
+		s.cancel()
+		close(s.recvChan)
+		close(s.endCh)
+		close(s.errCH)
+	}
 }
 
 func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {

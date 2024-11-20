@@ -44,7 +44,7 @@ func (m *Scheduler) NewSignSession(
 		SignTaskSessionType,
 		allPartners,
 	)
-	party, endCh, errCh := RunParty(m.ctx, msg, params, key, innerSession, keyDerivationDelta) // todo
+	party, endCh, errCh := RunParty(innerSession.ctx, msg, params, key, innerSession, keyDerivationDelta) // todo
 	innerSession.party = party
 	innerSession.partyIdMap = partyIdMap
 	innerSession.endCh = endCh

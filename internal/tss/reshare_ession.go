@@ -72,7 +72,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	)
 	reShareSession.oldSession = oldInnerSession
 
-	party, endCh, errCh := RunReshare(m.ctx, oldParams, *m.partyData.GetData(ec), reShareSession) // todo
+	party, endCh, errCh := RunReshare(oldInnerSession.ctx, oldParams, *m.partyData.GetData(ec), reShareSession) // todo
 	oldInnerSession.party = party
 	oldInnerSession.partyIdMap = oldPartyIdMap
 	oldInnerSession.endCh = endCh
@@ -104,7 +104,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	)
 	reShareSession.newSession = newInnerSession
 
-	party, endCh, errCh = RunReshare(m.ctx, newParams, *m.partyData.GetData(ec), reShareSession)
+	party, endCh, errCh = RunReshare(newInnerSession.ctx, newParams, *m.partyData.GetData(ec), reShareSession)
 	newInnerSession.party = party
 	newInnerSession.partyIdMap = newPartyIdMap
 	newInnerSession.endCh = endCh

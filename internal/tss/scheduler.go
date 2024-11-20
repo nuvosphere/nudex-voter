@@ -36,7 +36,7 @@ type Scheduler struct {
 	groups             map[helper.GroupID]*helper.Group
 	srw                sync.RWMutex
 	sessions           map[helper.SessionID]Session[ProposalID]
-	sessionTasks       map[ProposalID]Session[ProposalID]
+	proposalSession    map[ProposalID]Session[ProposalID]
 	sigInToOut         chan *SessionResult[ProposalID, *tsscommon.SignatureData]
 	senateInToOut      chan *SessionResult[ProposalID, *helper.LocalPartySaveData]
 	partyData          *PartyData
@@ -76,7 +76,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 		grw:                sync.RWMutex{},
 		groups:             make(map[helper.GroupID]*helper.Group),
 		sessions:           make(map[helper.SessionID]Session[ProposalID]),
-		sessionTasks:       make(map[ProposalID]Session[ProposalID]),
+		proposalSession:    make(map[ProposalID]Session[ProposalID]),
 		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
 		senateInToOut:      make(chan *SessionResult[ProposalID, *helper.LocalPartySaveData]),
 		ctx:                ctx,
@@ -94,8 +94,8 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 }
 
 func (m *Scheduler) Start() {
-	m.p2pLoop(m.ctx)
-	m.proposalLoop(m.ctx)
+	m.p2pLoop()
+	m.proposalLoop()
 	m.BlockDetectionThreshold()
 
 	is := m.IsGenesis()
@@ -106,9 +106,10 @@ func (m *Scheduler) Start() {
 			m.Genesis() // build senate session
 		} else {
 			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
-			// Candidate save data
-			m.saveSenateData()
 		}
+
+		m.saveSenateData()
+		log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), "proposer: ", m.Proposer())
 	}
 
 	// loop approveProposal
@@ -137,17 +138,13 @@ func (m *Scheduler) Genesis() {
 		common.Address{},
 		helper.SenateProposal,
 	)
-
-	//_ = m.NewGenerateKeySession(
-	//	helper.EDDSA,
-	//	helper.SenateProposalIDOfEDDSA,
-	//	helper.SenateSessionIDOfEDDSA,
-	//	common.Address{},
-	//	helper.SenateProposal,
-	//)
-
-	// leader save data
-	m.saveSenateData()
+	_ = m.NewGenerateKeySession(
+		helper.EDDSA,
+		helper.SenateProposalIDOfEDDSA,
+		helper.SenateSessionIDOfEDDSA,
+		common.Address{},
+		helper.SenateProposal,
+	)
 }
 
 func (m *Scheduler) saveSenateData() {
@@ -195,12 +192,12 @@ func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
 	//if ok {
 	//	m.srw.Lock()
 	//	m.sessions[session.SessionID()] = session
-	//	m.sessionTasks[session.ProposalID()] = session
+	//	m.proposalSession[session.ProposalID()] = session
 	//	m.srw.Unlock()
 	//}
 	m.srw.Lock()
 	m.sessions[session.SessionID()] = session
-	m.sessionTasks[session.ProposalID()] = session
+	m.proposalSession[session.ProposalID()] = session
 	m.srw.Unlock()
 
 	return true
@@ -223,7 +220,7 @@ func (m *Scheduler) GetSession(sessionID helper.SessionID) Session[ProposalID] {
 func (m *Scheduler) IsMeeting(taskID ProposalID) bool {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
-	_, ok := m.sessionTasks[taskID]
+	_, ok := m.proposalSession[taskID]
 
 	return ok
 }
@@ -248,14 +245,14 @@ func (m *Scheduler) ReleaseGroup(groupID helper.GroupID) {
 	delete(m.groups, groupID)
 }
 
-func (m *Scheduler) SessionRelease(session helper.SessionID) {
+func (m *Scheduler) SessionRelease(sessionID helper.SessionID) {
 	m.srw.Lock()
 	defer m.srw.Unlock()
 
-	s, ok := m.sessions[session]
+	s, ok := m.sessions[sessionID]
 	if ok {
-		delete(m.sessions, session)
-		delete(m.sessionTasks, s.ProposalID())
+		delete(m.sessions, sessionID)
+		delete(m.proposalSession, s.ProposalID())
 		s.Release()
 	}
 }
@@ -270,7 +267,7 @@ func (m *Scheduler) Release() {
 	}
 
 	m.sessions = make(map[helper.SessionID]Session[ProposalID])
-	m.sessionTasks = make(map[ProposalID]Session[ProposalID])
+	m.proposalSession = make(map[ProposalID]Session[ProposalID])
 	m.srw.Unlock()
 	close(m.sigInToOut)
 }
@@ -321,14 +318,14 @@ func (m *Scheduler) IsProposer() bool {
 	return m.Proposer() == m.LocalSubmitter()
 }
 
-func (m *Scheduler) p2pLoop(ctx context.Context) {
+func (m *Scheduler) p2pLoop() {
 	m.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
 	m.tssMsgCh = m.bus.Subscribe(eventbus.EventTssMsg{})
 
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-m.ctx.Done():
 				log.Info("Signer stopping...")
 				return
 			case event := <-m.tssMsgCh: // from p2p network
@@ -347,13 +344,13 @@ func (m *Scheduler) p2pLoop(ctx context.Context) {
 	log.Info("p2p loop started")
 }
 
-func (m *Scheduler) proposalLoop(ctx context.Context) {
+func (m *Scheduler) proposalLoop() {
 	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
 
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-m.ctx.Done():
 				log.Info("proposal loop stopping...")
 				return
 			case data := <-m.pendingTask: // from layer2 log scan

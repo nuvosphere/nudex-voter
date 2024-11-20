@@ -18,14 +18,14 @@ import (
 )
 
 type P2PMocker struct {
-	typeBindEvent sync.Map // MessageType:eventbus.Event
+	typeBindEvent *sync.Map // MessageType:eventbus.Event
 	bus           eventbus.Bus
 }
 
 func NewP2PMocker(bus eventbus.Bus) *P2PMocker {
 	return &P2PMocker{
 		bus:           bus,
-		typeBindEvent: sync.Map{},
+		typeBindEvent: &sync.Map{},
 	}
 }
 
