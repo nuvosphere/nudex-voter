@@ -182,31 +182,3 @@ func (v *VoterContractMocker) GetAddressRecord(opts *bind.CallOpts, _user common
 	// TODO implement me
 	panic("implement me")
 }
-
-//
-//=== RUN   TestScheduler
-//scheduler_test.go:110: submitters [0x3a818294ca1F3C27d7588b123Ec43F2546fa07f4 0x5091FC3cb4E4BB014141Aa41375d8Dd73b34AfA2 0x04d9389Cf937b1e6F2258d842e7237E955d6ab04 0xf6D37CE75dB465DcDb4c7097bEB9c1D46b171037 0x1D2cd50A3cF3c55a7982AD54F9f364C1e953Bc57]
-//scheduler_test.go:117: index: 0 submitter: 0x3a818294ca1F3C27d7588b123Ec43F2546fa07f4
-//time="2024-11-20T11:40:48+08:00" level=info msg="p2p loop started"
-//time="2024-11-20T11:40:48+08:00" level=info msg="proposal loop started"
-//scheduler_test.go:117: index: 1 submitter: 0x5091FC3cb4E4BB014141Aa41375d8Dd73b34AfA2
-//time="2024-11-20T11:40:48+08:00" level=info msg="TSS keygen process started Candidate:0x3a818294ca1F3C27d7588b123Ec43F2546fa07f4proposer: 0x04d9389Cf937b1e6F2258d842e7237E955d6ab04"
-//time="2024-11-20T11:40:48+08:00" level=info msg="p2p loop started"
-//time="2024-11-20T11:40:48+08:00" level=info msg="proposal loop started"
-//time="2024-11-20T11:40:48+08:00" level=info msg="TSS keygen process started Candidate:0x5091FC3cb4E4BB014141Aa41375d8Dd73b34AfA2proposer: 0x04d9389Cf937b1e6F2258d842e7237E955d6ab04"
-//scheduler_test.go:117: index: 2 submitter: 0x04d9389Cf937b1e6F2258d842e7237E955d6ab04
-//time="2024-11-20T11:40:48+08:00" level=info msg="p2p loop started"
-//time="2024-11-20T11:40:48+08:00" level=info msg="proposal loop started"
-//time="2024-11-20T11:40:48+08:00" level=info msg="TSS keygen process started leader:0x04d9389Cf937b1e6F2258d842e7237E955d6ab04proposer: 0x04d9389Cf937b1e6F2258d842e7237E955d6ab04"
-//time="2024-11-20T11:40:48+08:00" level=debug msg="creating new local party"
-//time="2024-11-20T11:40:48+08:00" level=debug msg="local party createdpartyID{0,4d9389cf937b1e6f2258d842e7237e955d6ab04-secp256k1}"
-//time="2024-11-20T11:40:48+08:00" level=debug msg="Starting out/in message loop"
-//time="2024-11-20T11:40:48+08:00" level=debug msg="waiting for next message...partyID: {0,4d9389cf937b1e6f2258d842e7237e955d6ab04-secp256k1}"
-//time="2024-11-20T11:40:48+08:00" level=debug msg="party {0,4d9389cf937b1e6f2258d842e7237e955d6ab04-secp256k1} waiting for []"
-//time="2024-11-20T11:40:48+08:00" level=debug msg="Starting party"
-//scheduler_test.go:117: index: 3 submitter: 0x5091FC3cb4E4BB014141Aa41375d8Dd73b34AfA2
-//time="2024-11-20T11:40:48+08:00" level=info msg="p2p loop started"
-//time="2024-11-20T11:40:48+08:00" level=info msg="proposal loop started"
-//time="2024-11-20T11:40:48+08:00" level=info msg="TSS keygen process started Candidate:0x5091FC3cb4E4BB014141Aa41375d8Dd73b34AfA2proposer: 0x04d9389Cf937b1e6F2258d842e7237E955d6ab04"
-//scheduler_test.go:117: index: 4 submitter: 0xf6D37CE75dB465DcDb4c7097bEB9c1D46b171037
-//time="2024-11-20T11:40:48+08:00" level=info msg="p2p loop started"
