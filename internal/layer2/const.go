@@ -4,7 +4,7 @@ const (
 	SubmitterChosen            = "SubmitterChosen"
 	SubmitterRotationRequested = "SubmitterRotationRequested"
 	TaskSubmitted              = "TaskSubmitted"
-	TaskCompleted              = "TaskCompleted"
+	TaskUpdated                = "TaskUpdated"
 	AddressRegistered          = "AddressRegistered"
 	ParticipantAdded           = "ParticipantAdded"
 	ParticipantRemoved         = "ParticipantRemoved"

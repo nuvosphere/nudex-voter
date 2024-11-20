@@ -1,32 +1,6 @@
 [
   {
     "type": "function",
-    "name": "accountManager",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IAccountManager"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "assetManager",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IAssetManager"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "chooseNewSubmitter",
     "inputs": [
       {
@@ -37,60 +11,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "confirmTasks",
-    "inputs": [
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "delistAsset",
-    "inputs": [
-      {
-        "name": "assetType",
-        "type": "uint8",
-        "internalType": "enum IAssetManager.AssetType"
-      },
-      {
-        "name": "contractAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "chainId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "depositManager",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IDepositManager"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -115,27 +35,12 @@
         "internalType": "address"
       },
       {
-        "name": "_accountManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_assetManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_depositManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
         "name": "_participantManager",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_nuDexOperations",
+        "name": "_taskManager",
         "type": "address",
         "internalType": "address"
       },
@@ -163,44 +68,6 @@
   },
   {
     "type": "function",
-    "name": "listAsset",
-    "inputs": [
-      {
-        "name": "name",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "nuDexName",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "assetType",
-        "type": "uint8",
-        "internalType": "enum IAssetManager.AssetType"
-      },
-      {
-        "name": "contractAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "chainId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "nextSubmitter",
     "inputs": [],
     "outputs": [
@@ -208,19 +75,6 @@
         "name": "",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "nuDexOperations",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract ITaskManager"
       }
     ],
     "stateMutability": "view"
@@ -253,58 +107,12 @@
   },
   {
     "type": "function",
-    "name": "preconfirmTask",
-    "inputs": [
-      {
-        "name": "_taskId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_result",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "setSignerAddress",
     "inputs": [
       {
         "name": "_newSigner",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "submitTaskReceipt",
-    "inputs": [
-      {
-        "name": "_taskId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_result",
-        "type": "bytes",
-        "internalType": "bytes"
       },
       {
         "name": "_signature",
@@ -324,6 +132,19 @@
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "taskManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ITaskManager"
       }
     ],
     "stateMutability": "view"
@@ -359,14 +180,31 @@
     "name": "verifyAndCall",
     "inputs": [
       {
-        "name": "_target",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_data",
-        "type": "bytes",
-        "internalType": "bytes"
+        "name": "_opts",
+        "type": "tuple[]",
+        "internalType": "struct Operation[]",
+        "components": [
+          {
+            "name": "managerAddr",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "state",
+            "type": "uint8",
+            "internalType": "enum State"
+          },
+          {
+            "name": "taskId",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "optData",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
       },
       {
         "name": "_signature",
@@ -386,6 +224,19 @@
         "type": "uint64",
         "indexed": false,
         "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperationFailed",
+    "inputs": [
+      {
+        "name": "errData",
+        "type": "bytes",
+        "indexed": true,
+        "internalType": "bytes"
       }
     ],
     "anonymous": false
@@ -421,6 +272,11 @@
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "EmptyOperationsArray",
+    "inputs": []
   },
   {
     "type": "error",

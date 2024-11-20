@@ -8,8 +8,8 @@ import (
 
 func TestTopic(t *testing.T) {
 	assert.Equal(t, AddressRegisteredTopic.String(), "0x10d3f3c3d0c7da2f6751b14c10b9dbc6e04f5ebc6b798a6e220f3857ba1cd454")
-	assert.Equal(t, TaskSubmittedTopic.String(), "0x78e6ef797d565365876ecf57b6b91c9f0cb3da890e073ffcc8a3be2c28e145e0")
-	assert.Equal(t, TaskCompletedTopic.String(), "0x8d728f48e16602b5feb9528aa4cbf18ab06ee67918838342dfbd65d218e2a3ee")
+	assert.Equal(t, TaskSubmittedTopic.String(), "0x96a9964cc016aebed6b4922209fc0404309ba528357eec22795575c934c6f0d7")
+	assert.Equal(t, TaskUpdatedTopic.String(), "0x86de36c316de140ff1614f14d3353be006c1d760e2b4e9eb6cd40783f0fa7e57")
 	assert.Equal(t, SubmitterRotationRequestedTopic.String(), "0x810bb46f7f5182d661c517393732ca0639393a548c222be3f52830dbd81b5584")
 	assert.Equal(t, SubmitterChosenTopic.String(), "0x0d6caedcf9fb56222a63417673875559577b650f769290f255258825d907867d")
 	assert.Equal(t, ParticipantAddedTopic.String(), "0x31d3ac54da09405b02d1de0ee0de648de637fbdc111123be0d7fc31f2a544c0b")

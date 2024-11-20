@@ -8,7 +8,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
-func DecodeTask(taskId uint32, context []byte) ITask {
+func DecodeTask(taskId uint64, context []byte) ITask {
 	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
 	utils.Assert(err)
 

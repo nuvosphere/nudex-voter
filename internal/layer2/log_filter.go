@@ -62,7 +62,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, TaskSubmitted, vLog)
-		actualTask := db.DecodeTask(uint32(taskSubmitted.TaskId.Uint64()), taskSubmitted.Context)
+		actualTask := db.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Context)
 		task := db.Task{
 			TaskId:    actualTask.TaskID(),
 			TaskType:  actualTask.Type(),
@@ -81,24 +81,24 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			l.postTask(actualTask)
 		}
 
-	case contracts.TaskCompletedTopic:
-		taskCompleted := contracts.TaskManagerContractTaskCompleted{}
-		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskCompleted, TaskCompleted, vLog)
+	case contracts.TaskUpdatedTopic:
+		taskUpdated := contracts.TaskManagerContractTaskUpdated{}
+		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskUpdated, TaskUpdated, vLog)
 
-		var taskCompletedEvent *db.TaskCompletedEvent
+		var taskCompletedEvent *db.TaskUpdatedEvent
 
 		err := l.db.GetRelayerDB().Transaction(func(tx *gorm.DB) error {
 			taskErr := tx.
 				Model(&db.Task{}).
-				Where("task_id = ?", taskCompleted.TaskId.Uint64()).
+				Where("task_id = ?", taskUpdated.TaskId).
 				Update("status", db.Completed).Error
 
-			taskCompletedEvent = &db.TaskCompletedEvent{
-				TaskId:      uint32(taskCompleted.TaskId.Uint64()),
-				Submitter:   taskCompleted.Submitter.Hex(),
-				CompletedAt: taskCompleted.CompletedAt.Int64(),
-				Result:      taskCompleted.Result,
-				LogIndex:    l.LogIndex(TaskCompleted, vLog),
+			taskCompletedEvent = &db.TaskUpdatedEvent{
+				TaskId:     taskUpdated.TaskId,
+				Submitter:  taskUpdated.Submitter.Hex(),
+				UpdateTime: taskUpdated.UpdateTime.Int64(),
+				Result:     taskUpdated.Result,
+				LogIndex:   l.LogIndex(TaskUpdated, vLog),
 			}
 			err := tx.Save(taskCompletedEvent).Error
 
@@ -140,7 +140,6 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 		addressRegistered := contracts.AccountManagerContractAddressRegistered{}
 		contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, AddressRegistered, vLog)
 		account := db.Account{
-			User:     addressRegistered.User.Hex(),
 			Account:  addressRegistered.Account.Uint64(),
 			ChainId:  addressRegistered.ChainId,
 			Index:    addressRegistered.Index.Uint64(),

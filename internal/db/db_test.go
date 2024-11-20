@@ -17,7 +17,7 @@ func TestTask(t *testing.T) {
 	dbm := NewDatabaseManager()
 	dbm.initDB()
 
-	var taskId uint32 = 13
+	var taskId uint64 = 13
 	task := CreateWalletTask{
 		BaseTask: BaseTask{
 			TaskType: 0,
@@ -75,7 +75,7 @@ func TestUniqueTask(t *testing.T) {
 	dbm := NewDatabaseManager()
 	dbm.initDB()
 
-	var taskId uint32 = 26
+	var taskId uint64 = 26
 	task := CreateWalletTask{
 		BaseTask: BaseTask{
 			TaskType: 0,

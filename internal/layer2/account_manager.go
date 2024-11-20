@@ -10,13 +10,13 @@ import (
 
 type AccountManager interface {
 	EncodeRegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) []byte
-	GetAddressRecord(opts *bind.CallOpts, _user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (string, error) // address
+	GetAddressRecord(opts *bind.CallOpts, _account *big.Int, _chain uint8, _index *big.Int) (string, error) // address
 }
 
 func (l *Layer2Listener) EncodeRegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) []byte {
 	return contracts.EncodeFun(contracts.AccountManagerContractABI, "registerNewAddress", _user, _account, _chain, _index, _address)
 }
 
-func (l *Layer2Listener) GetAddressRecord(opts *bind.CallOpts, _user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
-	return l.accountManager.GetAddressRecord(nil, _user, _account, _chain, _index)
+func (l *Layer2Listener) GetAddressRecord(opts *bind.CallOpts, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
+	return l.accountManager.GetAddressRecord(nil, _account, _chain, _index)
 }

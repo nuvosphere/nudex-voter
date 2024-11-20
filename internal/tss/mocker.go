@@ -153,7 +153,7 @@ func (v *VoterContractMocker) EncodeSubmitTask(submitter common.Address, context
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) NextTaskId() (*big.Int, error) {
+func (v *VoterContractMocker) NextTaskId() (uint64, error) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -178,7 +178,7 @@ func (v *VoterContractMocker) EncodeRegisterNewAddress(_user common.Address, _ac
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GetAddressRecord(opts *bind.CallOpts, _user common.Address, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
+func (v *VoterContractMocker) GetAddressRecord(opts *bind.CallOpts, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
 	// TODO implement me
 	panic("implement me")
 }

@@ -13,25 +13,25 @@ const (
 )
 
 const (
-	New = iota
+	Created = iota
 	Pending
 	Completed
-	Other
+	Failed
 )
 
 type ITask interface {
 	Type() int
-	TaskID() uint32
+	TaskID() uint64
 	SetBaseTask(task Task)
 }
 
 type Task struct {
 	gorm.Model
-	TaskId           uint32            `gorm:"unique;not null"                     json:"task_id"`
+	TaskId           uint64            `gorm:"unique;not null"                     json:"task_id"`
 	TaskType         int               `gorm:"not null;default:0"                  json:"task_type"`
 	Context          []byte            `gorm:"not null"                            json:"context"`
 	Submitter        string            `gorm:"not null"                            json:"submitter"`
-	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:new; 1:pending; 2:Completed; 3:other
+	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:Created; 1:pending; 2:Completed; 3:Failed
 	LogIndex         LogIndex          `gorm:"foreignKey:ForeignID"`                              // has one https://gorm.io/zh_CN/docs/has_one.html
 	CreateWalletTask *CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
 	DepositTask      *DepositTask      `gorm:"foreignKey:TaskId;references:TaskId"`
@@ -45,7 +45,7 @@ func (Task) TableName() string {
 type BaseTask struct {
 	gorm.Model
 	TaskType int    `gorm:"not null;default:0"                  json:"task_type"`
-	TaskId   uint32 `gorm:"unique;not null"                     json:"task_id"`
+	TaskId   uint64 `gorm:"unique;not null"                     json:"task_id"`
 	Task     Task   `gorm:"foreignKey:TaskId;references:TaskId"`
 }
 
@@ -53,7 +53,7 @@ func (t *BaseTask) Type() int {
 	return t.TaskType
 }
 
-func (t *BaseTask) TaskID() uint32 {
+func (t *BaseTask) TaskID() uint64 {
 	return t.TaskId
 }
 
@@ -77,7 +77,7 @@ func (CreateWalletTask) TableName() string {
 	return "create_wallet_task"
 }
 
-func NewCreateWalletTask(taskId uint32, req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
+func NewCreateWalletTask(taskId uint64, req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
 	return &CreateWalletTask{
 		BaseTask: BaseTask{
 			TaskId:   taskId,
@@ -107,7 +107,7 @@ func (DepositTask) TableName() string {
 	return "deposit_task"
 }
 
-func NewDepositTask(taskId uint32, req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
+func NewDepositTask(taskId uint64, req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
 	return &DepositTask{
 		BaseTask: BaseTask{
 			TaskId:   taskId,
@@ -145,7 +145,7 @@ func (WithdrawalTask) TableName() string {
 	return "withdrawal_task"
 }
 
-func NewWithdrawalTask(taskId uint32, req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
+func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
 	return &WithdrawalTask{
 		BaseTask: BaseTask{
 			TaskId:   taskId,
@@ -194,12 +194,12 @@ const (
 	TaskErrorCodeChainNotSupported
 )
 
-type TaskCompletedEvent struct {
+type TaskUpdatedEvent struct {
 	gorm.Model
-	TaskId      uint32   `gorm:"unique;not null"                     json:"task_id"`
-	Submitter   string   `gorm:"not null"                            json:"submitter"`
-	CompletedAt int64    `gorm:"unique;not null"                     json:"completed_at"`
-	Result      []byte   `json:"result"`
-	Task        Task     `gorm:"foreignKey:TaskId;references:TaskId"`
-	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	TaskId     uint64   `gorm:"unique;not null"                     json:"task_id"`
+	Submitter  string   `gorm:"not null"                            json:"submitter"`
+	UpdateTime int64    `gorm:"unique;not null"                     json:"completed_at"`
+	Result     []byte   `json:"result"`
+	Task       Task     `gorm:"foreignKey:TaskId;references:TaskId"`
+	LogIndex   LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }

@@ -369,7 +369,7 @@ func (m *Scheduler) proposalLoop() {
 					m.submitterChosen = v
 					m.proposer.Store(common.HexToAddress(v.Submitter))
 
-				case *db.TaskCompletedEvent: // todo
+				case *db.TaskUpdatedEvent: // todo
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
 				}
 			}

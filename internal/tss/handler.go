@@ -53,7 +53,7 @@ func (m *Scheduler) GetTask(taskID int64) (*db.Task, error) {
 		}
 
 		return &db.Task{
-			TaskId:    uint32(itask.Id.Uint64()),
+			TaskId:    itask.Id,
 			Context:   itask.Context,
 			Submitter: itask.Submitter.Hex(),
 		}, nil
