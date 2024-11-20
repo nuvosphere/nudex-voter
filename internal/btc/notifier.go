@@ -3,17 +3,16 @@ package btc
 import (
 	"context"
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"sync"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type BTCNotifier struct {
@@ -31,11 +30,14 @@ type BTCNotifier struct {
 
 func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller) *BTCNotifier {
 	var maxBlockHeight int64 = -1
+
 	var lastBlock db.BtcBlockData
+
 	result := cache.db.Order("block_height desc").First(&lastBlock)
 	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
 		log.Fatalf("Failed to get max block height from db, %v", result.Error)
 	}
+
 	if result.Error == nil {
 		maxBlockHeight = int64(lastBlock.BlockHeight) - 1
 	}
@@ -43,9 +45,11 @@ func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller
 	if maxBlockHeight < int64(config.AppConfig.BTCStartHeight) {
 		maxBlockHeight = int64(config.AppConfig.BTCStartHeight) - 1
 	}
+
 	log.Infof("New btc notify at max block height is %d", maxBlockHeight)
 
 	var syncStatus db.BtcSyncStatus
+
 	resultQuery := cache.db.First(&syncStatus)
 	if resultQuery.Error != nil && resultQuery.Error == gorm.ErrRecordNotFound {
 		syncStatus.ConfirmedHeight = int64(config.AppConfig.BTCStartHeight - 1)
@@ -54,6 +58,7 @@ func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller
 		cache.db.Create(&syncStatus)
 		log.Info("New btc notify sync status not found, create one")
 	}
+
 	log.Infof("New btc notify sync status confirmed height is %d", syncStatus.ConfirmedHeight)
 
 	return &BTCNotifier{
@@ -70,6 +75,7 @@ func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller
 func (bn *BTCNotifier) Start(ctx context.Context) {
 	bn.cache.Start(ctx)
 	bn.poller.Start(ctx)
+
 	go bn.checkConfirmations(ctx)
 }
 
@@ -110,7 +116,9 @@ func (bn *BTCNotifier) checkConfirmations(ctx context.Context) {
 
 			newSyncHeight := syncConfirmedHeight
 			grows := false
+
 			log.Infof("Btc check block confirmation fired, best height: %d, from: %d, to: %d", bestHeight, syncConfirmedHeight+1, confirmedHeight)
+
 			for height := syncConfirmedHeight + 1; height <= confirmedHeight; height++ {
 				// blockInDb, err := bn.poller.GetBlock(uint64(height))
 				// if err != nil {
@@ -122,6 +130,7 @@ func (bn *BTCNotifier) checkConfirmations(ctx context.Context) {
 					log.Errorf("Btc getting block at %d error: %v", height, err)
 					break
 				}
+
 				blockWithHeight := BlockWithHeight{
 					Block:  block,
 					Height: bn.currentHeight,
@@ -140,6 +149,7 @@ func (bn *BTCNotifier) checkConfirmations(ctx context.Context) {
 					BlockNumber: uint64(height),
 				}
 				log.Debugf("Pushed block at height %d to confirmChan", height)
+
 				bn.currentHeight++
 
 				if bn.syncStatus.ConfirmedHeight+10 < newSyncHeight {
@@ -153,6 +163,7 @@ func (bn *BTCNotifier) checkConfirmations(ctx context.Context) {
 
 				time.Sleep(catchUpInterval)
 			}
+
 			if grows {
 				// Save sync status
 				log.Infof("Btc sync status saving, new confirmed height: %d ", newSyncHeight)

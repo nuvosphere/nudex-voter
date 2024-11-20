@@ -2,7 +2,7 @@ package http
 
 import "encoding/json"
 
-// UNCHECKED
+// UNCHECKED.
 type FireblocksWebhookRequest struct {
 	Type      string          `json:"type"`
 	TenantId  string          `json:"tenantId"`
@@ -10,7 +10,7 @@ type FireblocksWebhookRequest struct {
 	Data      json.RawMessage `json:"data"`
 }
 
-// TRANSACTION_CREATED, TRANSACTION_STATUS_UPDATED, TRANSACTION_APPROVAL_STATUS_UPDATED
+// TRANSACTION_CREATED, TRANSACTION_STATUS_UPDATED, TRANSACTION_APPROVAL_STATUS_UPDATED.
 type TransactionDetails struct {
 	ID                            string                   `json:"id"`
 	ExternalTxID                  string                   `json:"externalTxId"`

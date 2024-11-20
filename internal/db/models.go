@@ -3,76 +3,138 @@ package db
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"gorm.io/gorm"
 )
 
-type BTCTransaction struct {
-	ID          uint      `gorm:"primaryKey"`
-	TxID        string    `gorm:"uniqueIndex;not null"`
-	RawTxData   string    `gorm:"type:text;not null"`
-	ReceivedAt  time.Time `gorm:"not null"`
-	Processed   bool      `gorm:"default:false"`
-	ProcessedAt time.Time
+type LogIndex struct {
+	gorm.Model
+	ContractAddress common.Address `gorm:"index;size:160"                json:"contract_address"`
+	EventName       string         `json:"eventName"`                                         // event name
+	Log             *types.Log     `gorm:"serializer:json"               json:"log"`          // event content
+	TxHash          common.Hash    `gorm:"index;size:256"                json:"tx_hash"`      // tx hash
+	ChainId         uint64         `gorm:"index:log_index_unique,unique" json:"chain_id"`     // chainId
+	BlockNumber     uint64         `gorm:"index:log_index_unique,unique" json:"block_number"` // block number of the tx
+	LogIndex        uint64         `gorm:"index:log_index_unique,unique" json:"log_index"`    // block log index
+	ForeignID       uint           `gorm:"index"                         json:"foreign_id"`   // task table ID;submitter table ID;participant_event table ID;...
+}
+
+func (LogIndex) TableName() string {
+	return "log_index"
 }
 
 type EVMSyncStatus struct {
-	ID            uint      `gorm:"primaryKey"`
-	LastSyncBlock uint64    `gorm:"not null"`
-	UpdatedAt     time.Time `gorm:"not null"`
+	gorm.Model
+	LastSyncBlock uint64 `gorm:"not null" json:"last_sync_block"`
+}
+
+func (EVMSyncStatus) TableName() string {
+	return "evm_sync_status"
+}
+
+// SubmitterChosen contains block number and current submitter.
+type SubmitterChosen struct {
+	gorm.Model
+	Submitter   string   `gorm:"index:submitter_block_number_unique,unique" json:"submitter"`
+	BlockNumber uint64   `gorm:"index:submitter_block_number_unique,unique" json:"block_number"`
+	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (SubmitterChosen) TableName() string {
+	return "submitter"
+}
+
+// Participant save all participants.
+type Participant struct {
+	gorm.Model
+	Address string `gorm:"uniqueIndex;not null" json:"address"`
+}
+
+func (Participant) TableName() string {
+	return "participant"
+}
+
+// ParticipantEvent save all participants.
+type ParticipantEvent struct {
+	gorm.Model
+	EventName   string   `json:"eventName"` // event name
+	Address     string   `gorm:"index;not null"       json:"address"`
+	BlockNumber uint64   `gorm:"index;not null"       json:"block_number"`
+	LogIndex    LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (ParticipantEvent) TableName() string {
+	return "participant_event"
+}
+
+// Account save all accounts.
+type Account struct {
+	gorm.Model
+	User     string   `gorm:"not null"              json:"user"`
+	Account  uint64   `gorm:"not null"              json:"account"`
+	ChainId  uint8    `gorm:"not null"              json:"chain_id"`
+	Index    uint64   `gorm:"not null"              json:"index"`
+	Address  string   `gorm:"uniqueIndex; not null" json:"address"`
+	LogIndex LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (Account) TableName() string {
+	return "account"
+}
+
+type DepositRecord struct {
+	gorm.Model
+	TargetAddress string   `gorm:"not null"             json:"target_address"`
+	Amount        uint64   `gorm:"not null"             json:"amount"`
+	ChainId       uint64   `gorm:"not null"             json:"chain_id"`
+	TxInfo        []byte   `gorm:"not null"             json:"tx_info"`
+	ExtraInfo     []byte   `gorm:"not null"             json:"extra_info"`
+	LogIndex      LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (DepositRecord) TableName() string {
+	return "deposit_record"
 }
 
 type WithdrawalRecord struct {
-	ID           uint      `gorm:"primaryKey"`
-	WithdrawalID string    `gorm:"uniqueIndex;not null"`
-	UserAddress  string    `gorm:"not null"`
-	Amount       string    `gorm:"not null"`
-	DetectedAt   time.Time `gorm:"not null"`
-	OnChain      bool      `gorm:"default:false"`
-	OnChainTxID  string
-	Processed    bool `gorm:"default:false"`
-	ProcessedAt  time.Time
+	gorm.Model
+	TargetAddress string   `gorm:"not null"             json:"target_address"`
+	Amount        uint64   `gorm:"not null"             json:"amount"`
+	ChainId       uint64   `gorm:"not null"             json:"chain_id"`
+	TxInfo        []byte   `gorm:"not null"             json:"tx_info"`
+	ExtraInfo     []byte   `gorm:"not null"             json:"extra_info"`
+	LogIndex      LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
-// SubmitterRotation contains block number and current submitter
-type SubmitterRotation struct {
-	ID               uint64 `gorm:"primaryKey"`
-	BlockNumber      uint64 `gorm:"not null"`
-	CurrentSubmitter string `gorm:"not null"`
+func (WithdrawalRecord) TableName() string {
+	return "withdrawal_record"
 }
 
-// Participant save all participants
-type Participant struct {
-	ID      uint64 `gorm:"primaryKey"`
-	Address string `gorm:"uniqueIndex;not null"`
-}
-
-// Account save all accounts
-type Account struct {
-	ID      uint64 `gorm:"primaryKey"`
-	User    string `gorm:"not null"`
-	Account uint64 `gorm:"not null"`
-	ChainId uint8  `gorm:"not null"`
-	Index   uint64 `gorm:"not null"`
-	Address string `gorm:"not null"`
+type BTCTransaction struct {
+	gorm.Model
+	TxID        string    `gorm:"uniqueIndex;not null" json:"tx_id"`
+	RawTxData   string    `gorm:"type:text;not null"   json:"raw_tx_data"`
+	ReceivedAt  time.Time `gorm:"not null"             json:"received_at"`
+	Processed   bool      `gorm:"default:false"        json:"processed"`
+	ProcessedAt time.Time `json:"processed_at"`
 }
 
 type BtcBlock struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Height    uint64    `gorm:"not null;uniqueIndex" json:"height"`
-	Hash      string    `gorm:"not null" json:"hash"`
-	Status    string    `gorm:"not null" json:"status"` // "unconfirm", "confirmed", "signing", "pending", "processed"
-	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
+	gorm.Model
+	Height uint64 `gorm:"not null;uniqueIndex" json:"height"`
+	Hash   string `gorm:"not null"             json:"hash"`
+	Status string `gorm:"not null"             json:"status"` // "unconfirm", "confirmed", "signing", "pending", "processed"
 }
 
 type BtcSyncStatus struct {
-	ID              uint      `gorm:"primaryKey" json:"id"`
-	UnconfirmHeight int64     `gorm:"not null" json:"unconfirm_height"`
-	ConfirmedHeight int64     `gorm:"not null" json:"confirmed_height"`
-	UpdatedAt       time.Time `gorm:"not null" json:"updated_at"`
+	gorm.Model
+	UnconfirmHeight int64 `gorm:"not null" json:"unconfirm_height"`
+	ConfirmedHeight int64 `gorm:"not null" json:"confirmed_height"`
 }
 
 type BtcBlockData struct {
-	ID           uint   `gorm:"primaryKey" json:"id"`
+	gorm.Model
 	BlockHeight  uint64 `gorm:"unique;not null" json:"block_height"`
 	BlockHash    string `gorm:"unique;not null" json:"block_hash"`
 	Header       []byte `json:"header"`
@@ -84,21 +146,9 @@ type BtcBlockData struct {
 }
 
 type BtcTXOutput struct {
-	ID       uint   `gorm:"primaryKey" json:"id"`
+	gorm.Model
 	BlockID  uint   `json:"block_data_id"`
 	TxHash   string `json:"tx_hash"`
 	Value    uint64 `json:"value"`
 	PkScript []byte `json:"pk_script"`
-}
-
-func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.relayerDb.AutoMigrate(&BTCTransaction{}, &EVMSyncStatus{}, &WithdrawalRecord{}, &SubmitterRotation{}, &Participant{}, &Account{}); err != nil {
-		log.Fatalf("Failed to migrate database 1: %v", err)
-	}
-	if err := dm.btcLightDb.AutoMigrate(&BtcBlock{}); err != nil {
-		log.Fatalf("Failed to migrate database 3: %v", err)
-	}
-	if err := dm.btcCacheDb.AutoMigrate(&BtcSyncStatus{}, &BtcBlockData{}, &BtcTXOutput{}); err != nil {
-		log.Fatalf("Failed to migrate database 2: %v", err)
-	}
 }

@@ -1,10 +1,10 @@
 package p2p
 
-type Message struct {
+type Message[T any] struct {
 	MessageType MessageType `json:"msg_type"`
 	RequestId   string      `json:"request_id"`
 	DataType    string      `json:"data_type"`
-	Data        interface{} `json:"data"`
+	Data        T           `json:"data"`
 }
 
 type HeartbeatMessage struct {
@@ -13,20 +13,19 @@ type HeartbeatMessage struct {
 	Timestamp int64  `json:"ts"`
 }
 
+type HandshakeMessage struct {
+	PeerID    string `json:"peer_id"`
+	Submitter string `json:"submitter"`
+	Handshake string `json:"handshake"`
+	Timestamp int64  `json:"ts"`
+}
+
 type MessageType int
 
 const (
 	MessageTypeUnknown = iota
-	MessageTypeTssUpdate
-	MessageTypeKeygenReq
-	MessageTypeKeygenResp
+	MessageTypeTssMsg
 	MessageTypeSigReq
 	MessageTypeSigResp
 	MessageTypeDepositReceive
-)
-
-const (
-	DataTypeTssUpdateMessage = "TssUpdateMessage"
-	DataTypeKeygenReq        = "KeygenReq"
-	DataTypeKeygenResponse   = "KeygenResponse"
 )

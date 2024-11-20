@@ -3,69 +3,106 @@ package layer2
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math/big"
+	"strings"
+	"sync/atomic"
+	"time"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/abis"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"math/big"
-	"strings"
-	"time"
-)
-
-var (
-	votingManagerABI = `[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newParticipant","type":"address"}],"name":"ParticipantAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"participant","type":"address"}],"name":"ParticipantRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"requester","type":"address"},{"indexed":true,"internalType":"address","name":"currentSubmitter","type":"address"}],"name":"SubmitterRotationRequested","type":"event"},{"inputs":[{"internalType":"address","name":"targetAddress","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"txInfo","type":"bytes"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"bytes","name":"extraInfo","type":"bytes"},{"internalType":"bytes","name":"signature","type":"bytes"}],"name":"submitDepositInfo","outputs":[],"stateMutability":"nonpayable","type":"function"}]`
 )
 
 type Layer2Listener struct {
-	libp2p    *p2p.LibP2PService
-	db        *db.DatabaseManager
-	state     *state.State
-	ethClient *ethclient.Client
-
-	contractVotingManager  *abis.VotingManagerContract
-	contractAccountManager *abis.AccountManagerContract
-
-	sigFinishChan chan interface{}
+	p2p                   *p2p.Service
+	db                    *db.DatabaseManager
+	state                 *state.State
+	ethClient             *ethclient.Client
+	chainID               atomic.Int64
+	contractAddress       []common.Address
+	addressBind           map[common.Address]func(types.Log) error
+	contractVotingManager *contracts.VotingManagerContract
+	participantManager    *contracts.ParticipantManagerContract
+	taskManager           *contracts.TaskManagerContract
+	accountManager        *contracts.AccountManagerContract
 }
 
-func NewLayer2Listener(libp2p *p2p.LibP2PService, state *state.State, db *db.DatabaseManager) *Layer2Listener {
+func (l *Layer2Listener) postTask(task any) {
+	l.state.Bus().Publish(eventbus.EventTask{}, task)
+}
+
+func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManager) *Layer2Listener {
 	ethClient, err := DialEthClient()
 	if err != nil {
 		log.Fatalf("Error creating Layer2 EVM RPC client: %v", err)
 	}
 
-	contractVotingManager, err := abis.NewVotingManagerContract(abis.VotingAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract VotingManager: %v", err)
-	}
-
-	contractAccountManager, err := abis.NewAccountManagerContract(abis.AccountAddress, ethClient)
-	if err != nil {
-		log.Fatalf("Failed to instantiate contract AccountManager: %v", err)
-	}
-
-	return &Layer2Listener{
-		libp2p:    libp2p,
+	self := &Layer2Listener{
+		p2p:       p,
 		db:        db,
 		state:     state,
 		ethClient: ethClient,
-
-		contractVotingManager:  contractVotingManager,
-		contractAccountManager: contractAccountManager,
-
-		sigFinishChan: make(chan interface{}, 256),
+		chainID:   atomic.Int64{},
 	}
+
+	var (
+		VotingAddress      = common.HexToAddress(config.AppConfig.VotingContract)
+		AccountAddress     = common.HexToAddress(config.AppConfig.AccountContract)
+		TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
+		ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
+		DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
+	)
+
+	self.addressBind = map[common.Address]func(types.Log) error{
+		VotingAddress:      self.processVotingLog,
+		AccountAddress:     self.processAccountLog,
+		ParticipantAddress: self.processParticipantLog,
+		TaskAddress:        self.processTaskLog,
+		DepositAddress:     self.processDepositLog,
+	}
+	self.contractAddress = lo.MapToSlice(
+		self.addressBind,
+		func(item common.Address, _ func(log2 types.Log) error) common.Address { return item },
+	)
+
+	var errs []error
+
+	_, err = self.ChainID(context.Background())
+	errs = append(errs, err)
+	contractVotingManager, err := contracts.NewVotingManagerContract(VotingAddress, ethClient)
+	errs = append(errs, err)
+	participantManager, err := contracts.NewParticipantManagerContract(ParticipantAddress, ethClient)
+	errs = append(errs, err)
+	taskManager, err := contracts.NewTaskManagerContract(TaskAddress, ethClient)
+	errs = append(errs, err)
+	accountManager, err := contracts.NewAccountManagerContract(TaskAddress, ethClient)
+	errs = append(errs, err)
+
+	utils.Assert(errors.Join(errs...))
+
+	self.taskManager = taskManager
+	self.contractVotingManager = contractVotingManager
+	self.participantManager = participantManager
+	self.accountManager = accountManager
+
+	return self
 }
 
-// New an eth client
+// New an eth client.
 func DialEthClient() (*ethclient.Client, error) {
 	var opts []rpc.ClientOption
 
@@ -74,10 +111,13 @@ func DialEthClient() (*ethclient.Client, error) {
 		if len(jwtSecret) != 32 {
 			return nil, errors.New("jwt secret is not a 32 bytes hex string")
 		}
+
 		var jwtKey [32]byte
+
 		copy(jwtKey[:], jwtSecret)
 		opts = append(opts, rpc.WithHTTPAuth(node.NewJWTAuth(jwtKey)))
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	// Dial the Ethereum node with optional JWT authentication
@@ -85,15 +125,18 @@ func DialEthClient() (*ethclient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return ethclient.NewClient(client), nil
 }
 
-func (lis *Layer2Listener) Start(ctx context.Context) {
+func (l *Layer2Listener) Start(ctx context.Context) {
 	// Get latest sync height
 	var syncStatus db.EVMSyncStatus
-	relayerDB := lis.db.GetRelayerDB()
+
+	relayerDB := l.db.GetRelayerDB()
+
 	result := relayerDB.First(&syncStatus)
-	if result.Error == gorm.ErrRecordNotFound {
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		syncStatus.LastSyncBlock = uint64(config.AppConfig.L2StartHeight)
 		syncStatus.UpdatedAt = time.Now()
 		relayerDB.Create(&syncStatus)
@@ -101,61 +144,78 @@ func (lis *Layer2Listener) Start(ctx context.Context) {
 		log.Fatalf("Error querying sync status: %v", result.Error)
 	}
 
+L:
 	for {
-		latestBlock, err := lis.ethClient.BlockNumber(context.Background())
+		isContinue, err := l.scan(ctx, &syncStatus)
 		if err != nil {
-			log.Warnf("Error getting latest block number: %v", err)
+			log.Errorf("scan : %v", err)
 		}
-
-		targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)
-
-		if syncStatus.LastSyncBlock < targetBlock {
-			fromBlock := syncStatus.LastSyncBlock + 1
-			toBlock := min(fromBlock+uint64(config.AppConfig.L2MaxBlockRange)-1, targetBlock)
-
-			log.WithFields(log.Fields{
-				"fromBlock": fromBlock,
-				"toBlock":   toBlock,
-			}).Info("Syncing L2 nudex events")
-
-			filterQuery := ethereum.FilterQuery{
-				FromBlock: big.NewInt(int64(fromBlock)),
-				ToBlock:   big.NewInt(int64(toBlock)),
-				Addresses: []common.Address{abis.VotingAddress, abis.AccountAddress},
-			}
-
-			logs, err := lis.ethClient.FilterLogs(context.Background(), filterQuery)
-			if err != nil {
-				log.Errorf("Failed to filter logs: %v", err)
-				// Next loop
-				time.Sleep(config.AppConfig.L2RequestInterval)
-				continue
-			}
-
-			for _, vLog := range logs {
-				lis.processLogs(vLog)
-				if syncStatus.LastSyncBlock < vLog.BlockNumber {
-					syncStatus.LastSyncBlock = vLog.BlockNumber
-					syncStatus.UpdatedAt = time.Now()
-					lis.db.GetRelayerDB().Save(&syncStatus)
-				}
-			}
-
-			if syncStatus.LastSyncBlock < toBlock {
-				// Save sync status
-				syncStatus.LastSyncBlock = toBlock
-				syncStatus.UpdatedAt = time.Now()
-				lis.db.GetRelayerDB().Save(&syncStatus)
-			}
+		if isContinue {
+			continue L
 		}
-
 		// Next loop
 		time.Sleep(config.AppConfig.L2RequestInterval)
 	}
-
 }
 
-// stop ctx
-func (lis *Layer2Listener) stop() {
+func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) (isContinue bool, err error) {
+	latestBlock, err := l.ethClient.BlockNumber(ctx)
+	if err != nil {
+		return false, fmt.Errorf("error getting latest block number: %v", err)
+	}
 
+	targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)
+	if syncStatus.LastSyncBlock < targetBlock {
+		fromBlock := syncStatus.LastSyncBlock + 1
+
+		toBlock := fromBlock + uint64(config.AppConfig.L2MaxBlockRange) - 1
+		if toBlock > targetBlock {
+			toBlock = targetBlock
+		}
+
+		log.WithFields(log.Fields{"fromBlock": fromBlock, "toBlock": toBlock}).Info("Syncing L2 nudex events")
+
+		filterQuery := ethereum.FilterQuery{
+			FromBlock: big.NewInt(int64(fromBlock)),
+			ToBlock:   big.NewInt(int64(toBlock)),
+			Addresses: l.contractAddress,
+			// Topics:    batch,
+		}
+
+		logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)
+		if err != nil {
+			return false, fmt.Errorf("failed to filter logs: %w", err)
+		}
+
+		for _, vLog := range logs {
+			l.processLogs(vLog)
+		}
+
+		// Save sync status
+		syncStatus.LastSyncBlock = toBlock
+		syncStatus.UpdatedAt = time.Now()
+		l.db.GetRelayerDB().Save(syncStatus)
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// stop ctx.
+//
+//lint:ignore U1000 Ignore unused function
+func (l *Layer2Listener) stop() {}
+
+func (l *Layer2Listener) ChainID(ctx context.Context) (*big.Int, error) {
+	if l.chainID.Load() == 0 {
+		chainID, err := l.ethClient.ChainID(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("chainID error: %w", err)
+		}
+
+		l.chainID.Store(chainID.Int64())
+	}
+
+	return big.NewInt(l.chainID.Load()), nil
 }

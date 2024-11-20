@@ -1,49 +1,43 @@
 package tss
 
 import (
-	"crypto/ecdsa"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/ethereum/go-ethereum/common"
+	"encoding/json"
+	"fmt"
+
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
-	"github.com/nuvosphere/nudex-voter/internal/state"
-	"sync"
-	"time"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
-type TSSService struct {
-	privateKey *ecdsa.PrivateKey
-	address    common.Address
+const (
+	DataTypeTssKeygenMsg     = "TssKeygenMsg"
+	DataTypeTssSignMsg       = "TssSignMsg"
+	DataTypeTssReSharingMsg  = "TssReSharingMsg"
+	DataTypeSignCreateWallet = "SignCreateWallet"
+	DataTypeSignDeposit      = "SignDeposit"
+	DataTypeSignWithdrawal   = "SignWithdrawal"
+)
 
-	libp2p *p2p.LibP2PService
-	state  *state.State
+// convertMsgData converts the message data to the corresponding struct.
+func convertMsgData(msg p2p.Message[json.RawMessage]) any {
+	switch msg.DataType {
+	case DataTypeTssKeygenMsg, DataTypeTssReSharingMsg, DataTypeTssSignMsg:
+		return unmarshal[types.TssMessage](msg.Data)
+	case GenKeySessionType, SignTaskSessionType, ReShareGroupSessionType:
+		return unmarshal[SessionMessage[ProposalID, Proposal]](msg.Data)
+	case DataTypeSignCreateWallet:
+		return unmarshal[types.SignMessage](msg.Data)
+	}
 
-	party      *keygen.LocalParty
-	partyIdMap map[string]*tsslib.PartyID
+	return unmarshal[any](msg.Data)
+}
 
-	setupTime              time.Time
-	round1P2pMessage       *p2p.Message
-	round1MessageSendTimes int
+func unmarshal[T any](data json.RawMessage) T {
+	var obj T
 
-	tssUpdateCh chan interface{}
+	err := json.Unmarshal(data, &obj)
+	if err != nil || data == nil {
+		panic(fmt.Errorf("unmarshal data:%v, error: %w", data, err))
+	}
 
-	keygenReqCh     chan interface{}
-	keygenReceiveCh chan interface{}
-
-	keyOutCh chan tsslib.Message
-	keyEndCh chan *keygen.LocalPartySaveData
-
-	sigStartCh   chan interface{}
-	sigReceiveCh chan interface{}
-
-	sigFailChan    chan interface{}
-	sigFinishChan  chan interface{}
-	sigTimeoutChan chan interface{}
-
-	// [request_id][vote_address]MsgSign
-	sigMap        map[string]map[string]interface{}
-	sigTimeoutMap map[string]time.Time
-	sigMu         sync.RWMutex
-
-	once sync.Once
+	return obj
 }

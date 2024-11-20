@@ -1,134 +1,325 @@
 package tss
 
 import (
-	"context"
-	tsslib "github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/nuvosphere/nudex-voter/internal/config"
-	"reflect"
-	"time"
-	"unsafe"
+	"errors"
+	"fmt"
+	"math/big"
 
-	"github.com/nuvosphere/nudex-voter/internal/state"
-	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-func (tss *TSSService) handleSigStart(ctx context.Context, event interface{}) {
-	switch e := event.(type) {
-	case types.MsgSignKeyPrepareMessage:
-		log.Debugf("Event handleSigStart is of type MsgSignKeyPrepareMessage, request id %s", e.RequestId)
-		if err := tss.handleSigStartKeyPrepare(ctx, e); err != nil {
-			log.Errorf("Error handleSigStart MsgSignKeyPrepareMessage, %v", err)
-			tss.state.EventBus.Publish(state.SigFailed, e)
+var (
+	ErrTaskNotFound          = gorm.ErrRecordNotFound
+	ErrTaskCompleted         = fmt.Errorf("task already completed")
+	ErrTaskOrderInconsistent = fmt.Errorf("order of the task is inconsistent")
+	ErrTaskIdWrong           = fmt.Errorf("taskId is wrong")
+	ErrTaskSignatureMsgWrong = fmt.Errorf("task signature msg is wrong")
+	ErrGroupIdWrong          = fmt.Errorf("groupId is wrong")
+	ErrSessionIdWrong        = fmt.Errorf("sessionId is wrong")
+	ErrProposerWrong         = fmt.Errorf("task proposer is wrong")
+)
+
+func (m *Scheduler) Validate(msg SessionMessage[ProposalID, Proposal]) error {
+	if m.IsDiscussed(msg.ProposalID) {
+		return fmt.Errorf("taskID:%v, %w", msg.ProposalID, ErrTaskCompleted)
+	}
+
+	if msg.Proposer != m.Proposer() {
+		return fmt.Errorf("proposer:(%v, %v), %w", msg.Proposer, m.Proposer(), ErrProposerWrong)
+	}
+
+	return nil
+}
+
+func (m *Scheduler) GetTask(taskID int64) (*db.Task, error) {
+	task := &db.Task{}
+
+	err := m.stateDB.
+		Preload(clause.Associations).
+		Where("task_id", taskID).
+		Last(task).
+		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		itask, err := m.voterContract.Tasks(big.NewInt(taskID))
+		if err != nil {
+			return nil, err
 		}
-	default:
-		log.Debug("Unknown event handleSigStart type")
+
+		return &db.Task{
+			TaskId:    itask.Id,
+			Context:   itask.Context,
+			Submitter: itask.Submitter.Hex(),
+		}, nil
 	}
+
+	if err != nil {
+		return nil, fmt.Errorf("taskID:%v, %w", taskID, err)
+	}
+
+	return task, err
 }
 
-func (tss *TSSService) handleSigReceive(ctx context.Context, event interface{}) {
+func (m *Scheduler) GenKeyProposal() Proposal {
+	return *helper.SenateProposal
 }
 
-func (tss *TSSService) handleSigFailed(ctx context.Context, event interface{}, reason string) {
+func (m *Scheduler) ReShareGroupProposal() Proposal {
+	return *helper.SenateProposal
 }
 
-func (tss *TSSService) handleSigFinish(ctx context.Context, event interface{}) {
+func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
+	// todo
+	return big.Int{}
 }
 
-func (tss *TSSService) checkTimeouts() {
-	tss.sigMu.Lock()
-	now := time.Now()
-	expiredRequests := make([]string, 0)
-
-	for requestId, expireTime := range tss.sigTimeoutMap {
-		if now.After(expireTime) {
-			log.Debugf("Request %s has timed out, removing from sigMap", requestId)
-			expiredRequests = append(expiredRequests, requestId)
+func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
+	session := m.GetSession(msg.SessionID)
+	if session != nil {
+		from := session.PartyID(msg.FromPartyId)
+		// && !session.Equal(msg.FromPartyId)
+		if from != nil && (msg.IsBroadcast || session.Included(msg.ToPartyIds)) {
+			session.Post(msg.State(from))
 		}
-	}
-	tss.sigMu.Unlock()
 
-	for _, requestId := range expiredRequests {
-		tss.removeSigMap(requestId, true)
+		return true
 	}
+
+	return false
 }
 
-func (tss *TSSService) checkKeygen(ctx context.Context) {
-	if tss.party == nil {
-		log.Debug("Party not init, start to setup")
-		tss.setup()
-		return
-	}
+// processReceivedProposal handler received msg from other node.
+func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
+	log.Debug("process received proposal id", msg.ProposalID)
 
-	localPartySaveData, err := loadTSSData()
-	if err == nil {
-		if localPartySaveData.ECDSAPub != nil {
-			return
-		}
-	}
-
-	if tss.setupTime.IsZero() {
-		tss.setup()
-		return
-	}
-
-	party := reflect.ValueOf(tss.party.BaseParty).Elem()
-	round := party.FieldByName("rnd")
-	if !round.CanInterface() {
-		round = reflect.NewAt(round.Type(), unsafe.Pointer(round.UnsafeAddr())).Elem()
-	}
-	rnd, ok := round.Interface().(tsslib.Round)
+	ok := m.OpenSession(msg)
 	if ok {
-		if rnd.RoundNumber() == 1 {
-			if tss.round1P2pMessage != nil {
-				log.Debug("Party set up timeout, send first round p2p message again")
-				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
-				if err == nil {
-					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
-				}
-			}
-		} else if rnd.RoundNumber() == 2 {
-			if tss.round1P2pMessage != nil && tss.round1MessageSendTimes < 3 {
-				tss.round1MessageSendTimes++
-				log.Debugf("Reached round2, send first round p2p message the %d time", tss.round1MessageSendTimes)
-				err = tss.libp2p.PublishMessage(ctx, *tss.round1P2pMessage)
-				if err == nil {
-					log.Debugf("Publish p2p message tssUpdateMessage again: RequestId=%s", tss.round1P2pMessage.RequestId)
-				}
-			}
-		}
+		return nil
 	}
 
-	if time.Now().After(tss.setupTime.Add(config.AppConfig.TssSigTimeout)) {
-		if err := tss.party.FirstRound().Start(); err != nil {
-			log.Errorf("TSS keygen process failed to start: %v, start to setup again", err)
-			tss.setup()
+	// build new session
+	switch msg.Type {
+	case GenKeySessionType:
+		return m.JoinGenKeySession(msg)
+	case ReShareGroupSessionType:
+		return m.JoinReShareGroupSession(msg)
+	case SignTaskSessionType:
+		task, err := m.GetTask(msg.ProposalID)
+		if err != nil {
+			return err
+		}
+
+		return m.JoinSignTaskSession(msg, task)
+	case TxSignatureSessionType: // blockchain wallet tx signature
+		task, err := m.GetTask(msg.ProposalID)
+		if err != nil {
+			return err
+		}
+
+		return m.JoinTxSignatureSession(msg, task)
+	default:
+		return fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
+	}
+}
+
+func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) error {
+	// check groupID
+	if msg.GroupID != m.Participants().GroupID() {
+		return fmt.Errorf("GenKeySessionType: %w", ErrGroupIdWrong)
+	}
+	// check msg
+	unSignMsg := m.GenKeyProposal()
+	if unSignMsg.String() != msg.Proposal.String() {
+		return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
+	}
+
+	ec := helper.ECDSA
+
+	switch msg.ProposalID {
+	case helper.SenateProposalIDOfEDDSA:
+		ec = helper.EDDSA
+	}
+
+	_ = m.NewGenerateKeySession(
+		ec,
+		msg.ProposalID,
+		msg.SessionID,
+		msg.Signer,
+		&msg.Proposal,
+	)
+
+	m.OpenSession(msg)
+
+	return nil
+}
+
+func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal]) error {
+	// todo How find new part?
+	ng := m.newGroup.Load()
+	if ng == nil {
+		return fmt.Errorf("newGroup: %w", ErrGroupIdWrong)
+	}
+
+	newGroup := ng.(*NewGroup)
+	newPartners := newGroup.NewParts
+	// check groupID
+	if msg.GroupID != m.Participants().GroupID() {
+		return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
+	}
+	// check msg
+	unSignMsg := m.ReShareGroupProposal() // todo add or remove address
+	if unSignMsg.String() != msg.Proposal.String() {
+		return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
+	}
+
+	ec := helper.ECDSA
+
+	switch msg.ProposalID {
+	case helper.SenateProposalIDOfEDDSA:
+		ec = helper.EDDSA
+	}
+
+	_ = m.NewReShareGroupSession(
+		ec,
+		msg.ProposalID,
+		&msg.Proposal,
+		m.Participants(),
+		newPartners,
+	)
+
+	m.OpenSession(msg)
+
+	return nil
+}
+
+func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal], task *db.Task) error {
+	//localPartySaveData := m.partyData.GetData(ec)
+	//unSignMsg := m.TaskProposal(task)
+	//if unSignMsg.String() != msg.Proposal.String() {
+	//	return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
+	//}
+	ec := m.CurveType(task)
+
+	switch task.TaskType {
+	case db.TaskTypeCreateWallet:
+		localPartySaveData, keyDerivationDelta, unSignMsg := m.GenerateCreateWalletProposal(task.CreateWalletTask)
+		if unSignMsg.String() != msg.Proposal.String() {
+			return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
+		}
+
+		m.NewSignSession(
+			ec,
+			msg.SessionID,
+			ProposalID(task.TaskId),
+			unSignMsg,
+			localPartySaveData,
+			keyDerivationDelta,
+		)
+
+	case db.TaskTypeDeposit:
+
+	case db.TaskTypeWithdrawal:
+
+	default:
+		return fmt.Errorf("taskID %d: %w: %v", task.TaskId, ErrTaskIdWrong, task.TaskType)
+	}
+
+	//_ = m.NewSignSession(
+	//	ec,
+	//	msg.SessionID,
+	//	msg.ProposalID,
+	//	&msg.Proposal,
+	//	*localPartySaveData,
+	//	keyDerivationDelta,
+	//)
+
+	return nil
+}
+
+func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task *db.Task) error {
+	return nil
+}
+
+func (m *Scheduler) CurveType(task *db.Task) helper.CurveType {
+	// todo
+	return helper.ECDSA
+}
+
+func (m *Scheduler) GenerateCreateWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int, *big.Int) {
+	//taskId := big.NewInt(int64(task.TaskId))
+	//var (
+	//	contractAddress common.Address
+	//	calldata        []byte
+	//)
+	//unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(contractAddress, calldata, taskId)
+	//if err != nil {
+	//	log.Error("GenerateVerifyTaskUnSignMsg error", err)
+	//	return
+	//}
+	coinType := getCoinTypeByChain(task.Chain)
+	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
+	param, err := path.ToParams()
+	utils.Assert(err)
+
+	ec := m.CurveType(&task.Task)
+	localPartySaveData := m.partyData.GetData(ec)
+
+	l := *localPartySaveData
+
+	switch ec {
+	case helper.ECDSA:
+		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(*l.ECDSAData().ECDSAPub.ToECDSAPubKey(), param.Indexes())
+		utils.Assert(err)
+
+		err = wallet.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, l.ECDSAData(), &extendedChildPk.PublicKey, ec.EC())
+		utils.Assert(err)
+
+		return l, keyDerivationDelta, big.NewInt(100) // todo
+	default:
+		panic(fmt.Errorf("unknown EC type: %v", ec))
+	}
+}
+
+func (m *Scheduler) processTaskProposal(task db.ITask) {
+	switch taskData := task.(type) {
+	case *db.CreateWalletTask:
+		ec := m.CurveType(&taskData.Task)
+		localPartySaveData, keyDerivationDelta, unSignMsg := m.GenerateCreateWalletProposal(taskData)
+
+		m.NewSignSession(
+			ec,
+			helper.ZeroSessionID,
+			ProposalID(taskData.TaskId),
+			unSignMsg,
+			localPartySaveData,
+			keyDerivationDelta,
+		)
+	case *db.DepositTask:
+		account := &db.Account{}
+
+		err := m.stateDB.
+			Preload(clause.Associations).
+			Where("chain_id = ? AND address = ?", taskData.ChainId, taskData.TargetAddress).
+			Last(account).
+			Error
+		if err != nil {
+			log.Error("db.DepositTask get account error", err)
 			return
 		}
-		log.Debug("Party set up timeout, start local party first round again")
-		tss.setupTime = time.Now()
-	}
-}
 
-func (tss *TSSService) sigExists(requestId string) (map[string]interface{}, bool) {
-	tss.sigMu.RLock()
-	defer tss.sigMu.RUnlock()
-	data, ok := tss.sigMap[requestId]
-	return data, ok
-}
-
-func (tss *TSSService) removeSigMap(requestId string, reportTimeout bool) {
-	tss.sigMu.Lock()
-	defer tss.sigMu.Unlock()
-	if reportTimeout {
-		if voteMap, ok := tss.sigMap[requestId]; ok {
-			if voteMsg, ok := voteMap[tss.address.Hex()]; ok {
-				log.Debugf("Report timeout when remove sig map, found msg, request id %s, proposer %s",
-					requestId, tss.address.Hex())
-				tss.state.EventBus.Publish(state.SigTimeout, voteMsg)
-			}
+		switch taskData.AssetType {
+		case db.AssetTypeMain:
+		case db.AssetTypeErc20:
+		default:
+			log.Errorf("unknown asset type: %v", taskData.AssetType)
 		}
+
+	case *db.WithdrawalTask:
 	}
-	delete(tss.sigMap, requestId)
-	delete(tss.sigTimeoutMap, requestId)
 }

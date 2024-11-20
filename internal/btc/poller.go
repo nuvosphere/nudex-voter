@@ -5,15 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/state"
-	"github.com/nuvosphere/nudex-voter/internal/types"
-	"gorm.io/gorm"
 	"sync"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
+	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type SigHashQueue struct {
@@ -42,7 +43,7 @@ type BTCPoller struct {
 	sigTimeoutChan chan interface{}
 
 	sigHashQueue *SigHashQueue
-	sigHashMu    sync.Mutex
+	sigHashMu    sync.Mutex //lint:ignore U1000 Ignore unused
 }
 
 func NewBTCPoller(state *state.State, db *gorm.DB) *BTCPoller {
@@ -86,6 +87,7 @@ func (p *BTCPoller) GetBlockHashForTx(txHash chainhash.Hash) (*chainhash.Hash, e
 	}
 
 	blockHashBytes := btcTxOutput.PkScript[:32] // Assuming the block hash is the first 32 bytes of PkScript
+
 	blockHash, err := chainhash.NewHash(blockHashBytes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hash from block hash bytes: %v", err)
@@ -93,6 +95,7 @@ func (p *BTCPoller) GetBlockHashForTx(txHash chainhash.Hash) (*chainhash.Hash, e
 
 	return blockHash, nil
 }
+
 func (p *BTCPoller) GetBlockHeader(blockHash *chainhash.Hash) (*wire.BlockHeader, error) {
 	var blockData db.BtcBlockData
 	if err := p.db.Where("block_hash = ?", blockHash.String()).First(&blockData).Error; err != nil {
@@ -100,7 +103,8 @@ func (p *BTCPoller) GetBlockHeader(blockHash *chainhash.Hash) (*wire.BlockHeader
 	}
 
 	header := wire.BlockHeader{}
-	err := header.Deserialize(bytes.NewReader([]byte(blockData.Header)))
+
+	err := header.Deserialize(bytes.NewReader(blockData.Header))
 	if err != nil {
 		return nil, fmt.Errorf("failed to deserialize block header: %v", err)
 	}
@@ -129,6 +133,7 @@ func (p *BTCPoller) GetBlock(height uint64) (*db.BtcBlockData, error) {
 	if err := p.db.Where("block_height = ?", height).First(&blockData).Error; err != nil {
 		return nil, fmt.Errorf("error retrieving block from database: %v", err)
 	}
+
 	return &blockData, nil
 }
 
@@ -142,5 +147,5 @@ func (p *BTCPoller) handleConfirmedBlock(block *types.BtcBlockExt) {
 	}
 
 	// push to event bus
-	p.state.EventBus.Publish(state.BlockScanned, *block)
+	p.state.Bus().Publish(eventbus.EventBlockScanned{}, *block)
 }
