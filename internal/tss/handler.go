@@ -3,6 +3,9 @@ package tss
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"math/big"
 
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -252,16 +255,6 @@ func (m *Scheduler) CurveType(task *db.Task) helper.CurveType {
 }
 
 func (m *Scheduler) GenerateCreateWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int, *big.Int) {
-	//taskId := big.NewInt(int64(task.TaskId))
-	//var (
-	//	contractAddress common.Address
-	//	calldata        []byte
-	//)
-	//unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(contractAddress, calldata, taskId)
-	//if err != nil {
-	//	log.Error("GenerateVerifyTaskUnSignMsg error", err)
-	//	return
-	//}
 	coinType := getCoinTypeByChain(task.Chain)
 	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
 	param, err := path.ToParams()
@@ -280,7 +273,19 @@ func (m *Scheduler) GenerateCreateWalletProposal(task *db.CreateWalletTask) (hel
 		err = wallet.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, l.ECDSAData(), &extendedChildPk.PublicKey, ec.EC())
 		utils.Assert(err)
 
-		return l, keyDerivationDelta, big.NewInt(100) // todo
+		operations := []contracts.Operation{
+			{
+				ManagerAddr: common.HexToAddress(config.AppConfig.AccountContract),
+				State:       TaskStateCompleted,
+				TaskId:      task.TaskID(),
+				OptData:     []byte("example data"),
+			},
+		}
+
+		unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+		utils.Assert(err)
+
+		return l, keyDerivationDelta, new(big.Int).SetBytes(unSignMsg.Bytes())
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}

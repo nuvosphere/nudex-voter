@@ -106,12 +106,12 @@ func (v *VoterContractMocker) TaskCompletionThreshold() (*big.Int, error) {
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte) []byte {
+func (v *VoterContractMocker) EncodeVerifyAndCall(operations []contracts.Operation, signature []byte) []byte {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations contracts.Operation) (common.Hash, error) {
+func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (common.Hash, error) {
 	// TODO implement me
 	panic("implement me")
 }
