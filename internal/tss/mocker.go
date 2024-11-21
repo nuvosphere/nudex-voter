@@ -111,7 +111,7 @@ func (v *VoterContractMocker) EncodeVerifyAndCall(_target common.Address, _data 
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(contractAddress common.Address, calldata []byte, taskID *big.Int) (common.Hash, error) {
+func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations contracts.Operation) (common.Hash, error) {
 	// TODO implement me
 	panic("implement me")
 }
