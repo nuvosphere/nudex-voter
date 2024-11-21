@@ -6,13 +6,13 @@ import (
 	"math/big"
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
-	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
@@ -20,6 +20,7 @@ import (
 type P2PMocker struct {
 	typeBindEvent *sync.Map // MessageType:eventbus.Event
 	bus           eventbus.Bus
+	nodeCount     int
 }
 
 func NewP2PMocker(bus eventbus.Bus) *P2PMocker {
@@ -49,8 +50,12 @@ func (p *P2PMocker) PublishMessage(ctx context.Context, msg any) error {
 	return nil
 }
 
+func (p *P2PMocker) SetOnlinePeerCount(nodeCount int) {
+	p.nodeCount = nodeCount
+}
+
 func (p *P2PMocker) OnlinePeerCount() int {
-	return testutil.TestPartyCount
+	return p.nodeCount
 }
 
 func (p *P2PMocker) IsOnline(partyID string) bool {
@@ -60,12 +65,13 @@ func (p *P2PMocker) IsOnline(partyID string) bool {
 type VoterContractMocker struct {
 	nonce        big.Int
 	proposer     common.Address
-	participants types.Participants
+	participants atomic.Value // types.Participants
 }
 
 func NewVoterContractMocker() *VoterContractMocker {
 	return &VoterContractMocker{
-		nonce: *big.NewInt(1),
+		nonce:        *big.NewInt(1),
+		participants: atomic.Value{},
 	}
 }
 
@@ -117,15 +123,16 @@ func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(contractAddress common
 }
 
 func (v *VoterContractMocker) SetParticipants(pp types.Participants) {
-	v.participants = pp
+	v.participants.Store(pp)
 }
 
 func (v *VoterContractMocker) Participants() (types.Participants, error) {
-	return v.participants, nil
+	return v.participants.Load().(types.Participants), nil
 }
 
 func (v *VoterContractMocker) IsParticipant(participant common.Address) (bool, error) {
-	return slices.Contains(v.participants, participant), nil
+	participants := v.participants.Load().(types.Participants)
+	return slices.Contains(participants, participant), nil
 }
 
 func (v *VoterContractMocker) GetRandomParticipant(participant common.Address) (common.Address, error) {

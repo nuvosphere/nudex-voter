@@ -1,11 +1,11 @@
 package tss
 
 import (
-	"context"
 	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -86,23 +87,24 @@ func TestCreateAddress(t *testing.T) {
 	}
 }
 
-func TestScheduler(t *testing.T) {
+func TestSchedulerOfNewGroup(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)
 
-	ss := make([]*Scheduler, 0, len(accounts))
+	schedulerList := make([]*Scheduler, 0, len(accounts))
 
 	bus := eventbus.NewBus()
 	p2pMocker := NewP2PMocker(bus)
+	p2pMocker.SetOnlinePeerCount(testutil.TestPartyCount)
 
-	voterContractMocker := NewVoterContractMocker()
+	submitters := types.Participants{}
 
-	var submitters types.Participants
+	var proposer common.Address
 
 	for i := 0; i < testutil.TestPartyCount; i++ {
 		submitter := accounts[i].Address
 		if i == 2 {
-			voterContractMocker.SetProposer(submitter)
+			proposer = submitter
 		}
 
 		submitters = append(submitters, submitter)
@@ -110,66 +112,201 @@ func TestScheduler(t *testing.T) {
 
 	t.Log("submitters", submitters)
 
-	for i, submitter := range submitters {
-		t.Logf("index: %d submitter: %v, submitter:%v", i, submitters[i], submitter)
-	}
+	createNode := func(index int, submitter common.Address, runMode int) *Scheduler {
+		stateDB := createDB(t, index)
+		t.Logf("index: %d, submitter:%v", index, submitter)
 
-	voterContractMocker.SetParticipants(submitters)
+		voterContractMocker := NewVoterContractMocker()
+		copyParts := types.Participants{}
+		copyParts = append(copyParts, submitters...)
+		t.Logf("copyParts: %v", copyParts)
+		voterContractMocker.SetParticipants(copyParts)
+		voterContractMocker.SetProposer(proposer)
 
-	for i, submitter := range submitters {
-		d := createDB(t, i)
-		t.Logf("index: %d submitter: %v, submitter:%v", i, submitters[i], submitter)
-		s := NewScheduler(false, p2pMocker, bus, d, voterContractMocker, submitter)
-		basePath := filepath.Join("./", strconv.Itoa(i))
+		s := NewScheduler(false, runMode, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)
 
 		s.partyData.basePath = basePath
-		ss = append(ss, s)
+		schedulerList = append(schedulerList, s)
+
+		return s
 	}
 
-	for _, s := range ss {
+	// create node
+	for i, submitter := range submitters {
+		createNode(i, submitter, BootMode) // specifies the run mode for the first time
+	}
+
+	// run node
+	for _, s := range schedulerList {
 		go s.Start()
 	}
 
 	time.Sleep(10 * time.Minute)
-	lo.ForEach(ss, func(item *Scheduler, index int) { item.Stop() })
+	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
-func TestContext(t *testing.T) {
-	utils.SkipCI(t)
+const TestNewPartyCount = 6
 
-	ctx, cancel := context.WithCancel(context.Background())
+var newAccount = Account{
+	PK:      "a451cf94141706b5f426dab712cf99753f7f3101abb3125ad6541cd661f35230",
+	Address: common.HexToAddress("0xF5D09AE932101D53DDe91659686285F316e4C613"),
+}
+
+func TestSchedulerOfReGroup(t *testing.T) {
+	utils.SkipCI(t)
+	log.SetLevel(log.DebugLevel)
+
+	schedulerList := make([]*Scheduler, 0, len(accounts))
+
+	bus := eventbus.NewBus()
+	p2pMocker := NewP2PMocker(bus)
+	p2pMocker.SetOnlinePeerCount(testutil.TestPartyCount)
+
+	submitters := types.Participants{}
+
+	var proposer common.Address
 
 	for i := 0; i < testutil.TestPartyCount; i++ {
-		go func() {
-			<-ctx.Done()
-			t.Logf("i := %d", i)
-		}()
+		submitter := accounts[i].Address
+		if i == 2 {
+			proposer = submitter
+		}
+
+		submitters = append(submitters, submitter)
 	}
 
-	t.Log("---------1")
-	time.Sleep(10 * time.Second)
-	t.Log("---------2")
-	cancel()
-	t.Log("---------3")
-	time.Sleep(10 * time.Second)
+	t.Log("submitters", submitters)
 
-	ticker := time.NewTicker(1 * time.Second)
+	createNode := func(index int, submitter common.Address, runMode int) *Scheduler {
+		stateDB := createDB(t, index)
+		t.Logf("index: %d, submitter:%v", index, submitter)
 
-	go func() {
-	L:
-		for {
-			select {
-			case <-ctx.Done():
-				t.Log("---------Done")
-				break L
-			case <-ticker.C:
-				t.Log("---------ticker")
-			}
-		}
-	}()
-	time.Sleep(10 * time.Second)
-	cancel()
-	time.Sleep(10 * time.Second)
+		voterContractMocker := NewVoterContractMocker()
+		copyParts := types.Participants{}
+		copyParts = append(copyParts, submitters...)
+		t.Logf("copyParts: %v", copyParts)
+		voterContractMocker.SetParticipants(copyParts)
+		voterContractMocker.SetProposer(proposer)
+
+		s := NewScheduler(false, runMode, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		basePath := filepath.Join("./", strconv.Itoa(index))
+		err := os.MkdirAll(basePath, os.ModePerm)
+		assert.NoError(t, err)
+
+		s.partyData.basePath = basePath
+		schedulerList = append(schedulerList, s)
+
+		return s
+	}
+
+	// 1.create old node
+	for i, submitter := range submitters {
+		createNode(i, submitter, NormalMode)
+	}
+
+	// 2.run old node
+	for _, s := range schedulerList {
+		go s.Start()
+	}
+
+	time.Sleep(5 * time.Second)
+
+	t.Log("new node join")
+	// 3.create new node
+	s := createNode(5, newAccount.Address, JoinMode) // specifies the run mode for the join node
+	t.Logf("new node: %v", s.Participants())
+	time.Sleep(1 * time.Second)
+
+	// 4.run new node
+	go s.Start()
+
+	// 5.send new participant tx to contact online by owner
+	// generate `ParticipantEvent`
+	event := &db.ParticipantEvent{
+		EventName:   layer2.ParticipantAdded,
+		Address:     newAccount.Address.String(),
+		BlockNumber: 10,
+	}
+
+	time.Sleep(5 * time.Second)
+
+	t.Log("send new join node event")
+	// 6.leader(proposer) listen contact event(ParticipantEvent)
+	// start regroup
+	bus.Publish(eventbus.EventTask{}, event)
+
+	// 7.wait end
+	time.Sleep(10 * time.Minute)
+	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
+}
+
+func TestValue(t *testing.T) {
+	newGroup := NewGroup{
+		Event:    nil,
+		NewParts: []common.Address{newAccount.Address},
+		OldParts: nil,
+	}
+
+	value := atomic.Value{}
+	ll := value.Load()
+	assert.Nil(t, ll)
+	t.Log(ll)
+	value.Store(&newGroup)
+	t.Log(value.Load())
+	t.Logf("&loadValue = %p, &newGroup = %p", value.Load(), &newGroup)
+
+	var null *NewGroup
+
+	t.Logf("null %v", null)
+
+	if null == nil {
+		t.Log("null == nil")
+	}
+
+	var obj any = null
+
+	t.Logf("obj %v", obj)
+	// assert.Equal(t, nil, obj) !!!
+	assert.NotEqual(t, obj, nil)
+	assert.Equal(t, obj, null)
+	value.Store(null)
+	assert.Nil(t, value.Load())
+
+	if value.Load() == null {
+		t.Log("value.Load() == null, var null *NewGroup")
+	}
+
+	if value.Load() != nil {
+		t.Log("value.Load() != nil")
+	}
+
+	t.Log(value.Load())
+	t.Logf("&loadValue = %p, &newGroup = %p", value.Load(), &newGroup)
+
+	otherValue := atomic.Value{}
+	otherValue.Store(newGroup)
+	loadValue := otherValue.Load().(NewGroup)
+	assert.Equal(t, loadValue, newGroup)
+	assert.Equal(t, otherValue.Load(), newGroup)
+
+	if &loadValue == &newGroup {
+		t.Log("&loadValue == &newGroup")
+	}
+
+	otherGroup := NewGroup{
+		Event:    nil,
+		NewParts: nil,
+		OldParts: nil,
+	}
+
+	if &loadValue != &otherGroup {
+		t.Log("&loadValue != &otherGroup")
+		t.Logf("&loadValue = %p, &otherGroup = %p", &loadValue, &otherGroup)
+	}
+
+	assert.Equal(t, &loadValue, &newGroup)
+	t.Logf("&loadValue = %p, &newGroup = %p", &loadValue, &newGroup)
 }

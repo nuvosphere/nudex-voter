@@ -83,7 +83,7 @@ type LocalPartySaveData struct {
 }
 
 func BuildECDSALocalPartySaveData() *LocalPartySaveData {
-	return &LocalPartySaveData{}
+	return &LocalPartySaveData{ty: ECDSA}
 }
 
 func BuildEDDSALocalPartySaveData() *LocalPartySaveData {
