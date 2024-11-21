@@ -53,17 +53,17 @@ func (l *Layer2Listener) Proposer() (common.Address, error) {
 func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (common.Hash, error) {
 	nonce, err := l.contractVotingManager.TssNonce(nil)
 	if err != nil {
-		return common.Hash{}, nil
+		return common.Hash{}, err
 	}
 
 	nonce.Add(nonce, big.NewInt(1))
 
 	encodeData, err := utils.AbiEncodePacked(nonce, operations)
 	if err != nil {
-		return common.Hash{}, nil
+		return common.Hash{}, err
 	}
 
-	return crypto.Keccak256Hash(encodeData), nil
+	return crypto.Keccak256Hash(encodeData), err
 }
 
 func (l *Layer2Listener) NextSubmitter() (common.Address, error) {

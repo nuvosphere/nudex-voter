@@ -3,12 +3,12 @@ package tss
 import (
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
