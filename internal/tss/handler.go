@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
@@ -80,7 +81,7 @@ func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
 }
 
 func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
-	session := m.GetSession(msg.SessionID)
+	session := m.GetSession(msg.ProposalID)
 	if session != nil {
 		from := session.PartyID(msg.FromPartyId)
 		// && !session.Equal(msg.FromPartyId)
@@ -159,17 +160,38 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 	return nil
 }
 
-func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal]) error {
-	// todo How find new part?
-	ng := m.newGroup.Load()
-	if ng == nil {
-		return fmt.Errorf("newGroup: %w", ErrGroupIdWrong)
+func (m *Scheduler) isReShareGroup() bool {
+	newGroup := m.newGroup.Load().(*NewGroup)
+	if newGroup != nullNewGroup {
+		return true
 	}
 
-	newGroup := ng.(*NewGroup)
-	newPartners := newGroup.NewParts
+	partners, err := m.voterContract.Participants()
+	utils.Assert(err)
+
+	old := m.partners.Load().(types.Participants)
+	if old.GroupID() != partners.GroupID() {
+		m.newGroup.Store(&NewGroup{
+			NewParts: partners,
+			OldParts: old,
+		})
+
+		return true
+	}
+
+	return false
+}
+
+func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal]) error {
+	// todo How find new part?
+	is := m.isReShareGroup()
+	if !is {
+		return fmt.Errorf("not new group: %w", ErrGroupIdWrong)
+	}
+
+	newGroup := m.newGroup.Load().(*NewGroup)
 	// check groupID
-	if msg.GroupID != m.Participants().GroupID() {
+	if msg.GroupID != newGroup.NewParts.GroupID() {
 		return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
 	}
 	// check msg
@@ -186,11 +208,12 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	}
 
 	_ = m.NewReShareGroupSession(
+		m.runMode.Load(),
 		ec,
 		msg.ProposalID,
 		&msg.Proposal,
-		m.Participants(),
-		newPartners,
+		newGroup.OldParts,
+		newGroup.NewParts,
 	)
 
 	m.OpenSession(msg)

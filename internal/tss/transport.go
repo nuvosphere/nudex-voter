@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -81,14 +82,13 @@ func NewParam(
 	allPartners types.Participants,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
 	partyIDs := createPartyIDsByGroup(ec, allPartners)
-	part := new(big.Int).SetBytes(localSubmitter.Bytes())
-	part = new(big.Int).Add(part, big.NewInt(int64(ec)))
+
+	part := PartyKey(ec, allPartners, localSubmitter)
 	partyID := partyIDs.FindByKey(part)
+
 	peerCtx := tss.NewPeerContext(partyIDs)
-	params := tss.NewParameters(ec.EC(), peerCtx, partyID, len(partyIDs), allPartners.Threshold())
-	partyIdMap := lo.SliceToMap(partyIDs, func(item *tss.PartyID) (string, *tss.PartyID) {
-		return item.Id, item
-	})
+	params := tss.NewParameters(ec.EC(), peerCtx, partyID, partyIDs.Len(), allPartners.Threshold())
+	partyIdMap := lo.SliceToMap(partyIDs, func(item *tss.PartyID) (string, *tss.PartyID) { return strings.ToLower(item.Id), item })
 
 	return params, partyIdMap
 }
@@ -158,11 +158,11 @@ func (s *sessionTransport[T, M, D]) PartyID(id string) *tss.PartyID {
 }
 
 func (s *sessionTransport[T, M, D]) Equal(id string) bool {
-	return s.party.PartyID().Id == id
+	return strings.EqualFold(s.party.PartyID().Id, id)
 }
 
 func (s *sessionTransport[T, M, D]) Included(ids []string) bool {
-	return slices.Contains(ids, s.party.PartyID().Id)
+	return slices.Contains(ids, strings.ToLower(s.party.PartyID().Id))
 }
 
 func (s *sessionTransport[T, M, D]) SessionID() helper.SessionID {
@@ -209,8 +209,8 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 			Proposer:                s.Proposer(),
 			ProposalID:              s.ProposalID(),
 			Proposal:                s.session.Proposal,
-			FromPartyId:             routing.From.Id,
-			ToPartyIds:              lo.Map(routing.To, func(to *tss.PartyID, _ int) string { return to.Id }),
+			FromPartyId:             strings.ToLower(routing.From.Id),
+			ToPartyIds:              lo.Map(routing.To, func(to *tss.PartyID, _ int) string { return strings.ToLower(to.Id) }),
 			IsBroadcast:             routing.IsBroadcast,
 			IsToOldCommittee:        routing.IsToOldCommittee,
 			IsToOldAndNewCommittees: routing.IsToOldAndNewCommittees,

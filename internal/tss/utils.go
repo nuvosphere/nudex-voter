@@ -37,27 +37,16 @@ func Partners() types.Participants {
 	)
 }
 
+func PartyKey(ec helper.CurveType, participants types.Participants, address common.Address) *big.Int {
+	key := new(big.Int).Add(address.Big(), big.NewInt(int64(ec)))
+	return key.Add(key, participants.GroupID().Big())
+}
+
 func createPartyIDsByGroup(ec helper.CurveType, addressList types.Participants) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	for i, address := range addressList {
-		key := new(big.Int).Add(address.Big(), big.NewInt(int64(ec)))
-		tssAllPartyIDs[i] = tss.NewPartyID(
-			strings.ToLower(key.Text(16)),
-			strings.ToLower(key.Text(16))+"-"+ec.CurveName(),
-			key,
-		)
-	}
-
-	return tss.SortPartyIDs(tssAllPartyIDs)
-}
-
-func createOldPartyIDsByGroup(ec helper.CurveType, addressList types.Participants) tss.SortedPartyIDs {
-	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
-
-	for i, address := range addressList {
-		key := new(big.Int).Add(address.Big(), big.NewInt(int64(ec)))
-		key = new(big.Int).Add(key, big.NewInt(1)) // key + 1
+		key := PartyKey(ec, addressList, address)
 		tssAllPartyIDs[i] = tss.NewPartyID(
 			strings.ToLower(key.Text(16)),
 			strings.ToLower(key.Text(16))+"-"+ec.CurveName(),
@@ -246,7 +235,8 @@ func RunReshare(
 
 	switch key.CurveType() {
 	case helper.ECDSA:
-		party = ecdsaResharing.NewLocalParty(params, *key.ECDSAData(), outCh, ecdsaEndCh)
+		data := key.ECDSAData()
+		party = ecdsaResharing.NewLocalParty(params, *data, outCh, ecdsaEndCh)
 
 	case helper.EDDSA:
 		party = eddsaResharing.NewLocalParty(params, *key.EDDSAData(), outCh, eddsaEndCh)
@@ -263,12 +253,8 @@ func RunReshare(
 			return
 		case data := <-ecdsaEndCh:
 			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
-
-			close(ecdsaEndCh)
 		case data := <-eddsaEndCh:
 			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
-
-			close(eddsaEndCh)
 		}
 	}()
 

@@ -26,8 +26,15 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	NormalMode = iota
+	BootMode
+	JoinMode
+)
+
 type Scheduler struct {
 	isProd             bool
+	runMode            *atomic.Int64
 	p2p                p2p.P2PService
 	bus                eventbus.Bus
 	ctx                context.Context
@@ -43,18 +50,18 @@ type Scheduler struct {
 	localSubmitter     common.Address // submit = partyID
 	proposer           *atomic.Value  // current submitter
 	partners           *atomic.Value  // types.Participants
+	newGroup           *atomic.Value  // NewGroup
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
 	stateDB            *gorm.DB
 	submitterChosen    *db.SubmitterChosen
 	pendingProposal    chan any
 	notify             chan struct{}
-	tssMsgCh           <-chan any   // eventbus channel
-	pendingTask        <-chan any   // eventbus channel
-	newGroup           atomic.Value // todo NewGroup
+	tssMsgCh           <-chan any // eventbus channel
+	pendingTask        <-chan any // eventbus channel
 }
 
-func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
+func NewScheduler(isProd bool, runMode int, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
 	proposer, err := voterContract.Proposer()
 	utils.Assert(err)
@@ -68,8 +75,15 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	ps := atomic.Value{}
 	ps.Store(partners)
 
+	r := &atomic.Int64{}
+	r.Store(int64(runMode))
+
+	newGroup := &atomic.Value{}
+	newGroup.Store(nullNewGroup)
+
 	return &Scheduler{
 		isProd:             isProd,
+		runMode:            r,
 		p2p:                p,
 		bus:                bus,
 		srw:                sync.RWMutex{},
@@ -84,6 +98,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 		localSubmitter:     localSubmitter,
 		proposer:           &pp,
 		partners:           &ps,
+		newGroup:           newGroup,
 		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
 		pendingProposal:    make(chan any, 1024),
 		notify:             make(chan struct{}, 1024),
@@ -99,17 +114,30 @@ func (m *Scheduler) Start() {
 	m.BlockDetectionThreshold()
 
 	is := m.IsGenesis()
-	if is {
-		if m.isCanProposal() {
-			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
-			// leader
-			m.Genesis() // build senate session
-		} else {
-			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
-		}
 
-		m.saveSenateData()
-		log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+	switch m.runMode.Load() {
+	case BootMode:
+		if is {
+			if m.isCanProposal() {
+				log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+				// leader
+				m.Genesis() // build senate session
+			} else {
+				log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			}
+
+			m.saveSenateData()
+			m.runMode.Store(NormalMode)
+			log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+		} else {
+			log.Info("local data already exists")
+		}
+	case JoinMode:
+		log.Info("start running join node mode")
+	default:
+		if is {
+			panic("Initialization is not performed")
+		}
 	}
 
 	// loop approveProposal
@@ -124,6 +152,7 @@ func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[Proposa
 
 	err := m.partyData.SaveLocalData(sessionResult.Data)
 	utils.Assert(err)
+	m.runMode.Store(NormalMode)
 }
 
 func (m *Scheduler) Stop() {
@@ -169,6 +198,7 @@ L:
 			if count >= m.Threshold() {
 				break L
 			}
+			log.Infof("detection online peer count:%d, threshold:%d", count, m.Threshold())
 			time.Sleep(time.Second)
 		}
 	}
@@ -210,17 +240,17 @@ func (m *Scheduler) GetGroup(groupID helper.GroupID) *helper.Group {
 	return m.groups[groupID]
 }
 
-func (m *Scheduler) GetSession(sessionID helper.SessionID) Session[ProposalID] {
+func (m *Scheduler) GetSession(proposalID ProposalID) Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
-	return m.sessions[sessionID]
+	return m.proposalSession[proposalID]
 }
 
-func (m *Scheduler) IsMeeting(taskID ProposalID) bool {
+func (m *Scheduler) IsMeeting(proposalID ProposalID) bool {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
-	_, ok := m.proposalSession[taskID]
+	_, ok := m.proposalSession[proposalID]
 
 	return ok
 }
@@ -379,46 +409,49 @@ func (m *Scheduler) proposalLoop() {
 }
 
 func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
-	party := common.HexToAddress(v.Address)
-
-	var newParts types.Participants
+	joinAddress := common.HexToAddress(v.Address)
+	newParts := types.Participants{}
+	oldParts := m.Participants()
 
 	switch v.EventName {
 	case layer2.ParticipantAdded:
-		if !slices.Contains(m.Participants(), party) {
-			newParts = append(m.Participants(), party)
+		if !slices.Contains(oldParts, joinAddress) {
+			newParts = append(oldParts, joinAddress)
 		}
 	case layer2.ParticipantRemoved:
-		newParts = lo.Filter(m.Participants(), func(item common.Address, index int) bool { return item != party })
+		newParts = lo.Filter(oldParts, func(item common.Address, index int) bool { return item != joinAddress })
 	}
 
-	if len(newParts) > 0 && len(newParts) != len(m.Participants()) {
+	log.Infof("newParts: %v, oldParts: %v, joinAddress:%v ", newParts, oldParts, joinAddress)
+
+	if len(newParts) > 0 && newParts.GroupID() != oldParts.GroupID() {
 		m.newGroup.Store(&NewGroup{
 			Event:    v,
-			NewParts: m.Participants(),
-			OldParts: newParts,
+			NewParts: newParts,
+			OldParts: oldParts,
 		})
 
 		if m.isCanProposal() {
 			_ = m.NewReShareGroupSession(
+				m.runMode.Load(),
 				helper.ECDSA,
 				helper.SenateProposalIDOfECDSA,
 				helper.SenateProposal,
-				m.Participants(),
+				oldParts,
 				newParts,
 			)
 			_ = m.NewReShareGroupSession(
+				m.runMode.Load(),
 				helper.EDDSA,
 				helper.SenateProposalIDOfEDDSA,
 				helper.SenateProposal,
-				m.Participants(),
+				oldParts,
 				newParts,
 			)
 
-			newGroup := m.newGroup.Load().(*NewGroup)
-			m.partners.Store(newGroup.NewParts)
-			newGroup = nil // todo
-			m.newGroup.Store(newGroup)
+			log.Info("Leader NewReShareGroupSession stared")
+		} else {
+			log.Info("Candidate NewReShareGroupSession stared")
 		}
 	}
 }
@@ -431,6 +464,8 @@ func (m *Scheduler) reGroupResultLoop() {
 				log.Info("reGroup result loop stopping...")
 			case sessionResult := <-m.senateInToOut:
 				m.SaveSenateSessionResult(sessionResult)
+				newGroup := m.newGroup.Swap(nullNewGroup).(*NewGroup)
+				m.partners.Store(newGroup.NewParts)
 			}
 		}
 	}()
@@ -442,15 +477,7 @@ func (m *Scheduler) isCanProposal() bool {
 }
 
 func (m *Scheduler) Participants() types.Participants {
-	if m.IsProposer() {
-		return m.partners.Load().(types.Participants)
-	}
-
-	partners, err := m.voterContract.Participants()
-	utils.Assert(err)
-	m.partners.Store(partners)
-
-	return partners
+	return m.partners.Load().(types.Participants)
 }
 
 type NewGroup struct {
@@ -458,6 +485,8 @@ type NewGroup struct {
 	NewParts types.Participants
 	OldParts types.Participants
 }
+
+var nullNewGroup *NewGroup
 
 type Draft struct {
 	Type    int

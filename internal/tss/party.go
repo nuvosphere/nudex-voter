@@ -8,8 +8,9 @@ import (
 	"sync"
 
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	"github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
+	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -50,6 +51,20 @@ func (p *PartyData) GetData(ec helper.CurveType) *helper.LocalPartySaveData {
 	p.rw.Unlock()
 
 	return data
+}
+
+func (p *PartyData) GenerateNewLocalPartySaveData(ec helper.CurveType, parties types.Participants) *helper.LocalPartySaveData {
+	switch ec {
+	case helper.ECDSA:
+		save := ecdsaKeygen.NewLocalPartySaveData(parties.Len())
+		// save.LocalPreParams = p.ECDSALocalData().ECDSAData().LocalPreParams //todo
+		return helper.BuildECDSALocalPartySaveData().SetData(&save)
+	case helper.EDDSA:
+		save := eddsaKeygen.NewLocalPartySaveData(parties.Len())
+		return helper.BuildEDDSALocalPartySaveData().SetData(&save)
+	}
+
+	return nil
 }
 
 func (p *PartyData) LoadData() bool {
@@ -124,7 +139,7 @@ func (p *PartyData) loadTSSData(ec helper.CurveType) (*helper.LocalPartySaveData
 
 		return helper.BuildECDSALocalPartySaveData().SetData(&data), nil
 	case helper.EDDSA:
-		var data keygen.LocalPartySaveData
+		var data eddsaKeygen.LocalPartySaveData
 		if err := json.Unmarshal(dataBytes, &data); err != nil {
 			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
 		}

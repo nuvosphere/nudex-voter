@@ -214,14 +214,14 @@ func CreateAndConnectReSharingTransports(
 	newCommittee []*tss.PartyID,
 ) ([]*MemoryTransporter, []*MemoryTransporter) {
 	// Create transport between peers
-	oldTransports := make([]*MemoryTransporter, len(oldCommittee))
+	oldTransports := make([]*MemoryTransporter, 0, len(oldCommittee))
 
 	for _, partyID := range oldCommittee {
 		mt := NewMemoryTransporter(partyID)
 		oldTransports = append(oldTransports, mt)
 	}
 
-	newTransports := make([]*MemoryTransporter, len(newCommittee))
+	newTransports := make([]*MemoryTransporter, 0, len(newCommittee))
 
 	for _, partyID := range newCommittee {
 		mt := NewMemoryTransporter(partyID)
