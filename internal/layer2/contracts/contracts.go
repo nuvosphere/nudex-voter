@@ -112,11 +112,11 @@ func EncodeTransferOfERC20(from, to common.Address, amount *big.Int) []byte {
 }
 
 func EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte) []byte {
-	return EncodeFun(VotingManagerContractABI, "verifyAndCall", _target, _data, _signature)
+	return EncodeFun(VotingManagerContractMetaData.ABI, "verifyAndCall", _target, _data, _signature)
 }
 
 func EncodeSubmitTaskReceipt(taskId *big.Int, result []byte, signature []byte) []byte {
-	return EncodeFun(VotingManagerContractABI, "submitTaskReceipt", taskId, result, signature)
+	return EncodeFun(VotingManagerContractMetaData.ABI, "submitTaskReceipt", taskId, result, signature)
 }
 
 var (

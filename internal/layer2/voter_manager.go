@@ -71,5 +71,5 @@ func (l *Layer2Listener) NextSubmitter() (common.Address, error) {
 }
 
 func (l *Layer2Listener) EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte) []byte {
-	return contracts.EncodeFun(contracts.VotingManagerContractABI, "verifyAndCall", _target, _data, _signature)
+	return contracts.EncodeFun(contracts.VotingManagerContractMetaData.ABI, "verifyAndCall", _target, _data, _signature)
 }
