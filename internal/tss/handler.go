@@ -202,11 +202,6 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 }
 
 func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal], task *db.Task) error {
-	//localPartySaveData := m.partyData.GetData(ec)
-	//unSignMsg := m.TaskProposal(task)
-	//if unSignMsg.String() != msg.Proposal.String() {
-	//	return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
-	//}
 	ec := m.CurveType(task)
 
 	switch task.TaskType {
@@ -232,15 +227,6 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 	default:
 		return fmt.Errorf("taskID %d: %w: %v", task.TaskId, ErrTaskIdWrong, task.TaskType)
 	}
-
-	//_ = m.NewSignSession(
-	//	ec,
-	//	msg.SessionID,
-	//	msg.ProposalID,
-	//	&msg.Proposal,
-	//	*localPartySaveData,
-	//	keyDerivationDelta,
-	//)
 
 	return nil
 }
