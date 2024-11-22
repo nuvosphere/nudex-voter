@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 
@@ -78,16 +79,21 @@ func (t *Service) handleSigFinish(ctx context.Context, taskID int64, signatureDa
 			return
 		}
 		if task == nil {
-			log.Errorf("find no task by taskId %d", taskID)
+			log.Errorf("find no task by taskId: %d", taskID)
 			return
 		}
 
 		createWalletTask := task.CreateWalletTask
-		localPartySaveData, _, _, operations := t.scheduler.GenerateCreateWalletProposal(createWalletTask)
-		// @todo check unSignMsg signature
+		localPartySaveData, _, unSignMsg, operations := t.scheduler.GenerateCreateWalletProposal(createWalletTask)
 
 		calldata := t.scheduler.voterContract.EncodeVerifyAndCall(operations, signatureData.Signature)
 		publicKey := *localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey()
+		verifyOk := ecdsa.Verify(&publicKey, unSignMsg.Bytes(), new(big.Int).SetBytes(signatureData.R), new(big.Int).SetBytes(signatureData.S))
+		if !verifyOk {
+			log.Errorf("verify signature fail for taskId: %d", taskID)
+			return
+		}
+
 		submitterWallet := wallet.NewWallet(config.AppConfig.L2RPC, publicKey, *config.AppConfig.L2PrivateKey)
 		tx, err := submitterWallet.BuildUnsignTx(context.Background(), common.HexToAddress(config.AppConfig.AccountContract), big.NewInt(0), calldata)
 		if err != nil {
