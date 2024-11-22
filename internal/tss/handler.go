@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -206,7 +207,7 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 
 	switch task.TaskType {
 	case db.TaskTypeCreateWallet:
-		localPartySaveData, keyDerivationDelta, unSignMsg := m.GenerateCreateWalletProposal(task.CreateWalletTask)
+		localPartySaveData, keyDerivationDelta, unSignMsg, _ := m.GenerateCreateWalletProposal(task.CreateWalletTask)
 		if unSignMsg.String() != msg.Proposal.String() {
 			return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
 		}
@@ -240,7 +241,7 @@ func (m *Scheduler) CurveType(task *db.Task) helper.CurveType {
 	return helper.ECDSA
 }
 
-func (m *Scheduler) GenerateCreateWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int, *big.Int) {
+func (m *Scheduler) GenerateCreateWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int, *big.Int, []contracts.Operation) {
 	coinType := getCoinTypeByChain(task.Chain)
 	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
 	param, err := path.ToParams()
@@ -264,14 +265,16 @@ func (m *Scheduler) GenerateCreateWalletProposal(task *db.CreateWalletTask) (hel
 				ManagerAddr: common.HexToAddress(config.AppConfig.AccountContract),
 				State:       TaskStateCompleted,
 				TaskId:      task.TaskID(),
-				OptData:     []byte("example data"),
+				OptData: m.voterContract.EncodeRegisterNewAddress(new(big.Int).SetUint64(uint64(task.Account)),
+					task.Chain, new(big.Int).SetUint64(uint64(task.Index)),
+					crypto.PubkeyToAddress(extendedChildPk.PublicKey).String()),
 			},
 		}
 
 		unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 		utils.Assert(err)
 
-		return l, keyDerivationDelta, new(big.Int).SetBytes(unSignMsg.Bytes())
+		return l, keyDerivationDelta, new(big.Int).SetBytes(unSignMsg.Bytes()), operations
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}
@@ -281,7 +284,7 @@ func (m *Scheduler) processTaskProposal(task db.ITask) {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:
 		ec := m.CurveType(&taskData.Task)
-		localPartySaveData, keyDerivationDelta, unSignMsg := m.GenerateCreateWalletProposal(taskData)
+		localPartySaveData, keyDerivationDelta, unSignMsg, _ := m.GenerateCreateWalletProposal(taskData)
 
 		m.NewSignSession(
 			ec,

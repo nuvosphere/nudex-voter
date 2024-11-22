@@ -12,7 +12,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
@@ -83,23 +82,12 @@ func (t *Service) handleSigFinish(ctx context.Context, taskID int64, signatureDa
 			return
 		}
 
-		// @todo handle optdata
-		operations := []contracts.Operation{
-			{
-				ManagerAddr: common.HexToAddress(config.AppConfig.AccountContract),
-				State:       TaskStateCompleted,
-				TaskId:      uint64(taskID),
-				OptData:     []byte("example data"),
-			},
-		}
+		createWalletTask := task.CreateWalletTask
+		localPartySaveData, _, _, operations := t.scheduler.GenerateCreateWalletProposal(createWalletTask)
+		// @todo check unSignMsg signature
 
-		// @todo verify unSignMsg
-		_, err = t.scheduler.voterContract.GenerateVerifyTaskUnSignMsg(operations)
-		if err != nil {
-			log.Fatalf("generate unsign task err:%v", err)
-		}
 		calldata := t.scheduler.voterContract.EncodeVerifyAndCall(operations, signatureData.Signature)
-		publicKey := *t.scheduler.partyData.ECDSALocalData().ECDSAData().ECDSAPub.ToECDSAPubKey()
+		publicKey := *localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey()
 		submitterWallet := wallet.NewWallet(config.AppConfig.L2RPC, publicKey, *config.AppConfig.L2PrivateKey)
 		tx, err := submitterWallet.BuildUnsignTx(context.Background(), common.HexToAddress(config.AppConfig.AccountContract), big.NewInt(0), calldata)
 		if err != nil {

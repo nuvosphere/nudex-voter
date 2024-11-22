@@ -173,7 +173,7 @@ func (v *VoterContractMocker) EncodeMarkTaskCompleted(taskId *big.Int, result []
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) EncodeRegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) []byte {
+func (v *VoterContractMocker) EncodeRegisterNewAddress(_account *big.Int, _chain uint8, _index *big.Int, _address string) []byte {
 	// TODO implement me
 	panic("implement me")
 }
