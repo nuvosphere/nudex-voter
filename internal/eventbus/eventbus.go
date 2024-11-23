@@ -52,7 +52,7 @@ func (d *defaultBus) SubscriberLen(event Event) int {
 }
 
 func (d *defaultBus) Subscribe(event Event) <-chan any {
-	return d.SubscribeWithLen(event, 256)
+	return d.SubscribeWithLen(event, 100000)
 }
 
 func (d *defaultBus) SubscribeWithLen(event Event, channelLen int) <-chan any {
