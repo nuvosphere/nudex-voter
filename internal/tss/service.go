@@ -22,7 +22,6 @@ func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterCo
 	return &Service{
 		scheduler: NewScheduler(
 			true,
-			NormalMode, // todo
 			p,
 			bus,
 			stateDB,

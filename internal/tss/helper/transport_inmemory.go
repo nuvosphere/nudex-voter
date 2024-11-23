@@ -162,9 +162,9 @@ func (mt *MemoryTransporter) GetReceiver() chan *ReceivedPartyState {
 	return mt.recvChan
 }
 
-// Receive returns a channel for the current peer to receive messages from
+// GetReceiveChannel returns a channel for the current peer to receive messages from
 // other peers.
-func (mt *MemoryTransporter) Receive(_ string) chan *ReceivedPartyState {
+func (mt *MemoryTransporter) GetReceiveChannel(_ string) chan *ReceivedPartyState {
 	return mt.recvChan
 }
 

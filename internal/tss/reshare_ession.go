@@ -2,8 +2,13 @@ package tss
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"strings"
 
+	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaResharing "github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
+	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
+	eddsaResharing "github.com/bnb-chain/tss-lib/v2/eddsa/resharing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
@@ -14,32 +19,120 @@ import (
 
 var _ Session[any] = &ReShareGroupSession[any, any, any]{}
 
+type JoinReShareGroupSession[T, M, D any] struct {
+	*sessionTransport[T, M, D]
+	partyIdMap map[string]*tss.PartyID
+	isNew      bool
+}
+
+func (r *JoinReShareGroupSession[T, M, D]) Post(state *helper.ReceivedPartyState) {
+	if len(state.ToPartyIds) == 0 {
+		log.Error("did not expect a msg to have a nil destination during resharing")
+		return
+	}
+
+	if r.Included(state.ToPartyIds) {
+		if state.IsToOldAndNewCommittees {
+			r.sessionTransport.Post(state)
+			return
+		}
+
+		if (!state.IsToOldCommittee && r.isNew) || (state.IsToOldCommittee && !r.isNew) {
+			r.sessionTransport.Post(state)
+		}
+	}
+}
+
+func (r *JoinReShareGroupSession[T, M, D]) PartyID(id string) *tss.PartyID {
+	pid := r.partyIdMap[strings.ToLower(id)]
+	if pid != nil {
+		return pid
+	}
+
+	return r.sessionTransport.PartyID(id)
+}
+
 type ReShareGroupSession[T, M, D any] struct {
 	oldSession *sessionTransport[T, M, D]
 	newSession *sessionTransport[T, M, D]
 }
 
+func createReShareParam(
+	ctx context.Context,
+	params *tss.ReSharingParameters,
+	key helper.LocalPartySaveData,
+) (tss.Party, chan *helper.LocalPartySaveData, chan tss.Message, chan *tss.Error) {
+	// outgoing messages to other peers
+	outCh := make(chan tss.Message, 100000)
+	// error if reshare fails, contains culprits to blame
+	errCh := make(chan *tss.Error, 256)
+
+	log.Debug("creating new local party")
+
+	outEndCh := make(chan *helper.LocalPartySaveData, 100000)
+	// output data when keygen finished
+	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData, 256)
+	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData, 256)
+
+	var party tss.Party
+
+	switch key.CurveType() {
+	case helper.ECDSA:
+		data := key.ECDSAData()
+		party = ecdsaResharing.NewLocalParty(params, *data, outCh, ecdsaEndCh)
+
+	case helper.EDDSA:
+		party = eddsaResharing.NewLocalParty(params, *key.EDDSAData(), outCh, eddsaEndCh)
+
+	default:
+		panic("implement me")
+	}
+
+	go func() {
+		defer close(eddsaEndCh)
+		defer close(ecdsaEndCh)
+		select {
+		case <-ctx.Done():
+			return
+		case data := <-ecdsaEndCh:
+			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
+		case data := <-eddsaEndCh:
+			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
+		}
+	}()
+
+	log.Debug("local resharing party created", "partyID", party.PartyID())
+
+	return party, outEndCh, outCh, errCh
+}
+
+func runReShareParty(ctx context.Context, transport helper.Transporter, party tss.Party, outCh chan tss.Message, errCh chan *tss.Error) {
+	helper.RunParty(ctx, party, errCh, outCh, transport, true)
+}
+
 func (m *Scheduler) NewReShareGroupSession(
-	runMode int64,
 	ec helper.CurveType,
-	taskID ProposalID, // msg id
+	sessionID helper.SessionID,
+	proposalID ProposalID, // msg id
 	msg *Proposal,
 	oldPartners types.Participants,
 	newPartners types.Participants,
 ) helper.SessionID {
+	m.ecCount.Add(1)
 	localSubmitter := m.LocalSubmitter()
 
 	log.Debugf("newPartners:%v, oldPartners: %v", newPartners, oldPartners)
-	oldPartyIDs := createPartyIDsByGroup(ec, oldPartners)
+	oldPartyIDs := createPartyIDsByGroupWithAlias(ec, oldPartners, "old: "+m.partyData.basePath)
 	oldPeerCtx := tss.NewPeerContext(oldPartyIDs) // todo
 
-	newPartyIDs := createPartyIDsByGroup(ec, newPartners)
+	newPartyIDs := createPartyIDsByGroupWithAlias(ec, newPartners, "new: "+m.partyData.basePath)
 	newPeerCtx := tss.NewPeerContext(newPartyIDs)
 	newPartKey := PartyKey(ec, newPartners, localSubmitter)
 	newPartyID := newPartyIDs.FindByKey(newPartKey)
+
 	log.Debugf("newPartyID: %v", newPartyID)
 
-	newPartyIdMap := lo.SliceToMap(newPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) { return item.Id, item })
+	newPartyIdMap := lo.SliceToMap(newPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) { return strings.ToLower(item.Id), item })
 	newParams := tss.NewReSharingParameters(
 		ec.EC(),
 		oldPeerCtx,
@@ -50,37 +143,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners.Len(),
 		newPartners.Threshold(),
 	)
-
-	if runMode == JoinMode { // new node
-		newInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
-			ec,
-			m.p2p,
-			m,
-			helper.SenateSessionID,
-			common.Address{}, // todo
-			localSubmitter,
-			taskID,
-			msg,
-			ReShareGroupSessionType,
-			newPartners,
-		)
-
-		localData := m.partyData.GenerateNewLocalPartySaveData(ec, newPartners)
-		party, endCh, errCh := RunReshare(newInnerSession.ctx, newParams, *localData, newInnerSession) // new create node
-		newInnerSession.party = party
-		newInnerSession.partyIdMap = newPartyIdMap
-		newInnerSession.endCh = endCh
-		newInnerSession.errCH = errCh
-		newInnerSession.inToOut = m.senateInToOut
-
-		newInnerSession.Run()
-		m.AddSession(newInnerSession)
-
-		return newInnerSession.SessionID()
-	}
-
-	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{}
-
+	oldPartyIdMap := lo.SliceToMap(oldPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) { return strings.ToLower(item.Id), item })
 	oldPartKey := PartyKey(ec, oldPartners, localSubmitter)
 	oldPartyID := oldPartyIDs.FindByKey(oldPartKey)
 	oldParams := tss.NewReSharingParameters(
@@ -93,55 +156,133 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners.Len(),
 		newPartners.Threshold(),
 	)
-	oldPartyIdMap := lo.SliceToMap(oldPartyIDs, func(item *tss.PartyID) (string, *tss.PartyID) { return item.Id, item })
+
+	joinedNew := newPartners.Contains(m.LocalSubmitter())
+	joinedOld := oldPartners.Contains(m.LocalSubmitter())
+	// 1. joined new group
+	if joinedNew && !joinedOld {
+		log.Debugf("new join node: oldPartyIDs: %v,newPartyIDs:%v", oldPartyIDs, newPartyIDs)
+
+		newInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+			ec,
+			m.p2p,
+			m,
+			sessionID,
+			common.Address{}, // todo
+			localSubmitter,
+			proposalID,
+			msg,
+			ReShareGroupSessionType,
+			newPartners,
+		)
+		newInnerSession.partyIdMap = newPartyIdMap
+		newInnerSession.inToOut = m.senateInToOut
+		localData := m.partyData.GenerateNewLocalPartySaveData(ec, newPartners)
+		party, outEndCh, outCh, errCh := createReShareParam(newInnerSession.ctx, newParams, *localData)
+		newInnerSession.party = party
+		newInnerSession.endCh = outEndCh
+		newInnerSession.errCH = errCh
+
+		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{
+			sessionTransport: newInnerSession,
+			partyIdMap:       oldPartyIdMap,
+			isNew:            true,
+		}
+		m.AddSession(joinSession)
+		joinSession.Run()
+
+		runReShareParty(newInnerSession.ctx, joinSession, party, outCh, errCh)
+
+		return joinSession.SessionID()
+	}
+
+	// 2. joined old group
+	if !joinedNew && joinedOld {
+		log.Debugf("remove node: oldPartyIDs: %v,newPartyIDs:%v", oldPartyIDs, newPartyIDs)
+
+		oldInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+			ec,
+			m.p2p,
+			m,
+			sessionID,
+			common.Address{}, // todo
+			localSubmitter,
+			proposalID,
+			msg,
+			ReShareGroupSessionType,
+			newPartners, // todo
+		)
+		oldInnerSession.partyIdMap = oldPartyIdMap
+		oldInnerSession.inToOut = m.senateInToOut
+
+		localData := m.partyData.GetData(ec)
+		party, outEndCh, outCh, errCh := createReShareParam(oldInnerSession.ctx, oldParams, *localData)
+		oldInnerSession.party = party
+		oldInnerSession.endCh = outEndCh
+		oldInnerSession.errCH = errCh
+		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{
+			sessionTransport: oldInnerSession,
+			partyIdMap:       newPartyIdMap,
+			isNew:            false,
+		}
+		m.AddSession(joinSession)
+		joinSession.Run()
+
+		runReShareParty(oldInnerSession.ctx, joinSession, party, outCh, errCh)
+
+		return joinSession.SessionID()
+	}
+
+	// 3. both joined old and new group
+	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{}
 	oldInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
 		ec,
 		m.p2p,
 		m,
-		helper.SenateSessionID,
+		sessionID,
 		common.Address{}, // todo
 		localSubmitter,
-		taskID,
+		proposalID,
 		msg,
 		ReShareGroupSessionType,
 		newPartners, // todo
 	)
-	reShareSession.oldSession = oldInnerSession
+	oldInnerSession.partyIdMap = oldPartyIdMap
+	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *helper.LocalPartySaveData], 100) // todo
 
 	localData := m.partyData.GetData(ec)
-	log.Debugf("localData: %v", localData.GetData())
-	party, endCh, errCh := RunReshare(oldInnerSession.ctx, oldParams, *localData, reShareSession) // todo
-	oldInnerSession.party = party
-	oldInnerSession.partyIdMap = oldPartyIdMap
-	oldInnerSession.endCh = endCh
-	oldInnerSession.errCH = errCh
-	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *helper.LocalPartySaveData], 1) // todo
+	oldParty, oldOutEndCh, oldOutCh, oldErrCh := createReShareParam(oldInnerSession.ctx, oldParams, *localData)
+	oldInnerSession.party = oldParty
+	oldInnerSession.endCh = oldOutEndCh
+	oldInnerSession.errCH = oldErrCh
+	reShareSession.oldSession = oldInnerSession
 
 	newInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
 		ec,
 		m.p2p,
 		m,
-		helper.SenateSessionID,
+		sessionID,
 		common.Address{}, // todo
 		localSubmitter,
-		taskID,
+		proposalID,
 		msg,
 		ReShareGroupSessionType,
 		newPartners,
 	)
-
-	// todo
-	localData = m.partyData.GenerateNewLocalPartySaveData(ec, newPartners)
-	party, endCh, errCh = RunReshare(newInnerSession.ctx, newParams, *localData, reShareSession)
-	newInnerSession.party = party
 	newInnerSession.partyIdMap = newPartyIdMap
-	newInnerSession.endCh = endCh
-	newInnerSession.errCH = errCh
 	newInnerSession.inToOut = m.senateInToOut
+	localData = m.partyData.GenerateNewLocalPartySaveData(ec, newPartners)
+	party, outEndCh, outCh, errCh := createReShareParam(newInnerSession.ctx, newParams, *localData)
+	newInnerSession.party = party
+	newInnerSession.endCh = outEndCh
+	newInnerSession.errCH = errCh
 
 	reShareSession.newSession = newInnerSession
-	reShareSession.Run()
 	m.AddSession(reShareSession)
+	reShareSession.Run()
+
+	runReShareParty(oldInnerSession.ctx, reShareSession, oldParty, oldOutCh, oldErrCh) // run old party
+	runReShareParty(newInnerSession.ctx, reShareSession, party, outCh, errCh)          // run new party
 
 	return reShareSession.SessionID()
 }
@@ -159,43 +300,64 @@ func FromRouteMsg(bytes []byte, routing *tss.MessageRouting) *helper.ReceivedPar
 }
 
 func (r *ReShareGroupSession[T, M, D]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {
-	var errs []error
+	var err error
+
+	dest := lo.Map(routing.To, func(item *tss.PartyID, index int) string { return strings.ToLower(item.Id) })
+	if len(dest) == 0 {
+		return fmt.Errorf("did not expect a msg to have a nil destination during resharing")
+	}
+
+	log.Debugf("ReShareGroupSession Send from:%v to: %v", routing.From, routing.To)
 
 	if r.oldSession.Equal(routing.From.Id) { // from
 		log.Debugf("msg from oldSession: %v", routing.From.Id)
-		errs = append(errs, r.oldSession.Send(ctx, bytes, routing, b))
+		err = r.oldSession.Send(ctx, bytes, routing, b)
 
-		if routing.IsBroadcast || (r.newSession.Included(lo.Map(routing.To, func(item *tss.PartyID, _ int) string { return item.Id }))) {
+		if (!routing.IsToOldCommittee || routing.IsToOldAndNewCommittees) && r.newSession.Included(dest) {
+			log.Debugf("msg from oldSession: %v, to newSession: %v", routing.From, r.newSession.party.PartyID())
 			r.newSession.Post(FromRouteMsg(bytes, routing))
 		}
 	}
 
-	if r.newSession.Equal(routing.From.Id) { // from
+	if r.newSession.Equal(routing.From.Id) {
 		log.Debugf("msg from newSession: %v", routing.From.Id)
-		errs = append(errs, r.newSession.Send(ctx, bytes, routing, b))
+		err = r.newSession.Send(ctx, bytes, routing, b)
 
-		if routing.IsBroadcast || (r.oldSession.Included(lo.Map(routing.To, func(item *tss.PartyID, _ int) string { return item.Id }))) {
+		if (routing.IsToOldCommittee || routing.IsToOldAndNewCommittees) && r.oldSession.Included(dest) {
+			log.Debugf("msg from newSession: %v, to oldSession: %v", routing.From, r.oldSession.party.PartyID())
 			r.oldSession.Post(FromRouteMsg(bytes, routing))
 		}
 	}
 
-	return errors.Join(errs...)
+	return err
 }
 
-func (r *ReShareGroupSession[T, M, D]) Receive(partyID string) chan *helper.ReceivedPartyState {
+func (r *ReShareGroupSession[T, M, D]) GetReceiveChannel(partyID string) chan *helper.ReceivedPartyState {
 	if r.oldSession.Equal(partyID) {
-		return r.oldSession.Receive(partyID)
+		log.Debugf("GetReceiveChanne: from oldSession: %v", partyID)
+		return r.oldSession.GetReceiveChannel(partyID)
 	}
 
-	return r.oldSession.Receive(partyID)
+	log.Debugf("GetReceiveChanne: from newSession: %v", partyID)
+
+	return r.newSession.GetReceiveChannel(partyID)
 }
 
 func (r *ReShareGroupSession[T, M, D]) Post(state *helper.ReceivedPartyState) {
-	if state.IsBroadcast || state.IsToOldCommittee {
+	log.Infof("from: %v,dest: %v", state.From, state.ToPartyIds)
+
+	if len(state.ToPartyIds) == 0 {
+		log.Error("did not expect a msg to have a nil destination during resharing")
+		return
+	}
+
+	if (state.IsToOldCommittee || state.IsToOldAndNewCommittees) && r.oldSession.Included(state.ToPartyIds) {
+		log.Debugf("oldSession from: %v, to: %v, dest: %v", state.From.Moniker, r.oldSession.party.PartyID().Moniker, state.ToPartyIds)
 		r.oldSession.Post(state)
 	}
 
-	if state.IsBroadcast || state.IsToOldAndNewCommittees {
+	if (!state.IsToOldCommittee || state.IsToOldAndNewCommittees) && r.newSession.Included(state.ToPartyIds) {
+		log.Debugf("newSession from: %v, to: %v, dest: %v", state.From.Moniker, r.newSession.party.PartyID().Moniker, state.ToPartyIds)
 		r.newSession.Post(state)
 	}
 }
@@ -214,7 +376,7 @@ func (r *ReShareGroupSession[T, M, D]) Type() string {
 }
 
 func (r *ReShareGroupSession[T, M, D]) SessionID() helper.SessionID {
-	return helper.SenateSessionID
+	return r.newSession.SessionID()
 }
 
 func (r *ReShareGroupSession[T, M, D]) GroupID() helper.GroupID {

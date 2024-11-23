@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"math/big"
 	"testing"
 
 	"github.com/bnb-chain/tss-lib/v2/crypto"
@@ -45,7 +46,13 @@ func TestReshare(t *testing.T) {
 	newPartyIDs := tss.GenerateTestPartyIDs(test.TestParticipants)
 	require.Len(t, newPartyIDs, test.TestParticipants)
 
-	t.Logf("old partyIDs: %v", oldPartyIDs)
+	for _, vla := range oldPartyIDs {
+		t.Log("vla", vla, "key", new(big.Int).SetBytes(vla.Key))
+	}
+
+	t.Logf("oldPartyIDs: %v;", oldPartyIDs)
+
+	t.Logf("sort old partyIDs: %v", tss.SortPartyIDs(oldPartyIDs))
 	t.Logf("new partyIDs: %v", newPartyIDs)
 
 	// 3. Create and connect transport between peers

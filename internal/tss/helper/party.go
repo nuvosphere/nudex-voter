@@ -2,7 +2,6 @@ package helper
 
 import (
 	"context"
-	"encoding/hex"
 	"time"
 
 	"github.com/bnb-chain/tss-lib/v2/tss"
@@ -20,18 +19,16 @@ func RunParty(
 	isReSharing bool,
 ) {
 	// Start party in goroutine
-	go func() {
-		log.Debug("Starting party")
+	log.Debug("Starting party")
 
-		if err := party.Start(); err != nil {
-			errCh <- err
-		}
-	}()
+	if err := party.Start(); err != nil {
+		errCh <- err
+	}
 
 	// Process outgoing and incoming messages
 	go func() {
 		log.Debugf("party.PartyID():%v", party.PartyID())
-		incomingMsgCh := transport.Receive(party.PartyID().Id)
+		incomingMsgCh := transport.GetReceiveChannel(party.PartyID().Id)
 
 		log.Debug("Starting out/in message loop")
 
@@ -45,12 +42,7 @@ func RunParty(
 				return
 
 			case <-ticker.C:
-				var partyIDkeys []string
-				for _, partyID := range party.WaitingFor() {
-					partyIDkeys = append(partyIDkeys, hex.EncodeToString(partyID.Key))
-				}
-
-				log.Debugf("party %v waiting for %v", party.PartyID(), partyIDkeys)
+				log.Debugf("party: %v, waiting for: %v", party.PartyID(), party.WaitingFor())
 			case outgoingMsg := <-outCh:
 				log.Debug("outgoing message", "GetTo(): ", outgoingMsg.GetTo())
 
@@ -68,61 +60,68 @@ func RunParty(
 
 				// Prevent blocking goroutine to receive messages, may deadlock
 				// if receive channels are full if not in goroutine.
-				go func() {
-					// outCh => Send
-					// send to other parties
-					if err := transport.Send(ctx, data, routing, isReSharing); err != nil {
-						log.Error(
-							"failed to send output message: ",
-							"from PartyID: ", party.PartyID(),
-							"err: ", err,
-						)
-						errCh <- party.WrapError(err)
+				// outCh => Send
+				// send to other parties
+				if err := transport.Send(ctx, data, routing, isReSharing); err != nil {
+					log.Error(
+						"failed to send output message: ",
+						"from PartyID: ", party.PartyID(),
+						"err: ", err,
+					)
+					errCh <- party.WrapError(err)
 
-						return
-					}
+					return
+				}
 
-					log.Debug("done sending outgoing message", "partyID", party.PartyID())
-				}()
+				log.Debug("done sending outgoing message", "partyID", party.PartyID())
 			case incomingMsg := <-incomingMsgCh:
 				if incomingMsg == nil {
 					log.Debug("done incoming message", "partyID", party.PartyID())
 					return
 				}
+
+				for !party.Running() {
+					log.Debug("party not running...", "partyID: ", party.PartyID())
+					time.Sleep(100 * time.Millisecond)
+				}
+
 				// Receive => party
 				// Running in goroutine prevents blocking when channels get
 				// filled up. This may deadlock if not run in a goroutine and
 				// blocks receiving messages.
-				go func() {
-					log.Debug(
-						"received message: ",
-						"partyID: ", party.PartyID(),
-						"from partyID: ", incomingMsg.From,
-						"isBroadcast: ", incomingMsg.IsBroadcast,
-						"len(bytes): ", len(incomingMsg.WireBytes),
-					)
+				// go func() {
+				log.Debug(
+					"received message: ",
+					"partyID: ", party.PartyID(),
+					"from partyID: ", incomingMsg.From,
+					"isBroadcast: ", incomingMsg.IsBroadcast,
+					"len(bytes): ", len(incomingMsg.WireBytes),
+				)
 
-					// The first return value `ok` is false only when there is
-					// an error. This should be fine to ignore as we handle err
-					// instead.
-					_, err := party.UpdateFromBytes(
-						incomingMsg.WireBytes,
-						incomingMsg.From,
-						incomingMsg.IsBroadcast,
-					)
-					if err != nil {
-						log.Error("failed to update from bytes", "err", err)
-						errCh <- party.WrapError(err)
+				// The first return value `ok` is false only when there is
+				// an error. This should be fine to ignore as we handle err
+				// instead.
+				ok, err := party.UpdateFromBytes(
+					incomingMsg.WireBytes,
+					incomingMsg.From,
+					incomingMsg.IsBroadcast,
+				)
+				if err != nil {
+					log.Error("failed to update from bytes", "err", err)
+					errCh <- party.WrapError(err)
 
-						return
-					}
+					return
+				}
 
-					log.Debugf(
-						"updated party %v from bytes from %v",
-						party.PartyID(),
-						incomingMsg.From,
-					)
-				}()
+				if !ok {
+					log.Error("UpdateFromBytes: fail")
+				}
+
+				log.Debugf(
+					"updated party %v from bytes from %v",
+					party.PartyID(),
+					incomingMsg.From,
+				)
 			}
 		}
 	}()

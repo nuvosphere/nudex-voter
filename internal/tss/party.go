@@ -57,7 +57,12 @@ func (p *PartyData) GenerateNewLocalPartySaveData(ec helper.CurveType, parties t
 	switch ec {
 	case helper.ECDSA:
 		save := ecdsaKeygen.NewLocalPartySaveData(parties.Len())
-		// save.LocalPreParams = p.ECDSALocalData().ECDSAData().LocalPreParams //todo
+		localData := p.EDDSALocalData()
+
+		if localData != nil && localData.ECDSAData() != nil {
+			save.LocalPreParams = localData.ECDSAData().LocalPreParams // new node join party
+		}
+
 		return helper.BuildECDSALocalPartySaveData().SetData(&save)
 	case helper.EDDSA:
 		save := eddsaKeygen.NewLocalPartySaveData(parties.Len())

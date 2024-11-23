@@ -58,3 +58,9 @@ func (m *Scheduler) NewSignSession(
 
 	return session.SessionID()
 }
+
+func (s *SignSession[T, M, D]) Post(data *helper.ReceivedPartyState) {
+	if data.IsBroadcast || s.Included(data.ToPartyIds) {
+		s.sessionTransport.Post(data)
+	}
+}

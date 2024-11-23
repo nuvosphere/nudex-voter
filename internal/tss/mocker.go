@@ -15,6 +15,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type P2PMocker struct {
@@ -45,6 +46,9 @@ func (p *P2PMocker) PublishMessage(ctx context.Context, msg any) error {
 	event, ok := p.typeBindEvent.Load(receivedMsg.MessageType)
 	if ok {
 		p.bus.Publish(event, receivedMsg)
+		log.Infof("receivedMsg.MessageType: %v", receivedMsg.MessageType)
+	} else {
+		log.Errorf("receivedMsg.MessageType error: %v", receivedMsg.MessageType)
 	}
 
 	return nil

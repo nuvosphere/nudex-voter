@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
@@ -80,35 +79,57 @@ func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
 	return big.Int{}
 }
 
+func (m *Scheduler) isSenateSession(sessionID helper.SessionID) bool {
+	return sessionID == helper.SenateSessionIDOfECDSA || sessionID == helper.SenateSessionIDOfEDDSA
+}
+
 func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
-	session := m.GetSession(msg.ProposalID)
+	session := m.GetSession(msg.SessionID)
 	if session != nil {
-		from := session.PartyID(msg.FromPartyId)
-		// && !session.Equal(msg.FromPartyId)
-		if from != nil && (msg.IsBroadcast || session.Included(msg.ToPartyIds)) {
-			session.Post(msg.State(from))
+		if !session.Equal(msg.FromPartyId) { // not from self
+			from := session.PartyID(msg.FromPartyId)
+			if from != nil {
+				session.Post(msg.State(from))
+			} else {
+				if session.Included(msg.ToPartyIds) {
+					log.Errorf("session is nil, but included: %v", msg.SessionID)
+				}
+
+				if !m.isSenateSession(msg.SessionID) {
+					// panic
+					panic(fmt.Errorf("session from not is exist:%v basePath: %v", msg.FromPartyId, m.partyData.basePath))
+				}
+
+				log.Errorf("session from not is exist:%v basePath: %v", msg.FromPartyId, m.partyData.basePath)
+			}
 		}
 
 		return true
 	}
+
+	log.Debug("session not is exist")
 
 	return false
 }
 
 // processReceivedProposal handler received msg from other node.
 func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
-	log.Debug("process received proposal id", msg.ProposalID)
+	log.Debugf("process received proposal id: %v, basePath: %v", msg.ProposalID, m.partyData.basePath)
 
 	ok := m.OpenSession(msg)
 	if ok {
+		log.Debugf("open session success, sessionID: %v", msg.SessionID)
 		return nil
 	}
+
+	log.Debug("open session: fail: msg.Type", msg.Type)
 
 	// build new session
 	switch msg.Type {
 	case GenKeySessionType:
 		return m.JoinGenKeySession(msg)
 	case ReShareGroupSessionType:
+		log.Debug("ReShareGroupSessionType")
 		return m.JoinReShareGroupSession(msg)
 	case SignTaskSessionType:
 		task, err := m.GetTask(msg.ProposalID)
@@ -140,12 +161,7 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 		return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 	}
 
-	ec := helper.ECDSA
-
-	switch msg.ProposalID {
-	case helper.SenateProposalIDOfEDDSA:
-		ec = helper.EDDSA
-	}
+	ec := m.CurveTypeBySession(msg.SessionID)
 
 	_ = m.NewGenerateKeySession(
 		ec,
@@ -166,15 +182,17 @@ func (m *Scheduler) isReShareGroup() bool {
 		return true
 	}
 
+	// get latest participants compare local participants
 	partners, err := m.voterContract.Participants()
 	utils.Assert(err)
 
-	old := m.partners.Load().(types.Participants)
+	old := m.Participants()
 	if old.GroupID() != partners.GroupID() {
-		m.newGroup.Store(&NewGroup{
+		g := &NewGroup{
 			NewParts: partners,
 			OldParts: old,
-		})
+		}
+		m.newGroup.Store(g)
 
 		return true
 	}
@@ -182,11 +200,22 @@ func (m *Scheduler) isReShareGroup() bool {
 	return false
 }
 
+func (m *Scheduler) CurveTypeBySession(sessionID helper.SessionID) helper.CurveType {
+	switch sessionID {
+	case helper.SenateSessionIDOfEDDSA:
+		return helper.EDDSA
+	case helper.SenateSessionIDOfECDSA:
+		return helper.ECDSA
+	default:
+		panic("unimplemented")
+	}
+}
+
 func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal]) error {
 	// todo How find new part?
 	is := m.isReShareGroup()
 	if !is {
-		return fmt.Errorf("not new group: %w", ErrGroupIdWrong)
+		return fmt.Errorf("not new group")
 	}
 
 	newGroup := m.newGroup.Load().(*NewGroup)
@@ -200,16 +229,11 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 		return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 	}
 
-	ec := helper.ECDSA
-
-	switch msg.ProposalID {
-	case helper.SenateProposalIDOfEDDSA:
-		ec = helper.EDDSA
-	}
+	ec := m.CurveTypeBySession(msg.SessionID)
 
 	_ = m.NewReShareGroupSession(
-		m.runMode.Load(),
 		ec,
+		msg.SessionID,
 		msg.ProposalID,
 		&msg.Proposal,
 		newGroup.OldParts,
