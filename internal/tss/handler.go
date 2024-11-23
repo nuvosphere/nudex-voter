@@ -161,12 +161,7 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 		return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 	}
 
-	ec := helper.ECDSA
-
-	switch msg.ProposalID {
-	case helper.SenateProposalIDOfEDDSA:
-		ec = helper.EDDSA
-	}
+	ec := m.CurveTypeBySession(msg.SessionID)
 
 	_ = m.NewGenerateKeySession(
 		ec,
@@ -205,6 +200,17 @@ func (m *Scheduler) isReShareGroup() bool {
 	return false
 }
 
+func (m *Scheduler) CurveTypeBySession(sessionID helper.SessionID) helper.CurveType {
+	switch sessionID {
+	case helper.SenateSessionIDOfEDDSA:
+		return helper.EDDSA
+	case helper.SenateSessionIDOfECDSA:
+		return helper.ECDSA
+	default:
+		panic("unimplemented")
+	}
+}
+
 func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal]) error {
 	// todo How find new part?
 	is := m.isReShareGroup()
@@ -223,12 +229,7 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 		return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 	}
 
-	ec := helper.ECDSA
-
-	switch msg.ProposalID {
-	case helper.SenateProposalIDOfEDDSA:
-		ec = helper.EDDSA
-	}
+	ec := m.CurveTypeBySession(msg.SessionID)
 
 	_ = m.NewReShareGroupSession(
 		ec,

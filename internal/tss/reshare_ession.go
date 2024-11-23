@@ -43,25 +43,6 @@ func (r *JoinReShareGroupSession[T, M, D]) Post(state *helper.ReceivedPartyState
 	}
 }
 
-func (r *JoinReShareGroupSession[T, M, D]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {
-	var err error
-
-	dest := lo.Map(routing.To, func(item *tss.PartyID, index int) string { return strings.ToLower(item.Id) })
-	if len(dest) == 0 {
-		return fmt.Errorf("did not expect a msg to have a nil destination during resharing")
-	}
-
-	log.Debugf("JoinReShareGroupSession from:%v to: %v", routing.From, routing.To)
-	err = r.sessionTransport.Send(ctx, bytes, routing, b)
-
-	if (!routing.IsToOldCommittee || routing.IsToOldAndNewCommittees) && r.Included(dest) {
-		log.Debugf("---------------------------0000000000000000000")
-		r.Post(FromRouteMsg(bytes, routing))
-	}
-
-	return err
-}
-
 func (r *JoinReShareGroupSession[T, M, D]) PartyID(id string) *tss.PartyID {
 	pid := r.partyIdMap[strings.ToLower(id)]
 	if pid != nil {
@@ -137,6 +118,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	oldPartners types.Participants,
 	newPartners types.Participants,
 ) helper.SessionID {
+	m.ecCount.Add(1)
 	localSubmitter := m.LocalSubmitter()
 
 	log.Debugf("newPartners:%v, oldPartners: %v", newPartners, oldPartners)

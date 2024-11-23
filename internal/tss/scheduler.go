@@ -49,6 +49,7 @@ type Scheduler struct {
 	localSubmitter     common.Address
 	proposer           *atomic.Value // current submitter
 	partners           *atomic.Value // types.Participants
+	ecCount            *atomic.Int64
 	newGroup           *atomic.Value // *NewGroup
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
@@ -418,14 +419,14 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 		})
 
 		if m.isCanProposal() {
-			//_ = m.NewReShareGroupSession(
-			//	helper.ECDSA,
-			//	helper.SenateSessionIDOfECDSA,
-			//	helper.SenateProposalIDOfECDSA,
-			//	helper.SenateProposal,
-			//	oldParts,
-			//	newParts,
-			//)
+			_ = m.NewReShareGroupSession(
+				helper.ECDSA,
+				helper.SenateSessionIDOfECDSA,
+				helper.SenateProposalIDOfECDSA,
+				helper.SenateProposal,
+				oldParts,
+				newParts,
+			)
 			_ = m.NewReShareGroupSession(
 				helper.EDDSA,
 				helper.SenateSessionIDOfEDDSA,
@@ -450,9 +451,13 @@ func (m *Scheduler) reGroupResultLoop() {
 				log.Info("reGroup result loop stopping...")
 			case sessionResult := <-m.senateInToOut:
 				m.SaveSenateSessionResult(sessionResult)
-				newGroup := m.newGroup.Swap(nullNewGroup).(*NewGroup)
-				m.partners.Store(newGroup.NewParts)
-				log.Infof("regroup success!!!: new groupID: %v", newGroup.NewParts.GroupID())
+				m.ecCount.Add(-1)
+
+				if m.ecCount.Load() == 0 {
+					newGroup := m.newGroup.Swap(nullNewGroup).(*NewGroup)
+					m.partners.Store(newGroup.NewParts)
+					log.Infof("regroup success!!!: new groupID: %v", newGroup.NewParts.GroupID())
+				}
 			}
 		}
 	}()
