@@ -92,7 +92,7 @@ func NewScheduler(isProd bool, runMode int, p p2p.P2PService, bus eventbus.Bus, 
 		sessions:           make(map[helper.SessionID]Session[ProposalID]),
 		proposalSession:    make(map[ProposalID]Session[ProposalID]),
 		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
-		senateInToOut:      make(chan *SessionResult[ProposalID, *helper.LocalPartySaveData]),
+		senateInToOut:      make(chan *SessionResult[ProposalID, *helper.LocalPartySaveData], 1024),
 		ctx:                ctx,
 		cancel:             cancel,
 		localSubmitter:     localSubmitter,
@@ -143,6 +143,7 @@ func (m *Scheduler) Start() {
 	// loop approveProposal
 	m.loopApproveProposal()
 	m.reGroupResultLoop()
+	log.Info("Scheduler stared success!")
 }
 
 func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *helper.LocalPartySaveData]) {
@@ -153,6 +154,7 @@ func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[Proposa
 	err := m.partyData.SaveLocalData(sessionResult.Data)
 	utils.Assert(err)
 	m.runMode.Store(NormalMode)
+	log.Info("TSS keygen success! SaveSenateSessionResult: ", "localSubmitter:", m.LocalSubmitter())
 }
 
 func (m *Scheduler) Stop() {
@@ -240,11 +242,11 @@ func (m *Scheduler) GetGroup(groupID helper.GroupID) *helper.Group {
 	return m.groups[groupID]
 }
 
-func (m *Scheduler) GetSession(proposalID ProposalID) Session[ProposalID] {
+func (m *Scheduler) GetSession(sessionID helper.SessionID) Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
-	return m.proposalSession[proposalID]
+	return m.sessions[sessionID]
 }
 
 func (m *Scheduler) IsMeeting(proposalID ProposalID) bool {
@@ -392,10 +394,10 @@ func (m *Scheduler) proposalLoop() {
 						log.Info("proposal task", v)
 						m.processTaskProposal(v)
 					}
-				case *db.ParticipantEvent:
+				case *db.ParticipantEvent: // regroup
 					m.processReGroupProposal(v)
 
-				case *db.SubmitterChosen:
+				case *db.SubmitterChosen: // charge proposer
 					m.submitterChosen = v
 					m.proposer.Store(common.HexToAddress(v.Submitter))
 
@@ -435,6 +437,7 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 			_ = m.NewReShareGroupSession(
 				m.runMode.Load(),
 				helper.ECDSA,
+				helper.SenateSessionIDOfECDSA,
 				helper.SenateProposalIDOfECDSA,
 				helper.SenateProposal,
 				oldParts,
@@ -443,6 +446,7 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 			_ = m.NewReShareGroupSession(
 				m.runMode.Load(),
 				helper.EDDSA,
+				helper.SenateSessionIDOfEDDSA,
 				helper.SenateProposalIDOfEDDSA,
 				helper.SenateProposal,
 				oldParts,
@@ -466,6 +470,7 @@ func (m *Scheduler) reGroupResultLoop() {
 				m.SaveSenateSessionResult(sessionResult)
 				newGroup := m.newGroup.Swap(nullNewGroup).(*NewGroup)
 				m.partners.Store(newGroup.NewParts)
+				log.Infof("regroup success!!!: new groupID: %v", newGroup.NewParts.GroupID())
 			}
 		}
 	}()

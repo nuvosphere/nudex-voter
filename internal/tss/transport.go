@@ -45,6 +45,7 @@ func (s *SessionMessage[T, M]) State(from *tss.PartyID) *helper.ReceivedPartySta
 	return &helper.ReceivedPartyState{
 		WireBytes:               s.MsgWireBytes,
 		From:                    from,
+		ToPartyIds:              s.ToPartyIds,
 		IsBroadcast:             s.IsBroadcast,
 		IsToOldCommittee:        s.IsToOldCommittee,
 		IsToOldAndNewCommittees: s.IsToOldAndNewCommittees,
@@ -154,7 +155,7 @@ func (s *sessionTransport[T, M, D]) Name() string {
 }
 
 func (s *sessionTransport[T, M, D]) PartyID(id string) *tss.PartyID {
-	return s.partyIdMap[id]
+	return s.partyIdMap[strings.ToLower(id)]
 }
 
 func (s *sessionTransport[T, M, D]) Equal(id string) bool {
@@ -221,12 +222,14 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 	return s.broadcaster.PublishMessage(ctx, msg)
 }
 
-func (s *sessionTransport[T, M, D]) Receive(_ string) chan *helper.ReceivedPartyState {
+func (s *sessionTransport[T, M, D]) GetReceiveChannel(_ string) chan *helper.ReceivedPartyState {
 	return s.recvChan
 }
 
 func (s *sessionTransport[T, M, D]) Post(data *helper.ReceivedPartyState) {
-	s.recvChan <- data
+	if !s.Equal(data.From.Id) {
+		s.recvChan <- data
+	}
 }
 
 func (s *sessionTransport[T, M, D]) Run() {

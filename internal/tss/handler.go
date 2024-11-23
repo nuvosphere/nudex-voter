@@ -81,34 +81,44 @@ func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
 }
 
 func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
-	session := m.GetSession(msg.ProposalID)
+	session := m.GetSession(msg.SessionID)
 	if session != nil {
-		from := session.PartyID(msg.FromPartyId)
-		// && !session.Equal(msg.FromPartyId)
-		if from != nil && (msg.IsBroadcast || session.Included(msg.ToPartyIds)) {
-			session.Post(msg.State(from))
+		if !session.Equal(msg.FromPartyId) { // is not self
+			from := session.PartyID(msg.FromPartyId)
+			if from != nil {
+				session.Post(msg.State(from))
+			} else {
+				// panic
+				log.Fatalf("session from not is exist:%v basePath: %v", msg.FromPartyId, m.partyData.basePath)
+			}
 		}
 
 		return true
 	}
+
+	log.Debug("session not is exist")
 
 	return false
 }
 
 // processReceivedProposal handler received msg from other node.
 func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
-	log.Debug("process received proposal id", msg.ProposalID)
+	log.Debugf("process received proposal id: %v, basePath: %v", msg.ProposalID, m.partyData.basePath)
 
 	ok := m.OpenSession(msg)
 	if ok {
+		log.Debugf("open session success, sessionID: %v", msg.SessionID)
 		return nil
 	}
+
+	log.Debug("open session: fail: msg.Type", msg.Type)
 
 	// build new session
 	switch msg.Type {
 	case GenKeySessionType:
 		return m.JoinGenKeySession(msg)
 	case ReShareGroupSessionType:
+		log.Debug("ReShareGroupSessionType")
 		return m.JoinReShareGroupSession(msg)
 	case SignTaskSessionType:
 		task, err := m.GetTask(msg.ProposalID)
@@ -166,6 +176,7 @@ func (m *Scheduler) isReShareGroup() bool {
 		return true
 	}
 
+	// get latest participants compare local participants
 	partners, err := m.voterContract.Participants()
 	utils.Assert(err)
 
@@ -210,6 +221,7 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	_ = m.NewReShareGroupSession(
 		m.runMode.Load(),
 		ec,
+		msg.SessionID,
 		msg.ProposalID,
 		&msg.Proposal,
 		newGroup.OldParts,

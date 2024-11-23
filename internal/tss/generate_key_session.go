@@ -44,6 +44,8 @@ func (m *Scheduler) NewGenerateKeySession(
 	return session.SessionID()
 }
 
-func (m *GenerateKeySession[T, M, D]) Release() {
-	m.sessionTransport.Release()
+func (g *GenerateKeySession[T, M, D]) Post(data *helper.ReceivedPartyState) {
+	if data.IsBroadcast || g.Included(data.ToPartyIds) {
+		g.sessionTransport.Post(data)
+	}
 }

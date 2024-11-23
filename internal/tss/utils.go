@@ -42,19 +42,25 @@ func PartyKey(ec helper.CurveType, participants types.Participants, address comm
 	return key.Add(key, participants.GroupID().Big())
 }
 
-func createPartyIDsByGroup(ec helper.CurveType, addressList types.Participants) tss.SortedPartyIDs {
+func createPartyIDsByGroupWithAlias(ec helper.CurveType, addressList types.Participants, aliasName string) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
+
+	groupID := addressList.GroupID()
 
 	for i, address := range addressList {
 		key := PartyKey(ec, addressList, address)
 		tssAllPartyIDs[i] = tss.NewPartyID(
 			strings.ToLower(key.Text(16)),
-			strings.ToLower(key.Text(16))+"-"+ec.CurveName(),
+			fmt.Sprintf("address: %v, groupID:%v, ec: %s, aliasName: %v", address, groupID, ec.CurveName(), aliasName),
 			key,
 		)
 	}
 
 	return tss.SortPartyIDs(tssAllPartyIDs)
+}
+
+func createPartyIDsByGroup(ec helper.CurveType, addressList types.Participants) tss.SortedPartyIDs {
+	return createPartyIDsByGroupWithAlias(ec, addressList, "")
 }
 
 func createPartyIDsByAddress(addressList types.Participants) tss.SortedPartyIDs {
@@ -156,7 +162,7 @@ func RunKeyGen(
 	transport helper.Transporter,
 ) (tss.Party, map[string]*tss.PartyID, chan *helper.LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
-	outCh := make(chan tss.Message, 10)
+	outCh := make(chan tss.Message, 256)
 	// error if keygen fails, contains culprits to blame
 	errCh := make(chan *tss.Error, 10)
 
@@ -220,16 +226,16 @@ func RunReshare(
 	transport helper.Transporter,
 ) (tss.Party, chan *helper.LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
-	outCh := make(chan tss.Message, 1)
+	outCh := make(chan tss.Message, 100000)
 	// error if reshare fails, contains culprits to blame
-	errCh := make(chan *tss.Error, 1)
+	errCh := make(chan *tss.Error, 256)
 
 	log.Debug("creating new local party")
 
-	outEndCh := make(chan *helper.LocalPartySaveData)
+	outEndCh := make(chan *helper.LocalPartySaveData, 100000)
 	// output data when keygen finished
-	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData)
-	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData)
+	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData, 256)
+	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData, 256)
 
 	var party tss.Party
 
@@ -275,9 +281,9 @@ func RunParty(
 ) (tss.Party, chan *tsscommon.SignatureData, chan *tss.Error) {
 	// outgoing messages to other peers - not one to not deadlock when a party
 	// round is waiting for outgoing messages channel to clear
-	outCh := make(chan tss.Message, params.PartyCount())
+	outCh := make(chan tss.Message, 256)
 	// output signature when finished
-	endCh := make(chan *tsscommon.SignatureData, 1)
+	endCh := make(chan *tsscommon.SignatureData, 256)
 	// error if signing fails, contains culprits to blame
 	errCh := make(chan *tss.Error, 1)
 
