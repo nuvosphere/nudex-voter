@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
@@ -80,16 +79,28 @@ func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
 	return big.Int{}
 }
 
+func (m *Scheduler) isSenateSession(sessionID helper.SessionID) bool {
+	return sessionID == helper.SenateSessionIDOfECDSA || sessionID == helper.SenateSessionIDOfEDDSA
+}
+
 func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
 	session := m.GetSession(msg.SessionID)
 	if session != nil {
-		if !session.Equal(msg.FromPartyId) { // is not self
+		if !session.Equal(msg.FromPartyId) { // not from self
 			from := session.PartyID(msg.FromPartyId)
 			if from != nil {
 				session.Post(msg.State(from))
 			} else {
-				// panic
-				log.Fatalf("session from not is exist:%v basePath: %v", msg.FromPartyId, m.partyData.basePath)
+				if session.Included(msg.ToPartyIds) {
+					log.Errorf("session is nil, but included: %v", msg.SessionID)
+				}
+
+				if !m.isSenateSession(msg.SessionID) {
+					// panic
+					panic(fmt.Errorf("session from not is exist:%v basePath: %v", msg.FromPartyId, m.partyData.basePath))
+				}
+
+				log.Errorf("session from not is exist:%v basePath: %v", msg.FromPartyId, m.partyData.basePath)
 			}
 		}
 
@@ -180,12 +191,13 @@ func (m *Scheduler) isReShareGroup() bool {
 	partners, err := m.voterContract.Participants()
 	utils.Assert(err)
 
-	old := m.partners.Load().(types.Participants)
+	old := m.Participants()
 	if old.GroupID() != partners.GroupID() {
-		m.newGroup.Store(&NewGroup{
+		g := &NewGroup{
 			NewParts: partners,
 			OldParts: old,
-		})
+		}
+		m.newGroup.Store(g)
 
 		return true
 	}
@@ -197,7 +209,7 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	// todo How find new part?
 	is := m.isReShareGroup()
 	if !is {
-		return fmt.Errorf("not new group: %w", ErrGroupIdWrong)
+		return fmt.Errorf("not new group")
 	}
 
 	newGroup := m.newGroup.Load().(*NewGroup)
@@ -219,7 +231,6 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	}
 
 	_ = m.NewReShareGroupSession(
-		m.runMode.Load(),
 		ec,
 		msg.SessionID,
 		msg.ProposalID,

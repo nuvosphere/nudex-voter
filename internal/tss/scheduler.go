@@ -34,7 +34,6 @@ const (
 
 type Scheduler struct {
 	isProd             bool
-	runMode            *atomic.Int64
 	p2p                p2p.P2PService
 	bus                eventbus.Bus
 	ctx                context.Context
@@ -47,10 +46,10 @@ type Scheduler struct {
 	sigInToOut         chan *SessionResult[ProposalID, *tsscommon.SignatureData]
 	senateInToOut      chan *SessionResult[ProposalID, *helper.LocalPartySaveData]
 	partyData          *PartyData
-	localSubmitter     common.Address // submit = partyID
-	proposer           *atomic.Value  // current submitter
-	partners           *atomic.Value  // types.Participants
-	newGroup           *atomic.Value  // NewGroup
+	localSubmitter     common.Address
+	proposer           *atomic.Value // current submitter
+	partners           *atomic.Value // types.Participants
+	newGroup           *atomic.Value // *NewGroup
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
 	stateDB            *gorm.DB
@@ -61,7 +60,7 @@ type Scheduler struct {
 	pendingTask        <-chan any // eventbus channel
 }
 
-func NewScheduler(isProd bool, runMode int, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
+func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
 	proposer, err := voterContract.Proposer()
 	utils.Assert(err)
@@ -75,15 +74,11 @@ func NewScheduler(isProd bool, runMode int, p p2p.P2PService, bus eventbus.Bus, 
 	ps := atomic.Value{}
 	ps.Store(partners)
 
-	r := &atomic.Int64{}
-	r.Store(int64(runMode))
-
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)
 
 	return &Scheduler{
 		isProd:             isProd,
-		runMode:            r,
 		p2p:                p,
 		bus:                bus,
 		srw:                sync.RWMutex{},
@@ -113,31 +108,19 @@ func (m *Scheduler) Start() {
 	m.proposalLoop()
 	m.BlockDetectionThreshold()
 
-	is := m.IsGenesis()
-
-	switch m.runMode.Load() {
-	case BootMode:
-		if is {
-			if m.isCanProposal() {
-				log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
-				// leader
-				m.Genesis() // build senate session
-			} else {
-				log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
-			}
-
-			m.saveSenateData()
-			m.runMode.Store(NormalMode)
-			log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+	if m.IsGenesis() {
+		if m.isCanProposal() {
+			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			// leader
+			m.Genesis() // build senate session
 		} else {
-			log.Info("local data already exists")
+			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
 		}
-	case JoinMode:
-		log.Info("start running join node mode")
-	default:
-		if is {
-			panic("Initialization is not performed")
-		}
+
+		m.saveSenateData()
+		log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+	} else {
+		log.Info("local data already exists: scheduler begin running")
 	}
 
 	// loop approveProposal
@@ -153,7 +136,6 @@ func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[Proposa
 
 	err := m.partyData.SaveLocalData(sessionResult.Data)
 	utils.Assert(err)
-	m.runMode.Store(NormalMode)
 	log.Info("TSS keygen success! SaveSenateSessionResult: ", "localSubmitter:", m.LocalSubmitter())
 }
 
@@ -415,6 +397,8 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 	newParts := types.Participants{}
 	oldParts := m.Participants()
 
+	log.Debugf("ParticipantEvent: %v, address: %v", v.EventName, v.Address)
+
 	switch v.EventName {
 	case layer2.ParticipantAdded:
 		if !slices.Contains(oldParts, joinAddress) {
@@ -424,7 +408,7 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 		newParts = lo.Filter(oldParts, func(item common.Address, index int) bool { return item != joinAddress })
 	}
 
-	log.Infof("newParts: %v, oldParts: %v, joinAddress:%v ", newParts, oldParts, joinAddress)
+	log.Debugf("newParts: %v, oldParts: %v, joinAddress:%v ", newParts, oldParts, joinAddress)
 
 	if len(newParts) > 0 && newParts.GroupID() != oldParts.GroupID() {
 		m.newGroup.Store(&NewGroup{
@@ -434,17 +418,15 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 		})
 
 		if m.isCanProposal() {
+			//_ = m.NewReShareGroupSession(
+			//	helper.ECDSA,
+			//	helper.SenateSessionIDOfECDSA,
+			//	helper.SenateProposalIDOfECDSA,
+			//	helper.SenateProposal,
+			//	oldParts,
+			//	newParts,
+			//)
 			_ = m.NewReShareGroupSession(
-				m.runMode.Load(),
-				helper.ECDSA,
-				helper.SenateSessionIDOfECDSA,
-				helper.SenateProposalIDOfECDSA,
-				helper.SenateProposal,
-				oldParts,
-				newParts,
-			)
-			_ = m.NewReShareGroupSession(
-				m.runMode.Load(),
 				helper.EDDSA,
 				helper.SenateSessionIDOfEDDSA,
 				helper.SenateProposalIDOfEDDSA,
@@ -478,7 +460,15 @@ func (m *Scheduler) reGroupResultLoop() {
 
 func (m *Scheduler) isCanProposal() bool {
 	m.BlockDetectionThreshold()
-	return m.LocalSubmitter() == m.Proposer()
+	return m.LocalSubmitter() == m.Proposer() && m.isJoined()
+}
+
+func (m *Scheduler) isJoined() bool {
+	return m.Participants().Contains(m.LocalSubmitter())
+}
+
+func (m *Scheduler) IsNewJoined() bool {
+	return m.newGroup.Load().(*NewGroup).IsNewJoined(m.LocalSubmitter())
 }
 
 func (m *Scheduler) Participants() types.Participants {
@@ -489,6 +479,10 @@ type NewGroup struct {
 	Event    *db.ParticipantEvent
 	NewParts types.Participants
 	OldParts types.Participants
+}
+
+func (g *NewGroup) IsNewJoined(address common.Address) bool {
+	return g.NewParts.Contains(address)
 }
 
 var nullNewGroup *NewGroup

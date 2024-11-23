@@ -123,7 +123,7 @@ func TestSchedulerOfNewGroup(t *testing.T) {
 		voterContractMocker.SetParticipants(copyParts)
 		voterContractMocker.SetProposer(proposer)
 
-		s := NewScheduler(false, runMode, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
 		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)
@@ -148,14 +148,13 @@ func TestSchedulerOfNewGroup(t *testing.T) {
 	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
-const TestNewPartyCount = 6
-
-var newAccount = Account{
+var addAccount = Account{
 	PK:      "a451cf94141706b5f426dab712cf99753f7f3101abb3125ad6541cd661f35230",
 	Address: common.HexToAddress("0xF5D09AE932101D53DDe91659686285F316e4C613"),
 }
 
-func TestSchedulerOfReGroup(t *testing.T) {
+// add one submitter.
+func TestSchedulerOfReGroupForAddAccount(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)
 
@@ -180,7 +179,7 @@ func TestSchedulerOfReGroup(t *testing.T) {
 
 	t.Log("submitters", submitters)
 
-	createNode := func(index int, submitter common.Address, runMode int) *Scheduler {
+	createNode := func(index int, submitter common.Address) *Scheduler {
 		stateDB := createDB(t, index)
 		t.Logf("index: %d, submitter:%v", index, submitter)
 
@@ -191,7 +190,7 @@ func TestSchedulerOfReGroup(t *testing.T) {
 		voterContractMocker.SetParticipants(copyParts)
 		voterContractMocker.SetProposer(proposer)
 
-		s := NewScheduler(false, runMode, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
 		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)
@@ -204,7 +203,7 @@ func TestSchedulerOfReGroup(t *testing.T) {
 
 	// 1.create old node
 	for i, submitter := range submitters {
-		createNode(i, submitter, NormalMode)
+		createNode(i, submitter)
 	}
 
 	// 2.run old node
@@ -216,7 +215,7 @@ func TestSchedulerOfReGroup(t *testing.T) {
 
 	t.Log("new node join")
 	// 3.create new node
-	s := createNode(5, newAccount.Address, JoinMode) // specifies the run mode for the join node
+	s := createNode(5, addAccount.Address) // specifies the run mode for the join node
 	t.Logf("new node: %v", s.Participants())
 	time.Sleep(1 * time.Second)
 
@@ -227,7 +226,91 @@ func TestSchedulerOfReGroup(t *testing.T) {
 	// generate `ParticipantEvent`
 	event := &db.ParticipantEvent{
 		EventName:   layer2.ParticipantAdded,
-		Address:     newAccount.Address.String(),
+		Address:     addAccount.Address.String(),
+		BlockNumber: 10,
+	}
+
+	time.Sleep(5 * time.Second)
+
+	t.Log("send new join node event")
+	// 6.leader(proposer) listen contact event(ParticipantEvent)
+	// start regroup
+	bus.Publish(eventbus.EventTask{}, event)
+
+	// 7.wait end
+	time.Sleep(10 * time.Minute)
+	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
+}
+
+var removeAccount = Account{
+	PK:      "a451cf94141706b5f426dab712cf99753f7f3101abb3125ad6541cd661f35230",
+	Address: common.HexToAddress("0xF5D09AE932101D53DDe91659686285F316e4C613"),
+}
+
+// remove one submitter.
+func TestSchedulerOfReGroupForRemoveAccount(t *testing.T) {
+	utils.SkipCI(t)
+	log.SetLevel(log.DebugLevel)
+
+	schedulerList := make([]*Scheduler, 0, len(accounts))
+
+	bus := eventbus.NewBus()
+	p2pMocker := NewP2PMocker(bus)
+	p2pMocker.SetOnlinePeerCount(testutil.TestPartyCount)
+
+	submitters := types.Participants{}
+
+	var proposer common.Address
+
+	for i := 0; i < testutil.TestPartyCount; i++ {
+		submitter := accounts[i].Address
+		if i == 2 {
+			proposer = submitter
+		}
+
+		submitters = append(submitters, submitter)
+	}
+
+	submitters = append(submitters, removeAccount.Address)
+
+	t.Log("submitters", submitters)
+
+	createNode := func(index int, submitter common.Address) *Scheduler {
+		stateDB := createDB(t, index)
+		voterContractMocker := NewVoterContractMocker()
+		copyParts := types.Participants{}
+		copyParts = append(copyParts, submitters...)
+		voterContractMocker.SetParticipants(copyParts)
+		voterContractMocker.SetProposer(proposer)
+
+		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		basePath := filepath.Join("./", strconv.Itoa(index))
+		err := os.MkdirAll(basePath, os.ModePerm)
+		assert.NoError(t, err)
+
+		s.partyData.basePath = basePath
+		schedulerList = append(schedulerList, s)
+
+		return s
+	}
+
+	// 1.create old node
+	for i, submitter := range submitters {
+		createNode(i, submitter)
+	}
+
+	// 2.run old node
+	for _, s := range schedulerList {
+		go s.Start()
+	}
+
+	time.Sleep(5 * time.Second)
+
+	// 5.send new participant tx to contact online by owner
+	// generate `ParticipantEvent`
+	event := &db.ParticipantEvent{
+		EventName:   layer2.ParticipantRemoved,
+		Address:     removeAccount.Address.String(),
 		BlockNumber: 10,
 	}
 
@@ -246,7 +329,7 @@ func TestSchedulerOfReGroup(t *testing.T) {
 func TestValue(t *testing.T) {
 	newGroup := NewGroup{
 		Event:    nil,
-		NewParts: []common.Address{newAccount.Address},
+		NewParts: []common.Address{addAccount.Address},
 		OldParts: nil,
 	}
 

@@ -39,3 +39,7 @@ func (p Participants) GroupID() common.Hash {
 
 	return crypto.Keccak256Hash(data)
 }
+
+func (p Participants) Contains(address common.Address) bool {
+	return slices.Contains(p, address)
+}
