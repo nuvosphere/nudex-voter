@@ -18,7 +18,7 @@ func RunReshare(
 	transport Transporter,
 ) (tss.Party, chan *keygen.LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
-	outCh := make(chan tss.Message, 1)
+	outCh := make(chan tss.Message, 100)
 	// output reshared key when finished
 	endCh := make(chan *keygen.LocalPartySaveData, 1)
 	// error if reshare fails, contains culprits to blame

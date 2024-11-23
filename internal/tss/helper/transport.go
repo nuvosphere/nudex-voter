@@ -10,9 +10,9 @@ import (
 // transfer lib-tss messages between parties.
 type Transporter interface {
 	Send(context.Context, []byte, *tss.MessageRouting, bool) error
-	// Receive returns a channel that will be read by the local tss party. This
+	// GetReceiveChannel returns a channel that will be read by the local tss party. This
 	// consists of ReceivedPartyState messages received from other parties.
-	Receive(partyID string) chan *ReceivedPartyState
+	GetReceiveChannel(partyID string) chan *ReceivedPartyState
 
 	Post(*ReceivedPartyState)
 
@@ -23,6 +23,7 @@ type Transporter interface {
 type ReceivedPartyState struct {
 	WireBytes               []byte
 	From                    *tss.PartyID
+	ToPartyIds              []string
 	IsBroadcast             bool
 	IsToOldCommittee        bool `json:"is_to_old_committee"`          // whether the message should be sent to old committee participants rather than the new committee
 	IsToOldAndNewCommittees bool `json:"is_to_old_and_new_committees"` // whether the message should be sent to both old and new committee participants
