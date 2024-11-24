@@ -135,7 +135,7 @@ func (d *LocalPartySaveData) EDDSAData() *eddsaKeygen.LocalPartySaveData {
 func (d *LocalPartySaveData) Address() string {
 	switch d.ty {
 	case ECDSA:
-		return crypto.PubkeyToAddress(*d.EDDSAData().EDDSAPub.ToECDSAPubKey()).String()
+		return crypto.PubkeyToAddress(*d.ECDSAData().ECDSAPub.ToECDSAPubKey()).String()
 	default:
 		panic("implement me")
 	}

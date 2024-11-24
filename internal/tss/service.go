@@ -33,10 +33,8 @@ func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterCo
 
 func (t *Service) Start(ctx context.Context) {
 	t.scheduler.Start()
-
-	<-ctx.Done()
+	t.loop(ctx)
 	log.Info("TSSService is stopping...")
-	t.Stop()
 }
 
 func (t *Service) Stop() {
@@ -52,12 +50,14 @@ func (t *Service) loop(ctx context.Context) {
 			case <-ctx.Done():
 				log.Info("tss signature read result loop stopped")
 			case result := <-out:
+				log.Infof("finish consensus sessionID:%s", result.SessionID)
 				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.ProposalID)
 				t.scheduler.AddDiscussedTask(result.ProposalID) // todo
 
 				if result.Err != nil {
 					log.Errorf("%s, result error:%v", info, result.Err)
 				} else {
+					log.Infof("finish consensus:%s", info)
 					t.handleSigFinish(ctx, result.Data)
 				}
 			}

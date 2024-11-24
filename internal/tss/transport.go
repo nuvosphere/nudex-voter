@@ -238,8 +238,10 @@ func (s *sessionTransport[T, M, D]) Run() {
 		select {
 		case <-s.ctx.Done():
 		case data := <-s.endCh:
+			log.Infof("recived data: session id: %v", s.SessionID())
 			s.inToOut <- s.newDataResult(data)
 		case err := <-s.errCH:
+			log.Infof("recived err: session id: %v", s.SessionID())
 			s.inToOut <- s.newErrResult(err)
 		}
 	}()

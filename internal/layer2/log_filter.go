@@ -85,7 +85,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		taskUpdated := contracts.TaskManagerContractTaskUpdated{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskUpdated, TaskUpdated, vLog)
 
-		var taskCompletedEvent *db.TaskUpdatedEvent
+		var taskUpdatedEvent *db.TaskUpdatedEvent
 
 		err := l.db.GetRelayerDB().Transaction(func(tx *gorm.DB) error {
 			taskErr := tx.
@@ -93,14 +93,14 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 				Where("task_id = ?", taskUpdated.TaskId).
 				Update("status", db.Completed).Error
 
-			taskCompletedEvent = &db.TaskUpdatedEvent{
+			taskUpdatedEvent = &db.TaskUpdatedEvent{
 				TaskId:     taskUpdated.TaskId,
 				Submitter:  taskUpdated.Submitter.Hex(),
 				UpdateTime: taskUpdated.UpdateTime.Int64(),
 				Result:     taskUpdated.Result,
 				LogIndex:   l.LogIndex(TaskUpdated, vLog),
 			}
-			err := tx.Save(taskCompletedEvent).Error
+			err := tx.Save(taskUpdatedEvent).Error
 
 			return errors.Join(taskErr, err)
 		})
@@ -108,8 +108,8 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			return err
 		}
 
-		if taskCompletedEvent != nil {
-			l.postTask(taskCompletedEvent)
+		if taskUpdatedEvent != nil {
+			l.postTask(taskUpdatedEvent)
 		}
 	}
 

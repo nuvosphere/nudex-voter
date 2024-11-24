@@ -184,9 +184,8 @@ func (v *VoterContractMocker) EncodeMarkTaskCompleted(taskId *big.Int, result []
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) EncodeRegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) []byte {
-	// TODO implement me
-	panic("implement me")
+func (v *VoterContractMocker) EncodeRegisterNewAddress(_account *big.Int, _chain uint8, _index *big.Int, _address string) []byte {
+	return contracts.EncodeFun(contracts.AccountManagerContractABI, "registerNewAddress", _account, _chain, _index, _address)
 }
 
 func (v *VoterContractMocker) GetAddressRecord(opts *bind.CallOpts, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {

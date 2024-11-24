@@ -52,7 +52,7 @@ type Scheduler struct {
 	partners           *atomic.Value // types.Participants
 	ecCount            *atomic.Int64
 	newGroup           *atomic.Value // *NewGroup
-	pendingTasks       pool.Pool[uint64]
+	pendingTasks       *pool.Pool[uint64]
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
 	stateDB            *gorm.DB
@@ -97,6 +97,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 		proposer:           &pp,
 		partners:           &ps,
 		newGroup:           newGroup,
+		pendingTasks:       pool.NewTxPool[uint64](),
 		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
 		pendingProposal:    make(chan any, 1024),
 		notify:             make(chan struct{}, 1024),

@@ -141,10 +141,11 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 
 	log.Debugf("open session fail: session id: %v, msg type: %v,", msg.SessionID, msg.Type)
 
+	var err error
 	// build new session
 	switch msg.Type {
 	case GenKeySessionType:
-		return m.JoinGenKeySession(msg)
+		err = m.JoinGenKeySession(msg)
 	case ReShareGroupSessionType:
 		return m.JoinReShareGroupSession(msg)
 	case SignTaskSessionType:
@@ -153,17 +154,25 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 			return err
 		}
 
-		return m.JoinSignTaskSession(msg, task)
+		err = m.JoinSignTaskSession(msg, task)
 	case TxSignatureSessionType: // blockchain wallet tx signature
 		task, err := m.GetTask(uint64(msg.ProposalID))
 		if err != nil {
 			return err
 		}
 
-		return m.JoinTxSignatureSession(msg, task)
+		err = m.JoinTxSignatureSession(msg, task)
 	default:
-		return fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
+		err = fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}
+
+	if err != nil {
+		return err
+	}
+
+	_ = m.OpenSession(msg)
+
+	return nil
 }
 
 func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) error {
@@ -262,6 +271,8 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 }
 
 func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) error {
+	log.Debugf("JoinSignTaskSession: session id: %v, task id:%v, task type: %v", msg.SessionID, task.TaskID(), task.Type())
+
 	//localPartySaveData := m.partyData.GetData(ec)
 	//unSignMsg := m.TaskProposal(task)
 	//if unSignMsg.String() != msg.Proposal.String() {
