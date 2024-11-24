@@ -83,7 +83,11 @@ func (t *Pool[E]) Reset() {
 
 func (t *Pool[E]) GetTopN(N int64) []Task[E] {
 	t.Lock()
-	slices.Sort(t.ids)
+
+	is := slices.IsSorted(t.ids)
+	if !is {
+		slices.Sort(t.ids)
+	}
 	t.Unlock()
 	t.RLock()
 	defer t.RUnlock()
