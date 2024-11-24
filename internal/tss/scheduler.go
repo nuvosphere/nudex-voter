@@ -17,6 +17,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
+	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -51,6 +52,7 @@ type Scheduler struct {
 	partners           *atomic.Value // types.Participants
 	ecCount            *atomic.Int64
 	newGroup           *atomic.Value // *NewGroup
+	pendingTasks       pool.Pool[uint64]
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
 	stateDB            *gorm.DB
@@ -372,7 +374,9 @@ func (m *Scheduler) proposalLoop() {
 				log.Info("received task from layer2 log scan: ", data)
 
 				switch v := data.(type) {
-				case db.ITask:
+				case pool.Task[uint64]:
+					m.pendingTasks.Add(v)
+
 					if m.isCanProposal() {
 						log.Info("proposal task", v)
 						m.processTaskProposal(v)

@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"gorm.io/gorm"
 )
 
@@ -19,9 +20,8 @@ const (
 	Failed
 )
 
-type ITask interface {
-	Type() int
-	TaskID() uint64
+type DetailTask interface {
+	pool.Task[uint64]
 	SetBaseTask(task Task)
 }
 
@@ -38,8 +38,35 @@ type Task struct {
 	WithdrawalTask   *WithdrawalTask   `gorm:"foreignKey:TaskId;references:TaskId"`
 }
 
-func (Task) TableName() string {
+func (*Task) TableName() string {
 	return "task"
+}
+
+func (t *Task) Type() int {
+	return t.TaskType
+}
+
+func (t *Task) TaskID() uint64 {
+	return t.TaskId
+}
+
+func (t *Task) DetailTask() DetailTask {
+	var c DetailTask
+
+	switch t.TaskType {
+	case TaskTypeCreateWallet:
+		c = t.CreateWalletTask
+	case TaskTypeDeposit:
+		c = t.DepositTask
+	case TaskTypeWithdrawal:
+		c = t.WithdrawalTask
+	default:
+		panic("DetailTask: unhandled default case")
+	}
+
+	c.SetBaseTask(*t)
+
+	return c
 }
 
 type BaseTask struct {
@@ -60,10 +87,6 @@ func (t *BaseTask) TaskID() uint64 {
 func (t *BaseTask) SetBaseTask(task Task) {
 	t.Task = task
 }
-
-//func (t *BaseTask) BaseTask() Task {
-//	return t.Task
-//}
 
 type CreateWalletTask struct {
 	BaseTask
