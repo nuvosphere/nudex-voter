@@ -149,16 +149,16 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	case ReShareGroupSessionType:
 		return m.JoinReShareGroupSession(msg)
 	case SignTaskSessionType:
-		task, err := m.GetTask(uint64(msg.ProposalID))
-		if err != nil {
-			return err
+		task, errTask := m.GetTask(uint64(msg.ProposalID))
+		if errTask != nil {
+			return errTask
 		}
 
 		err = m.JoinSignTaskSession(msg, task)
 	case TxSignatureSessionType: // blockchain wallet tx signature
-		task, err := m.GetTask(uint64(msg.ProposalID))
-		if err != nil {
-			return err
+		task, errTask := m.GetTask(uint64(msg.ProposalID))
+		if errTask != nil {
+			return errTask
 		}
 
 		err = m.JoinTxSignatureSession(msg, task)
