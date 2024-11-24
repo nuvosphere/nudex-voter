@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts/codec"
 )
 
 func Pack(meta *bind.MetaData, method string, params ...interface{}) []byte {
@@ -162,4 +163,8 @@ func unpackEventLog(meta *bind.MetaData, out interface{}, event string, log type
 	}
 
 	return abi.ParseTopics(out, indexed, log.Topics[1:])
+}
+
+func EncodeOperation(tssNonce *big.Int, operations []Operation) []byte {
+	return EncodeFun(codec.VoterCodecMetaData.ABI, "", tssNonce, operations)
 }

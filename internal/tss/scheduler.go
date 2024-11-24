@@ -307,20 +307,26 @@ func (m *Scheduler) loopApproveProposal() {
 }
 
 func (m *Scheduler) BatchTask() {
-	log.Info("batch proposal")
-	m.BlockDetectionThreshold()
-	tasks := m.pendingTasks.GetTopN(TopN)
-	_ = lo.Map(tasks, func(item pool.Task[uint64], index int) *contracts.Operation { return m.Operation(item) })
-
-	_, err := m.voterContract.TssNonce()
-	if err != nil {
-		log.Info("batch task nonce error", "err:", err)
-		return
-	}
-
 	if m.isCanProposal() {
-		log.Info("proposal task")
-		// m.voterContract.EncodeVerifyAndCall()
+		log.Info("batch proposal")
+		m.BlockDetectionThreshold()
+		tasks := m.pendingTasks.GetTopN(TopN)
+		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
+
+		nonce, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+		if err != nil {
+			log.Errorf("batch task generate verify task unsign msg err:%v", err)
+			return
+		}
+
+		m.NewSignSession(
+			helper.ECDSA,
+			helper.ZeroSessionID,
+			ProposalID(nonce.Int64()), // todo
+			msg.Big(),
+			*m.partyData.ECDSALocalData(),
+			nil,
+		)
 	}
 }
 

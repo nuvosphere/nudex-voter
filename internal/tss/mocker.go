@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
@@ -121,9 +122,17 @@ func (v *VoterContractMocker) EncodeVerifyAndCall(operations []contracts.Operati
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (common.Hash, error) {
-	// TODO implement me
-	panic("implement me")
+func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error) {
+	nonce, err := v.TssNonce()
+	if err != nil {
+		return nil, common.Hash{}, err
+	}
+
+	nonce.Add(nonce, big.NewInt(1))
+
+	encodeData := contracts.EncodeOperation(nonce, operations)
+
+	return nonce, crypto.Keccak256Hash(encodeData), err
 }
 
 func (v *VoterContractMocker) SetParticipants(pp types.Participants) {
