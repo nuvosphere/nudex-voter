@@ -57,19 +57,71 @@ func (t *Service) loop(ctx context.Context) {
 				if result.Err != nil {
 					log.Errorf("%s, result error:%v", info, result.Err)
 				} else {
-					log.Infof("finish consensus:%s", info)
-					t.handleSigFinish(ctx, result.Data)
+					t.handleSigFinish(ctx, uint64(result.ProposalID), result.Data)
 				}
 			}
 		}
 	}()
 }
 
-func (t *Service) handleSigFinish(ctx context.Context, signatureData *tsscommon.SignatureData) {
+func (t *Service) handleSigFinish(ctx context.Context, taskID uint64, signatureData *tsscommon.SignatureData) {
 	// 1. save db
 	// 2. update status
 	if t.scheduler.IsProposer() {
-		// 2. send signature data to blockchain
 		log.Info("proposer submit signature")
+
+		task, err := t.scheduler.GetTask(taskID)
+		if err != nil {
+			log.Errorf("get task err:%v", err)
+			return
+		}
+
+		if task == nil {
+			log.Errorf("find no task by taskId: %d", taskID)
+			return
+		}
+		// createWalletTask := task.
+		// localPartySaveData, _, unSignMsg, operations := t.scheduler.CreateWalletProposal(createWalletTask)
+		//
+		// calldata := t.scheduler.voterContract.EncodeVerifyAndCall(operations, signatureData.Signature)
+		// publicKey := *localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey()
+		// verifyOk := ecdsa.Verify(&publicKey, unSignMsg.Bytes(), new(big.Int).SetBytes(signatureData.R), new(big.Int).SetBytes(signatureData.S))
+		//
+		//	if !verifyOk {
+		//		log.Errorf("verify signature fail for taskId: %d", taskID)
+		//		return
+		//	}
+		//
+		// submitterWallet := wallet.NewWallet(config.AppConfig.L2RPC, publicKey, *config.AppConfig.L2PrivateKey)
+		// tx, err := submitterWallet.BuildUnsignTx(context.Background(), common.HexToAddress(config.AppConfig.AccountContract), big.NewInt(0), calldata)
+		//
+		//	if err != nil {
+		//		log.Fatalf("failed to build unsigned transaction: %v", err)
+		//	}
+		//
+		// signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(config.AppConfig.L2ChainId), config.AppConfig.L2PrivateKey)
+		//
+		//	if err != nil {
+		//		log.Fatalf("failed to sign transaction: %v", err)
+		//	}
+		//
+		// err = submitterWallet.SendSingedTx(context.Background(), signedTx)
+		//
+		//	if err != nil {
+		//		log.Fatalf("failed to send transaction: %v", err)
+		//	}
+		//
+		// receipt, err := submitterWallet.WaitTxSuccess(ctx, signedTx.Hash())
+		//
+		//	if err != nil {
+		//		log.Fatalf("failed to wait transaction success: %v", err)
+		//	}
+		//
+		//	if receipt.Status == 0 {
+		//		log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", taskID, signedTx.Hash().String())
+		//	} else {
+		//
+		//		log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", taskID, signedTx.Hash().String())
+		//	}
 	}
 }

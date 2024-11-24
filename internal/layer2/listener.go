@@ -81,7 +81,14 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 
 	var errs []error
 
-	_, err = self.ChainID(context.Background())
+	chainId, err := self.ChainID(context.Background())
+	self.chainID.Store(chainId.Int64())
+
+	if chainId.Int64() != config.AppConfig.L2ChainId.Int64() {
+		err = fmt.Errorf("ChainId mismatch: expected %d, got %d", config.AppConfig.L2ChainId.Int64(), chainId.Int64())
+		errs = append(errs, err)
+	}
+
 	errs = append(errs, err)
 	contractVotingManager, err := contracts.NewVotingManagerContract(VotingAddress, ethClient)
 	errs = append(errs, err)
