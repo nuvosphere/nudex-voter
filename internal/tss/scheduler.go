@@ -524,9 +524,3 @@ func (g *NewGroup) IsNewJoined(address common.Address) bool {
 }
 
 var nullNewGroup *NewGroup
-
-type Draft struct {
-	Type    int
-	DraftID int32
-	Extra   any
-}
