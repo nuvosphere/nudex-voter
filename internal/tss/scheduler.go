@@ -16,6 +16,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
+	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
@@ -57,7 +58,6 @@ type Scheduler struct {
 	voterContract      layer2.VoterContract
 	stateDB            *gorm.DB
 	submitterChosen    *db.SubmitterChosen
-	pendingProposal    chan any
 	notify             chan struct{}
 	tssMsgCh           <-chan any // eventbus channel
 	pendingTask        <-chan any // eventbus channel
@@ -99,7 +99,6 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 		newGroup:           newGroup,
 		pendingTasks:       pool.NewTxPool[uint64](),
 		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
-		pendingProposal:    make(chan any, 1024),
 		notify:             make(chan struct{}, 1024),
 		stateDB:            stateDB,
 		voterContract:      voterContract,
@@ -290,22 +289,39 @@ func (m *Scheduler) Release() {
 	close(m.sigInToOut)
 }
 
-func (m *Scheduler) SubmitProposal(proposal any) {
-	m.pendingProposal <- proposal
-}
-
 func (m *Scheduler) loopApproveProposal() {
+	ticker := time.NewTicker(30 * time.Second)
+
 	go func() {
 		select {
 		case <-m.ctx.Done():
 			log.Info("approve proposal done")
-		case proposal := <-m.pendingProposal:
-			// todo
-			// signature proposal
-			log.Info("doing approve proposal", proposal)
-			m.BlockDetectionThreshold()
+
+		case <-ticker.C:
+			m.BatchTask()
+
+		case <-m.notify:
+			m.BatchTask()
 		}
 	}()
+}
+
+func (m *Scheduler) BatchTask() {
+	log.Info("batch proposal")
+	m.BlockDetectionThreshold()
+	tasks := m.pendingTasks.GetTopN(TopN)
+	_ = lo.Map(tasks, func(item pool.Task[uint64], index int) *contracts.Operation { return m.Operation(item) })
+
+	_, err := m.voterContract.TssNonce()
+	if err != nil {
+		log.Info("batch task nonce error", "err:", err)
+		return
+	}
+
+	if m.isCanProposal() {
+		log.Info("proposal task")
+		// m.voterContract.EncodeVerifyAndCall()
+	}
 }
 
 func (m *Scheduler) IsDiscussed(taskID int64) bool {
@@ -362,6 +378,8 @@ func (m *Scheduler) p2pLoop() {
 	log.Info("p2p loop started")
 }
 
+const TopN = 20
+
 func (m *Scheduler) proposalLoop() {
 	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
 
@@ -378,10 +396,14 @@ func (m *Scheduler) proposalLoop() {
 				case pool.Task[uint64]:
 					m.pendingTasks.Add(v)
 
-					if m.isCanProposal() {
-						log.Info("proposal task", v)
-						m.processTaskProposal(v)
+					if m.pendingTasks.Len() >= TopN {
+						m.notify <- struct{}{}
 					}
+
+					//if m.isCanProposal() {
+					//	log.Info("proposal task", v)
+					//	m.processTaskProposal(v)
+					//}
 				case *db.ParticipantEvent: // regroup
 					m.processReGroupProposal(v)
 
