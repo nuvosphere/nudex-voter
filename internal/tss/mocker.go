@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
@@ -116,14 +117,22 @@ func (v *VoterContractMocker) TaskCompletionThreshold() (*big.Int, error) {
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte) []byte {
+func (v *VoterContractMocker) EncodeVerifyAndCall(operations []contracts.Operation, signature []byte) []byte {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(contractAddress common.Address, calldata []byte, taskID *big.Int) (common.Hash, error) {
-	// TODO implement me
-	panic("implement me")
+func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error) {
+	nonce, err := v.TssNonce()
+	if err != nil {
+		return nil, common.Hash{}, err
+	}
+
+	nonce.Add(nonce, big.NewInt(1))
+
+	encodeData := contracts.EncodeOperation(nonce, operations)
+
+	return nonce, crypto.Keccak256Hash(encodeData), err
 }
 
 func (v *VoterContractMocker) SetParticipants(pp types.Participants) {
@@ -184,9 +193,8 @@ func (v *VoterContractMocker) EncodeMarkTaskCompleted(taskId *big.Int, result []
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) EncodeRegisterNewAddress(_user common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) []byte {
-	// TODO implement me
-	panic("implement me")
+func (v *VoterContractMocker) EncodeRegisterNewAddress(_account *big.Int, _chain uint8, _index *big.Int, _address string) []byte {
+	return contracts.EncodeFun(contracts.AccountManagerContractABI, "registerNewAddress", _account, _chain, _index, _address)
 }
 
 func (v *VoterContractMocker) GetAddressRecord(opts *bind.CallOpts, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {

@@ -112,7 +112,7 @@ func TestSchedulerOfNewGroup(t *testing.T) {
 
 	t.Log("submitters", submitters)
 
-	createNode := func(index int, submitter common.Address, runMode int) *Scheduler {
+	createNode := func(index int, submitter common.Address) *Scheduler {
 		stateDB := createDB(t, index)
 		t.Logf("index: %d, submitter:%v", index, submitter)
 
@@ -136,7 +136,7 @@ func TestSchedulerOfNewGroup(t *testing.T) {
 
 	// create node
 	for i, submitter := range submitters {
-		createNode(i, submitter, BootMode) // specifies the run mode for the first time
+		createNode(i, submitter) // specifies the run mode for the first time
 	}
 
 	// run node
@@ -320,6 +320,87 @@ func TestSchedulerOfReGroupForRemoveAccount(t *testing.T) {
 	// 6.leader(proposer) listen contact event(ParticipantEvent)
 	// start regroup
 	bus.Publish(eventbus.EventTask{}, event)
+
+	// 7.wait end
+	time.Sleep(10 * time.Minute)
+	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
+}
+
+// remove one submitter.
+func TestSchedulerSignature(t *testing.T) {
+	utils.SkipCI(t)
+	log.SetLevel(log.DebugLevel)
+
+	schedulerList := make([]*Scheduler, 0, len(accounts))
+
+	bus := eventbus.NewBus()
+	p2pMocker := NewP2PMocker(bus)
+	p2pMocker.SetOnlinePeerCount(testutil.TestPartyCount)
+
+	submitters := types.Participants{}
+
+	var proposer common.Address
+
+	for i := 0; i < testutil.TestPartyCount; i++ {
+		submitter := accounts[i].Address
+		if i == 2 {
+			proposer = submitter
+		}
+
+		submitters = append(submitters, submitter)
+	}
+
+	t.Log("submitters", submitters)
+
+	createNode := func(index int, submitter common.Address) *Scheduler {
+		stateDB := createDB(t, index)
+		voterContractMocker := NewVoterContractMocker()
+		copyParts := types.Participants{}
+		copyParts = append(copyParts, submitters...)
+		voterContractMocker.SetParticipants(copyParts)
+		voterContractMocker.SetProposer(proposer)
+
+		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		basePath := filepath.Join("./", strconv.Itoa(index))
+		err := os.MkdirAll(basePath, os.ModePerm)
+		assert.NoError(t, err)
+
+		s.partyData.basePath = basePath
+
+		schedulerList = append(schedulerList, s)
+
+		return s
+	}
+
+	// 1.create node
+	for i, submitter := range submitters {
+		createNode(i, submitter)
+	}
+
+	// 2.run node
+	for _, s := range schedulerList {
+		go s.Start()
+	}
+
+	time.Sleep(5 * time.Second)
+
+	// 3.send tx to contact online by owner
+
+	// generate `ParticipantEvent`
+	task := &db.CreateWalletTask{
+		BaseTask: db.BaseTask{
+			TaskType: db.TaskTypeCreateWallet,
+			TaskId:   1,
+		},
+		Account: 1,
+		Chain:   0, // eth
+		Index:   1,
+	}
+
+	t.Log("send create wallet task")
+	// 6.leader(proposer) listen contact task(ParticipantEvent)
+	// start regroup
+	bus.Publish(eventbus.EventTask{}, task)
 
 	// 7.wait end
 	time.Sleep(10 * time.Minute)

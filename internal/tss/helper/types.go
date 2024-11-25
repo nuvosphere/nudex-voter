@@ -19,7 +19,7 @@ var (
 	ZeroSessionID           SessionID
 	senateSessionID         = crypto.Keccak256Hash([]byte("The voter senate session，one and only one"))
 	SenateProposal          = senateSessionID.Big()
-	senateProposalID        = senateSessionID.Big().Int64()
+	senateProposalID        = senateSessionID.Big().Uint64()
 	SenateProposalIDOfECDSA = senateProposalID - 1
 	SenateProposalIDOfEDDSA = senateProposalID - 2
 	SenateSessionIDOfECDSA  = crypto.Keccak256Hash([]byte("ECDSA:The voter senate session，one and only one"))
@@ -135,7 +135,7 @@ func (d *LocalPartySaveData) EDDSAData() *eddsaKeygen.LocalPartySaveData {
 func (d *LocalPartySaveData) Address() string {
 	switch d.ty {
 	case ECDSA:
-		return crypto.PubkeyToAddress(*d.EDDSAData().EDDSAPub.ToECDSAPubKey()).String()
+		return crypto.PubkeyToAddress(*d.ECDSAData().ECDSAPub.ToECDSAPubKey()).String()
 	default:
 		panic("implement me")
 	}

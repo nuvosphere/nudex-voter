@@ -21,7 +21,7 @@ import (
 var _ Session[any] = &sessionTransport[any, any, any]{}
 
 type (
-	ProposalID = int64
+	ProposalID = uint64
 	Proposal   = big.Int
 )
 
@@ -33,6 +33,7 @@ type SessionMessage[T, M any] struct {
 	Proposer                common.Address   `json:"proposer,omitempty"`    // current submitter
 	ProposalID              T                `json:"proposal_id,omitempty"` // msg id
 	Proposal                M                `json:"proposal,omitempty"`
+	Data                    []T              `json:"data"`
 	FromPartyId             string           `json:"from_party_id"`
 	ToPartyIds              []string         `json:"to_party_ids"`
 	IsBroadcast             bool             `json:"is_broadcast"`
@@ -71,10 +72,11 @@ type sessionTransport[T, M, D any] struct {
 }
 
 const (
-	GenKeySessionType       = "GenerateKeySession"
-	ReShareGroupSessionType = "ReShareGroupSession"
-	SignTaskSessionType     = "SignTaskSession"
-	TxSignatureSessionType  = "TxSignatureSession"
+	GenKeySessionType        = "GenerateKeySession"
+	ReShareGroupSessionType  = "ReShareGroupSession"
+	SignTaskSessionType      = "SignTaskSession"
+	SignBatchTaskSessionType = "SignBatchTaskSessionType"
+	TxSignatureSessionType   = "TxSignatureSession"
 )
 
 func NewParam(
@@ -238,8 +240,10 @@ func (s *sessionTransport[T, M, D]) Run() {
 		select {
 		case <-s.ctx.Done():
 		case data := <-s.endCh:
+			log.Infof("received data: session id: %v", s.SessionID())
 			s.inToOut <- s.newDataResult(data)
 		case err := <-s.errCH:
+			log.Infof("received err: session id: %v", s.SessionID())
 			s.inToOut <- s.newErrResult(err)
 		}
 	}()

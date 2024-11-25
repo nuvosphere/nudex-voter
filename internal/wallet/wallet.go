@@ -33,13 +33,12 @@ type Wallet struct {
 	nonce               atomic.Uint64
 }
 
-func NewWallet(l2url string, tssPublicKey ecdsa.PublicKey, submitterPrivateKey ecdsa.PrivateKey) *Wallet {
+func NewWallet(l2url string, submitterPrivateKey ecdsa.PrivateKey) *Wallet {
 	client, err := ethclient.Dial(l2url)
 	utils.Assert(err)
 
 	return &Wallet{
 		client:              client,
-		tssPublicKey:        tssPublicKey,
 		submitterPrivateKey: submitterPrivateKey,
 		submitter:           crypto.PubkeyToAddress(submitterPrivateKey.PublicKey),
 		pendingTx:           sync.Map{},
@@ -65,6 +64,10 @@ func GenerateAddressByPath(masterPubKey ecdsa.PublicKey, coinType, account uint3
 	utils.Assert(err)
 
 	return crypto.PubkeyToAddress(extendKey.PublicKey)
+}
+
+func (s *Wallet) SetTssPublicKey(tssPublicKey ecdsa.PublicKey) {
+	s.tssPublicKey = tssPublicKey
 }
 
 func (s *Wallet) Address(coinType, account uint32, index uint8) common.Address {

@@ -44,13 +44,13 @@ func (l *Layer2Listener) TaskSubmitter() (common.Address, error) {
 }
 
 func (l *Layer2Listener) EncodeSubmitTask(submitter common.Address, context []byte) []byte {
-	return contracts.EncodeFun(contracts.TaskManagerContractABI, "submitTask", submitter, context)
+	return contracts.EncodeFun(contracts.TaskManagerContractMetaData.ABI, "submitTask", submitter, context)
 }
 
 func (l *Layer2Listener) EncodeMarkTaskCompleted(taskId *big.Int, result []byte) []byte {
-	return contracts.EncodeFun(contracts.TaskManagerContractABI, "markTaskCompleted", taskId, result)
+	return contracts.EncodeFun(contracts.TaskManagerContractMetaData.ABI, "markTaskCompleted", taskId, result)
 }
 
 func (l *Layer2Listener) EncodeMarkTaskCompletedBatch(taskIds []*big.Int, results [][]byte) []byte {
-	return contracts.EncodeFun(contracts.TaskManagerContractABI, "markTaskCompleted_Batch", taskIds, results)
+	return contracts.EncodeFun(contracts.TaskManagerContractMetaData.ABI, "markTaskCompleted_Batch", taskIds, results)
 }

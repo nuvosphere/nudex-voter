@@ -17,12 +17,19 @@ const (
 	DataTypeSignWithdrawal   = "SignWithdrawal"
 )
 
+const (
+	TaskStateCreated = iota
+	TaskStatePending
+	TaskStateCompleted
+	TaskStateFailed
+)
+
 // convertMsgData converts the message data to the corresponding struct.
 func convertMsgData(msg p2p.Message[json.RawMessage]) any {
 	switch msg.DataType {
 	case DataTypeTssKeygenMsg, DataTypeTssReSharingMsg, DataTypeTssSignMsg:
 		return unmarshal[types.TssMessage](msg.Data)
-	case GenKeySessionType, SignTaskSessionType, ReShareGroupSessionType:
+	case GenKeySessionType, SignTaskSessionType, SignBatchTaskSessionType, ReShareGroupSessionType, TxSignatureSessionType:
 		return unmarshal[SessionMessage[ProposalID, Proposal]](msg.Data)
 	case DataTypeSignCreateWallet:
 		return unmarshal[types.SignMessage](msg.Data)

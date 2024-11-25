@@ -281,11 +281,11 @@ func RunParty(
 ) (tss.Party, chan *tsscommon.SignatureData, chan *tss.Error) {
 	// outgoing messages to other peers - not one to not deadlock when a party
 	// round is waiting for outgoing messages channel to clear
-	outCh := make(chan tss.Message, 256)
+	outCh := make(chan tss.Message, 100000)
 	// output signature when finished
 	endCh := make(chan *tsscommon.SignatureData, 256)
 	// error if signing fails, contains culprits to blame
-	errCh := make(chan *tss.Error, 1)
+	errCh := make(chan *tss.Error, 256)
 
 	log.Debug("creating new local party")
 

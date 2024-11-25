@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
 type ContractVotingManager interface {
@@ -18,8 +17,8 @@ type ContractVotingManager interface {
 	ForcedRotationWindow() (*big.Int, error)
 	TaskCompletionThreshold() (*big.Int, error)
 
-	EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte) []byte
-	GenerateVerifyTaskUnSignMsg(contractAddress common.Address, calldata []byte, taskID *big.Int) (common.Hash, error)
+	EncodeVerifyAndCall(operations []contracts.Operation, signature []byte) []byte
+	GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error)
 }
 
 func (l *Layer2Listener) TssSigner() (common.Address, error) {
@@ -50,26 +49,23 @@ func (l *Layer2Listener) Proposer() (common.Address, error) {
 	return l.contractVotingManager.NextSubmitter(nil)
 }
 
-func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(contractAddress common.Address, calldata []byte, taskID *big.Int) (common.Hash, error) {
+func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error) {
 	nonce, err := l.contractVotingManager.TssNonce(nil)
 	if err != nil {
-		return common.Hash{}, nil
+		return nil, common.Hash{}, err
 	}
 
 	nonce.Add(nonce, big.NewInt(1))
 
-	encodeData, err := utils.AbiEncodePacked(nonce, contractAddress, calldata, taskID)
-	if err != nil {
-		return common.Hash{}, nil
-	}
+	encodeData := contracts.EncodeOperation(nonce, operations)
 
-	return crypto.Keccak256Hash(encodeData), nil
+	return nonce, crypto.Keccak256Hash(encodeData), err
 }
 
 func (l *Layer2Listener) NextSubmitter() (common.Address, error) {
 	return l.contractVotingManager.NextSubmitter(nil)
 }
 
-func (l *Layer2Listener) EncodeVerifyAndCall(_target common.Address, _data []byte, _signature []byte) []byte {
-	return contracts.EncodeFun(contracts.VotingManagerContractABI, "verifyAndCall", _target, _data, _signature)
+func (l *Layer2Listener) EncodeVerifyAndCall(operations []contracts.Operation, signature []byte) []byte {
+	return contracts.EncodeFun(contracts.VotingManagerContractMetaData.ABI, "verifyAndCall", operations, signature)
 }
