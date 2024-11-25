@@ -61,17 +61,19 @@ type Scheduler struct {
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
-	proposer, err := voterContract.Proposer()
-	utils.Assert(err)
-
 	pp := atomic.Value{}
-	pp.Store(proposer)
-
-	partners, err := voterContract.Participants()
-	utils.Assert(err)
+	proposer, err := voterContract.Proposer()
+	if err != nil {
+		log.Warnf("get proposer error, %s", err.Error())
+		pp.Store(proposer)
+	}
 
 	ps := atomic.Value{}
-	ps.Store(partners)
+	partners, err := voterContract.Participants()
+	if err != nil {
+		log.Warnf("get partners error, %s", err.Error())
+		ps.Store(partners)
+	}
 
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)
@@ -342,9 +344,7 @@ func (m *Scheduler) LocalSubmitter() common.Address {
 }
 
 func (m *Scheduler) Proposer() common.Address {
-	proposer, err := m.voterContract.Proposer()
-	utils.Assert(err)
-
+	proposer, _ := m.voterContract.Proposer()
 	return proposer
 }
 
