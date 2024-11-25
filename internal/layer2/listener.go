@@ -172,7 +172,14 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 		return false, fmt.Errorf("error getting latest block number: %v", err)
 	}
 
-	targetBlock := latestBlock - uint64(config.AppConfig.L2Confirmations)
+	var targetBlock uint64
+	if latestBlock >= uint64(config.AppConfig.L2Confirmations) {
+		targetBlock = latestBlock - uint64(config.AppConfig.L2Confirmations)
+	} else {
+		log.Infof("latestBlock is less than L2Confirmations, setting targetBlock to 0")
+		targetBlock = 0
+	}
+
 	if syncStatus.LastSyncBlock < targetBlock {
 		fromBlock := syncStatus.LastSyncBlock + 1
 
