@@ -37,6 +37,14 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())
 		operation.OptData = data
 	case *db.DepositTask:
+		// m.voterContract.EncodeRecordDeposit(
+		//	common.HexToAddress(task.TargetAddress),
+		//	big.NewInt(int64(task.Amount)),
+		//	task.ChainId,
+		//	task.TxHash
+		//	)
+		// todo
+
 	case *db.WithdrawalTask:
 	default:
 		panic("unhandled default case")

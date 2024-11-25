@@ -8,7 +8,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
@@ -197,7 +196,15 @@ func (v *VoterContractMocker) EncodeRegisterNewAddress(_account *big.Int, _chain
 	return contracts.EncodeFun(contracts.AccountManagerContractABI, "registerNewAddress", _account, _chain, _index, _address)
 }
 
-func (v *VoterContractMocker) GetAddressRecord(opts *bind.CallOpts, _account *big.Int, _chain uint8, _index *big.Int) (string, error) {
+func (v *VoterContractMocker) GetAddressRecord(_account *big.Int, _chain uint8, _index *big.Int) (string, error) {
 	// TODO implement me
 	panic("implement me")
+}
+
+func (v *VoterContractMocker) EncodeRecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) []byte {
+	return contracts.EncodeFun(contracts.DepositManagerContractMetaData.ABI, "recordWithdrawal", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
+}
+
+func (v *VoterContractMocker) EncodeRecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) []byte {
+	return contracts.EncodeFun(contracts.DepositManagerContractMetaData.ABI, "recordWithdrawal", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }

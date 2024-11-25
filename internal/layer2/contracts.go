@@ -10,6 +10,7 @@ type VoterContract interface {
 	ParticipantManager
 	TaskManager
 	AccountManager
+	DepositManager
 }
 
 type Operation interface {
