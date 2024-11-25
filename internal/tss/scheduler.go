@@ -48,6 +48,7 @@ type Scheduler struct {
 	ecCount            *atomic.Int64
 	newGroup           *atomic.Value // *NewGroup
 	pendingTasks       *pool.Pool[uint64]
+	operations         *pool.Pool[ProposalID]
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
 	stateDB            *gorm.DB
@@ -55,6 +56,7 @@ type Scheduler struct {
 	notify             chan struct{}
 	tssMsgCh           <-chan any // eventbus channel
 	pendingTask        <-chan any // eventbus channel
+	handleSigFinish    func(*Operations)
 }
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
@@ -316,7 +318,7 @@ func (m *Scheduler) BatchTask() {
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
 			helper.ZeroSessionID,
-			ProposalID(nonce.Uint64()), // todo
+			nonce.Uint64(), // ProposalID todo
 			msg.Big(),
 		)
 	}
@@ -482,6 +484,29 @@ func (m *Scheduler) reGroupResultLoop() {
 					newGroup := m.newGroup.Swap(nullNewGroup).(*NewGroup)
 					m.partners.Store(newGroup.NewParts)
 					log.Infof("regroup success!!!: new groupID: %v", newGroup.NewParts.GroupID())
+				}
+			}
+		}
+	}()
+}
+
+func (m *Scheduler) loopSigInToOut() {
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("tss signature read result loop stopped")
+			case result := <-m.sigInToOut:
+				log.Infof("finish consensus sessionID:%s", result.SessionID)
+				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.ProposalID)
+				m.AddDiscussedTask(result.ProposalID) // todo
+
+				if result.Err != nil {
+					log.Errorf("%s, result error:%v", info, result.Err)
+				} else {
+					ops := m.operations.Get(result.ProposalID).(*Operations)
+					ops.Signature = result.Data.SignatureRecovery
+					m.handleSigFinish(ops)
 				}
 			}
 		}

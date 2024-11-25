@@ -151,7 +151,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	case ReShareGroupSessionType:
 		return m.JoinReShareGroupSession(msg)
 	case SignTaskSessionType:
-		task, errTask := m.GetTask(uint64(msg.ProposalID))
+		task, errTask := m.GetTask(msg.ProposalID)
 		if errTask != nil {
 			return errTask
 		}
@@ -162,7 +162,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		err = m.JoinSignBatchTaskSession(msg)
 
 	case TxSignatureSessionType: // blockchain wallet tx signature
-		task, errTask := m.GetTask(uint64(msg.ProposalID))
+		task, errTask := m.GetTask(msg.ProposalID)
 		if errTask != nil {
 			return errTask
 		}
@@ -323,7 +323,7 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 
 		m.NewSignSession(
 			msg.SessionID,
-			ProposalID(task.TaskID()),
+			task.TaskID(),
 			unSignMsg,
 			localPartySaveData,
 			nil,
@@ -413,7 +413,7 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 
 		m.NewSignSession(
 			helper.ZeroSessionID,
-			ProposalID(taskData.TaskId),
+			taskData.TaskId,
 			unSignMsg,
 			localPartySaveData,
 			nil,

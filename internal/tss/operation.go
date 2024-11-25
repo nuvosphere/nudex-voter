@@ -9,6 +9,22 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 )
 
+const TypeOperations = 100
+
+type Operations struct {
+	Nonce     *big.Int
+	Operation []contracts.Operation
+	Signature []byte
+}
+
+func (o *Operations) TaskID() uint64 {
+	return o.Nonce.Uint64()
+}
+
+func (o *Operations) Type() int {
+	return TypeOperations
+}
+
 func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
 	operation := &contracts.Operation{
 		TaskId: detailTask.TaskID(),

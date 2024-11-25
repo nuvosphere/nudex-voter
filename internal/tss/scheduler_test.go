@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"context"
 	"encoding/hex"
 	"os"
 	"path/filepath"
@@ -332,7 +331,7 @@ func TestSchedulerSignature(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)
 
-	serviceList := make([]*Service, 0, len(accounts))
+	schedulerList := make([]*Scheduler, 0, len(accounts))
 
 	bus := eventbus.NewBus()
 	p2pMocker := NewP2PMocker(bus)
@@ -362,14 +361,13 @@ func TestSchedulerSignature(t *testing.T) {
 		voterContractMocker.SetProposer(proposer)
 
 		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
-		service := &Service{scheduler: s}
 		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)
 
 		s.partyData.basePath = basePath
 
-		serviceList = append(serviceList, service)
+		schedulerList = append(schedulerList, s)
 
 		return s
 	}
@@ -380,8 +378,8 @@ func TestSchedulerSignature(t *testing.T) {
 	}
 
 	// 2.run node
-	for _, s := range serviceList {
-		go s.Start(context.Background())
+	for _, s := range schedulerList {
+		go s.Start()
 	}
 
 	time.Sleep(5 * time.Second)
@@ -406,7 +404,7 @@ func TestSchedulerSignature(t *testing.T) {
 
 	// 7.wait end
 	time.Sleep(10 * time.Minute)
-	lo.ForEach(serviceList, func(item *Service, index int) { item.Stop() })
+	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
 func TestValue(t *testing.T) {
