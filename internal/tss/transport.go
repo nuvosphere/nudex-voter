@@ -129,7 +129,6 @@ func newSession[T comparable, M, D any](
 			Proposer:   proposer,
 			ProposalID: ProposalId,
 			Proposal:   proposal,
-			Threshold:  allPartners.Threshold(),
 		},
 		sessionRelease: m,
 		ty:             ty,
@@ -185,7 +184,7 @@ func (s *sessionTransport[T, M, D]) Proposer() common.Address {
 }
 
 func (s *sessionTransport[T, M, D]) Threshold() int {
-	return s.session.Threshold
+	return types.Participants(s.session.AllPartners).Threshold()
 }
 
 func (s *sessionTransport[T, M, D]) Release() {
