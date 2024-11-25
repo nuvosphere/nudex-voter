@@ -25,18 +25,36 @@ func RandSessionID() helper.SessionID {
 	return common.BytesToHash(b[:])
 }
 
+func (m *Scheduler) NewMasterSignBatchSession(
+	sessionID helper.SessionID,
+	proposalID ProposalID,
+	msg *Proposal,
+) helper.SessionID {
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType)
+}
+
 func (m *Scheduler) NewSignSession(
-	ec helper.CurveType,
 	sessionID helper.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
 	key helper.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) helper.SessionID {
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType)
+}
+
+func (m *Scheduler) NewSignSessionWitKey(
+	sessionID helper.SessionID,
+	proposalID ProposalID,
+	msg *Proposal,
+	key helper.LocalPartySaveData,
+	keyDerivationDelta *big.Int,
+	ty string,
+) helper.SessionID {
 	allPartners := m.Participants()
-	params, partyIdMap := NewParam(ec, m.LocalSubmitter(), allPartners)
+	params, partyIdMap := NewParam(key.CurveType(), m.LocalSubmitter(), allPartners)
 	innerSession := newSession[ProposalID, *Proposal, *tsscommon.SignatureData](
-		ec,
+		key.CurveType(),
 		m.p2p,
 		m,
 		sessionID,
@@ -44,13 +62,12 @@ func (m *Scheduler) NewSignSession(
 		m.Proposer(),
 		proposalID,
 		msg,
-		SignTaskSessionType,
+		ty,
 		allPartners,
 	)
 	innerSession.inToOut = m.sigInToOut
 	innerSession.partyIdMap = partyIdMap
-	// party, endCh, errCh := RunParty(innerSession.ctx, msg, params, key, innerSession, keyDerivationDelta) // todo
-	party, endCh, outCh, errCh := createSignParty(msg, params, key, keyDerivationDelta) // todo
+	party, endCh, outCh, errCh := createSignParty(msg, params, key, keyDerivationDelta)
 	innerSession.party = party
 	innerSession.endCh = endCh
 	innerSession.errCH = errCh

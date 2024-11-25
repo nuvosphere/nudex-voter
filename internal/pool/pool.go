@@ -44,6 +44,21 @@ func (t *Pool[E]) Get(id E) Task[E] {
 	return t.items[id]
 }
 
+func (t *Pool[E]) BatchGet(ids []E) []Task[E] {
+	t.RLock()
+	defer t.RUnlock()
+
+	tasks := make([]Task[E], 0)
+
+	for _, id := range ids {
+		if t.items[id] != nil {
+			tasks = append(tasks, t.items[id])
+		}
+	}
+
+	return tasks
+}
+
 func (t *Pool[E]) IsExist(id E) bool {
 	t.RLock()
 	defer t.RUnlock()

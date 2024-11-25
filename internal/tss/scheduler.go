@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -24,14 +23,9 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-)
-
-const (
-	NormalMode = iota
-	BootMode
-	JoinMode
 )
 
 type Scheduler struct {
@@ -319,27 +313,25 @@ func (m *Scheduler) BatchTask() {
 			return
 		}
 
-		m.NewSignSession(
-			helper.ECDSA,
+		// only ecdsa batch
+		m.NewMasterSignBatchSession(
 			helper.ZeroSessionID,
-			ProposalID(nonce.Int64()), // todo
+			ProposalID(nonce.Uint64()), // todo
 			msg.Big(),
-			*m.partyData.ECDSALocalData(),
-			nil,
 		)
 	}
 }
 
-func (m *Scheduler) IsDiscussed(taskID int64) bool {
+func (m *Scheduler) IsDiscussed(taskID uint64) bool {
 	_, ok := m.discussedTaskCache.Get(fmt.Sprintf("%d", taskID))
 	if !ok {
-		ok, _ = m.voterContract.IsTaskCompleted(big.NewInt(taskID))
+		ok, _ = m.voterContract.IsTaskCompleted(decimal.NewFromUint64(taskID).BigInt())
 	}
 
 	return ok
 }
 
-func (m *Scheduler) AddDiscussedTask(taskID int64) {
+func (m *Scheduler) AddDiscussedTask(taskID uint64) {
 	m.discussedTaskCache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
 }
 

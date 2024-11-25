@@ -113,7 +113,7 @@ func TestSchedulerOfNewGroup(t *testing.T) {
 
 	t.Log("submitters", submitters)
 
-	createNode := func(index int, submitter common.Address, runMode int) *Scheduler {
+	createNode := func(index int, submitter common.Address) *Scheduler {
 		stateDB := createDB(t, index)
 		t.Logf("index: %d, submitter:%v", index, submitter)
 
@@ -137,7 +137,7 @@ func TestSchedulerOfNewGroup(t *testing.T) {
 
 	// create node
 	for i, submitter := range submitters {
-		createNode(i, submitter, BootMode) // specifies the run mode for the first time
+		createNode(i, submitter) // specifies the run mode for the first time
 	}
 
 	// run node
