@@ -158,7 +158,6 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 
 		err = m.JoinSignTaskSession(msg, task)
 	case SignBatchTaskSessionType:
-		// todo
 		err = m.JoinSignBatchTaskSession(msg)
 
 	case TxSignatureSessionType: // blockchain wallet tx signature
@@ -192,7 +191,7 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 		return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
 	}
 
-	ec := m.CurveTypeBySession(msg.SessionID)
+	ec := m.CurveTypeBySenateSession(msg.SessionID)
 
 	_ = m.NewGenerateKeySession(
 		ec,
@@ -231,7 +230,7 @@ func (m *Scheduler) isReShareGroup() bool {
 	return false
 }
 
-func (m *Scheduler) CurveTypeBySession(sessionID helper.SessionID) helper.CurveType {
+func (m *Scheduler) CurveTypeBySenateSession(sessionID helper.SessionID) helper.CurveType {
 	switch sessionID {
 	case helper.SenateSessionIDOfEDDSA:
 		return helper.EDDSA
@@ -252,15 +251,15 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	newGroup := m.newGroup.Load().(*NewGroup)
 	// check groupID
 	if msg.GroupID != newGroup.NewParts.GroupID() {
-		return fmt.Errorf("ReShareGroupSessionType: %w", ErrGroupIdWrong)
+		return fmt.Errorf("JoinReShareGroupSession: session id: %v, msg.SessionID, %w", msg.SessionID, ErrGroupIdWrong)
 	}
 	// check msg
-	unSignMsg := m.ReShareGroupProposal() // todo add or remove address
-	if unSignMsg.String() != msg.Proposal.String() {
-		return fmt.Errorf("ReShareGroupUnSignMsg: %w", ErrTaskSignatureMsgWrong)
+	unSignMsg := m.ReShareGroupProposal()
+	if unSignMsg.Cmp(&msg.Proposal) != 0 {
+		return fmt.Errorf("JoinReShareGroupSession: proposal error, session id: %v", msg.SessionID)
 	}
 
-	ec := m.CurveTypeBySession(msg.SessionID)
+	ec := m.CurveTypeBySenateSession(msg.SessionID)
 
 	_ = m.NewReShareGroupSession(
 		ec,
@@ -307,12 +306,6 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 
 func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) error {
 	log.Debugf("JoinSignTaskSession: session id: %v, task id:%v, task type: %v", msg.SessionID, task.TaskID(), task.Type())
-
-	//localPartySaveData := m.partyData.GetData(ec)
-	//unSignMsg := m.TaskProposal(task)
-	//if unSignMsg.String() != msg.Proposal.String() {
-	//	return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
-	//}
 
 	switch v := task.(type) {
 	case *db.CreateWalletTask:

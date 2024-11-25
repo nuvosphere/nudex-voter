@@ -26,14 +26,6 @@ var (
 	SenateSessionIDOfEDDSA  = crypto.Keccak256Hash([]byte("EDDSA:The voter senate session，one and only one"))
 )
 
-type BaseMessage[T, M any] struct {
-	GroupID    GroupID        `json:"group_id,omitempty"`
-	SessionID  SessionID      `json:"session_id,omitempty"`
-	Proposer   common.Address `json:"proposer,omitempty"`    // current submitter
-	ProposalID T              `json:"proposal_id,omitempty"` // msg id
-	Proposal   M              `json:"proposal"`
-}
-
 type Session[T, M any] struct {
 	Group
 	SessionID  SessionID      `json:"sessionID,omitempty"`
@@ -41,7 +33,6 @@ type Session[T, M any] struct {
 	Signer     common.Address `json:"signer,omitempty"`      // current signer
 	ProposalID T              `json:"proposal_id,omitempty"` // msg id
 	Proposal   M              `json:"proposal,omitempty"`
-	Threshold  int            `json:"threshold"`
 }
 
 type Group struct {
