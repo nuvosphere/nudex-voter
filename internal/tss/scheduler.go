@@ -66,16 +66,16 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	proposer, err := voterContract.Proposer()
 	if err != nil {
 		log.Warnf("get proposer error, %s", err.Error())
-		pp.Store(proposer)
 	}
+	pp.Store(proposer)
 
 	ps := atomic.Value{}
 
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
-		ps.Store(partners)
 	}
+	ps.Store(partners)
 
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)
