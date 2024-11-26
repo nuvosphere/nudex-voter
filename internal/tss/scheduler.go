@@ -20,7 +20,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
-	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
@@ -37,12 +36,12 @@ type Scheduler struct {
 	ctx                context.Context
 	cancel             context.CancelFunc
 	grw                sync.RWMutex
-	groups             map[helper.GroupID]*helper.Group
+	groups             map[types.GroupID]*types.Group
 	srw                sync.RWMutex
-	sessions           map[helper.SessionID]Session[ProposalID]
+	sessions           map[types.SessionID]Session[ProposalID]
 	proposalSession    map[ProposalID]Session[ProposalID]
 	sigInToOut         chan *SessionResult[ProposalID, *tsscommon.SignatureData]
-	senateInToOut      chan *SessionResult[ProposalID, *helper.LocalPartySaveData]
+	senateInToOut      chan *SessionResult[ProposalID, *types.LocalPartySaveData]
 	partyData          *PartyData
 	localSubmitter     common.Address
 	proposer           *atomic.Value // current submitter
@@ -84,6 +83,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	} else {
 		ps.Store(partners)
 	}
+	p.UpdateParticipants(partners)
 
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)
@@ -94,11 +94,11 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 		bus:                bus,
 		srw:                sync.RWMutex{},
 		grw:                sync.RWMutex{},
-		groups:             make(map[helper.GroupID]*helper.Group),
-		sessions:           make(map[helper.SessionID]Session[ProposalID]),
+		groups:             make(map[types.GroupID]*types.Group),
+		sessions:           make(map[types.SessionID]Session[ProposalID]),
 		proposalSession:    make(map[ProposalID]Session[ProposalID]),
 		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
-		senateInToOut:      make(chan *SessionResult[ProposalID, *helper.LocalPartySaveData], 1024),
+		senateInToOut:      make(chan *SessionResult[ProposalID, *types.LocalPartySaveData], 1024),
 		ctx:                ctx,
 		cancel:             cancel,
 		localSubmitter:     localSubmitter,
@@ -141,7 +141,7 @@ func (m *Scheduler) Start() {
 	log.Info("Scheduler stared success!")
 }
 
-func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *helper.LocalPartySaveData]) {
+func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *types.LocalPartySaveData]) {
 	if sessionResult.Err != nil {
 		panic(sessionResult.Err)
 	}
@@ -157,18 +157,18 @@ func (m *Scheduler) Stop() {
 
 func (m *Scheduler) Genesis() {
 	_ = m.NewGenerateKeySession(
-		helper.ECDSA,
-		helper.SenateProposalIDOfECDSA,
-		helper.SenateSessionIDOfECDSA,
+		types.ECDSA,
+		types.SenateProposalIDOfECDSA,
+		types.SenateSessionIDOfECDSA,
 		common.Address{},
-		helper.SenateProposal,
+		types.SenateProposal,
 	)
 	_ = m.NewGenerateKeySession(
-		helper.EDDSA,
-		helper.SenateProposalIDOfEDDSA,
-		helper.SenateSessionIDOfEDDSA,
+		types.EDDSA,
+		types.SenateProposalIDOfEDDSA,
+		types.SenateSessionIDOfEDDSA,
 		common.Address{},
-		helper.SenateProposal,
+		types.SenateProposal,
 	)
 }
 
@@ -204,7 +204,7 @@ func (m *Scheduler) Threshold() int {
 	return m.Participants().Threshold()
 }
 
-func (m *Scheduler) AddGroup(group *helper.Group) {
+func (m *Scheduler) AddGroup(group *types.Group) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	m.groups[group.GroupID()] = group
@@ -229,14 +229,14 @@ func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
 	return true
 }
 
-func (m *Scheduler) GetGroup(groupID helper.GroupID) *helper.Group {
+func (m *Scheduler) GetGroup(groupID types.GroupID) *types.Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
 	return m.groups[groupID]
 }
 
-func (m *Scheduler) GetSession(sessionID helper.SessionID) Session[ProposalID] {
+func (m *Scheduler) GetSession(sessionID types.SessionID) Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
@@ -251,27 +251,27 @@ func (m *Scheduler) IsMeeting(proposalID ProposalID) bool {
 	return ok
 }
 
-func (m *Scheduler) GetGroups() []*helper.Group {
+func (m *Scheduler) GetGroups() []*types.Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
-	return lo.MapToSlice(m.groups, func(_ helper.GroupID, group *helper.Group) *helper.Group { return group })
+	return lo.MapToSlice(m.groups, func(_ types.GroupID, group *types.Group) *types.Group { return group })
 }
 
 func (m *Scheduler) GetSessions() []Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
-	return lo.MapToSlice(m.sessions, func(_ helper.SessionID, session Session[ProposalID]) Session[ProposalID] { return session })
+	return lo.MapToSlice(m.sessions, func(_ types.SessionID, session Session[ProposalID]) Session[ProposalID] { return session })
 }
 
-func (m *Scheduler) ReleaseGroup(groupID helper.GroupID) {
+func (m *Scheduler) ReleaseGroup(groupID types.GroupID) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	delete(m.groups, groupID)
 }
 
-func (m *Scheduler) SessionRelease(sessionID helper.SessionID) {
+func (m *Scheduler) SessionRelease(sessionID types.SessionID) {
 	m.srw.Lock()
 	defer m.srw.Unlock()
 
@@ -285,14 +285,14 @@ func (m *Scheduler) SessionRelease(sessionID helper.SessionID) {
 
 func (m *Scheduler) Release() {
 	m.grw.Lock()
-	m.groups = make(map[helper.GroupID]*helper.Group)
+	m.groups = make(map[types.GroupID]*types.Group)
 	m.grw.Unlock()
 	m.srw.Lock()
 	for _, s := range m.sessions {
 		s.Release()
 	}
 
-	m.sessions = make(map[helper.SessionID]Session[ProposalID])
+	m.sessions = make(map[types.SessionID]Session[ProposalID])
 	m.proposalSession = make(map[ProposalID]Session[ProposalID])
 	m.srw.Unlock()
 	close(m.sigInToOut)
@@ -330,7 +330,7 @@ func (m *Scheduler) BatchTask() {
 
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
-			helper.ZeroSessionID,
+			types.ZeroSessionID,
 			nonce.Uint64(), // ProposalID
 			msg.Big(),
 		)
@@ -487,18 +487,18 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 
 		if m.isCanProposal() {
 			_ = m.NewReShareGroupSession(
-				helper.ECDSA,
-				helper.SenateSessionIDOfECDSA,
-				helper.SenateProposalIDOfECDSA,
-				helper.SenateProposal,
+				types.ECDSA,
+				types.SenateSessionIDOfECDSA,
+				types.SenateProposalIDOfECDSA,
+				types.SenateProposal,
 				oldParts,
 				newParts,
 			)
 			_ = m.NewReShareGroupSession(
-				helper.EDDSA,
-				helper.SenateSessionIDOfEDDSA,
-				helper.SenateProposalIDOfEDDSA,
-				helper.SenateProposal,
+				types.EDDSA,
+				types.SenateSessionIDOfEDDSA,
+				types.SenateProposalIDOfEDDSA,
+				types.SenateProposal,
 				oldParts,
 				newParts,
 			)
@@ -523,6 +523,7 @@ func (m *Scheduler) reGroupResultLoop() {
 				if m.ecCount.Load() == 0 {
 					newGroup := m.newGroup.Swap(nullNewGroup).(*NewGroup)
 					m.partners.Store(newGroup.NewParts)
+					m.p2p.UpdateParticipants(newGroup.NewParts)
 					log.Infof("regroup success!!!: new groupID: %v", newGroup.NewParts.GroupID())
 				}
 			}

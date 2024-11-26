@@ -9,7 +9,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
-	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
@@ -87,15 +87,15 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 }
 
 func (m *Scheduler) GenKeyProposal() Proposal {
-	return *helper.SenateProposal
+	return *types.SenateProposal
 }
 
 func (m *Scheduler) ReShareGroupProposal() Proposal {
-	return *helper.SenateProposal
+	return *types.SenateProposal
 }
 
-func (m *Scheduler) isSenateSession(sessionID helper.SessionID) bool {
-	return sessionID == helper.SenateSessionIDOfECDSA || sessionID == helper.SenateSessionIDOfEDDSA
+func (m *Scheduler) isSenateSession(sessionID types.SessionID) bool {
+	return sessionID == types.SenateSessionIDOfECDSA || sessionID == types.SenateSessionIDOfEDDSA
 }
 
 func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
@@ -226,12 +226,12 @@ func (m *Scheduler) isReShareGroup() bool {
 	return false
 }
 
-func (m *Scheduler) CurveTypeBySenateSession(sessionID helper.SessionID) helper.CurveType {
+func (m *Scheduler) CurveTypeBySenateSession(sessionID types.SessionID) types.CurveType {
 	switch sessionID {
-	case helper.SenateSessionIDOfEDDSA:
-		return helper.EDDSA
-	case helper.SenateSessionIDOfECDSA:
-		return helper.ECDSA
+	case types.SenateSessionIDOfEDDSA:
+		return types.EDDSA
+	case types.SenateSessionIDOfECDSA:
+		return types.ECDSA
 	default:
 		panic("unimplemented")
 	}
@@ -358,17 +358,17 @@ func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Propos
 	return nil
 }
 
-func (m *Scheduler) CurveType(task pool.Task[uint64]) helper.CurveType {
+func (m *Scheduler) CurveType(task pool.Task[uint64]) types.CurveType {
 	// todo
-	return helper.ECDSA
+	return types.ECDSA
 }
 
-func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int) {
+func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int) {
 	coinType := getCoinTypeByChain(task.Chain)
 
 	ec := m.CurveType(&task.Task)
 	switch ec {
-	case helper.ECDSA:
+	case types.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
 		userAddress := wallet.GenerateAddressByPath(*localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey(), uint32(coinType), task.Account, task.Index)
 		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())
@@ -380,7 +380,7 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (helper.Loca
 	}
 }
 
-func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int, *big.Int) {
+func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int, *big.Int) {
 	coinType := getCoinTypeByChain(task.Chain)
 	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
 	param, err := path.ToParams()
@@ -392,7 +392,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) 
 	l := *localPartySaveData
 
 	switch ec {
-	case helper.ECDSA:
+	case types.ECDSA:
 		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(*l.ECDSAData().ECDSAPub.ToECDSAPubKey(), param.Indexes())
 		utils.Assert(err)
 
@@ -411,7 +411,7 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 		localPartySaveData, unSignMsg := m.CreateWalletProposal(taskData)
 
 		m.NewSignSession(
-			helper.ZeroSessionID,
+			types.ZeroSessionID,
 			taskData.TaskId,
 			unSignMsg,
 			localPartySaveData,

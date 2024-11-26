@@ -26,20 +26,20 @@ type (
 )
 
 type SessionMessage[T, M any] struct {
-	Type                    string           `json:"type"`
-	GroupID                 helper.GroupID   `json:"group_id,omitempty"`
-	SessionID               helper.SessionID `json:"session_id,omitempty"`
-	Signer                  common.Address   `json:"signer,omitempty"`
-	Proposer                common.Address   `json:"proposer,omitempty"`    // current submitter
-	ProposalID              T                `json:"proposal_id,omitempty"` // msg id
-	Proposal                M                `json:"proposal,omitempty"`
-	Data                    []T              `json:"data"`
-	FromPartyId             string           `json:"from_party_id"`
-	ToPartyIds              []string         `json:"to_party_ids"`
-	IsBroadcast             bool             `json:"is_broadcast"`
-	IsToOldCommittee        bool             `json:"is_to_old_committee"`          // whether the message should be sent to old committee participants rather than the new committee
-	IsToOldAndNewCommittees bool             `json:"is_to_old_and_new_committees"` // whether the message should be sent to both old and new committee participants
-	MsgWireBytes            []byte           `json:"msg_wire_bytes"`
+	Type                    string          `json:"type"`
+	GroupID                 types.GroupID   `json:"group_id,omitempty"`
+	SessionID               types.SessionID `json:"session_id,omitempty"`
+	Signer                  common.Address  `json:"signer,omitempty"`
+	Proposer                common.Address  `json:"proposer,omitempty"`    // current submitter
+	ProposalID              T               `json:"proposal_id,omitempty"` // msg id
+	Proposal                M               `json:"proposal,omitempty"`
+	Data                    []T             `json:"data"`
+	FromPartyId             string          `json:"from_party_id"`
+	ToPartyIds              []string        `json:"to_party_ids"`
+	IsBroadcast             bool            `json:"is_broadcast"`
+	IsToOldCommittee        bool            `json:"is_to_old_committee"`          // whether the message should be sent to old committee participants rather than the new committee
+	IsToOldAndNewCommittees bool            `json:"is_to_old_and_new_committees"` // whether the message should be sent to both old and new committee participants
+	MsgWireBytes            []byte          `json:"msg_wire_bytes"`
 }
 
 func (s *SessionMessage[T, M]) State(from *tss.PartyID) *helper.ReceivedPartyState {
@@ -57,7 +57,7 @@ func (s *SessionMessage[T, M]) State(from *tss.PartyID) *helper.ReceivedPartySta
 type sessionTransport[T, M, D any] struct {
 	broadcaster    p2p.P2PService                  // send data
 	recvChan       chan *helper.ReceivedPartyState // receive data
-	session        helper.Session[T, M]
+	session        types.Session[T, M]
 	sessionRelease SessionReleaser
 	isReleased     atomic.Bool
 	ty             string
@@ -72,7 +72,7 @@ type sessionTransport[T, M, D any] struct {
 }
 
 func NewParam(
-	ec helper.CurveType,
+	ec types.CurveType,
 	localSubmitter common.Address,
 	allPartners types.Participants,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
@@ -89,10 +89,10 @@ func NewParam(
 }
 
 func newSession[T comparable, M, D any](
-	ec helper.CurveType,
+	ec types.CurveType,
 	p p2p.P2PService,
 	m *Scheduler,
-	sessionID helper.SessionID,
+	sessionID types.SessionID,
 	signer common.Address, // current signer
 	proposer common.Address, // current submitter
 	ProposalId T, // msg id
@@ -100,7 +100,7 @@ func newSession[T comparable, M, D any](
 	ty string,
 	allPartners types.Participants,
 ) *sessionTransport[T, M, D] {
-	if sessionID == helper.ZeroSessionID {
+	if sessionID == types.ZeroSessionID {
 		sessionID = RandSessionID()
 	}
 
@@ -110,8 +110,8 @@ func newSession[T comparable, M, D any](
 	return &sessionTransport[T, M, D]{
 		broadcaster: p,
 		recvChan:    recvChan,
-		session: helper.Session[T, M]{
-			Group: helper.Group{
+		session: types.Session[T, M]{
+			Group: types.Group{
 				EC:          ec,
 				AllPartners: allPartners,
 			},
@@ -158,11 +158,11 @@ func (s *sessionTransport[T, M, D]) Included(ids []string) bool {
 	return slices.Contains(ids, strings.ToLower(s.party.PartyID().Id))
 }
 
-func (s *sessionTransport[T, M, D]) SessionID() helper.SessionID {
+func (s *sessionTransport[T, M, D]) SessionID() types.SessionID {
 	return s.session.SessionID
 }
 
-func (s *sessionTransport[T, M, D]) GroupID() helper.GroupID {
+func (s *sessionTransport[T, M, D]) GroupID() types.GroupID {
 	return s.session.AllPartners.GroupID()
 }
 
@@ -271,8 +271,8 @@ func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D]
 type SessionResult[T, D any] struct {
 	Type       string
 	ProposalID T
-	SessionID  helper.SessionID
-	GroupID    helper.GroupID
+	SessionID  types.SessionID
+	GroupID    types.GroupID
 	Data       D
 	Err        error
 }

@@ -42,11 +42,11 @@ type Type interface {
 }
 
 type SessionID interface {
-	SessionID() helper.SessionID
+	SessionID() types.SessionID
 }
 
 type GroupID interface {
-	GroupID() helper.GroupID
+	GroupID() types.GroupID
 }
 
 type ProposalIdent[T any] interface {

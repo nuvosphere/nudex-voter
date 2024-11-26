@@ -2,12 +2,16 @@ package p2p
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/crypto/pb"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -61,6 +65,28 @@ func (lp *Service) handleWriteHandshake(s network.Stream, self host.Host) error 
 
 // handleHandshake: echo.
 func (lp *Service) handleHandshake(s network.Stream, self host.Host) error {
+	remotePeerPublicKey, err := s.Conn().RemotePeer().ExtractPublicKey()
+	if err != nil {
+		return fmt.Errorf("error extracting public key: %w", err)
+	}
+
+	if remotePeerPublicKey.Type() != pb.KeyType_ECDSA {
+		return fmt.Errorf("%w: %s", ErrHandshake, remotePeerPublicKey.Type())
+	}
+
+	remotePeerStdPublicKey, err := crypto.PubKeyToStdKey(remotePeerPublicKey)
+	if err != nil {
+		return fmt.Errorf("error extracting std public key: %w", err)
+	}
+
+	remoteSubmitter := ethCrypto.PubkeyToAddress(*remotePeerStdPublicKey.(*ecdsa.PublicKey))
+
+	if !lp.IsPartner(remoteSubmitter) {
+		// todo
+		// return fmt.Errorf("%w: remoteSubmitter: %v", ErrHandshake, remoteSubmitter)
+		log.Errorf("%v: remoteSubmitter: %v", ErrHandshake, remoteSubmitter)
+	}
+
 	handShake, err := lp.handleReadHandshake(s, self)
 	if err != nil {
 		return err

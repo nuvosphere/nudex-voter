@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -25,6 +26,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
@@ -44,6 +46,7 @@ type P2PService interface {
 	PublishMessage(ctx context.Context, msg any) error
 	OnlinePeerCount() int
 	IsOnline(partyID string) bool
+	UpdateParticipants(partners types.Participants)
 }
 
 type Service struct {
@@ -51,34 +54,35 @@ type Service struct {
 	state         *state.State
 	typeBindEvent sync.Map // MessageType:eventbus.Event
 
-	partyIDBindPeerID        map[string]peer.ID // partyID:peer.ID
-	peerIDBindPartyID        map[peer.ID]string // peer.ID:partyID
+	submitterBindPeerID      map[string]peer.ID // submitter:peer.ID
+	peerIDBindSubmitter      map[peer.ID]string // peer.ID:submitter
 	onlineList               map[peer.ID]bool   // peer.ID:bool
 	rw                       sync.RWMutex
-	localSubmitter           common.Address // submitter == partyID
+	localSubmitter           common.Address
 	selfPeerID               peer.ID
 	localSubmitterPrivateKey *ecdsa.PrivateKey
+	partners                 *atomic.Value // types.Participants
 }
 
 func NewLibP2PService(state *state.State, localSubmitterPrivateKey *ecdsa.PrivateKey) *Service {
 	localSubmitter := ethCrypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
 	return &Service{
-		state:             state,
-		typeBindEvent:     sync.Map{},
-		partyIDBindPeerID: make(map[string]peer.ID),
-		peerIDBindPartyID: make(map[peer.ID]string),
-		onlineList:        make(map[peer.ID]bool),
-		rw:                sync.RWMutex{},
-		localSubmitter:    localSubmitter,
+		state:               state,
+		typeBindEvent:       sync.Map{},
+		submitterBindPeerID: make(map[string]peer.ID),
+		peerIDBindSubmitter: make(map[peer.ID]string),
+		onlineList:          make(map[peer.ID]bool),
+		rw:                  sync.RWMutex{},
+		localSubmitter:      localSubmitter,
 	}
 }
 
-// addPeerInfo: submitter == partyID.
-func (lp *Service) addPeerInfo(peerID peer.ID, partyID string) {
+func (lp *Service) addPeerInfo(peerID peer.ID, submitter string) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
-	lp.partyIDBindPeerID[partyID] = peerID
-	lp.peerIDBindPartyID[peerID] = partyID
+	submitter = strings.ToLower(submitter)
+	lp.submitterBindPeerID[submitter] = peerID
+	lp.peerIDBindSubmitter[peerID] = submitter
 	lp.onlineList[peerID] = true
 }
 
@@ -88,17 +92,33 @@ func (lp *Service) OnlinePeerCount() int {
 	return len(lp.onlineList)
 }
 
-func (lp *Service) IsOnline(partyID string) bool {
+func (lp *Service) IsOnline(submitter string) bool {
 	defer lp.rw.RUnlock()
 	lp.rw.RLock()
 
-	peerID, ok := lp.partyIDBindPeerID[partyID]
+	peerID, ok := lp.submitterBindPeerID[strings.ToLower(submitter)]
 	if ok {
 		_, ok = lp.onlineList[peerID]
 		return ok
 	}
 
 	return false
+}
+
+func (lp *Service) UpdateParticipants(partners types.Participants) {
+	lp.partners.Store(partners)
+}
+
+func (lp *Service) Participants() types.Participants {
+	return lp.partners.Load().(types.Participants)
+}
+
+func (lp *Service) GroupID() common.Hash {
+	return lp.Participants().GroupID()
+}
+
+func (lp *Service) IsPartner(address common.Address) bool {
+	return lp.Participants().Contains(address)
 }
 
 func (lp *Service) online(remotePeerID peer.ID) {
@@ -117,11 +137,11 @@ func (lp *Service) removePeer(remotePeerID peer.ID) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
 
-	partyID, ok := lp.peerIDBindPartyID[remotePeerID]
+	submitter, ok := lp.peerIDBindSubmitter[remotePeerID]
 	if ok {
 		delete(lp.onlineList, remotePeerID)
-		delete(lp.peerIDBindPartyID, remotePeerID)
-		delete(lp.partyIDBindPeerID, partyID)
+		delete(lp.peerIDBindSubmitter, remotePeerID)
+		delete(lp.submitterBindPeerID, strings.ToLower(submitter))
 	}
 }
 

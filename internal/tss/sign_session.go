@@ -9,6 +9,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,7 +19,7 @@ type SignSession[T, M, D any] struct {
 	*sessionTransport[T, M, D]
 }
 
-func RandSessionID() helper.SessionID {
+func RandSessionID() types.SessionID {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 
@@ -26,31 +27,31 @@ func RandSessionID() helper.SessionID {
 }
 
 func (m *Scheduler) NewMasterSignBatchSession(
-	sessionID helper.SessionID,
+	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
-) helper.SessionID {
+) types.SessionID {
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType)
 }
 
 func (m *Scheduler) NewSignSession(
-	sessionID helper.SessionID,
+	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
-	key helper.LocalPartySaveData,
+	key types.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
-) helper.SessionID {
+) types.SessionID {
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType)
 }
 
 func (m *Scheduler) NewSignSessionWitKey(
-	sessionID helper.SessionID,
+	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
-	key helper.LocalPartySaveData,
+	key types.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 	ty string,
-) helper.SessionID {
+) types.SessionID {
 	allPartners := m.Participants()
 	params, partyIdMap := NewParam(key.CurveType(), m.LocalSubmitter(), allPartners)
 	innerSession := newSession[ProposalID, *Proposal, *tsscommon.SignatureData](
@@ -89,7 +90,7 @@ func (s *SignSession[T, M, D]) Post(data *helper.ReceivedPartyState) {
 func createSignParty(
 	msg *big.Int,
 	params *tss.Parameters,
-	key helper.LocalPartySaveData,
+	key types.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) (tss.Party, chan *tsscommon.SignatureData, chan tss.Message, chan *tss.Error) {
 	// outgoing messages to other peers - not one to not deadlock when a party
@@ -105,7 +106,7 @@ func createSignParty(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case helper.ECDSA:
+	case types.ECDSA:
 		if keyDerivationDelta != nil {
 			party = signing.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {
@@ -118,7 +119,7 @@ func createSignParty(
 
 	log.Debug("local signing party created", "partyID", party.PartyID())
 
-	// helper.RunParty(ctx, party, errCh, outCh, transport, false)
+	// types.RunParty(ctx, party, errCh, outCh, transport, false)
 
 	return party, endCh, outCh, errCh
 }

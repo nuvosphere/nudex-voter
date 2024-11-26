@@ -22,6 +22,7 @@ type P2PMocker struct {
 	typeBindEvent *sync.Map // MessageType:eventbus.Event
 	bus           eventbus.Bus
 	nodeCount     int
+	partners      types.Participants
 }
 
 func NewP2PMocker(bus eventbus.Bus) *P2PMocker {
@@ -33,6 +34,10 @@ func NewP2PMocker(bus eventbus.Bus) *P2PMocker {
 
 func (p *P2PMocker) Bind(msgType p2p.MessageType, event eventbus.Event) {
 	p.typeBindEvent.Store(msgType, event)
+}
+
+func (p *P2PMocker) UpdateParticipants(partners types.Participants) {
+	p.partners = partners
 }
 
 func (p *P2PMocker) PublishMessage(ctx context.Context, msg any) error {
