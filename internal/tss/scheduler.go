@@ -134,6 +134,7 @@ func (m *Scheduler) Start() {
 		log.Info("local data already exists: scheduler begin running")
 	}
 
+	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(types.ECDSA).Address())
 	// loop approveProposal
 	m.loopApproveProposal()
 	m.reGroupResultLoop()
