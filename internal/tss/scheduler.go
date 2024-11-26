@@ -66,16 +66,16 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	proposer, err := voterContract.Proposer()
 	if err != nil {
 		log.Warnf("get proposer error, %s", err.Error())
-		pp.Store(proposer)
 	}
+	pp.Store(proposer)
 
 	ps := atomic.Value{}
 
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
-		ps.Store(partners)
 	}
+	ps.Store(partners)
 
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)
@@ -129,6 +129,7 @@ func (m *Scheduler) Start() {
 	// loop approveProposal
 	m.loopApproveProposal()
 	m.reGroupResultLoop()
+	m.loopSigInToOut()
 	log.Info("Scheduler stared success!")
 }
 
@@ -198,7 +199,7 @@ func (m *Scheduler) Threshold() int {
 func (m *Scheduler) AddGroup(group *helper.Group) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
-	m.groups[group.GroupID] = group
+	m.groups[group.GroupID()] = group
 }
 
 func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
@@ -322,7 +323,7 @@ func (m *Scheduler) BatchTask() {
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
 			helper.ZeroSessionID,
-			nonce.Uint64(), // ProposalID todo
+			nonce.Uint64(), // ProposalID
 			msg.Big(),
 		)
 	}
@@ -401,11 +402,39 @@ func (m *Scheduler) proposalLoop() {
 					if m.pendingTasks.Len() >= TopN {
 						m.notify <- struct{}{}
 					}
+				case *db.ParticipantEvent: // regroup
+					m.processReGroupProposal(v)
 
-					//if m.isCanProposal() {
-					//	log.Info("proposal task", v)
-					//	m.processTaskProposal(v)
-					//}
+				case *db.SubmitterChosen: // charge proposer
+					m.submitterChosen = v
+					m.proposer.Store(common.HexToAddress(v.Submitter))
+
+				case *db.TaskUpdatedEvent: // todo
+					log.Infof("taskID: %d completed on blockchain", v.TaskId)
+				}
+			}
+		}
+	}()
+
+	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
+
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("proposal loop stopping...")
+				return
+			case data := <-testPendingTask: // from test task
+				log.Info("received task from layer2 log scan: ", data)
+
+				switch v := data.(type) {
+				case pool.Task[uint64]:
+					m.pendingTasks.Add(v)
+
+					if m.isCanProposal() {
+						log.Info("proposal task", v)
+						m.processTaskProposal(v)
+					}
 				case *db.ParticipantEvent: // regroup
 					m.processReGroupProposal(v)
 
@@ -499,16 +528,23 @@ func (m *Scheduler) loopSigInToOut() {
 			case <-m.ctx.Done():
 				log.Info("tss signature read result loop stopped")
 			case result := <-m.sigInToOut:
-				log.Infof("finish consensus sessionID:%s", result.SessionID)
+				log.Infof("finish consensus success, sessionID:%s", result.SessionID)
 				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.ProposalID)
 				m.AddDiscussedTask(result.ProposalID) // todo
 
 				if result.Err != nil {
 					log.Errorf("%s, result error:%v", info, result.Err)
 				} else {
-					ops := m.operations.Get(result.ProposalID).(*Operations)
-					ops.Signature = result.Data.SignatureRecovery
-					m.handleSigFinish(ops)
+					switch result.Type {
+					case SignBatchTaskSessionType:
+						ops := m.operations.Get(result.ProposalID).(*Operations)
+						ops.Signature = result.Data.SignatureRecovery
+						if m.handleSigFinish != nil {
+							m.handleSigFinish(ops)
+						}
+					default:
+						log.Infof("tss signature result: %v", result)
+					}
 				}
 			}
 		}

@@ -45,9 +45,7 @@ fmt: ## go fmt
 
 .PHONY: fix
 fix: fmt ## auto fix code
-	wsl --fix ./...
-	tagalign -fix -sort ./...
-	godot -w ./
+	golangci-lint run --fix ./...
 
 .PHONY: dep
 tool: ## Install dep tool

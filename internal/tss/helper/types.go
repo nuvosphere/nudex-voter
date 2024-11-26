@@ -8,6 +8,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 type (
@@ -36,9 +37,12 @@ type Session[T, M any] struct {
 }
 
 type Group struct {
-	EC          CurveType        `json:"ec,omitempty"`
-	GroupID     GroupID          `json:"group_id,omitempty"`
-	AllPartners []common.Address `json:"all_partners,omitempty"` // all submitter
+	EC          CurveType          `json:"ec,omitempty"`
+	AllPartners types.Participants `json:"all_partners,omitempty"` // all submitter
+}
+
+func (g *Group) GroupID() GroupID {
+	return g.AllPartners.GroupID()
 }
 
 type CurveType int
