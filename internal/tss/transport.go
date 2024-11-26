@@ -122,7 +122,6 @@ func newSession[T comparable, M, D any](
 			Group: helper.Group{
 				EC:          ec,
 				AllPartners: allPartners,
-				GroupID:     allPartners.GroupID(),
 			},
 			SessionID:  sessionID,
 			Signer:     signer,
@@ -172,7 +171,7 @@ func (s *sessionTransport[T, M, D]) SessionID() helper.SessionID {
 }
 
 func (s *sessionTransport[T, M, D]) GroupID() helper.GroupID {
-	return s.session.GroupID
+	return s.session.AllPartners.GroupID()
 }
 
 func (s *sessionTransport[T, M, D]) ProposalID() T {
@@ -184,7 +183,7 @@ func (s *sessionTransport[T, M, D]) Proposer() common.Address {
 }
 
 func (s *sessionTransport[T, M, D]) Threshold() int {
-	return types.Participants(s.session.AllPartners).Threshold()
+	return s.session.AllPartners.Threshold()
 }
 
 func (s *sessionTransport[T, M, D]) Release() {
@@ -201,8 +200,8 @@ func (s *sessionTransport[T, M, D]) Release() {
 func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, routing *tss.MessageRouting, b bool) error {
 	msg := p2p.Message[any]{
 		MessageType: p2p.MessageTypeTssMsg,
-		RequestId:   fmt.Sprintf("%v", s.ProposalID()), // todo taskID
-		DataType:    s.Type(),                          // todo
+		RequestId:   fmt.Sprintf("%v", s.ProposalID()),
+		DataType:    s.Type(),
 		Data: SessionMessage[T, M]{
 			Type:                    s.Type(),
 			GroupID:                 s.GroupID(),

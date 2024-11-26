@@ -198,7 +198,7 @@ func (m *Scheduler) Threshold() int {
 func (m *Scheduler) AddGroup(group *helper.Group) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
-	m.groups[group.GroupID] = group
+	m.groups[group.GroupID()] = group
 }
 
 func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
