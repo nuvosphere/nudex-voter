@@ -235,7 +235,7 @@ func TestSchedulerOfReGroupForAddAccount(t *testing.T) {
 	t.Log("send new join node event")
 	// 6.leader(proposer) listen contact event(ParticipantEvent)
 	// start regroup
-	bus.Publish(eventbus.EventTask{}, event)
+	bus.Publish(eventbus.EventTestTask{}, event)
 
 	// 7.wait end
 	time.Sleep(10 * time.Minute)
@@ -319,7 +319,7 @@ func TestSchedulerOfReGroupForRemoveAccount(t *testing.T) {
 	t.Log("send new join node event")
 	// 6.leader(proposer) listen contact event(ParticipantEvent)
 	// start regroup
-	bus.Publish(eventbus.EventTask{}, event)
+	bus.Publish(eventbus.EventTestTask{}, event)
 
 	// 7.wait end
 	time.Sleep(10 * time.Minute)
@@ -400,7 +400,7 @@ func TestSchedulerSignature(t *testing.T) {
 	t.Log("send create wallet task")
 	// 6.leader(proposer) listen contact task(ParticipantEvent)
 	// start regroup
-	bus.Publish(eventbus.EventTask{}, task)
+	bus.Publish(eventbus.EventTestTask{}, task)
 
 	// 7.wait end
 	time.Sleep(10 * time.Minute)

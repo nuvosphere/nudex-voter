@@ -9,12 +9,11 @@ import (
 )
 
 const (
-	DataTypeTssKeygenMsg     = "TssKeygenMsg"
-	DataTypeTssSignMsg       = "TssSignMsg"
-	DataTypeTssReSharingMsg  = "TssReSharingMsg"
-	DataTypeSignCreateWallet = "SignCreateWallet"
-	DataTypeSignDeposit      = "SignDeposit"
-	DataTypeSignWithdrawal   = "SignWithdrawal"
+	DataTypeTssKeygenMsg    = "TssKeygenMsg"
+	DataTypeTssSignMsg      = "TssSignMsg"
+	DataTypeTssReSharingMsg = "TssReSharingMsg"
+	DataTypeSignDeposit     = "SignDeposit"
+	DataTypeSignWithdrawal  = "SignWithdrawal"
 )
 
 const (
@@ -24,6 +23,14 @@ const (
 	TaskStateFailed
 )
 
+const (
+	GenKeySessionType        = "GenerateKeySession"
+	ReShareGroupSessionType  = "ReShareGroupSession"
+	SignTaskSessionType      = "SignTaskSession"
+	SignBatchTaskSessionType = "SignBatchTaskSessionType"
+	TxSignatureSessionType   = "TxSignatureSession"
+)
+
 // convertMsgData converts the message data to the corresponding struct.
 func convertMsgData(msg p2p.Message[json.RawMessage]) any {
 	switch msg.DataType {
@@ -31,8 +38,6 @@ func convertMsgData(msg p2p.Message[json.RawMessage]) any {
 		return unmarshal[types.TssMessage](msg.Data)
 	case GenKeySessionType, SignTaskSessionType, SignBatchTaskSessionType, ReShareGroupSessionType, TxSignatureSessionType:
 		return unmarshal[SessionMessage[ProposalID, Proposal]](msg.Data)
-	case DataTypeSignCreateWallet:
-		return unmarshal[types.SignMessage](msg.Data)
 	}
 
 	return unmarshal[any](msg.Data)
