@@ -184,7 +184,7 @@ L:
 		default:
 			count := m.p2p.OnlinePeerCount()
 			threshold := m.Threshold()
-			if count > 0 && threshold > 0 && count >= threshold {
+			if count > 0 && threshold > 0 && count > threshold {
 				break L
 			}
 			log.Infof("detection online peer count:%d, threshold:%d", count, threshold)

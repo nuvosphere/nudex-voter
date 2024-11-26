@@ -22,6 +22,9 @@ func CalculateThreshold(length int) int {
 type Participants []common.Address
 
 func (p Participants) Threshold() int {
+	if len(p) <= 1 {
+		return 1
+	}
 	return CalculateThreshold(len(p))
 }
 
