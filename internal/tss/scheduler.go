@@ -2,6 +2,7 @@ package tss
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -11,6 +12,7 @@ import (
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
@@ -66,16 +68,22 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	proposer, err := voterContract.Proposer()
 	if err != nil {
 		log.Warnf("get proposer error, %s", err.Error())
+		proposer = crypto.PubkeyToAddress(*config.AppConfig.TssPublicKeys[0]) // genesis
+		pp.Store(proposer)
+	} else {
+		pp.Store(proposer)
 	}
-	pp.Store(proposer)
 
 	ps := atomic.Value{}
 
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
+		partners = lo.Map(config.AppConfig.TssPublicKeys, func(item *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*item) })
+		ps.Store(partners)
+	} else {
+		ps.Store(partners)
 	}
-	ps.Store(partners)
 
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)

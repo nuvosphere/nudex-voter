@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -49,15 +51,17 @@ type Service struct {
 	state         *state.State
 	typeBindEvent sync.Map // MessageType:eventbus.Event
 
-	partyIDBindPeerID map[string]peer.ID // partyID:peer.ID
-	peerIDBindPartyID map[peer.ID]string // peer.ID:partyID
-	onlineList        map[peer.ID]bool   // peer.ID:bool
-	rw                sync.RWMutex
-	localSubmitter    common.Address // submitter == partyID
-	selfPeerID        peer.ID
+	partyIDBindPeerID        map[string]peer.ID // partyID:peer.ID
+	peerIDBindPartyID        map[peer.ID]string // peer.ID:partyID
+	onlineList               map[peer.ID]bool   // peer.ID:bool
+	rw                       sync.RWMutex
+	localSubmitter           common.Address // submitter == partyID
+	selfPeerID               peer.ID
+	localSubmitterPrivateKey *ecdsa.PrivateKey
 }
 
-func NewLibP2PService(state *state.State, localSubmitter common.Address) *Service {
+func NewLibP2PService(state *state.State, localSubmitterPrivateKey *ecdsa.PrivateKey) *Service {
+	localSubmitter := ethCrypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
 	return &Service{
 		state:             state,
 		typeBindEvent:     sync.Map{},
@@ -122,7 +126,7 @@ func (lp *Service) removePeer(remotePeerID peer.ID) {
 }
 
 func (lp *Service) Start(ctx context.Context) {
-	self, ps, err := createNodeWithPubSub(ctx)
+	self, ps, err := lp.createNodeWithPubSub(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create libp2p self: %v", err)
 	}
@@ -326,8 +330,8 @@ func (lp *Service) sendHandshake(s network.Stream, self host.Host) error {
 	return nil
 }
 
-func createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error) {
-	privKey, err := loadOrCreatePrivateKey(privKeyFile)
+func (lp *Service) createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error) {
+	privKey, _, err := crypto.ECDSAKeyPairFromKey(lp.localSubmitterPrivateKey)
 	if err != nil {
 		return nil, nil, err
 	}

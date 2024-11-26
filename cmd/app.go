@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -33,16 +32,16 @@ func NewApplication() *Application {
 	config.InitConfig()
 
 	dbm := db.NewDatabaseManager()
-	state := state.InitializeState(dbm)
-	libP2PService := p2p.NewLibP2PService(state, crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey))
-	layer2Listener := layer2.NewLayer2Listener(libP2PService, state, dbm)
-	btcListener := btc.NewBTCListener(libP2PService, state, dbm)
-	tssService := tss.NewTssService(libP2PService, dbm.GetRelayerDB(), state.Bus(), layer2Listener)
-	httpServer := http.NewHTTPServer(libP2PService, state, dbm)
+	stateDB := state.InitializeState(dbm)
+	libP2PService := p2p.NewLibP2PService(stateDB, config.AppConfig.L2PrivateKey)
+	layer2Listener := layer2.NewLayer2Listener(libP2PService, stateDB, dbm)
+	btcListener := btc.NewBTCListener(libP2PService, stateDB, dbm)
+	tssService := tss.NewTssService(libP2PService, dbm.GetRelayerDB(), stateDB.Bus(), layer2Listener)
+	httpServer := http.NewHTTPServer(libP2PService, stateDB, dbm)
 
 	return &Application{
 		DatabaseManager: dbm,
-		State:           state,
+		State:           stateDB,
 		LibP2PService:   libP2PService,
 		Layer2Listener:  layer2Listener,
 		BTCListener:     btcListener,
