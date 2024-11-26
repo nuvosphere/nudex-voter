@@ -115,11 +115,11 @@ func (m *Scheduler) Start() {
 
 	if m.IsGenesis() {
 		if m.isCanProposal() {
-			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), " proposer: ", m.Proposer())
 			// leader
 			m.Genesis() // build senate session
 		} else {
-			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), " proposer: ", m.Proposer())
 		}
 
 		m.saveSenateData()

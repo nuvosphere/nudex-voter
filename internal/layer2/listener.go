@@ -158,7 +158,7 @@ L:
 			log.Errorf("scan : %v", err)
 		}
 		if isContinue {
-g			continue L
+			continue L
 		}
 		// Next loop
 		time.Sleep(config.AppConfig.L2RequestInterval)
