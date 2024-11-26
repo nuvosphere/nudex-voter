@@ -71,14 +71,6 @@ type sessionTransport[T, M, D any] struct {
 	inToOut        chan<- *SessionResult[T, D]
 }
 
-const (
-	GenKeySessionType        = "GenerateKeySession"
-	ReShareGroupSessionType  = "ReShareGroupSession"
-	SignTaskSessionType      = "SignTaskSession"
-	SignBatchTaskSessionType = "SignBatchTaskSessionType"
-	TxSignatureSessionType   = "TxSignatureSession"
-)
-
 func NewParam(
 	ec helper.CurveType,
 	localSubmitter common.Address,
@@ -257,6 +249,7 @@ func (s *sessionTransport[T, M, D]) Signer() common.Address {
 
 func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
+		Type:       s.ty,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -267,6 +260,7 @@ func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 
 func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
+		Type:       s.ty,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -275,6 +269,7 @@ func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D]
 }
 
 type SessionResult[T, D any] struct {
+	Type       string
 	ProposalID T
 	SessionID  helper.SessionID
 	GroupID    helper.GroupID

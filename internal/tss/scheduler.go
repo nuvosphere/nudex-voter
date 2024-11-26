@@ -129,6 +129,7 @@ func (m *Scheduler) Start() {
 	// loop approveProposal
 	m.loopApproveProposal()
 	m.reGroupResultLoop()
+	m.loopSigInToOut()
 	log.Info("Scheduler stared success!")
 }
 
@@ -527,16 +528,23 @@ func (m *Scheduler) loopSigInToOut() {
 			case <-m.ctx.Done():
 				log.Info("tss signature read result loop stopped")
 			case result := <-m.sigInToOut:
-				log.Infof("finish consensus sessionID:%s", result.SessionID)
+				log.Infof("finish consensus success, sessionID:%s", result.SessionID)
 				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.ProposalID)
 				m.AddDiscussedTask(result.ProposalID) // todo
 
 				if result.Err != nil {
 					log.Errorf("%s, result error:%v", info, result.Err)
 				} else {
-					ops := m.operations.Get(result.ProposalID).(*Operations)
-					ops.Signature = result.Data.SignatureRecovery
-					m.handleSigFinish(ops)
+					switch result.Type {
+					case SignBatchTaskSessionType:
+						ops := m.operations.Get(result.ProposalID).(*Operations)
+						ops.Signature = result.Data.SignatureRecovery
+						if m.handleSigFinish != nil {
+							m.handleSigFinish(ops)
+						}
+					default:
+						log.Infof("tss signature result: %v", result)
+					}
 				}
 			}
 		}
