@@ -322,7 +322,7 @@ func (m *Scheduler) BatchTask() {
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
 			helper.ZeroSessionID,
-			nonce.Uint64(), // ProposalID todo
+			nonce.Uint64(), // ProposalID
 			msg.Big(),
 		)
 	}
@@ -401,11 +401,39 @@ func (m *Scheduler) proposalLoop() {
 					if m.pendingTasks.Len() >= TopN {
 						m.notify <- struct{}{}
 					}
+				case *db.ParticipantEvent: // regroup
+					m.processReGroupProposal(v)
 
-					//if m.isCanProposal() {
-					//	log.Info("proposal task", v)
-					//	m.processTaskProposal(v)
-					//}
+				case *db.SubmitterChosen: // charge proposer
+					m.submitterChosen = v
+					m.proposer.Store(common.HexToAddress(v.Submitter))
+
+				case *db.TaskUpdatedEvent: // todo
+					log.Infof("taskID: %d completed on blockchain", v.TaskId)
+				}
+			}
+		}
+	}()
+
+	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
+
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("proposal loop stopping...")
+				return
+			case data := <-testPendingTask: // from test task
+				log.Info("received task from layer2 log scan: ", data)
+
+				switch v := data.(type) {
+				case pool.Task[uint64]:
+					m.pendingTasks.Add(v)
+
+					if m.isCanProposal() {
+						log.Info("proposal task", v)
+						m.processTaskProposal(v)
+					}
 				case *db.ParticipantEvent: // regroup
 					m.processReGroupProposal(v)
 

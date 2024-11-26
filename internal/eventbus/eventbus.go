@@ -15,6 +15,7 @@ type (
 	EventWithdrawRequest           struct{}
 	EventParticipantAddedOrRemoved struct{}
 	EventTask                      struct{}
+	EventTestTask                  struct{}
 )
 
 type Event any

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/chenzhijie/go-web3/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -91,11 +92,6 @@ func (m *Scheduler) GenKeyProposal() Proposal {
 
 func (m *Scheduler) ReShareGroupProposal() Proposal {
 	return *helper.SenateProposal
-}
-
-func (m *Scheduler) TaskProposal(task *db.Task) Proposal {
-	// todo
-	return big.Int{}
 }
 
 func (m *Scheduler) isSenateSession(sessionID helper.SessionID) bool {
@@ -366,15 +362,16 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (helper.Loca
 	case helper.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
 		userAddress := wallet.GenerateAddressByPath(*localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey(), uint32(coinType), task.Account, task.Index)
-		m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())
+		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())
+		msg = crypto.Keccak256Hash(msg)
 
-		return *localPartySaveData, big.NewInt(100) // todo
+		return *localPartySaveData, new(big.Int).SetBytes(msg)
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}
 }
 
-func (m *Scheduler) GenerateWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int, *big.Int) {
+func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) (helper.LocalPartySaveData, *big.Int, *big.Int) {
 	coinType := getCoinTypeByChain(task.Chain)
 	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
 	param, err := path.ToParams()
