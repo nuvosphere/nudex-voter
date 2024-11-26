@@ -2,16 +2,19 @@ package tss
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -52,6 +55,12 @@ func (t *Service) Stop() {
 func (t *Service) handleSigFinish(operations *Operations) {
 	// 1. save db
 	// 2. update status
+	data, _ := json.Marshal(operations)
+	t.scheduler.stateDB.Save(db.Operations{
+		Nonce:  decimal.NewFromBigInt(operations.Nonce, 0),
+		Data:   string(data),
+		Status: 0,
+	})
 	if t.scheduler.IsProposer() {
 		log.Info("proposer submit signature")
 

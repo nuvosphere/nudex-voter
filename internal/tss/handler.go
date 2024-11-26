@@ -271,6 +271,14 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	return nil
 }
 
+func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation) {
+	operations := &Operations{
+		Nonce:     nonce,
+		Operation: ops,
+	}
+	m.operations.Add(operations)
+}
+
 func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Proposal]) error {
 	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
@@ -296,6 +304,7 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 		msg.ProposalID,
 		&msg.Proposal,
 	)
+	m.saveOperations(nonce, operations)
 
 	return nil
 }

@@ -326,6 +326,7 @@ func (m *Scheduler) BatchTask() {
 			nonce.Uint64(), // ProposalID
 			msg.Big(),
 		)
+		m.saveOperations(nonce, operations)
 	}
 }
 
@@ -529,8 +530,7 @@ func (m *Scheduler) loopSigInToOut() {
 				log.Info("tss signature read result loop stopped")
 			case result := <-m.sigInToOut:
 				log.Infof("finish consensus success, sessionID:%s", result.SessionID)
-				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, taskID=%v", result.SessionID, result.GroupID, result.ProposalID)
-				m.AddDiscussedTask(result.ProposalID) // todo
+				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, ProposalID=%v", result.SessionID, result.GroupID, result.ProposalID)
 
 				if result.Err != nil {
 					log.Errorf("%s, result error:%v", info, result.Err)
@@ -542,6 +542,8 @@ func (m *Scheduler) loopSigInToOut() {
 						if m.handleSigFinish != nil {
 							m.handleSigFinish(ops)
 						}
+						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
+						m.operations.RemoveTopN(ops.TaskID() - 1) // todo
 					default:
 						log.Infof("tss signature result: %v", result)
 					}
@@ -549,6 +551,14 @@ func (m *Scheduler) loopSigInToOut() {
 			}
 		}
 	}()
+}
+
+func (m *Scheduler) GetDiscussedOperation(id uint64) *Operations {
+	ops := m.operations.Get(id)
+	if ops == nil {
+		return nil
+	}
+	return ops.(*Operations)
 }
 
 func (m *Scheduler) isCanProposal() bool {
