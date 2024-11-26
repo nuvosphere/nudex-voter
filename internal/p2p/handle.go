@@ -168,7 +168,12 @@ func (lp *Service) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subs
 				continue
 			}
 
-			lp.addPeerInfo(msg.ReceivedFrom, hbMsg.Message)
+			id, err := peer.Decode(hbMsg.PeerID)
+			if err != nil {
+				log.Errorf("Error decoding peer ID from heartbeat message: %v", err)
+				continue
+			}
+			lp.addPeerInfo(id, hbMsg.Message)
 			log.Infof("Received heartbeat from %d-%s: %s", hbMsg.Timestamp, hbMsg.PeerID, hbMsg.Message)
 		}
 	}

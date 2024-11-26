@@ -62,20 +62,20 @@ type Scheduler struct {
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
 	pp := atomic.Value{}
-
 	proposer, err := voterContract.Proposer()
 	if err != nil {
 		log.Warnf("get proposer error, %s", err.Error())
+	} else {
+		pp.Store(proposer)
 	}
-	pp.Store(proposer)
 
 	ps := atomic.Value{}
-
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
+	} else {
+		ps.Store(partners)
 	}
-	ps.Store(partners)
 
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)
@@ -113,11 +113,11 @@ func (m *Scheduler) Start() {
 
 	if m.IsGenesis() {
 		if m.isCanProposal() {
-			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), " proposer: ", m.Proposer())
 			// leader
 			m.Genesis() // build senate session
 		} else {
-			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), " proposer: ", m.Proposer())
 		}
 
 		m.saveSenateData()
@@ -183,10 +183,11 @@ L:
 			log.Info("DetectionThreshold context done")
 		default:
 			count := m.p2p.OnlinePeerCount()
-			if count >= m.Threshold() {
+			threshold := m.Threshold()
+			if count > 0 && threshold > 0 && count > threshold {
 				break L
 			}
-			log.Infof("detection online peer count:%d, threshold:%d", count, m.Threshold())
+			log.Infof("detection online peer count:%d, threshold:%d", count, threshold)
 			time.Sleep(time.Second)
 		}
 	}
@@ -565,7 +566,10 @@ func (m *Scheduler) IsNewJoined() bool {
 }
 
 func (m *Scheduler) Participants() types.Participants {
-	return m.partners.Load().(types.Participants)
+	if val := m.partners.Load(); val != nil {
+		return val.(types.Participants)
+	}
+	return types.Participants{}
 }
 
 type NewGroup struct {
