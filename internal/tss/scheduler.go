@@ -66,6 +66,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	proposer, err := voterContract.Proposer()
 	if err != nil {
 		log.Warnf("get proposer error, %s", err.Error())
+	} else {
 		pp.Store(proposer)
 	}
 
@@ -74,6 +75,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
+	} else {
 		ps.Store(partners)
 	}
 
