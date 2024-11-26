@@ -531,7 +531,10 @@ func (m *Scheduler) IsNewJoined() bool {
 }
 
 func (m *Scheduler) Participants() types.Participants {
-	return m.partners.Load().(types.Participants)
+	if val := m.partners.Load(); val != nil {
+		return val.(types.Participants)
+	}
+	return types.Participants{}
 }
 
 type NewGroup struct {
