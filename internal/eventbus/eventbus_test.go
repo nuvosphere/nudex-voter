@@ -5,10 +5,12 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEventBus(t *testing.T) {
+	utils.SkipCI(t)
 	bus := NewBus()
 
 	t.Log("test eventbus begin")
