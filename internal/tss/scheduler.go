@@ -141,6 +141,7 @@ func (m *Scheduler) Start() {
 	m.loopApproveProposal()
 	m.reGroupResultLoop()
 	m.loopSigInToOut()
+	m.loopDetectionCondition()
 	log.Info("Scheduler stared success!")
 }
 
@@ -366,6 +367,7 @@ func (m *Scheduler) Proposer() common.Address {
 		return p.(common.Address)
 	}
 	proposer, _ := m.voterContract.Proposer()
+	m.proposer.Store(proposer)
 	return proposer
 }
 
@@ -562,14 +564,35 @@ func (m *Scheduler) loopSigInToOut() {
 						ops := m.operations.Get(result.ProposalID).(*Operations)
 						ops.Signature = append(result.Data.Signature, result.Data.SignatureRecovery...)
 						log.Infof("SignatureRecovery: len: %d, SignatureRecovery: %x, Hash: %v", len(ops.Signature), ops.Signature, ops.Hash)
-						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
 						if m.handleSigFinish != nil {
 							m.handleSigFinish(ops)
 						}
 						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
-						m.operations.RemoveTopN(ops.TaskID() - 1) // todo
+						m.operations.RemoveTopN(ops.TaskID() - 1)
 					default:
 						log.Infof("tss signature result: %v", result)
+					}
+				}
+			}
+		}
+	}()
+}
+
+func (m *Scheduler) loopDetectionCondition() {
+	ticker := time.NewTicker(20 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("detection condition loop stopped")
+			case <-ticker.C:
+				latestProposer, err := m.voterContract.Proposer()
+				if err != nil {
+					log.Errorf("voterContract.Proposer err: %v", err)
+				} else {
+					proposer := m.Proposer()
+					if proposer != latestProposer {
+						m.proposer.Store(latestProposer)
 					}
 				}
 			}
