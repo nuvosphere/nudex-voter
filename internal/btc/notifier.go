@@ -42,8 +42,8 @@ func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller
 		maxBlockHeight = int64(lastBlock.BlockHeight) - 1
 	}
 
-	if maxBlockHeight < int64(config.AppConfig.BTCStartHeight) {
-		maxBlockHeight = int64(config.AppConfig.BTCStartHeight) - 1
+	if maxBlockHeight < int64(config.AppConfig.BtcStartHeight) {
+		maxBlockHeight = int64(config.AppConfig.BtcStartHeight) - 1
 	}
 
 	log.Infof("New btc notify at max block height is %d", maxBlockHeight)
@@ -52,8 +52,8 @@ func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller
 
 	resultQuery := cache.db.First(&syncStatus)
 	if resultQuery.Error != nil && resultQuery.Error == gorm.ErrRecordNotFound {
-		syncStatus.ConfirmedHeight = int64(config.AppConfig.BTCStartHeight - 1)
-		syncStatus.UnconfirmHeight = int64(config.AppConfig.BTCStartHeight - 1)
+		syncStatus.ConfirmedHeight = int64(config.AppConfig.BtcStartHeight - 1)
+		syncStatus.UnconfirmHeight = int64(config.AppConfig.BtcStartHeight - 1)
 		syncStatus.UpdatedAt = time.Now()
 		cache.db.Create(&syncStatus)
 		log.Info("New btc notify sync status not found, create one")

@@ -13,7 +13,7 @@ import (
 func DefaultPartners() Participants {
 	// todo online contact get address list
 	return lo.Map(
-		config.AppConfig.TssPublicKeys,
+		config.TssPublicKeys,
 		func(pubKey *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*pubKey) },
 	)
 }

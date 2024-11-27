@@ -33,7 +33,7 @@ func NewApplication() *Application {
 
 	dbm := db.NewDatabaseManager()
 	stateDB := state.InitializeState(dbm)
-	libP2PService := p2p.NewLibP2PService(stateDB, config.AppConfig.L2PrivateKey)
+	libP2PService := p2p.NewLibP2PService(stateDB, config.L2PrivateKey)
 	layer2Listener := layer2.NewLayer2Listener(libP2PService, stateDB, dbm)
 	btcListener := btc.NewBTCListener(libP2PService, stateDB, dbm)
 	tssService := tss.NewTssService(libP2PService, dbm.GetRelayerDB(), stateDB.Bus(), layer2Listener)

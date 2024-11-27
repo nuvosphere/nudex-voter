@@ -51,30 +51,45 @@ func createDB(t *testing.T, index int) *gorm.DB {
 
 type Account struct {
 	PK      string
+	PubKey  string
 	Address common.Address
 }
 
 var accounts = []Account{
 	{
 		PK:      "76cbb08e5321cec5f584b2b40b4666d9bbbee59eb3022e80d804e8310b17a105",
+		PubKey:  "020b537f46c6da81f84824ce1409bab1f9825fb58b57dcafbf4f4b074e90a0c040",
 		Address: common.HexToAddress("0x3a818294ca1F3C27d7588b123Ec43F2546fa07f4"),
 	},
 	{
 		PK:      "ffab86884b5f4696c503e8d0cef97f818d122f44017528c24ce3ac580f12b876",
+		PubKey:  "02a8fd23c439e9226f422e94911f06788e0019aa1f8efd4f498f75e4f1d5ef7c0a",
 		Address: common.HexToAddress("0x04d9389Cf937b1e6F2258d842e7237E955d6ab04"),
 	},
 	{
 		PK:      "5d0ca3f7b4e63f3308a73537001065ee1d6ff3e217115444b148018a1bcbfaf7",
+		PubKey:  "02f82403b0337c908478d381f88582e1051c2a9da22a34cd0a1a5b1d10a85b6256",
 		Address: common.HexToAddress("0xf6D37CE75dB465DcDb4c7097bEB9c1D46b171037"),
 	},
 	{
 		PK:      "dd4ae923532c8b47440db5497bf0591769969d3da3ed6ac1d7c2a037033404e9",
+		PubKey:  "0349b0799d14fcfd9e0726e037523302515e1082b0b1f23d2d876647aa31ef107d",
 		Address: common.HexToAddress("0x1D2cd50A3cF3c55a7982AD54F9f364C1e953Bc57"),
 	},
 	{
 		PK:      "ccb83c6d8cf4d1400ca1d90df2f9c9fafe4b1947ba51c13617603af3bef18590",
+		PubKey:  "038801d4a8877f5285a9b3048e6b2e36dbe1b5e00ce4ff98c9f723763d15883c0b",
 		Address: common.HexToAddress("0x5091FC3cb4E4BB014141Aa41375d8Dd73b34AfA2"),
 	},
+}
+
+func TestCreateAddress1(t *testing.T) {
+	for _, account := range accounts {
+		data, _ := hex.DecodeString(account.PK)
+		pk := crypto.ToECDSAUnsafe(data)
+		address := crypto.PubkeyToAddress(pk.PublicKey)
+		t.Log("pk", hex.EncodeToString(crypto.FromECDSA(pk)), "address:", address, "publicKey:", hex.EncodeToString(crypto.CompressPubkey(&pk.PublicKey)))
+	}
 }
 
 func TestCreateAddress(t *testing.T) {

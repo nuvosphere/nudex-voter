@@ -67,7 +67,8 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	proposer, err := voterContract.Proposer()
 	if err != nil {
 		log.Warnf("get proposer error, %s", err.Error())
-		proposer = crypto.PubkeyToAddress(*config.AppConfig.TssPublicKeys[0]) // genesis
+		log.Infof("TssPublicKeys: %v", len(config.TssPublicKeys))
+		proposer = crypto.PubkeyToAddress(*config.TssPublicKeys[0]) // genesis
 		pp.Store(proposer)
 	} else {
 		pp.Store(proposer)
@@ -78,11 +79,12 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
-		partners = lo.Map(config.AppConfig.TssPublicKeys, func(item *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*item) })
+		partners = lo.Map(config.TssPublicKeys, func(item *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*item) })
 		ps.Store(partners)
 	} else {
 		ps.Store(partners)
 	}
+	log.Infof("partners: %v", partners)
 	p.UpdateParticipants(partners)
 
 	newGroup := &atomic.Value{}
@@ -357,6 +359,10 @@ func (m *Scheduler) LocalSubmitter() common.Address {
 }
 
 func (m *Scheduler) Proposer() common.Address {
+	p := m.proposer.Load()
+	if p != nil {
+		return p.(common.Address)
+	}
 	proposer, _ := m.voterContract.Proposer()
 	return proposer
 }

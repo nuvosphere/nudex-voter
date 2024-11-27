@@ -54,18 +54,17 @@ type Service struct {
 	state         *state.State
 	typeBindEvent sync.Map // MessageType:eventbus.Event
 
-	submitterBindPeerID      map[string]peer.ID // submitter:peer.ID
-	peerIDBindSubmitter      map[peer.ID]string // peer.ID:submitter
-	onlineList               map[peer.ID]bool   // peer.ID:bool
-	rw                       sync.RWMutex
-	localSubmitter           common.Address
-	selfPeerID               peer.ID
-	localSubmitterPrivateKey *ecdsa.PrivateKey
-	partners                 *atomic.Value // types.Participants
+	submitterBindPeerID map[string]peer.ID // submitter:peer.ID
+	peerIDBindSubmitter map[peer.ID]string // peer.ID:submitter
+	onlineList          map[peer.ID]bool   // peer.ID:bool
+	rw                  sync.RWMutex
+	localSubmitter      common.Address
+	selfPeerID          peer.ID
+	partners            *atomic.Value // types.Participants
 }
 
 func NewLibP2PService(state *state.State, localSubmitterPrivateKey *ecdsa.PrivateKey) *Service {
-	localSubmitter := ethCrypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey)
+	localSubmitter := ethCrypto.PubkeyToAddress(config.L2PrivateKey.PublicKey)
 	return &Service{
 		state:               state,
 		typeBindEvent:       sync.Map{},
@@ -74,6 +73,7 @@ func NewLibP2PService(state *state.State, localSubmitterPrivateKey *ecdsa.Privat
 		onlineList:          make(map[peer.ID]bool),
 		rw:                  sync.RWMutex{},
 		localSubmitter:      localSubmitter,
+		partners:            &atomic.Value{},
 	}
 }
 
@@ -217,7 +217,7 @@ func (lp *Service) Start(ctx context.Context) {
 
 func (lp *Service) connectToBootNodes(ctx context.Context, self host.Host) {
 	bootNodeAddList := lo.FilterMap(
-		strings.Split(config.AppConfig.Libp2pBootNodes, ","),
+		strings.Split(config.AppConfig.P2pBootNodes, ","),
 		func(addr string, index int) (*peer.AddrInfo, bool) {
 			peerInfo, err := parseAddr(addr)
 			if err != nil {
@@ -351,15 +351,15 @@ func (lp *Service) sendHandshake(s network.Stream, self host.Host) error {
 }
 
 func (lp *Service) createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error) {
-	privKey, _, err := crypto.ECDSAKeyPairFromKey(lp.localSubmitterPrivateKey)
+	secp256k1PrivateKey, err := crypto.UnmarshalSecp256k1PrivateKey(ethCrypto.FromECDSA(config.L2PrivateKey))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	listenAddr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.AppConfig.Libp2pPort)
+	listenAddr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.AppConfig.P2pPort)
 
 	node, err := libp2p.New(
-		libp2p.Identity(privKey),
+		libp2p.Identity(secp256k1PrivateKey),
 		libp2p.Transport(tcp.NewTCPTransport), // TCP only
 		libp2p.ListenAddrStrings(listenAddr),  // ipv4 only
 	)
@@ -411,17 +411,6 @@ func loadOrCreatePrivateKey(fileName string) (crypto.PrivKey, error) {
 	}
 
 	return privKey, nil
-}
-
-func createPrivateKey(s string) (crypto.PrivKey, error) {
-	reader := rand.Reader
-	if s != "" {
-		reader = strings.NewReader(s)
-	}
-
-	pk, _, err := crypto.GenerateECDSAKeyPair(reader)
-
-	return pk, err
 }
 
 func printNodeAddrInfo(node host.Host) {

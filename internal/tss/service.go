@@ -31,14 +31,14 @@ func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterCo
 		bus,
 		stateDB,
 		voterContract,
-		crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
+		crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 	)
 
 	return &Service{
 		scheduler: scheduler,
 		wallet: wallet.NewWallet(
-			config.AppConfig.L2RPC,
-			*config.AppConfig.L2PrivateKey),
+			config.AppConfig.L2Rpc,
+			*config.L2PrivateKey),
 	}
 }
 
@@ -71,7 +71,7 @@ func (t *Service) handleSigFinish(operations *Operations) {
 			log.Fatalf("failed to build unsigned transaction: %v", err)
 		}
 
-		signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(config.AppConfig.L2ChainId), config.AppConfig.L2PrivateKey)
+		signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(config.L2ChainId), config.L2PrivateKey)
 		if err != nil {
 			log.Fatalf("failed to sign transaction: %v", err)
 		}

@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -70,7 +69,7 @@ func (lp *Service) handleHandshake(s network.Stream, self host.Host) error {
 		return fmt.Errorf("error extracting public key: %w", err)
 	}
 
-	if remotePeerPublicKey.Type() != pb.KeyType_ECDSA {
+	if remotePeerPublicKey.Type() != pb.KeyType_Secp256k1 {
 		return fmt.Errorf("%w: %s", ErrHandshake, remotePeerPublicKey.Type())
 	}
 
@@ -79,7 +78,18 @@ func (lp *Service) handleHandshake(s network.Stream, self host.Host) error {
 		return fmt.Errorf("error extracting std public key: %w", err)
 	}
 
-	remoteSubmitter := ethCrypto.PubkeyToAddress(*remotePeerStdPublicKey.(*ecdsa.PublicKey))
+	secp256k1PublicKey := remotePeerStdPublicKey.(*crypto.Secp256k1PublicKey)
+
+	res, err := secp256k1PublicKey.Raw()
+	if err != nil {
+		return fmt.Errorf("error extracting secp256k1PublicKey: %w", err)
+	}
+	publicKey, err := ethCrypto.DecompressPubkey(res)
+	if err != nil {
+		return fmt.Errorf("error decompressing secp256k1PublicKey: %w", err)
+	}
+
+	remoteSubmitter := ethCrypto.PubkeyToAddress(*publicKey)
 
 	if !lp.IsPartner(remoteSubmitter) {
 		// todo

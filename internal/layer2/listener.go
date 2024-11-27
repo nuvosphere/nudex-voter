@@ -84,8 +84,8 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 	chainId, err := self.ChainID(context.Background())
 	self.chainID.Store(chainId.Int64())
 
-	if chainId.Int64() != config.AppConfig.L2ChainId.Int64() {
-		err = fmt.Errorf("ChainId mismatch: expected %d, got %d", config.AppConfig.L2ChainId.Int64(), chainId.Int64())
+	if chainId.Int64() != config.L2ChainId.Int64() {
+		err = fmt.Errorf("ChainId mismatch: expected %d, got %d", config.L2ChainId.Int64(), chainId.Int64())
 		errs = append(errs, err)
 	}
 
@@ -128,7 +128,7 @@ func DialEthClient() (*ethclient.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	// Dial the Ethereum node with optional JWT authentication
-	client, err := rpc.DialOptions(ctx, config.AppConfig.L2RPC, opts...)
+	client, err := rpc.DialOptions(ctx, config.AppConfig.L2Rpc, opts...)
 	if err != nil {
 		return nil, err
 	}
