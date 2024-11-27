@@ -3,6 +3,7 @@ package tss
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -14,6 +15,7 @@ const TypeOperations = 100
 type Operations struct {
 	Nonce     *big.Int
 	Operation []contracts.Operation
+	Hash      common.Hash
 	Signature []byte
 }
 

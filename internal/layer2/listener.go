@@ -155,7 +155,7 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 		log.Fatalf("Error querying sync status: %v", result.Error)
 	}
 
-	ticker := time.NewTicker(config.AppConfig.L2RequestInterval)
+	ticker := time.NewTicker(config.AppConfig.L2RequestInterval * time.Second)
 	defer ticker.Stop()
 
 	log.Infof("Layer2Listener: begin scan log: begin height: %v", syncStatus.LastSyncBlock)
@@ -192,6 +192,8 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 
 		targetBlock = 0
 	}
+
+	log.Infof("syncStatus.LastSyncBlock: %v, targetBlock: %v", syncStatus.LastSyncBlock, targetBlock)
 
 	if syncStatus.LastSyncBlock < targetBlock {
 		fromBlock := syncStatus.LastSyncBlock + 1

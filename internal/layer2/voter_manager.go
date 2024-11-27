@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
 type ContractVotingManager interface {
@@ -59,7 +60,10 @@ func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Oper
 
 	encodeData := contracts.EncodeOperation(nonce, operations)
 
-	return nonce, crypto.Keccak256Hash(encodeData), err
+	hash := crypto.Keccak256Hash(encodeData)
+	hash = utils.PersonalMsgHash(hash)
+
+	return nonce, hash, err
 }
 
 func (l *Layer2Listener) NextSubmitter() (common.Address, error) {

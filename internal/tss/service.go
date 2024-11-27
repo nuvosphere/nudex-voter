@@ -68,12 +68,16 @@ func (t *Service) handleSigFinish(operations *Operations) {
 
 		calldata := t.scheduler.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
 
-		tx, err := t.wallet.BuildUnsignTx(context.Background(), common.HexToAddress(config.AppConfig.AccountContract), big.NewInt(0), calldata)
+		tx, err := t.wallet.BuildUnsignTx(context.Background(), common.HexToAddress(config.AppConfig.VotingContract), big.NewInt(0), calldata)
 		if err != nil {
 			log.Fatalf("failed to build unsigned transaction: %v", err)
 		}
 
-		signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(config.L2ChainId), config.L2PrivateKey)
+		chainId, err := t.wallet.ChainID(context.Background())
+		if err != nil {
+			log.Fatalf("failed to ChainID: %v", err)
+		}
+		signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(chainId), config.L2PrivateKey)
 		if err != nil {
 			log.Fatalf("failed to sign transaction: %v", err)
 		}

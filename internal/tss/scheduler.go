@@ -24,7 +24,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -340,14 +339,14 @@ func (m *Scheduler) BatchTask() {
 			msg.Big(),
 			lo.Map(tasks, func(item pool.Task[uint64], index int) ProposalID { return item.TaskID() }),
 		)
-		m.saveOperations(nonce, operations)
+		m.saveOperations(nonce, operations, msg)
 	}
 }
 
 func (m *Scheduler) IsDiscussed(taskID uint64) bool {
 	_, ok := m.discussedTaskCache.Get(fmt.Sprintf("%d", taskID))
 	if !ok {
-		ok, _ = m.voterContract.IsTaskCompleted(decimal.NewFromUint64(taskID).BigInt())
+		ok, _ = m.voterContract.IsTaskCompleted(taskID)
 	}
 
 	return ok
@@ -561,7 +560,9 @@ func (m *Scheduler) loopSigInToOut() {
 					switch result.Type {
 					case SignBatchTaskSessionType:
 						ops := m.operations.Get(result.ProposalID).(*Operations)
-						ops.Signature = result.Data.SignatureRecovery
+						ops.Signature = append(result.Data.Signature, result.Data.SignatureRecovery...)
+						log.Infof("SignatureRecovery: len: %d, SignatureRecovery: %x, Hash: %v", len(ops.Signature), ops.Signature, ops.Hash)
+						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
 						if m.handleSigFinish != nil {
 							m.handleSigFinish(ops)
 						}

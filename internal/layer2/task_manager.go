@@ -4,12 +4,14 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 )
 
 type TaskManager interface {
 	GetLatestTask() (contracts.ITaskManagerTask, error)
-	IsTaskCompleted(taskId *big.Int) (bool, error)
+	IsTaskCompleted(taskId uint64) (bool, error)
+	GetTaskState(taskId uint64) (uint8, error)
 	GetUncompletedTasks() ([]contracts.ITaskManagerTask, error)
 	EncodeSubmitTask(submitter common.Address, context []byte) []byte
 	NextTaskId() (uint64, error)
@@ -22,9 +24,13 @@ func (l *Layer2Listener) GetLatestTask() (contracts.ITaskManagerTask, error) {
 	return l.taskManager.GetLatestTask(nil)
 }
 
-func (l *Layer2Listener) IsTaskCompleted(taskId *big.Int) (bool, error) {
-	// return l.taskManager.IsTaskCompleted(nil, taskId)
-	return true, nil
+func (l *Layer2Listener) IsTaskCompleted(taskId uint64) (bool, error) {
+	state, err := l.GetTaskState(taskId)
+	return state == db.Completed, err
+}
+
+func (l *Layer2Listener) GetTaskState(taskId uint64) (uint8, error) {
+	return l.taskManager.GetTaskState(nil, taskId)
 }
 
 func (l *Layer2Listener) GetUncompletedTasks() ([]contracts.ITaskManagerTask, error) {

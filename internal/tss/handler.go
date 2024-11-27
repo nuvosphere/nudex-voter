@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/chenzhijie/go-web3/crypto"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -271,10 +272,11 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	return nil
 }
 
-func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation) {
+func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
 		Operation: ops,
+		Hash:      hash,
 	}
 	m.operations.Add(operations)
 }
@@ -305,7 +307,7 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 		&msg.Proposal,
 		msg.Data,
 	)
-	m.saveOperations(nonce, operations)
+	m.saveOperations(nonce, operations, unSignMsg)
 
 	return nil
 }

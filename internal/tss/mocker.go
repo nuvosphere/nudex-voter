@@ -162,7 +162,12 @@ func (v *VoterContractMocker) GetLatestTask() (contracts.ITaskManagerTask, error
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) IsTaskCompleted(taskId *big.Int) (bool, error) {
+func (v *VoterContractMocker) IsTaskCompleted(taskId uint64) (bool, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (v *VoterContractMocker) GetTaskState(taskId uint64) (uint8, error) {
 	// TODO implement me
 	panic("implement me")
 }
