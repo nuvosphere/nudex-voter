@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -39,6 +40,8 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		userAddress := wallet.GenerateAddressByPath(*m.partyData.ECDSALocalData().ECDSAData().ECDSAPub.ToECDSAPubKey(), uint32(coinType), task.Account, task.Index)
 		data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())
 		operation.OptData = data
+		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
+		operation.State = db.Completed
 	case *db.DepositTask:
 		// m.voterContract.EncodeRecordDeposit(
 		//	common.HexToAddress(task.TargetAddress),

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"crypto/ecdsa"
-	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -51,8 +50,10 @@ func Verify(hash common.Hash, sig []byte, sender common.Address) bool {
 
 // PersonalMsgHash Returns a hash
 func PersonalMsgHash(messageHash common.Hash) common.Hash {
-	fullMessage := fmt.Sprintf("\x19Ethereum Signed Message:\n32%s", hex.EncodeToString(messageHash[:]))
-	return crypto.Keccak256Hash([]byte(fullMessage))
+	// fullMessage := fmt.Sprintf("\x19Ethereum Signed Message:\n32%s", hex.EncodeToString(messageHash[:]))
+	// return crypto.Keccak256Hash([]byte(fullMessage))
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n32%s", messageHash[:])
+	return crypto.Keccak256Hash([]byte(msg))
 }
 
 // PersonalSign Returns a signature string

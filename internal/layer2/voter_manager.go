@@ -56,8 +56,6 @@ func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Oper
 		return nil, common.Hash{}, err
 	}
 
-	nonce.Add(nonce, big.NewInt(1))
-
 	encodeData := contracts.EncodeOperation(nonce, operations)
 
 	hash := crypto.Keccak256Hash(encodeData)
