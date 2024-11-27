@@ -215,6 +215,10 @@ func (lp *Service) Start(ctx context.Context) {
 	log.Info("LibP2PService has stopped.")
 }
 
+func (lp *Service) Stop(ctx context.Context) {
+	_ = lp.messageTopic.Close()
+}
+
 func (lp *Service) connectToBootNodes(ctx context.Context, self host.Host) {
 	bootNodeAddList := lo.FilterMap(
 		strings.Split(config.AppConfig.P2pBootNodes, ","),

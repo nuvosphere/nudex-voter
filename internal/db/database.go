@@ -119,6 +119,7 @@ func (dm *DatabaseManager) autoMigrate() {
 		&DepositTask{},
 		&WithdrawalTask{},
 		&TaskUpdatedEvent{},
+		&Operations{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}

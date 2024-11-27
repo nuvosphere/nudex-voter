@@ -73,6 +73,10 @@ func (s *HTTPServer) Start(ctx context.Context) {
 	log.Info("HTTP server has stopped.")
 }
 
+func (s *HTTPServer) Stop(ctx context.Context) {
+	log.Info("HTTP server is shutted down...")
+}
+
 // a demo handler.
 func (s *HTTPServer) handleHelloWorld(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "data": "hello world."})

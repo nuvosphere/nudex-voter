@@ -108,6 +108,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 		partners:           &ps,
 		newGroup:           newGroup,
 		pendingTasks:       pool.NewTxPool[uint64](),
+		operations:         pool.NewTxPool[ProposalID](),
 		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
 		notify:             make(chan struct{}, 1024),
 		stateDB:            stateDB,

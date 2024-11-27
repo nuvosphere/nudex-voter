@@ -45,10 +45,12 @@ func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterCo
 func (t *Service) Start(ctx context.Context) {
 	t.scheduler.handleSigFinish = t.handleSigFinish
 	t.scheduler.Start()
+
+	<-ctx.Done()
 	log.Info("TSSService is stopping...")
 }
 
-func (t *Service) Stop() {
+func (t *Service) Stop(ctx context.Context) {
 	t.scheduler.Stop()
 }
 
@@ -56,7 +58,7 @@ func (t *Service) handleSigFinish(operations *Operations) {
 	// 1. save db
 	// 2. update status
 	data, _ := json.Marshal(operations)
-	t.scheduler.stateDB.Save(db.Operations{
+	t.scheduler.stateDB.Save(&db.Operations{
 		Nonce:  decimal.NewFromBigInt(operations.Nonce, 0),
 		Data:   string(data),
 		Status: 0,
