@@ -3,6 +3,7 @@ package tss
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 var _ Session[any] = &GenerateKeySession[any, any, any]{}
@@ -12,14 +13,14 @@ type GenerateKeySession[T, M, D any] struct {
 }
 
 func (m *Scheduler) NewGenerateKeySession(
-	ec helper.CurveType,
+	ec types.CurveType,
 	proposalID ProposalID, // msg id
-	sessionID helper.SessionID,
+	sessionID types.SessionID,
 	signer common.Address,
 	msg *Proposal,
-) helper.SessionID {
+) types.SessionID {
 	allPartners := m.Participants()
-	s := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+	s := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
 		ec,
 		m.p2p,
 		m,
@@ -38,7 +39,7 @@ func (m *Scheduler) NewGenerateKeySession(
 	s.endCh = endCh
 	s.inToOut = m.senateInToOut
 	s.Run()
-	session := &GenerateKeySession[ProposalID, *Proposal, *helper.LocalPartySaveData]{sessionTransport: s}
+	session := &GenerateKeySession[ProposalID, *Proposal, *types.LocalPartySaveData]{sessionTransport: s}
 	m.AddSession(session)
 
 	return session.SessionID()

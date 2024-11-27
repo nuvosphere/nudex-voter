@@ -44,8 +44,8 @@ func (s *HTTPServer) Start(ctx context.Context) {
 	}
 
 	// Use configuration port
-	addr := ":" + config.AppConfig.HTTPPort
-	log.Infof("HTTP server is running on port %s", config.AppConfig.HTTPPort)
+	addr := ":" + config.AppConfig.HttpPort
+	log.Infof("HTTP server is running on port %s", config.AppConfig.HttpPort)
 
 	srv := &http.Server{
 		Addr:              addr,

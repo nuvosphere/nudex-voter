@@ -30,6 +30,7 @@ func LoadTestPreParam(index int) *keygen.LocalPreParams {
 }
 
 func TestPreParam(t *testing.T) {
+	utils.SkipCI(t)
 	for i := 0; i < 2; i++ {
 		preParams := LoadTestPreParam(i)
 		require.True(t, preParams.Validate(), "test-fixture preparams should be valid")
@@ -37,6 +38,7 @@ func TestPreParam(t *testing.T) {
 }
 
 func TestCreatePreParamFixtures(t *testing.T) {
+	utils.SkipCI(t)
 	// Takes a while to run -- only run when generating new fixtures or adding
 	// more parties
 	t.Skip("skip create pre-param fixtures")

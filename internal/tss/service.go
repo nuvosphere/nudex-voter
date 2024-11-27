@@ -2,16 +2,19 @@ package tss
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -28,14 +31,14 @@ func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterCo
 		bus,
 		stateDB,
 		voterContract,
-		crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey),
+		crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 	)
 
 	return &Service{
 		scheduler: scheduler,
 		wallet: wallet.NewWallet(
-			config.AppConfig.L2RPC,
-			*config.AppConfig.L2PrivateKey),
+			config.AppConfig.L2Rpc,
+			*config.L2PrivateKey),
 	}
 }
 
@@ -52,6 +55,12 @@ func (t *Service) Stop() {
 func (t *Service) handleSigFinish(operations *Operations) {
 	// 1. save db
 	// 2. update status
+	data, _ := json.Marshal(operations)
+	t.scheduler.stateDB.Save(db.Operations{
+		Nonce:  decimal.NewFromBigInt(operations.Nonce, 0),
+		Data:   string(data),
+		Status: 0,
+	})
 	if t.scheduler.IsProposer() {
 		log.Info("proposer submit signature")
 
@@ -62,7 +71,7 @@ func (t *Service) handleSigFinish(operations *Operations) {
 			log.Fatalf("failed to build unsigned transaction: %v", err)
 		}
 
-		signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(config.AppConfig.L2ChainId), config.AppConfig.L2PrivateKey)
+		signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(config.L2ChainId), config.L2PrivateKey)
 		if err != nil {
 			log.Fatalf("failed to sign transaction: %v", err)
 		}

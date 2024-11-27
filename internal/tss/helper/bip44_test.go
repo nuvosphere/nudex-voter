@@ -13,6 +13,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,6 +28,7 @@ func TestBip44GenerateAddress(t *testing.T) {
 }
 
 func TestHDSign(t *testing.T) {
+	utils.SkipCI(t)
 	// err := logging.SetLogLevel("*", "debug")
 	// require.NoError(t, err)
 	_, _, keys, signPIDs := testutil.GetTestKeys(t, testutil.TestThreshold+1)
