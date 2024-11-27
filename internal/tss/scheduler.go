@@ -123,11 +123,11 @@ func (m *Scheduler) Start() {
 
 	if m.IsGenesis() {
 		if m.isCanProposal() {
-			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			log.Info("TSS keygen process started ", "leader:", m.LocalSubmitter(), " proposer: ", m.Proposer())
 			// leader
 			m.Genesis() // build senate session
 		} else {
-			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+			log.Info("TSS keygen process started ", "Candidate:", m.LocalSubmitter(), " proposer: ", m.Proposer())
 		}
 
 		m.saveSenateData()
@@ -198,7 +198,7 @@ L:
 			if count > 0 && threshold > 0 && count > threshold {
 				break L
 			}
-			log.Infof("detection online peer count:%d, threshold:%d", count, m.Threshold())
+			log.Infof("detection online peer count:%d, threshold:%d", count, threshold)
 			time.Sleep(time.Second)
 		}
 	}
@@ -597,7 +597,10 @@ func (m *Scheduler) IsNewJoined() bool {
 }
 
 func (m *Scheduler) Participants() types.Participants {
-	return m.partners.Load().(types.Participants)
+	if val := m.partners.Load(); val != nil {
+		return val.(types.Participants)
+	}
+	return types.Participants{}
 }
 
 type NewGroup struct {
