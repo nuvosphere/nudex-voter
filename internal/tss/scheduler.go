@@ -336,6 +336,7 @@ func (m *Scheduler) BatchTask() {
 			types.ZeroSessionID,
 			nonce.Uint64(), // ProposalID
 			msg.Big(),
+			lo.Map(tasks, func(item pool.Task[uint64], index int) ProposalID { return item.TaskID() }),
 		)
 		m.saveOperations(nonce, operations)
 	}
@@ -413,10 +414,14 @@ func (m *Scheduler) proposalLoop() {
 
 				switch v := data.(type) {
 				case pool.Task[uint64]:
-					m.pendingTasks.Add(v)
+					if m.IsDiscussed(v.TaskID()) {
+						log.Errorf("received task from layer2 is discussed : %v", v.TaskID())
+					} else {
+						m.pendingTasks.Add(v)
 
-					if m.pendingTasks.Len() >= TopN {
-						m.notify <- struct{}{}
+						if m.pendingTasks.Len() >= TopN {
+							m.notify <- struct{}{}
+						}
 					}
 				case *db.ParticipantEvent: // regroup
 					m.processReGroupProposal(v)

@@ -30,8 +30,9 @@ func (m *Scheduler) NewMasterSignBatchSession(
 	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
+	data []ProposalID,
 ) types.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType)
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType, data)
 }
 
 func (m *Scheduler) NewSignSession(
@@ -41,7 +42,7 @@ func (m *Scheduler) NewSignSession(
 	key types.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) types.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType)
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType, nil)
 }
 
 func (m *Scheduler) NewSignSessionWitKey(
@@ -51,6 +52,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 	key types.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 	ty string,
+	data []ProposalID,
 ) types.SessionID {
 	allPartners := m.Participants()
 	params, partyIdMap := NewParam(key.CurveType(), m.LocalSubmitter(), allPartners)
@@ -66,6 +68,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 		ty,
 		allPartners,
 	)
+	innerSession.session.Data = data
 	innerSession.inToOut = m.sigInToOut
 	innerSession.partyIdMap = partyIdMap
 	party, endCh, outCh, errCh := createSignParty(msg, params, key, keyDerivationDelta)

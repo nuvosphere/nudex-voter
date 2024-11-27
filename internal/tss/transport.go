@@ -202,6 +202,7 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 			Proposer:                s.Proposer(),
 			ProposalID:              s.ProposalID(),
 			Proposal:                s.session.Proposal,
+			Data:                    s.session.Data,
 			FromPartyId:             strings.ToLower(routing.From.Id),
 			ToPartyIds:              lo.Map(routing.To, func(to *tss.PartyID, _ int) string { return strings.ToLower(to.Id) }),
 			IsBroadcast:             routing.IsBroadcast,

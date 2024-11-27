@@ -303,6 +303,7 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 		msg.SessionID,
 		msg.ProposalID,
 		&msg.Proposal,
+		msg.Data,
 	)
 	m.saveOperations(nonce, operations)
 
