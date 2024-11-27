@@ -25,6 +25,9 @@ func NewTxPool[E cmp.Ordered]() *Pool[E] {
 }
 
 func (t *Pool[E]) Add(item Task[E]) {
+	if t.IsExist(item.TaskID()) {
+		return
+	}
 	t.Lock()
 	defer t.Unlock()
 	t.ids = append(t.ids, item.TaskID())
