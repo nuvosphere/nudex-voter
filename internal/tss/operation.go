@@ -9,6 +9,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	log "github.com/sirupsen/logrus"
 )
 
 const TypeOperations = 100
@@ -44,17 +45,31 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
 	case *db.DepositTask:
-		// m.voterContract.EncodeRecordDeposit(
-		//	common.HexToAddress(task.TargetAddress),
-		//	big.NewInt(int64(task.Amount)),
-		//	task.ChainId,
-		//	task.TxHash
-		//	)
-		// todo
-
+		data := m.voterContract.EncodeRecordDeposit(
+			common.HexToAddress(task.TargetAddress),
+			big.NewInt(int64(task.Amount)),
+			uint64(task.ChainId),
+			common.HexToHash(task.TxHash).Bytes(), // todo
+			nil,
+		)
+		operation.OptData = data
+		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		operation.State = db.Completed
 	case *db.WithdrawalTask:
+		data := m.voterContract.EncodeRecordWithdrawal(
+			common.HexToAddress(task.TargetAddress),
+			big.NewInt(int64(task.Amount)),
+			uint64(task.ChainId),
+			common.HexToHash(task.TxHash).Bytes(), // todo
+			nil,
+		)
+		operation.OptData = data
+		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		operation.State = db.Pending
 	default:
-		panic("unhandled default case")
+		log.Errorf("unhandled default case")
+		operation.State = db.Completed
+		operation.OptData = nil // todo
 	}
 
 	return operation
