@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/stretchr/testify/assert"
 )
 
 func signHash(data []byte) common.Hash {
@@ -31,4 +32,13 @@ func TestSign(t *testing.T) {
 
 	address = common.HexToAddress("000000000000000000000000c9a4b85549a239b0259e52baa216b3611c34167c")
 	t.Log(address.Hex())
+
+	pk, err := crypto.HexToECDSA("76cbb08e5321cec5f584b2b40b4666d9bbbee59eb3022e80d804e8310b17a105")
+	assert.Nil(t, err)
+
+	t.Log(crypto.PubkeyToAddress(pk.PublicKey))
+
+	signature, err := PersonalSign(hash, pk)
+	assert.Nil(t, err)
+	t.Log(signature)
 }

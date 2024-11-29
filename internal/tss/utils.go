@@ -138,10 +138,10 @@ var ErrCoinType = fmt.Errorf("error coin type")
 
 func getCoinTypeByChain(chain uint8) int {
 	switch chain {
-	case db.WalletTypeEVM:
-		return 60
 	case db.WalletTypeBTC:
 		return 0
+	case db.WalletTypeEVM:
+		return 60
 	case db.WalletTypeSOL:
 		return 501
 	case db.WalletTypeSUI:

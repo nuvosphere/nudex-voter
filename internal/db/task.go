@@ -189,15 +189,15 @@ func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdraw
 }
 
 const (
-	WalletTypeEVM = iota
-	WalletTypeBTC
+	WalletTypeBTC = iota
+	WalletTypeEVM
 	WalletTypeSOL
 	WalletTypeSUI
 )
 
 const (
-	ChainEthereum = iota
-	ChainBitcoin
+	ChainBitcoin = iota
+	ChainEthereum
 	ChainSolana
 	ChainSui
 )
