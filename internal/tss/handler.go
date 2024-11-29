@@ -272,11 +272,12 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	return nil
 }
 
-func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, hash common.Hash) {
+func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
 		Operation: ops,
 		Hash:      hash,
+		DataHash:  dataHash,
 	}
 	m.operations.Add(operations)
 }
@@ -287,7 +288,7 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 	tasks := m.pendingTasks.BatchGet(msg.Data)
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
 
-	nonce, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
 		return fmt.Errorf("batch task generate verify task unsign msg err:%v", err)
 	}
@@ -307,7 +308,7 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 		&msg.Proposal,
 		msg.Data,
 	)
-	m.saveOperations(nonce, operations, unSignMsg)
+	m.saveOperations(nonce, operations, dataHash, unSignMsg)
 
 	return nil
 }

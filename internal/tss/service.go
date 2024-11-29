@@ -68,6 +68,8 @@ func (t *Service) handleSigFinish(operations *Operations) {
 
 		calldata := t.scheduler.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
 
+		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
+
 		tx, err := t.wallet.BuildUnsignTx(context.Background(), common.HexToAddress(config.AppConfig.VotingContract), big.NewInt(0), calldata)
 		if err != nil {
 			log.Fatalf("failed to build unsigned transaction: %v", err)

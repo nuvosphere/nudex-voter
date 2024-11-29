@@ -17,6 +17,7 @@ type Operations struct {
 	Nonce     *big.Int
 	Operation []contracts.Operation
 	Hash      common.Hash
+	DataHash  common.Hash
 	Signature []byte
 }
 

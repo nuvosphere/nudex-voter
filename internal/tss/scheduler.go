@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -326,12 +327,16 @@ func (m *Scheduler) BatchTask() {
 		m.BlockDetectionThreshold()
 		tasks := m.pendingTasks.GetTopN(TopN)
 		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
-
-		nonce, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+		if len(operations) == 0 {
+			log.Errorf("operations is empty")
+			return
+		}
+		nonce, dataHash, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 		if err != nil {
 			log.Errorf("batch task generate verify task unsign msg err:%v", err)
 			return
 		}
+		log.Infof("nonce: %v, dataHash: %v, msg: %v", nonce, dataHash, msg)
 
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
@@ -340,7 +345,7 @@ func (m *Scheduler) BatchTask() {
 			msg.Big(),
 			lo.Map(tasks, func(item pool.Task[uint64], index int) ProposalID { return item.TaskID() }),
 		)
-		m.saveOperations(nonce, operations, msg)
+		m.saveOperations(nonce, operations, dataHash, msg)
 	}
 }
 
@@ -433,7 +438,10 @@ func (m *Scheduler) proposalLoop() {
 					m.submitterChosen = v
 					m.proposer.Store(common.HexToAddress(v.Submitter))
 
-				case *db.TaskUpdatedEvent: // todo
+				case *db.TaskUpdatedEvent:
+					m.pendingTasks.Remove(v.TaskId)
+					m.AddDiscussedTask(v.TaskId)
+
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
 				}
 			}
@@ -501,6 +509,13 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 		})
 
 		if m.isCanProposal() {
+			for {
+				if m.p2p.IsOnline(strings.ToLower(joinAddress.String())) {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
+
 			_ = m.NewReShareGroupSession(
 				types.ECDSA,
 				types.SenateSessionIDOfECDSA,
@@ -562,8 +577,14 @@ func (m *Scheduler) loopSigInToOut() {
 					switch result.Type {
 					case SignBatchTaskSessionType:
 						ops := m.operations.Get(result.ProposalID).(*Operations)
-						ops.Signature = append(result.Data.Signature, result.Data.SignatureRecovery...)
-						log.Infof("SignatureRecovery: len: %d, SignatureRecovery: %x, Hash: %v", len(ops.Signature), ops.Signature, ops.Hash)
+						first := result.Data.SignatureRecovery[0]
+						if first < 27 {
+							first += 27
+						}
+						ops.Signature = append(result.Data.Signature, first)
+						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x, Hash: %v", len(result.Data.Signature), result.Data.Signature, ops.Hash)
+						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x, Hash: %v", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery, ops.Hash)
+						log.Infof("SignatureRecovery: len: %d, SignatureRecovery: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
 						if m.handleSigFinish != nil {
 							m.handleSigFinish(ops)
 						}

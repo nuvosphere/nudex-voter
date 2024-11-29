@@ -19,7 +19,7 @@ type ContractVotingManager interface {
 	TaskCompletionThreshold() (*big.Int, error)
 
 	EncodeVerifyAndCall(operations []contracts.Operation, signature []byte) []byte
-	GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error)
+	GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, common.Hash, error)
 }
 
 func (l *Layer2Listener) TssSigner() (common.Address, error) {
@@ -50,18 +50,18 @@ func (l *Layer2Listener) Proposer() (common.Address, error) {
 	return l.contractVotingManager.NextSubmitter(nil)
 }
 
-func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error) {
+func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, common.Hash, error) {
 	nonce, err := l.contractVotingManager.TssNonce(nil)
 	if err != nil {
-		return nil, common.Hash{}, err
+		return nil, common.Hash{}, common.Hash{}, err
 	}
 
 	encodeData := contracts.EncodeOperation(nonce, operations)
 
-	hash := crypto.Keccak256Hash(encodeData)
-	hash = utils.PersonalMsgHash(hash)
+	dataHash := crypto.Keccak256Hash(encodeData)
+	hash := utils.PersonalMsgHash(dataHash)
 
-	return nonce, hash, err
+	return nonce, dataHash, hash, err
 }
 
 func (l *Layer2Listener) NextSubmitter() (common.Address, error) {
