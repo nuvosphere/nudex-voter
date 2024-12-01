@@ -31,7 +31,7 @@ var (
 
 // AccountManagerContractMetaData contains all meta data concerning the AccountManagerContract contract.
 var AccountManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"addressRecord\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAddressRecord\",\"inputs\":[{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"registerNewAddress\",\"inputs\":[{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"userMapping\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"}],\"outputs\":[{\"name\":\"account\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AddressRegistered\",\"inputs\":[{\"name\":\"account\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint8\",\"indexed\":true,\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"index\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"newAddress\",\"type\":\"string\",\"indexed\":true,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAccountNumber\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"RegisteredAccount\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"addressRecord\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAddressRecord\",\"inputs\":[{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"registerNewAddress\",\"inputs\":[{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"userMapping\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"}],\"outputs\":[{\"name\":\"account\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AddressRegistered\",\"inputs\":[{\"name\":\"account\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":true,\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"index\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"newAddress\",\"type\":\"string\",\"indexed\":true,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAccountNumber\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"RegisteredAccount\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}]}]",
 }
 
 // AccountManagerContractABI is the input ABI used to generate the binding from.
@@ -458,7 +458,7 @@ func (it *AccountManagerContractAddressRegisteredIterator) Close() error {
 // AccountManagerContractAddressRegistered represents a AddressRegistered event raised by the AccountManagerContract contract.
 type AccountManagerContractAddressRegistered struct {
 	Account    *big.Int
-	ChainId    uint8
+	Chain      uint8
 	Index      *big.Int
 	NewAddress common.Hash
 	Raw        types.Log // Blockchain specific contextual infos
@@ -466,12 +466,12 @@ type AccountManagerContractAddressRegistered struct {
 
 // FilterAddressRegistered is a free log retrieval operation binding the contract event 0x7a67473c3abd26f528f517c1969c03e5c8ef10f890e62ec2cd946ce0a8fe3447.
 //
-// Solidity: event AddressRegistered(uint256 account, uint8 indexed chainId, uint256 index, string indexed newAddress)
-func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegistered(opts *bind.FilterOpts, chainId []uint8, newAddress []string) (*AccountManagerContractAddressRegisteredIterator, error) {
+// Solidity: event AddressRegistered(uint256 account, uint8 indexed chain, uint256 index, string indexed newAddress)
+func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegistered(opts *bind.FilterOpts, chain []uint8, newAddress []string) (*AccountManagerContractAddressRegisteredIterator, error) {
 
-	var chainIdRule []interface{}
-	for _, chainIdItem := range chainId {
-		chainIdRule = append(chainIdRule, chainIdItem)
+	var chainRule []interface{}
+	for _, chainItem := range chain {
+		chainRule = append(chainRule, chainItem)
 	}
 
 	var newAddressRule []interface{}
@@ -479,7 +479,7 @@ func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegi
 		newAddressRule = append(newAddressRule, newAddressItem)
 	}
 
-	logs, sub, err := _AccountManagerContract.contract.FilterLogs(opts, "AddressRegistered", chainIdRule, newAddressRule)
+	logs, sub, err := _AccountManagerContract.contract.FilterLogs(opts, "AddressRegistered", chainRule, newAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -488,12 +488,12 @@ func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegi
 
 // WatchAddressRegistered is a free log subscription operation binding the contract event 0x7a67473c3abd26f528f517c1969c03e5c8ef10f890e62ec2cd946ce0a8fe3447.
 //
-// Solidity: event AddressRegistered(uint256 account, uint8 indexed chainId, uint256 index, string indexed newAddress)
-func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegistered(opts *bind.WatchOpts, sink chan<- *AccountManagerContractAddressRegistered, chainId []uint8, newAddress []string) (event.Subscription, error) {
+// Solidity: event AddressRegistered(uint256 account, uint8 indexed chain, uint256 index, string indexed newAddress)
+func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegistered(opts *bind.WatchOpts, sink chan<- *AccountManagerContractAddressRegistered, chain []uint8, newAddress []string) (event.Subscription, error) {
 
-	var chainIdRule []interface{}
-	for _, chainIdItem := range chainId {
-		chainIdRule = append(chainIdRule, chainIdItem)
+	var chainRule []interface{}
+	for _, chainItem := range chain {
+		chainRule = append(chainRule, chainItem)
 	}
 
 	var newAddressRule []interface{}
@@ -501,7 +501,7 @@ func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegis
 		newAddressRule = append(newAddressRule, newAddressItem)
 	}
 
-	logs, sub, err := _AccountManagerContract.contract.WatchLogs(opts, "AddressRegistered", chainIdRule, newAddressRule)
+	logs, sub, err := _AccountManagerContract.contract.WatchLogs(opts, "AddressRegistered", chainRule, newAddressRule)
 	if err != nil {
 		return nil, err
 	}
@@ -535,7 +535,7 @@ func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegis
 
 // ParseAddressRegistered is a log parse operation binding the contract event 0x7a67473c3abd26f528f517c1969c03e5c8ef10f890e62ec2cd946ce0a8fe3447.
 //
-// Solidity: event AddressRegistered(uint256 account, uint8 indexed chainId, uint256 index, string indexed newAddress)
+// Solidity: event AddressRegistered(uint256 account, uint8 indexed chain, uint256 index, string indexed newAddress)
 func (_AccountManagerContract *AccountManagerContractFilterer) ParseAddressRegistered(log types.Log) (*AccountManagerContractAddressRegistered, error) {
 	event := new(AccountManagerContractAddressRegistered)
 	if err := _AccountManagerContract.contract.UnpackLog(event, "AddressRegistered", log); err != nil {

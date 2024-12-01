@@ -188,7 +188,7 @@ func (v *VoterContractMocker) NextTaskId() (uint64, error) {
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) Tasks(taskId *big.Int) (contracts.ITaskManagerTask, error) {
+func (v *VoterContractMocker) Tasks(taskId uint64) (contracts.ITaskManagerTask, error) {
 	// TODO implement me
 	panic("implement me")
 }

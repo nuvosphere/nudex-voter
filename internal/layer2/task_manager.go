@@ -15,7 +15,7 @@ type TaskManager interface {
 	GetUncompletedTasks() ([]contracts.ITaskManagerTask, error)
 	EncodeSubmitTask(submitter common.Address, context []byte) []byte
 	NextTaskId() (uint64, error)
-	Tasks(taskId *big.Int) (contracts.ITaskManagerTask, error)
+	Tasks(taskId uint64) (contracts.ITaskManagerTask, error)
 	TaskSubmitter() (common.Address, error)
 	EncodeMarkTaskCompleted(taskId *big.Int, result []byte) []byte
 }
@@ -41,7 +41,7 @@ func (l *Layer2Listener) NextTaskId() (uint64, error) {
 	return l.taskManager.NextTaskId(nil)
 }
 
-func (l *Layer2Listener) Tasks(taskId *big.Int) (contracts.ITaskManagerTask, error) {
+func (l *Layer2Listener) Tasks(taskId uint64) (contracts.ITaskManagerTask, error) {
 	return l.taskManager.Tasks(nil, taskId)
 }
 

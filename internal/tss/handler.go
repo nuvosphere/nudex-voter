@@ -68,7 +68,7 @@ func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
 }
 
 func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
-	t, err := m.voterContract.Tasks(big.NewInt(int64(taskId)))
+	t, err := m.voterContract.Tasks(taskId)
 	if err != nil {
 		return nil, err
 	}

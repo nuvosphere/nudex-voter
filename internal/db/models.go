@@ -73,7 +73,7 @@ type Account struct {
 	gorm.Model
 	User     string   `gorm:"not null"              json:"user"`
 	Account  uint64   `gorm:"not null"              json:"account"`
-	ChainId  uint8    `gorm:"not null"              json:"chain_id"`
+	Chain    uint8    `gorm:"not null"              json:"chain"`
 	Index    uint64   `gorm:"not null"              json:"index"`
 	Address  string   `gorm:"uniqueIndex; not null" json:"address"`
 	LogIndex LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html

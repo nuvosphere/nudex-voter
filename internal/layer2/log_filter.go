@@ -97,6 +97,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 				TaskId:     taskUpdated.TaskId,
 				Submitter:  taskUpdated.Submitter.Hex(),
 				UpdateTime: taskUpdated.UpdateTime.Int64(),
+				State:      taskUpdated.State,
 				Result:     taskUpdated.Result,
 				LogIndex:   l.LogIndex(TaskUpdated, vLog),
 			}
@@ -141,7 +142,7 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 		contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, AddressRegistered, vLog)
 		account := db.Account{
 			Account:  addressRegistered.Account.Uint64(),
-			ChainId:  addressRegistered.ChainId,
+			Chain:    addressRegistered.Chain,
 			Index:    addressRegistered.Index.Uint64(),
 			Address:  addressRegistered.NewAddress.Hex(),
 			LogIndex: l.LogIndex(AddressRegistered, vLog),
