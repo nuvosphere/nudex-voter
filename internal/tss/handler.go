@@ -43,7 +43,7 @@ func (m *Scheduler) Validate(msg SessionMessage[ProposalID, Proposal]) error {
 }
 
 func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
-	t := m.pendingTasks.Get(taskID)
+	t := m.taskQueue.Get(taskID)
 	if t != nil {
 		return t, nil
 	}
@@ -279,13 +279,14 @@ func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, da
 		Hash:      hash,
 		DataHash:  dataHash,
 	}
-	m.operations.Add(operations)
+	m.operationsQueue.Add(operations)
+	m.currentNonce.Store(nonce.Uint64())
 }
 
 func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Proposal]) error {
 	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
-	tasks := m.pendingTasks.BatchGet(msg.Data)
+	tasks := m.taskQueue.BatchGet(msg.Data)
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
 
 	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)

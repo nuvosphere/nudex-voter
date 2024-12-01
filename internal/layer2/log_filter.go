@@ -91,7 +91,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			taskErr := tx.
 				Model(&db.Task{}).
 				Where("task_id = ?", taskUpdated.TaskId).
-				Update("status", db.Completed).Error
+				Update("status", taskUpdated.State).Error
 
 			taskUpdatedEvent = &db.TaskUpdatedEvent{
 				TaskId:     taskUpdated.TaskId,
