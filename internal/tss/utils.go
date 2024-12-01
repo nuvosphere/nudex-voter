@@ -309,3 +309,11 @@ func RunParty(
 
 	return party, endCh, errCh
 }
+
+func secp256k1Signature(data *tsscommon.SignatureData) []byte {
+	first := data.SignatureRecovery[0]
+	if first < 27 {
+		first += 27
+	}
+	return append(data.Signature, first)
+}

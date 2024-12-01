@@ -438,9 +438,11 @@ func (m *Scheduler) proposalLoop() {
 					m.submitterChosen = v
 					m.proposer.Store(common.HexToAddress(v.Submitter))
 
-				case *db.TaskUpdatedEvent:
-					m.pendingTasks.Remove(v.TaskId)
-					m.AddDiscussedTask(v.TaskId)
+				case *db.TaskUpdatedEvent: // todo
+					if v.State == db.Completed {
+						m.pendingTasks.Remove(v.TaskId)
+						m.AddDiscussedTask(v.TaskId)
+					}
 
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
 				}
@@ -450,6 +452,7 @@ func (m *Scheduler) proposalLoop() {
 
 	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
 
+	// test branch
 	go func() {
 		for {
 			select {
@@ -476,6 +479,10 @@ func (m *Scheduler) proposalLoop() {
 
 				case *db.TaskUpdatedEvent: // todo
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
+					if v.State == db.Completed {
+						m.pendingTasks.Remove(v.TaskId)
+						m.AddDiscussedTask(v.TaskId)
+					}
 				}
 			}
 		}
@@ -577,14 +584,10 @@ func (m *Scheduler) loopSigInToOut() {
 					switch result.Type {
 					case SignBatchTaskSessionType:
 						ops := m.operations.Get(result.ProposalID).(*Operations)
-						first := result.Data.SignatureRecovery[0]
-						if first < 27 {
-							first += 27
-						}
-						ops.Signature = append(result.Data.Signature, first)
-						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x, Hash: %v", len(result.Data.Signature), result.Data.Signature, ops.Hash)
-						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x, Hash: %v", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery, ops.Hash)
-						log.Infof("SignatureRecovery: len: %d, SignatureRecovery: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
+						ops.Signature = secp256k1Signature(result.Data)
+						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
+						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
+						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
 						if m.handleSigFinish != nil {
 							m.handleSigFinish(ops)
 						}
