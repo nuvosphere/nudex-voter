@@ -9,7 +9,6 @@ import (
 
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
-	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,26 +16,26 @@ import (
 type PartyData struct {
 	basePath string
 	rw       sync.RWMutex
-	datas    map[helper.CurveType]*helper.LocalPartySaveData
+	datas    map[types.CurveType]*types.LocalPartySaveData
 }
 
 func NewPartyData(basePath string) *PartyData {
 	return &PartyData{
 		basePath: basePath,
 		rw:       sync.RWMutex{},
-		datas:    make(map[helper.CurveType]*helper.LocalPartySaveData),
+		datas:    make(map[types.CurveType]*types.LocalPartySaveData),
 	}
 }
 
-func (p *PartyData) ECDSALocalData() *helper.LocalPartySaveData {
-	return p.GetData(helper.ECDSA)
+func (p *PartyData) ECDSALocalData() *types.LocalPartySaveData {
+	return p.GetData(types.ECDSA)
 }
 
-func (p *PartyData) EDDSALocalData() *helper.LocalPartySaveData {
-	return p.GetData(helper.EDDSA)
+func (p *PartyData) EDDSALocalData() *types.LocalPartySaveData {
+	return p.GetData(types.EDDSA)
 }
 
-func (p *PartyData) GetData(ec helper.CurveType) *helper.LocalPartySaveData {
+func (p *PartyData) GetData(ec types.CurveType) *types.LocalPartySaveData {
 	p.rw.RLock()
 	data, ok := p.datas[ec]
 	p.rw.RUnlock()
@@ -53,9 +52,9 @@ func (p *PartyData) GetData(ec helper.CurveType) *helper.LocalPartySaveData {
 	return data
 }
 
-func (p *PartyData) GenerateNewLocalPartySaveData(ec helper.CurveType, parties types.Participants) *helper.LocalPartySaveData {
+func (p *PartyData) GenerateNewLocalPartySaveData(ec types.CurveType, parties types.Participants) *types.LocalPartySaveData {
 	switch ec {
-	case helper.ECDSA:
+	case types.ECDSA:
 		save := ecdsaKeygen.NewLocalPartySaveData(parties.Len())
 		localData := p.EDDSALocalData()
 
@@ -63,10 +62,10 @@ func (p *PartyData) GenerateNewLocalPartySaveData(ec helper.CurveType, parties t
 			save.LocalPreParams = localData.ECDSAData().LocalPreParams // new node join party
 		}
 
-		return helper.BuildECDSALocalPartySaveData().SetData(&save)
-	case helper.EDDSA:
+		return types.BuildECDSALocalPartySaveData().SetData(&save)
+	case types.EDDSA:
 		save := eddsaKeygen.NewLocalPartySaveData(parties.Len())
-		return helper.BuildEDDSALocalPartySaveData().SetData(&save)
+		return types.BuildEDDSALocalPartySaveData().SetData(&save)
 	}
 
 	return nil
@@ -76,14 +75,14 @@ func (p *PartyData) LoadData() bool {
 	p.rw.Lock()
 	defer p.rw.Unlock()
 
-	data, err := p.loadTSSData(helper.ECDSA)
+	data, err := p.loadTSSData(types.ECDSA)
 	if err != nil {
 		return false
 	}
 
 	p.datas[data.CurveType()] = data
 
-	data, err = p.loadTSSData(helper.EDDSA)
+	data, err = p.loadTSSData(types.EDDSA)
 	if err != nil {
 		return false
 	}
@@ -93,7 +92,7 @@ func (p *PartyData) LoadData() bool {
 	return true
 }
 
-func (p *PartyData) SaveLocalData(data *helper.LocalPartySaveData) error {
+func (p *PartyData) SaveLocalData(data *types.LocalPartySaveData) error {
 	p.rw.Lock()
 	defer p.rw.Unlock()
 	p.datas[data.CurveType()] = data
@@ -101,7 +100,7 @@ func (p *PartyData) SaveLocalData(data *helper.LocalPartySaveData) error {
 	return p.saveTSSData(data)
 }
 
-func (p *PartyData) saveTSSData(data *helper.LocalPartySaveData) error {
+func (p *PartyData) saveTSSData(data *types.LocalPartySaveData) error {
 	curveType := data.CurveType()
 
 	dataDir := filepath.Join(p.basePath, "tss_data", curveType.CurveName())
@@ -127,7 +126,7 @@ func (p *PartyData) saveTSSData(data *helper.LocalPartySaveData) error {
 	return nil
 }
 
-func (p *PartyData) loadTSSData(ec helper.CurveType) (*helper.LocalPartySaveData, error) {
+func (p *PartyData) loadTSSData(ec types.CurveType) (*types.LocalPartySaveData, error) {
 	filePath := filepath.Join(p.basePath, "tss_data", ec.CurveName(), "tss_key_data.json")
 
 	dataBytes, err := os.ReadFile(filePath)
@@ -136,20 +135,20 @@ func (p *PartyData) loadTSSData(ec helper.CurveType) (*helper.LocalPartySaveData
 	}
 
 	switch ec {
-	case helper.ECDSA:
+	case types.ECDSA:
 		var data ecdsaKeygen.LocalPartySaveData
 		if err := json.Unmarshal(dataBytes, &data); err != nil {
 			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
 		}
 
-		return helper.BuildECDSALocalPartySaveData().SetData(&data), nil
-	case helper.EDDSA:
+		return types.BuildECDSALocalPartySaveData().SetData(&data), nil
+	case types.EDDSA:
 		var data eddsaKeygen.LocalPartySaveData
 		if err := json.Unmarshal(dataBytes, &data); err != nil {
 			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
 		}
 
-		return helper.BuildEDDSALocalPartySaveData().SetData(&data), nil
+		return types.BuildEDDSALocalPartySaveData().SetData(&data), nil
 	}
 
 	return nil, fmt.Errorf("unknown elliptic curve")

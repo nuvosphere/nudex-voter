@@ -43,6 +43,8 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
 		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, eventName, vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
+	default:
+		return errors.New("invalid topic")
 	}
 
 	submitterChosen.Submitter = submitter
@@ -91,12 +93,13 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			taskErr := tx.
 				Model(&db.Task{}).
 				Where("task_id = ?", taskUpdated.TaskId).
-				Update("status", db.Completed).Error
+				Update("status", taskUpdated.State).Error
 
 			taskUpdatedEvent = &db.TaskUpdatedEvent{
 				TaskId:     taskUpdated.TaskId,
 				Submitter:  taskUpdated.Submitter.Hex(),
 				UpdateTime: taskUpdated.UpdateTime.Int64(),
+				State:      taskUpdated.State,
 				Result:     taskUpdated.Result,
 				LogIndex:   l.LogIndex(TaskUpdated, vLog),
 			}
@@ -111,6 +114,8 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		if taskUpdatedEvent != nil {
 			l.postTask(taskUpdatedEvent)
 		}
+	default:
+		return errors.New("invalid topic")
 	}
 
 	return nil
@@ -141,7 +146,7 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 		contracts.UnpackEventLog(contracts.AccountManagerContractMetaData, &addressRegistered, AddressRegistered, vLog)
 		account := db.Account{
 			Account:  addressRegistered.Account.Uint64(),
-			ChainId:  addressRegistered.ChainId,
+			Chain:    addressRegistered.Chain,
 			Index:    addressRegistered.Index.Uint64(),
 			Address:  addressRegistered.NewAddress.Hex(),
 			LogIndex: l.LogIndex(AddressRegistered, vLog),
@@ -199,6 +204,8 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 
 			return errors.Join(removedErr, vlogErr)
 		})
+	default:
+		return errors.New("invalid topic")
 	}
 
 	if err != nil {

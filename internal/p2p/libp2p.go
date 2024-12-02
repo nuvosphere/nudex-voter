@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -9,9 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -23,6 +26,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
@@ -41,7 +45,8 @@ type P2PService interface {
 	Bind(msgType MessageType, event eventbus.Event)
 	PublishMessage(ctx context.Context, msg any) error
 	OnlinePeerCount() int
-	IsOnline(partyID string) bool
+	IsOnline(submitter string) bool
+	UpdateParticipants(partners types.Participants)
 }
 
 type Service struct {
@@ -49,32 +54,35 @@ type Service struct {
 	state         *state.State
 	typeBindEvent sync.Map // MessageType:eventbus.Event
 
-	partyIDBindPeerID map[string]peer.ID // partyID:peer.ID
-	peerIDBindPartyID map[peer.ID]string // peer.ID:partyID
-	onlineList        map[peer.ID]bool   // peer.ID:bool
-	rw                sync.RWMutex
-	localSubmitter    common.Address // submitter == partyID
-	selfPeerID        peer.ID
+	submitterBindPeerID map[string]peer.ID // submitter:peer.ID
+	peerIDBindSubmitter map[peer.ID]string // peer.ID:submitter
+	onlineList          map[peer.ID]bool   // peer.ID:bool
+	rw                  sync.RWMutex
+	localSubmitter      common.Address
+	selfPeerID          peer.ID
+	partners            *atomic.Value // types.Participants
 }
 
-func NewLibP2PService(state *state.State, localSubmitter common.Address) *Service {
+func NewLibP2PService(state *state.State, localSubmitterPrivateKey *ecdsa.PrivateKey) *Service {
+	localSubmitter := ethCrypto.PubkeyToAddress(config.L2PrivateKey.PublicKey)
 	return &Service{
-		state:             state,
-		typeBindEvent:     sync.Map{},
-		partyIDBindPeerID: make(map[string]peer.ID),
-		peerIDBindPartyID: make(map[peer.ID]string),
-		onlineList:        make(map[peer.ID]bool),
-		rw:                sync.RWMutex{},
-		localSubmitter:    localSubmitter,
+		state:               state,
+		typeBindEvent:       sync.Map{},
+		submitterBindPeerID: make(map[string]peer.ID),
+		peerIDBindSubmitter: make(map[peer.ID]string),
+		onlineList:          make(map[peer.ID]bool),
+		rw:                  sync.RWMutex{},
+		localSubmitter:      localSubmitter,
+		partners:            &atomic.Value{},
 	}
 }
 
-// addPeerInfo: submitter == partyID.
-func (lp *Service) addPeerInfo(peerID peer.ID, partyID string) {
+func (lp *Service) addPeerInfo(peerID peer.ID, submitter string) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
-	lp.partyIDBindPeerID[partyID] = peerID
-	lp.peerIDBindPartyID[peerID] = partyID
+	submitter = strings.ToLower(submitter)
+	lp.submitterBindPeerID[submitter] = peerID
+	lp.peerIDBindSubmitter[peerID] = submitter
 	lp.onlineList[peerID] = true
 }
 
@@ -84,17 +92,33 @@ func (lp *Service) OnlinePeerCount() int {
 	return len(lp.onlineList)
 }
 
-func (lp *Service) IsOnline(partyID string) bool {
+func (lp *Service) IsOnline(submitter string) bool {
 	defer lp.rw.RUnlock()
 	lp.rw.RLock()
 
-	peerID, ok := lp.partyIDBindPeerID[partyID]
+	peerID, ok := lp.submitterBindPeerID[strings.ToLower(submitter)]
 	if ok {
 		_, ok = lp.onlineList[peerID]
 		return ok
 	}
 
 	return false
+}
+
+func (lp *Service) UpdateParticipants(partners types.Participants) {
+	lp.partners.Store(partners)
+}
+
+func (lp *Service) Participants() types.Participants {
+	return lp.partners.Load().(types.Participants)
+}
+
+func (lp *Service) GroupID() common.Hash {
+	return lp.Participants().GroupID()
+}
+
+func (lp *Service) IsPartner(address common.Address) bool {
+	return lp.Participants().Contains(address)
 }
 
 func (lp *Service) online(remotePeerID peer.ID) {
@@ -113,16 +137,16 @@ func (lp *Service) removePeer(remotePeerID peer.ID) {
 	defer lp.rw.Unlock()
 	lp.rw.Lock()
 
-	partyID, ok := lp.peerIDBindPartyID[remotePeerID]
+	submitter, ok := lp.peerIDBindSubmitter[remotePeerID]
 	if ok {
 		delete(lp.onlineList, remotePeerID)
-		delete(lp.peerIDBindPartyID, remotePeerID)
-		delete(lp.partyIDBindPeerID, partyID)
+		delete(lp.peerIDBindSubmitter, remotePeerID)
+		delete(lp.submitterBindPeerID, strings.ToLower(submitter))
 	}
 }
 
 func (lp *Service) Start(ctx context.Context) {
-	self, ps, err := createNodeWithPubSub(ctx)
+	self, ps, err := lp.createNodeWithPubSub(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create libp2p self: %v", err)
 	}
@@ -191,9 +215,13 @@ func (lp *Service) Start(ctx context.Context) {
 	log.Info("LibP2PService has stopped.")
 }
 
+func (lp *Service) Stop(ctx context.Context) {
+	_ = lp.messageTopic.Close()
+}
+
 func (lp *Service) connectToBootNodes(ctx context.Context, self host.Host) {
 	bootNodeAddList := lo.FilterMap(
-		strings.Split(config.AppConfig.Libp2pBootNodes, ","),
+		strings.Split(config.AppConfig.P2pBootNodes, ","),
 		func(addr string, index int) (*peer.AddrInfo, bool) {
 			peerInfo, err := parseAddr(addr)
 			if err != nil {
@@ -326,16 +354,16 @@ func (lp *Service) sendHandshake(s network.Stream, self host.Host) error {
 	return nil
 }
 
-func createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error) {
-	privKey, err := loadOrCreatePrivateKey(privKeyFile)
+func (lp *Service) createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error) {
+	secp256k1PrivateKey, err := crypto.UnmarshalSecp256k1PrivateKey(ethCrypto.FromECDSA(config.L2PrivateKey))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	listenAddr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.AppConfig.Libp2pPort)
+	listenAddr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.AppConfig.P2pPort)
 
 	node, err := libp2p.New(
-		libp2p.Identity(privKey),
+		libp2p.Identity(secp256k1PrivateKey),
 		libp2p.Transport(tcp.NewTCPTransport), // TCP only
 		libp2p.ListenAddrStrings(listenAddr),  // ipv4 only
 	)
@@ -387,17 +415,6 @@ func loadOrCreatePrivateKey(fileName string) (crypto.PrivKey, error) {
 	}
 
 	return privKey, nil
-}
-
-func createPrivateKey(s string) (crypto.PrivKey, error) {
-	reader := rand.Reader
-	if s != "" {
-		reader = strings.NewReader(s)
-	}
-
-	pk, _, err := crypto.GenerateECDSAKeyPair(reader)
-
-	return pk, err
 }
 
 func printNodeAddrInfo(node host.Host) {

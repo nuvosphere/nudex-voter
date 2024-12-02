@@ -44,8 +44,8 @@ func (s *HTTPServer) Start(ctx context.Context) {
 	}
 
 	// Use configuration port
-	addr := ":" + config.AppConfig.HTTPPort
-	log.Infof("HTTP server is running on port %s", config.AppConfig.HTTPPort)
+	addr := ":" + config.AppConfig.HttpPort
+	log.Infof("HTTP server is running on port %s", config.AppConfig.HttpPort)
 
 	srv := &http.Server{
 		Addr:              addr,
@@ -71,6 +71,10 @@ func (s *HTTPServer) Start(ctx context.Context) {
 	}
 
 	log.Info("HTTP server has stopped.")
+}
+
+func (s *HTTPServer) Stop(ctx context.Context) {
+	log.Info("HTTP server is shutted down...")
 }
 
 // a demo handler.

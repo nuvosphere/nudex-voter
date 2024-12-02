@@ -32,17 +32,17 @@ import (
 func Partners() types.Participants {
 	// todo online contact get address list
 	return lo.Map(
-		config.AppConfig.TssPublicKeys,
+		config.TssPublicKeys,
 		func(pubKey *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*pubKey) },
 	)
 }
 
-func PartyKey(ec helper.CurveType, participants types.Participants, address common.Address) *big.Int {
+func PartyKey(ec types.CurveType, participants types.Participants, address common.Address) *big.Int {
 	key := new(big.Int).Add(address.Big(), big.NewInt(int64(ec)))
 	return key.Add(key, participants.GroupID().Big())
 }
 
-func createPartyIDsByGroupWithAlias(ec helper.CurveType, addressList types.Participants, aliasName string) tss.SortedPartyIDs {
+func createPartyIDsByGroupWithAlias(ec types.CurveType, addressList types.Participants, aliasName string) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	groupID := addressList.GroupID()
@@ -59,7 +59,7 @@ func createPartyIDsByGroupWithAlias(ec helper.CurveType, addressList types.Parti
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func createPartyIDsByGroup(ec helper.CurveType, addressList types.Participants) tss.SortedPartyIDs {
+func createPartyIDsByGroup(ec types.CurveType, addressList types.Participants) tss.SortedPartyIDs {
 	return createPartyIDsByGroupWithAlias(ec, addressList, "")
 }
 
@@ -138,13 +138,13 @@ var ErrCoinType = fmt.Errorf("error coin type")
 
 func getCoinTypeByChain(chain uint8) int {
 	switch chain {
-	case db.WalletTypeEVM:
-		return 60
-	case db.WalletTypeBTC:
+	case db.ChainBitcoin:
 		return 0
-	case db.WalletTypeSOL:
+	case db.ChainEthereum:
+		return 60
+	case db.ChainSolana:
 		return 501
-	case db.WalletTypeSUI:
+	case db.ChainSui:
 		return 784
 	default:
 		panic(ErrCoinType)
@@ -156,11 +156,11 @@ func getCoinTypeByChain(chain uint8) int {
 func RunKeyGen(
 	ctx context.Context,
 	isProd bool,
-	ty helper.CurveType,
+	ty types.CurveType,
 	localSubmitter common.Address, // current submitter
 	allPartners types.Participants,
 	transport helper.Transporter,
-) (tss.Party, map[string]*tss.PartyID, chan *helper.LocalPartySaveData, chan *tss.Error) {
+) (tss.Party, map[string]*tss.PartyID, chan *types.LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 256)
 	// error if keygen fails, contains culprits to blame
@@ -170,7 +170,7 @@ func RunKeyGen(
 
 	log.Debug("creating new local party")
 
-	outEndCh := make(chan *helper.LocalPartySaveData)
+	outEndCh := make(chan *types.LocalPartySaveData)
 	// output data when keygen finished
 	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData)
 	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData)
@@ -178,7 +178,7 @@ func RunKeyGen(
 	params, partyIdMap := NewParam(ty, localSubmitter, allPartners)
 
 	switch ty {
-	case helper.ECDSA:
+	case types.ECDSA:
 		// prod
 		if isProd {
 			preParams, err := ecdsaKeygen.GeneratePreParams(2 * time.Minute)
@@ -190,7 +190,7 @@ func RunKeyGen(
 			party = ecdsaKeygen.NewLocalParty(params, outCh, ecdsaEndCh)
 		}
 
-	case helper.EDDSA:
+	case types.EDDSA:
 		party = eddsaKeygen.NewLocalParty(params, outCh, eddsaEndCh)
 	default:
 		panic("implement me")
@@ -203,10 +203,10 @@ func RunKeyGen(
 		case <-ctx.Done():
 			return
 		case data := <-ecdsaEndCh:
-			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
+			outEndCh <- types.BuildECDSALocalPartySaveData().SetData(data)
 
 		case data := <-eddsaEndCh:
-			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
+			outEndCh <- types.BuildEDDSALocalPartySaveData().SetData(data)
 		}
 	}()
 
@@ -222,9 +222,9 @@ func RunKeyGen(
 func RunReshare(
 	ctx context.Context,
 	params *tss.ReSharingParameters,
-	key helper.LocalPartySaveData,
+	key types.LocalPartySaveData,
 	transport helper.Transporter,
-) (tss.Party, chan *helper.LocalPartySaveData, chan *tss.Error) {
+) (tss.Party, chan *types.LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 100000)
 	// error if reshare fails, contains culprits to blame
@@ -232,7 +232,7 @@ func RunReshare(
 
 	log.Debug("creating new local party")
 
-	outEndCh := make(chan *helper.LocalPartySaveData, 100000)
+	outEndCh := make(chan *types.LocalPartySaveData, 100000)
 	// output data when keygen finished
 	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData, 256)
 	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData, 256)
@@ -240,11 +240,11 @@ func RunReshare(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case helper.ECDSA:
+	case types.ECDSA:
 		data := key.ECDSAData()
 		party = ecdsaResharing.NewLocalParty(params, *data, outCh, ecdsaEndCh)
 
-	case helper.EDDSA:
+	case types.EDDSA:
 		party = eddsaResharing.NewLocalParty(params, *key.EDDSAData(), outCh, eddsaEndCh)
 
 	default:
@@ -258,9 +258,9 @@ func RunReshare(
 		case <-ctx.Done():
 			return
 		case data := <-ecdsaEndCh:
-			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
+			outEndCh <- types.BuildECDSALocalPartySaveData().SetData(data)
 		case data := <-eddsaEndCh:
-			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
+			outEndCh <- types.BuildEDDSALocalPartySaveData().SetData(data)
 		}
 	}()
 
@@ -275,7 +275,7 @@ func RunParty(
 	ctx context.Context,
 	msg *big.Int,
 	params *tss.Parameters,
-	key helper.LocalPartySaveData,
+	key types.LocalPartySaveData,
 	transport helper.Transporter,
 	keyDerivationDelta *big.Int,
 ) (tss.Party, chan *tsscommon.SignatureData, chan *tss.Error) {
@@ -292,7 +292,7 @@ func RunParty(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case helper.ECDSA:
+	case types.ECDSA:
 		if keyDerivationDelta != nil {
 			party = signing.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {
@@ -308,4 +308,12 @@ func RunParty(
 	helper.RunParty(ctx, party, errCh, outCh, transport, false)
 
 	return party, endCh, errCh
+}
+
+func secp256k1Signature(data *tsscommon.SignatureData) []byte {
+	first := data.SignatureRecovery[0]
+	if first < 27 {
+		first += 27
+	}
+	return append(data.Signature, first)
 }

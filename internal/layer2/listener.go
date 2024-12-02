@@ -84,8 +84,8 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 	chainId, err := self.ChainID(context.Background())
 	self.chainID.Store(chainId.Int64())
 
-	if chainId.Int64() != config.AppConfig.L2ChainId.Int64() {
-		err = fmt.Errorf("ChainId mismatch: expected %d, got %d", config.AppConfig.L2ChainId.Int64(), chainId.Int64())
+	if chainId.Int64() != config.L2ChainId.Int64() {
+		err = fmt.Errorf("ChainId mismatch: expected %d, got %d", config.L2ChainId.Int64(), chainId.Int64())
 		errs = append(errs, err)
 	}
 
@@ -128,12 +128,16 @@ func DialEthClient() (*ethclient.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	// Dial the Ethereum node with optional JWT authentication
-	client, err := rpc.DialOptions(ctx, config.AppConfig.L2RPC, opts...)
+	client, err := rpc.DialOptions(ctx, config.AppConfig.L2Rpc, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return ethclient.NewClient(client), nil
+}
+
+func (l *Layer2Listener) Stop(ctx context.Context) {
+	log.Infof("Stoped layer2 listener")
 }
 
 func (l *Layer2Listener) Start(ctx context.Context) {
@@ -151,17 +155,26 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 		log.Fatalf("Error querying sync status: %v", result.Error)
 	}
 
-L:
+	ticker := time.NewTicker(config.AppConfig.L2RequestInterval * time.Second)
+	defer ticker.Stop()
+
+	log.Infof("Layer2Listener: begin scan log: begin height: %v", syncStatus.LastSyncBlock)
 	for {
-		isContinue, err := l.scan(ctx, &syncStatus)
-		if err != nil {
-			log.Errorf("scan : %v", err)
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		L:
+			for {
+				isContinue, err := l.scan(ctx, &syncStatus)
+				if err != nil {
+					log.Errorf("scan : %v", err)
+				}
+				if !isContinue {
+					break L
+				}
+			}
 		}
-		if isContinue {
-			continue L
-		}
-		// Next loop
-		time.Sleep(config.AppConfig.L2RequestInterval)
 	}
 }
 
@@ -179,6 +192,8 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 
 		targetBlock = 0
 	}
+
+	log.Infof("syncStatus.LastSyncBlock: %v, targetBlock: %v", syncStatus.LastSyncBlock, targetBlock)
 
 	if syncStatus.LastSyncBlock < targetBlock {
 		fromBlock := syncStatus.LastSyncBlock + 1

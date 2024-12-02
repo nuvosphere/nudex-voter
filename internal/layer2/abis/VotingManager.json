@@ -233,7 +233,7 @@
     "name": "OperationFailed",
     "inputs": [
       {
-        "name": "errData",
+        "name": "errInfo",
         "type": "bytes",
         "indexed": true,
         "internalType": "bytes"
@@ -305,11 +305,6 @@
     "inputs": [
       {
         "name": "sender",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "recoverAddr",
         "type": "address",
         "internalType": "address"
       }

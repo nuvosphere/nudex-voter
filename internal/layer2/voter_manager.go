@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
 type ContractVotingManager interface {
@@ -18,7 +19,7 @@ type ContractVotingManager interface {
 	TaskCompletionThreshold() (*big.Int, error)
 
 	EncodeVerifyAndCall(operations []contracts.Operation, signature []byte) []byte
-	GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error)
+	GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, common.Hash, error)
 }
 
 func (l *Layer2Listener) TssSigner() (common.Address, error) {
@@ -46,20 +47,21 @@ func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContrac
 }
 
 func (l *Layer2Listener) Proposer() (common.Address, error) {
-	return l.contractVotingManager.NextSubmitter(nil)
+	return l.NextSubmitter()
 }
 
-func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error) {
+func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, common.Hash, error) {
 	nonce, err := l.contractVotingManager.TssNonce(nil)
 	if err != nil {
-		return nil, common.Hash{}, err
+		return nil, common.Hash{}, common.Hash{}, err
 	}
-
-	nonce.Add(nonce, big.NewInt(1))
 
 	encodeData := contracts.EncodeOperation(nonce, operations)
 
-	return nonce, crypto.Keccak256Hash(encodeData), err
+	dataHash := crypto.Keccak256Hash(encodeData)
+	hash := utils.PersonalMsgHash(dataHash)
+
+	return nonce, dataHash, hash, err
 }
 
 func (l *Layer2Listener) NextSubmitter() (common.Address, error) {

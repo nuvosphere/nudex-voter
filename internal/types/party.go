@@ -1,4 +1,4 @@
-package helper
+package types
 
 import (
 	"crypto/elliptic"
@@ -10,7 +10,6 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 type (
@@ -36,11 +35,12 @@ type Session[T, M any] struct {
 	Signer     common.Address `json:"signer,omitempty"`      // current signer
 	ProposalID T              `json:"proposal_id,omitempty"` // msg id
 	Proposal   M              `json:"proposal,omitempty"`
+	Data       []T            `json:"data,omitempty"`
 }
 
 type Group struct {
-	EC          CurveType          `json:"ec,omitempty"`
-	AllPartners types.Participants `json:"all_partners,omitempty"` // all submitter
+	EC          CurveType    `json:"ec,omitempty"`
+	AllPartners Participants `json:"all_partners,omitempty"` // all submitter
 }
 
 func (g *Group) GroupID() GroupID {

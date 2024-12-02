@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/btc"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -15,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/samber/lo"
 	"github.com/samber/lo/parallel"
 	log "github.com/sirupsen/logrus"
 )
@@ -33,16 +33,16 @@ func NewApplication() *Application {
 	config.InitConfig()
 
 	dbm := db.NewDatabaseManager()
-	state := state.InitializeState(dbm)
-	libP2PService := p2p.NewLibP2PService(state, crypto.PubkeyToAddress(config.AppConfig.L2PrivateKey.PublicKey))
-	layer2Listener := layer2.NewLayer2Listener(libP2PService, state, dbm)
-	btcListener := btc.NewBTCListener(libP2PService, state, dbm)
-	tssService := tss.NewTssService(libP2PService, dbm.GetRelayerDB(), state.Bus(), layer2Listener)
-	httpServer := http.NewHTTPServer(libP2PService, state, dbm)
+	stateDB := state.InitializeState(dbm)
+	libP2PService := p2p.NewLibP2PService(stateDB, config.L2PrivateKey)
+	layer2Listener := layer2.NewLayer2Listener(libP2PService, stateDB, dbm)
+	btcListener := btc.NewBTCListener(libP2PService, stateDB, dbm)
+	tssService := tss.NewTssService(libP2PService, dbm.GetRelayerDB(), stateDB.Bus(), layer2Listener)
+	httpServer := http.NewHTTPServer(libP2PService, stateDB, dbm)
 
 	return &Application{
 		DatabaseManager: dbm,
-		State:           state,
+		State:           stateDB,
 		LibP2PService:   libP2PService,
 		Layer2Listener:  layer2Listener,
 		BTCListener:     btcListener,
@@ -56,7 +56,7 @@ func (app *Application) Run() {
 	defer cancel()
 
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	var moules []Module
 	if config.AppConfig.EnableRelayer {
@@ -76,6 +76,7 @@ func (app *Application) Run() {
 	log.Info("Receiving exit signal...")
 
 	cancel()
+	lo.ForEach(moules, func(module Module, _ int) { module.Stop(ctx) })
 
 	app.State.Bus().Close()
 	log.Info("Server stopped")
@@ -88,4 +89,5 @@ func main() {
 
 type Module interface {
 	Start(ctx context.Context)
+	Stop(ctx context.Context)
 }

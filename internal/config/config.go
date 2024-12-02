@@ -18,42 +18,82 @@ import (
 )
 
 type Config struct {
-	HTTPPort            string
-	Libp2pPort          int
-	Libp2pBootNodes     string
-	BTCRPC              string
-	BTCRPC_USER         string
-	BTCRPC_PASS         string
-	BTCStartHeight      int
-	L2RPC               string
-	L2JwtSecret         string
-	L2StartHeight       int
-	L2Confirmations     int
-	L2MaxBlockRange     int
-	L2RequestInterval   time.Duration
-	FireblocksPubKey    string
-	FireblocksPrivKey   string
-	TssPublicKeys       []*ecdsa.PublicKey
-	TssThreshold        int
-	TssSigTimeout       time.Duration
-	EnableWebhook       bool
-	EnableRelayer       bool
-	DbDir               string
-	LogLevel            logrus.Level
-	VotingContract      string
-	AccountContract     string
-	WithdrawContract    string
-	TaskManagerContract string
-	ParticipantContract string
-	DepositContract     string
-	L2PrivateKey        *ecdsa.PrivateKey
-	L2ChainId           *big.Int
+	HttpPort            string        `yaml:"httpPort"`
+	P2pPort             int           `yaml:"p2PPort"`
+	P2pBootNodes        string        `yaml:"p2PBootNodes"`
+	BtcRpc              string        `yaml:"btcRpc"`
+	BtcRpcUser          string        `yaml:"btcRpcUser"`
+	BtcRpcPass          string        `yaml:"btcRpcPass"`
+	BtcStartHeight      int           `yaml:"btcStartHeight"`
+	L2Rpc               string        `yaml:"l2Rpc"`
+	L2JwtSecret         string        `yaml:"l2JwtSecret"`
+	L2StartHeight       int           `yaml:"l2StartHeight"`
+	L2Confirmations     int           `yaml:"l2Confirmations"`
+	L2MaxBlockRange     int           `yaml:"l2MaxBlockRange"`
+	L2RequestInterval   time.Duration `yaml:"l2RequestInterval"`
+	FireblocksPubKey    string        `yaml:"fireblocksPubKey"`
+	FireblocksPrivKey   string        `yaml:"fireblocksPrivKey"`
+	TssThreshold        int           `yaml:"tssThreshold"`
+	TssSigTimeout       time.Duration `yaml:"tssSigTimeout"`
+	EnableWebhook       bool          `yaml:"enableWebhook"`
+	EnableRelayer       bool          `yaml:"enableRelayer"`
+	DbDir               string        `yaml:"dbDir"`
+	VotingContract      string        `yaml:"votingContract"`
+	AccountContract     string        `yaml:"accountContract"`
+	WithdrawContract    string        `yaml:"withdrawContract"`
+	TaskManagerContract string        `yaml:"taskManagerContract"`
+	ParticipantContract string        `yaml:"participantContract"`
+	DepositContract     string        `yaml:"depositContract"`
+	L2ChainID           string        `yaml:"l2ChainID"`
+	LogLevel            logrus.Level  `yaml:"logLevel"`
+	L2PrivateKey        string        `yaml:"l2PrivateKey"`
+	TssPublicKeys       []string      `yaml:"tssPublicKeys"`
+
+	// TssPublicKeys []*ecdsa.PublicKey
+	// L2PrivateKey  *ecdsa.PrivateKey
+	// L2ChainId     *big.Int
 }
 
-var AppConfig Config
+var (
+	AppConfig     Config
+	TssPublicKeys []*ecdsa.PublicKey
+	L2PrivateKey  *ecdsa.PrivateKey
+	L2ChainId     *big.Int
+)
 
 func InitConfig() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME/.config")
+	viper.AddConfigPath("/etc")
+
+	err := viper.ReadInConfig()
+	if !errors.Is(err, viper.ConfigFileNotFoundError{}) {
+		if err != nil && errors.Is(err, viper.ConfigFileNotFoundError{}) {
+			panic(err)
+		}
+		err = viper.Unmarshal(&AppConfig)
+		if err != nil {
+			panic(err)
+		}
+
+		setL2PrivateKey(AppConfig.L2PrivateKey)
+		setL2ChainId(AppConfig.L2ChainID)
+		setTssPublicKeys(strings.Join(AppConfig.TssPublicKeys, ","))
+		println("TssPublicKeys", AppConfig.TssPublicKeys)
+
+		return
+	}
+
 	viper.AutomaticEnv()
+	//viper.Debug()
+	//viper.SetConfigType("env")
+	//viper.AddConfigPath(".")
+	//viper.SetConfigFile(".env")
+	//if err := viper.ReadInConfig(); err != nil {
+	//	panic(err)
+	//}
 
 	// Default config
 	viper.SetDefault("HTTP_PORT", "8080")
@@ -92,30 +132,19 @@ func InitConfig() {
 		logrus.Fatalf("Invalid log level: %v", err)
 	}
 
-	l2PrivateKey, err := crypto.HexToECDSA(viper.GetString("L2_PRIVATE_KEY"))
-	if err != nil {
-		logrus.Fatalf("Failed to load l2 private key: %v, given length %d", err, len(viper.GetString("L2_PRIVATE_KEY")))
-	}
-
-	l2ChainId, err := strconv.ParseInt(viper.GetString("L2_CHAIN_ID"), 10, 64)
-	if err != nil {
-		logrus.Fatalf("Failed to parse l2 chain id: %v", err)
-	}
-
-	tssPublicKeys, err := ParseECDSAPublicKeys(viper.GetString("TSS_PUBLIC_KEYS"))
-	if err != nil {
-		logrus.Fatalf("Failed to parse tss public keys: %v", err)
-	}
+	setL2PrivateKey(viper.GetString("L2_PRIVATE_KEY"))
+	setL2ChainId(viper.GetString("L2_CHAIN_ID"))
+	setTssPublicKeys(viper.GetString("TSS_PUBLIC_KEYS"))
 
 	AppConfig = Config{
-		HTTPPort:            viper.GetString("HTTP_PORT"),
-		Libp2pPort:          viper.GetInt("LIBP2P_PORT"),
-		Libp2pBootNodes:     viper.GetString("LIBP2P_BOOT_NODES"),
-		BTCRPC:              viper.GetString("BTC_RPC"),
-		BTCRPC_USER:         viper.GetString("BTC_RPC_USER"),
-		BTCRPC_PASS:         viper.GetString("BTC_RPC_PASS"),
-		BTCStartHeight:      viper.GetInt("BTC_START_HEIGHT"),
-		L2RPC:               viper.GetString("L2_RPC"),
+		HttpPort:            viper.GetString("HTTP_PORT"),
+		P2pPort:             viper.GetInt("LIBP2P_PORT"),
+		P2pBootNodes:        viper.GetString("LIBP2P_BOOT_NODES"),
+		BtcRpc:              viper.GetString("BTC_RPC"),
+		BtcRpcUser:          viper.GetString("BTC_RPC_USER"),
+		BtcRpcPass:          viper.GetString("BTC_RPC_PASS"),
+		BtcStartHeight:      viper.GetInt("BTC_START_HEIGHT"),
+		L2Rpc:               viper.GetString("L2_RPC"),
 		L2JwtSecret:         viper.GetString("L2_JWT_SECRET"),
 		L2StartHeight:       viper.GetInt("L2_START_HEIGHT"),
 		L2Confirmations:     viper.GetInt("L2_CONFIRMATIONS"),
@@ -123,7 +152,6 @@ func InitConfig() {
 		L2RequestInterval:   viper.GetDuration("L2_REQUEST_INTERVAL"),
 		FireblocksPubKey:    viper.GetString("FIREBLOCKS_PUBKEY"),
 		FireblocksPrivKey:   viper.GetString("FIREBLOCKS_PRIVKEY"),
-		TssPublicKeys:       tssPublicKeys,
 		TssThreshold:        viper.GetInt("TSS_THRESHOLD"),
 		TssSigTimeout:       viper.GetDuration("TSS_SIG_TIMEOUT"),
 		EnableWebhook:       viper.GetBool("ENABLE_WEBHOOK"),
@@ -135,10 +163,37 @@ func InitConfig() {
 		ParticipantContract: viper.GetString("PARTICIPANT_CONTRACT"),
 		TaskManagerContract: viper.GetString("TASK_CONTRACT"),
 		DepositContract:     viper.GetString("DEPOSIT_CONTRACT"),
-		L2PrivateKey:        l2PrivateKey,
-		L2ChainId:           big.NewInt(l2ChainId),
+	}
+	setLogLevel()
+}
+
+func setTssPublicKeys(tssList string) {
+	tssPublicKeys, err := ParseECDSAPublicKeys(tssList)
+	if err != nil {
+		logrus.Fatalf("Failed to parse tss public keys: %v", err)
 	}
 
+	TssPublicKeys = tssPublicKeys
+}
+
+func setL2ChainId(chainId string) {
+	l2ChainId, err := strconv.ParseInt(chainId, 10, 64)
+	if err != nil {
+		logrus.Fatalf("Failed to parse l2 chain id: %v", err)
+	}
+
+	L2ChainId = big.NewInt(l2ChainId)
+}
+
+func setL2PrivateKey(pk string) {
+	privateKey, err := crypto.HexToECDSA(pk)
+	if err != nil {
+		logrus.Fatalf("Failed to load l2 private key: %v, given length %d", err, len(pk))
+	}
+	L2PrivateKey = privateKey
+}
+
+func setLogLevel() {
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(AppConfig.LogLevel)
 

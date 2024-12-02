@@ -60,8 +60,8 @@ type ReShareGroupSession[T, M, D any] struct {
 func createReShareParam(
 	ctx context.Context,
 	params *tss.ReSharingParameters,
-	key helper.LocalPartySaveData,
-) (tss.Party, chan *helper.LocalPartySaveData, chan tss.Message, chan *tss.Error) {
+	key types.LocalPartySaveData,
+) (tss.Party, chan *types.LocalPartySaveData, chan tss.Message, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 100000)
 	// error if reshare fails, contains culprits to blame
@@ -69,7 +69,7 @@ func createReShareParam(
 
 	log.Debug("creating new local party")
 
-	outEndCh := make(chan *helper.LocalPartySaveData, 100000)
+	outEndCh := make(chan *types.LocalPartySaveData, 100000)
 	// output data when keygen finished
 	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData, 256)
 	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData, 256)
@@ -77,11 +77,11 @@ func createReShareParam(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case helper.ECDSA:
+	case types.ECDSA:
 		data := key.ECDSAData()
 		party = ecdsaResharing.NewLocalParty(params, *data, outCh, ecdsaEndCh)
 
-	case helper.EDDSA:
+	case types.EDDSA:
 		party = eddsaResharing.NewLocalParty(params, *key.EDDSAData(), outCh, eddsaEndCh)
 
 	default:
@@ -95,9 +95,9 @@ func createReShareParam(
 		case <-ctx.Done():
 			return
 		case data := <-ecdsaEndCh:
-			outEndCh <- helper.BuildECDSALocalPartySaveData().SetData(data)
+			outEndCh <- types.BuildECDSALocalPartySaveData().SetData(data)
 		case data := <-eddsaEndCh:
-			outEndCh <- helper.BuildEDDSALocalPartySaveData().SetData(data)
+			outEndCh <- types.BuildEDDSALocalPartySaveData().SetData(data)
 		}
 	}()
 
@@ -111,13 +111,13 @@ func runReShareParty(ctx context.Context, transport helper.Transporter, party ts
 }
 
 func (m *Scheduler) NewReShareGroupSession(
-	ec helper.CurveType,
-	sessionID helper.SessionID,
+	ec types.CurveType,
+	sessionID types.SessionID,
 	proposalID ProposalID, // msg id
 	msg *Proposal,
 	oldPartners types.Participants,
 	newPartners types.Participants,
-) helper.SessionID {
+) types.SessionID {
 	m.ecCount.Add(1)
 	localSubmitter := m.LocalSubmitter()
 
@@ -163,7 +163,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	if joinedNew && !joinedOld {
 		log.Debugf("new join node: oldPartyIDs: %v,newPartyIDs:%v", oldPartyIDs, newPartyIDs)
 
-		newInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+		newInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
 			ec,
 			m.p2p,
 			m,
@@ -183,7 +183,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		newInnerSession.endCh = outEndCh
 		newInnerSession.errCH = errCh
 
-		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{
+		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *types.LocalPartySaveData]{
 			sessionTransport: newInnerSession,
 			partyIdMap:       oldPartyIdMap,
 			isNew:            true,
@@ -200,7 +200,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	if !joinedNew && joinedOld {
 		log.Debugf("remove node: oldPartyIDs: %v,newPartyIDs:%v", oldPartyIDs, newPartyIDs)
 
-		oldInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+		oldInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
 			ec,
 			m.p2p,
 			m,
@@ -220,7 +220,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		oldInnerSession.party = party
 		oldInnerSession.endCh = outEndCh
 		oldInnerSession.errCH = errCh
-		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{
+		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *types.LocalPartySaveData]{
 			sessionTransport: oldInnerSession,
 			partyIdMap:       newPartyIdMap,
 			isNew:            false,
@@ -234,8 +234,8 @@ func (m *Scheduler) NewReShareGroupSession(
 	}
 
 	// 3. both joined old and new group
-	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *helper.LocalPartySaveData]{}
-	oldInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *types.LocalPartySaveData]{}
+	oldInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
 		ec,
 		m.p2p,
 		m,
@@ -248,7 +248,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners, // todo
 	)
 	oldInnerSession.partyIdMap = oldPartyIdMap
-	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *helper.LocalPartySaveData], 100) // todo
+	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *types.LocalPartySaveData], 100) // todo
 
 	localData := m.partyData.GetData(ec)
 	oldParty, oldOutEndCh, oldOutCh, oldErrCh := createReShareParam(oldInnerSession.ctx, oldParams, *localData)
@@ -257,7 +257,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	oldInnerSession.errCH = oldErrCh
 	reShareSession.oldSession = oldInnerSession
 
-	newInnerSession := newSession[ProposalID, *Proposal, *helper.LocalPartySaveData](
+	newInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
 		ec,
 		m.p2p,
 		m,
@@ -375,11 +375,11 @@ func (r *ReShareGroupSession[T, M, D]) Type() string {
 	return ReShareGroupSessionType
 }
 
-func (r *ReShareGroupSession[T, M, D]) SessionID() helper.SessionID {
+func (r *ReShareGroupSession[T, M, D]) SessionID() types.SessionID {
 	return r.newSession.SessionID()
 }
 
-func (r *ReShareGroupSession[T, M, D]) GroupID() helper.GroupID {
+func (r *ReShareGroupSession[T, M, D]) GroupID() types.GroupID {
 	return r.newSession.GroupID()
 }
 

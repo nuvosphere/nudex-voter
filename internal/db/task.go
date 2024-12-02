@@ -189,15 +189,15 @@ func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdraw
 }
 
 const (
-	WalletTypeEVM = iota
-	WalletTypeBTC
+	WalletTypeBTC = iota
+	WalletTypeEVM
 	WalletTypeSOL
 	WalletTypeSUI
 )
 
 const (
-	ChainEthereum = iota
-	ChainBitcoin
+	ChainBitcoin = iota
+	ChainEthereum
 	ChainSolana
 	ChainSui
 )
@@ -222,6 +222,7 @@ type TaskUpdatedEvent struct {
 	TaskId     uint64   `gorm:"unique;not null"                     json:"task_id"`
 	Submitter  string   `gorm:"not null"                            json:"submitter"`
 	UpdateTime int64    `gorm:"unique;not null"                     json:"completed_at"`
+	State      uint8    `gorm:"state"                               json:"state"`
 	Result     []byte   `json:"result"`
 	Task       Task     `gorm:"foreignKey:TaskId;references:TaskId"`
 	LogIndex   LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html

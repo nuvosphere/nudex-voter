@@ -25,9 +25,9 @@ func NewBTCListener(libp2p *p2p.Service, state *state.State, dbm *db.DatabaseMan
 	poller := NewBTCPoller(state, db)
 
 	connConfig := &rpcclient.ConnConfig{
-		Host:         config.AppConfig.BTCRPC,
-		User:         config.AppConfig.BTCRPC_USER,
-		Pass:         config.AppConfig.BTCRPC_PASS,
+		Host:         config.AppConfig.BtcRpc,
+		User:         config.AppConfig.BtcRpcUser,
+		Pass:         config.AppConfig.BtcRpcPass,
 		HTTPPostMode: true,
 		DisableTLS:   true,
 	}
@@ -53,4 +53,8 @@ func (bl *BTCListener) Start(ctx context.Context) {
 
 	<-ctx.Done()
 	log.Info("BTCListener is stopping...")
+}
+
+func (bl *BTCListener) Stop(ctx context.Context) {
+	log.Info("BTCListener is stopped...")
 }

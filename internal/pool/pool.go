@@ -24,7 +24,27 @@ func NewTxPool[E cmp.Ordered]() *Pool[E] {
 	}
 }
 
+func (t *Pool[E]) First() Task[E] {
+	items := t.GetTopN(1)
+	if len(items) == 0 {
+		return nil
+	}
+	return items[0]
+}
+
+func (t *Pool[E]) Last() Task[E] {
+	l := t.Len()
+	items := t.GetTopN(int64(l))
+	if len(items) == 0 {
+		return nil
+	}
+	return items[l-1]
+}
+
 func (t *Pool[E]) Add(item Task[E]) {
+	if t.IsExist(item.TaskID()) {
+		return
+	}
 	t.Lock()
 	defer t.Unlock()
 	t.ids = append(t.ids, item.TaskID())

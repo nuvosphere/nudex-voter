@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"crypto/ecdsa"
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -43,4 +46,23 @@ func Verify(hash common.Hash, sig []byte, sender common.Address) bool {
 	}
 
 	return crypto.PubkeyToAddress(*pubKey) == sender
+}
+
+// PersonalMsgHash Returns a hash
+func PersonalMsgHash(messageHash common.Hash) common.Hash {
+	// fullMessage := fmt.Sprintf("\x19Ethereum Signed Message:\n32%s", hex.EncodeToString(messageHash[:]))
+	// return crypto.Keccak256Hash([]byte(fullMessage))
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n32%s", messageHash[:])
+	return crypto.Keccak256Hash([]byte(msg))
+}
+
+// PersonalSign Returns a signature string
+func PersonalSign(messageHash common.Hash, privateKey *ecdsa.PrivateKey) (string, error) {
+	hash := PersonalMsgHash(messageHash)
+	signatureBytes, err := crypto.Sign(hash.Bytes(), privateKey)
+	if err != nil {
+		return "", err
+	}
+	signatureBytes[64] += 27
+	return hexutil.Encode(signatureBytes), nil
 }
