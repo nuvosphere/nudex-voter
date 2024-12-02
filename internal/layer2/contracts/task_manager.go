@@ -42,7 +42,7 @@ type ITaskManagerTask struct {
 
 // TaskManagerContractMetaData contains all meta data concerning the TaskManagerContract contract.
 var TaskManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"getLatestTask\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structITaskManager.Task\",\"components\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getTaskState\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumState\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getUncompletedTasks\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structITaskManager.Task[]\",\"components\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_taskSubmitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nextPendingId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nextTaskId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmedTaskResults\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmedTasks\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaskSubmitter\",\"inputs\":[{\"name\":\"_taskSubmitter\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitTask\",\"inputs\":[{\"name\":\"_submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_context\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"taskSubmitter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tasks\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"updateTask\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"_state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"_result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskSubmitted\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"context\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"submitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskUpdated\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"submitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"updateTime\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"result\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"EmptyTask\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidTask\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OnlyTaskSubmitter\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"getLatestTask\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structITaskManager.Task\",\"components\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getTaskState\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumState\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getUncompletedTasks\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structITaskManager.Task[]\",\"components\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_taskSubmitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nextTaskId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"pendingTaskIndex\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"pendingTasks\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmedTaskResults\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"preconfirmedTasks\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTaskSubmitter\",\"inputs\":[{\"name\":\"_taskSubmitter\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitTask\",\"inputs\":[{\"name\":\"_submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_context\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"taskRecords\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"taskSubmitter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tasks\",\"inputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"createdAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"context\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"updateTask\",\"inputs\":[{\"name\":\"_taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"_state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"_result\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskSubmitted\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"context\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"submitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaskUpdated\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"submitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"updateTime\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"state\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumState\"},{\"name\":\"result\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AlreadyExistTask\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"EmptyTask\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidTask\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OnlyTaskSubmitter\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
 }
 
 // TaskManagerContractABI is the input ABI used to generate the binding from.
@@ -284,37 +284,6 @@ func (_TaskManagerContract *TaskManagerContractCallerSession) GetUncompletedTask
 	return _TaskManagerContract.Contract.GetUncompletedTasks(&_TaskManagerContract.CallOpts)
 }
 
-// NextPendingId is a free data retrieval call binding the contract method 0xe2a9a7d7.
-//
-// Solidity: function nextPendingId() view returns(uint64)
-func (_TaskManagerContract *TaskManagerContractCaller) NextPendingId(opts *bind.CallOpts) (uint64, error) {
-	var out []interface{}
-	err := _TaskManagerContract.contract.Call(opts, &out, "nextPendingId")
-
-	if err != nil {
-		return *new(uint64), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
-
-	return out0, err
-
-}
-
-// NextPendingId is a free data retrieval call binding the contract method 0xe2a9a7d7.
-//
-// Solidity: function nextPendingId() view returns(uint64)
-func (_TaskManagerContract *TaskManagerContractSession) NextPendingId() (uint64, error) {
-	return _TaskManagerContract.Contract.NextPendingId(&_TaskManagerContract.CallOpts)
-}
-
-// NextPendingId is a free data retrieval call binding the contract method 0xe2a9a7d7.
-//
-// Solidity: function nextPendingId() view returns(uint64)
-func (_TaskManagerContract *TaskManagerContractCallerSession) NextPendingId() (uint64, error) {
-	return _TaskManagerContract.Contract.NextPendingId(&_TaskManagerContract.CallOpts)
-}
-
 // NextTaskId is a free data retrieval call binding the contract method 0xfdc3d8d7.
 //
 // Solidity: function nextTaskId() view returns(uint64)
@@ -377,6 +346,68 @@ func (_TaskManagerContract *TaskManagerContractCallerSession) Owner() (common.Ad
 	return _TaskManagerContract.Contract.Owner(&_TaskManagerContract.CallOpts)
 }
 
+// PendingTaskIndex is a free data retrieval call binding the contract method 0xd9804297.
+//
+// Solidity: function pendingTaskIndex() view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCaller) PendingTaskIndex(opts *bind.CallOpts) (uint64, error) {
+	var out []interface{}
+	err := _TaskManagerContract.contract.Call(opts, &out, "pendingTaskIndex")
+
+	if err != nil {
+		return *new(uint64), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
+
+	return out0, err
+
+}
+
+// PendingTaskIndex is a free data retrieval call binding the contract method 0xd9804297.
+//
+// Solidity: function pendingTaskIndex() view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractSession) PendingTaskIndex() (uint64, error) {
+	return _TaskManagerContract.Contract.PendingTaskIndex(&_TaskManagerContract.CallOpts)
+}
+
+// PendingTaskIndex is a free data retrieval call binding the contract method 0xd9804297.
+//
+// Solidity: function pendingTaskIndex() view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCallerSession) PendingTaskIndex() (uint64, error) {
+	return _TaskManagerContract.Contract.PendingTaskIndex(&_TaskManagerContract.CallOpts)
+}
+
+// PendingTasks is a free data retrieval call binding the contract method 0x42260541.
+//
+// Solidity: function pendingTasks(uint256 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCaller) PendingTasks(opts *bind.CallOpts, arg0 *big.Int) (uint64, error) {
+	var out []interface{}
+	err := _TaskManagerContract.contract.Call(opts, &out, "pendingTasks", arg0)
+
+	if err != nil {
+		return *new(uint64), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
+
+	return out0, err
+
+}
+
+// PendingTasks is a free data retrieval call binding the contract method 0x42260541.
+//
+// Solidity: function pendingTasks(uint256 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractSession) PendingTasks(arg0 *big.Int) (uint64, error) {
+	return _TaskManagerContract.Contract.PendingTasks(&_TaskManagerContract.CallOpts, arg0)
+}
+
+// PendingTasks is a free data retrieval call binding the contract method 0x42260541.
+//
+// Solidity: function pendingTasks(uint256 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCallerSession) PendingTasks(arg0 *big.Int) (uint64, error) {
+	return _TaskManagerContract.Contract.PendingTasks(&_TaskManagerContract.CallOpts, arg0)
+}
+
 // PreconfirmedTaskResults is a free data retrieval call binding the contract method 0xc1e6dfeb.
 //
 // Solidity: function preconfirmedTaskResults(uint256 ) view returns(bytes)
@@ -410,16 +441,16 @@ func (_TaskManagerContract *TaskManagerContractCallerSession) PreconfirmedTaskRe
 
 // PreconfirmedTasks is a free data retrieval call binding the contract method 0x1f07caa8.
 //
-// Solidity: function preconfirmedTasks(uint256 ) view returns(uint256)
-func (_TaskManagerContract *TaskManagerContractCaller) PreconfirmedTasks(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
+// Solidity: function preconfirmedTasks(uint256 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCaller) PreconfirmedTasks(opts *bind.CallOpts, arg0 *big.Int) (uint64, error) {
 	var out []interface{}
 	err := _TaskManagerContract.contract.Call(opts, &out, "preconfirmedTasks", arg0)
 
 	if err != nil {
-		return *new(*big.Int), err
+		return *new(uint64), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
 
 	return out0, err
 
@@ -427,16 +458,47 @@ func (_TaskManagerContract *TaskManagerContractCaller) PreconfirmedTasks(opts *b
 
 // PreconfirmedTasks is a free data retrieval call binding the contract method 0x1f07caa8.
 //
-// Solidity: function preconfirmedTasks(uint256 ) view returns(uint256)
-func (_TaskManagerContract *TaskManagerContractSession) PreconfirmedTasks(arg0 *big.Int) (*big.Int, error) {
+// Solidity: function preconfirmedTasks(uint256 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractSession) PreconfirmedTasks(arg0 *big.Int) (uint64, error) {
 	return _TaskManagerContract.Contract.PreconfirmedTasks(&_TaskManagerContract.CallOpts, arg0)
 }
 
 // PreconfirmedTasks is a free data retrieval call binding the contract method 0x1f07caa8.
 //
-// Solidity: function preconfirmedTasks(uint256 ) view returns(uint256)
-func (_TaskManagerContract *TaskManagerContractCallerSession) PreconfirmedTasks(arg0 *big.Int) (*big.Int, error) {
+// Solidity: function preconfirmedTasks(uint256 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCallerSession) PreconfirmedTasks(arg0 *big.Int) (uint64, error) {
 	return _TaskManagerContract.Contract.PreconfirmedTasks(&_TaskManagerContract.CallOpts, arg0)
+}
+
+// TaskRecords is a free data retrieval call binding the contract method 0xdf9431ee.
+//
+// Solidity: function taskRecords(bytes32 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCaller) TaskRecords(opts *bind.CallOpts, arg0 [32]byte) (uint64, error) {
+	var out []interface{}
+	err := _TaskManagerContract.contract.Call(opts, &out, "taskRecords", arg0)
+
+	if err != nil {
+		return *new(uint64), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
+
+	return out0, err
+
+}
+
+// TaskRecords is a free data retrieval call binding the contract method 0xdf9431ee.
+//
+// Solidity: function taskRecords(bytes32 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractSession) TaskRecords(arg0 [32]byte) (uint64, error) {
+	return _TaskManagerContract.Contract.TaskRecords(&_TaskManagerContract.CallOpts, arg0)
+}
+
+// TaskRecords is a free data retrieval call binding the contract method 0xdf9431ee.
+//
+// Solidity: function taskRecords(bytes32 ) view returns(uint64)
+func (_TaskManagerContract *TaskManagerContractCallerSession) TaskRecords(arg0 [32]byte) (uint64, error) {
+	return _TaskManagerContract.Contract.TaskRecords(&_TaskManagerContract.CallOpts, arg0)
 }
 
 // TaskSubmitter is a free data retrieval call binding the contract method 0xcda20e13.
@@ -470,10 +532,10 @@ func (_TaskManagerContract *TaskManagerContractCallerSession) TaskSubmitter() (c
 	return _TaskManagerContract.Contract.TaskSubmitter(&_TaskManagerContract.CallOpts)
 }
 
-// Tasks is a free data retrieval call binding the contract method 0x8d977672.
+// Tasks is a free data retrieval call binding the contract method 0x6b895ab7.
 //
-// Solidity: function tasks(uint256 ) view returns(uint64 id, uint8 state, address submitter, uint256 createdAt, uint256 updatedAt, bytes context, bytes result)
-func (_TaskManagerContract *TaskManagerContractCaller) Tasks(opts *bind.CallOpts, arg0 *big.Int) (struct {
+// Solidity: function tasks(uint64 ) view returns(uint64 id, uint8 state, address submitter, uint256 createdAt, uint256 updatedAt, bytes context, bytes result)
+func (_TaskManagerContract *TaskManagerContractCaller) Tasks(opts *bind.CallOpts, arg0 uint64) (struct {
 	Id        uint64
 	State     uint8
 	Submitter common.Address
@@ -510,10 +572,10 @@ func (_TaskManagerContract *TaskManagerContractCaller) Tasks(opts *bind.CallOpts
 
 }
 
-// Tasks is a free data retrieval call binding the contract method 0x8d977672.
+// Tasks is a free data retrieval call binding the contract method 0x6b895ab7.
 //
-// Solidity: function tasks(uint256 ) view returns(uint64 id, uint8 state, address submitter, uint256 createdAt, uint256 updatedAt, bytes context, bytes result)
-func (_TaskManagerContract *TaskManagerContractSession) Tasks(arg0 *big.Int) (struct {
+// Solidity: function tasks(uint64 ) view returns(uint64 id, uint8 state, address submitter, uint256 createdAt, uint256 updatedAt, bytes context, bytes result)
+func (_TaskManagerContract *TaskManagerContractSession) Tasks(arg0 uint64) (struct {
 	Id        uint64
 	State     uint8
 	Submitter common.Address
@@ -525,10 +587,10 @@ func (_TaskManagerContract *TaskManagerContractSession) Tasks(arg0 *big.Int) (st
 	return _TaskManagerContract.Contract.Tasks(&_TaskManagerContract.CallOpts, arg0)
 }
 
-// Tasks is a free data retrieval call binding the contract method 0x8d977672.
+// Tasks is a free data retrieval call binding the contract method 0x6b895ab7.
 //
-// Solidity: function tasks(uint256 ) view returns(uint64 id, uint8 state, address submitter, uint256 createdAt, uint256 updatedAt, bytes context, bytes result)
-func (_TaskManagerContract *TaskManagerContractCallerSession) Tasks(arg0 *big.Int) (struct {
+// Solidity: function tasks(uint64 ) view returns(uint64 id, uint8 state, address submitter, uint256 createdAt, uint256 updatedAt, bytes context, bytes result)
+func (_TaskManagerContract *TaskManagerContractCallerSession) Tasks(arg0 uint64) (struct {
 	Id        uint64
 	State     uint8
 	Submitter common.Address
@@ -1181,13 +1243,14 @@ type TaskManagerContractTaskUpdated struct {
 	TaskId     uint64
 	Submitter  common.Address
 	UpdateTime *big.Int
+	State      uint8
 	Result     []byte
 	Raw        types.Log // Blockchain specific contextual infos
 }
 
-// FilterTaskUpdated is a free log retrieval operation binding the contract event 0x86de36c316de140ff1614f14d3353be006c1d760e2b4e9eb6cd40783f0fa7e57.
+// FilterTaskUpdated is a free log retrieval operation binding the contract event 0x5fdff117028da08af2dd3759035973e6e677707cdbd8b5c7f398eec3dd6a6d0f.
 //
-// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint256 indexed updateTime, bytes result)
+// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint256 indexed updateTime, uint8 state, bytes result)
 func (_TaskManagerContract *TaskManagerContractFilterer) FilterTaskUpdated(opts *bind.FilterOpts, taskId []uint64, submitter []common.Address, updateTime []*big.Int) (*TaskManagerContractTaskUpdatedIterator, error) {
 
 	var taskIdRule []interface{}
@@ -1210,9 +1273,9 @@ func (_TaskManagerContract *TaskManagerContractFilterer) FilterTaskUpdated(opts 
 	return &TaskManagerContractTaskUpdatedIterator{contract: _TaskManagerContract.contract, event: "TaskUpdated", logs: logs, sub: sub}, nil
 }
 
-// WatchTaskUpdated is a free log subscription operation binding the contract event 0x86de36c316de140ff1614f14d3353be006c1d760e2b4e9eb6cd40783f0fa7e57.
+// WatchTaskUpdated is a free log subscription operation binding the contract event 0x5fdff117028da08af2dd3759035973e6e677707cdbd8b5c7f398eec3dd6a6d0f.
 //
-// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint256 indexed updateTime, bytes result)
+// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint256 indexed updateTime, uint8 state, bytes result)
 func (_TaskManagerContract *TaskManagerContractFilterer) WatchTaskUpdated(opts *bind.WatchOpts, sink chan<- *TaskManagerContractTaskUpdated, taskId []uint64, submitter []common.Address, updateTime []*big.Int) (event.Subscription, error) {
 
 	var taskIdRule []interface{}
@@ -1260,9 +1323,9 @@ func (_TaskManagerContract *TaskManagerContractFilterer) WatchTaskUpdated(opts *
 	}), nil
 }
 
-// ParseTaskUpdated is a log parse operation binding the contract event 0x86de36c316de140ff1614f14d3353be006c1d760e2b4e9eb6cd40783f0fa7e57.
+// ParseTaskUpdated is a log parse operation binding the contract event 0x5fdff117028da08af2dd3759035973e6e677707cdbd8b5c7f398eec3dd6a6d0f.
 //
-// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint256 indexed updateTime, bytes result)
+// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint256 indexed updateTime, uint8 state, bytes result)
 func (_TaskManagerContract *TaskManagerContractFilterer) ParseTaskUpdated(log types.Log) (*TaskManagerContractTaskUpdated, error) {
 	event := new(TaskManagerContractTaskUpdated)
 	if err := _TaskManagerContract.contract.UnpackLog(event, "TaskUpdated", log); err != nil {

@@ -67,7 +67,7 @@ func (p *P2PMocker) OnlinePeerCount() int {
 	return p.nodeCount
 }
 
-func (p *P2PMocker) IsOnline(partyID string) bool {
+func (p *P2PMocker) IsOnline(submitter string) bool {
 	return true
 }
 
@@ -126,17 +126,18 @@ func (v *VoterContractMocker) EncodeVerifyAndCall(operations []contracts.Operati
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, error) {
+func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, common.Hash, error) {
 	nonce, err := v.TssNonce()
 	if err != nil {
-		return nil, common.Hash{}, err
+		return nil, common.Hash{}, common.Hash{}, err
 	}
-
-	nonce.Add(nonce, big.NewInt(1))
 
 	encodeData := contracts.EncodeOperation(nonce, operations)
 
-	return nonce, crypto.Keccak256Hash(encodeData), err
+	dataHash := crypto.Keccak256Hash(encodeData)
+	hash := utils.PersonalMsgHash(dataHash)
+
+	return nonce, dataHash, hash, err
 }
 
 func (v *VoterContractMocker) SetParticipants(pp types.Participants) {
@@ -162,7 +163,12 @@ func (v *VoterContractMocker) GetLatestTask() (contracts.ITaskManagerTask, error
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) IsTaskCompleted(taskId *big.Int) (bool, error) {
+func (v *VoterContractMocker) IsTaskCompleted(taskId uint64) (bool, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (v *VoterContractMocker) GetTaskState(taskId uint64) (uint8, error) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -182,7 +188,7 @@ func (v *VoterContractMocker) NextTaskId() (uint64, error) {
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) Tasks(taskId *big.Int) (contracts.ITaskManagerTask, error) {
+func (v *VoterContractMocker) Tasks(taskId uint64) (contracts.ITaskManagerTask, error) {
 	// TODO implement me
 	panic("implement me")
 }

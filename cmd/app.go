@@ -14,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/samber/lo"
 	"github.com/samber/lo/parallel"
 	log "github.com/sirupsen/logrus"
 )
@@ -55,7 +56,7 @@ func (app *Application) Run() {
 	defer cancel()
 
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	var moules []Module
 	if config.AppConfig.EnableRelayer {
@@ -75,6 +76,7 @@ func (app *Application) Run() {
 	log.Info("Receiving exit signal...")
 
 	cancel()
+	lo.ForEach(moules, func(module Module, _ int) { module.Stop(ctx) })
 
 	app.State.Bus().Close()
 	log.Info("Server stopped")
@@ -87,4 +89,5 @@ func main() {
 
 type Module interface {
 	Start(ctx context.Context)
+	Stop(ctx context.Context)
 }

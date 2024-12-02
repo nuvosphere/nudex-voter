@@ -162,7 +162,7 @@
         "internalType": "uint256"
       },
       {
-        "name": "chainId",
+        "name": "chain",
         "type": "uint8",
         "indexed": true,
         "internalType": "enum IAccountManager.Chain"

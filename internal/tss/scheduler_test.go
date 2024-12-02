@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
@@ -488,4 +489,11 @@ func TestValue(t *testing.T) {
 
 	assert.Equal(t, &loadValue, &newGroup)
 	t.Logf("&loadValue = %p, &newGroup = %p", &loadValue, &newGroup)
+}
+
+func TestRecveor(t *testing.T) {
+	signature, err := hexutil.Decode("0x7b5271a558d9319c395ac0c0403baa3a1cff47c2790870fb327fe89b8d801ea7531563c7763bc364dce8df59cf22d59f59f0272a506f01715985ecd3562f597801")
+	assert.NoError(t, err)
+	err = utils.VerifySig(common.HexToHash("0x0ff92700e1f5c45afab5763ddda39c503dd2fba606aef046278882b13d14ee50"), signature, common.HexToAddress("0xB43EB0e9Ec8040737FFcc144073C72Cf68bC4bab"))
+	assert.NoError(t, err)
 }

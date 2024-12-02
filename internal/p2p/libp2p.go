@@ -45,7 +45,7 @@ type P2PService interface {
 	Bind(msgType MessageType, event eventbus.Event)
 	PublishMessage(ctx context.Context, msg any) error
 	OnlinePeerCount() int
-	IsOnline(partyID string) bool
+	IsOnline(submitter string) bool
 	UpdateParticipants(partners types.Participants)
 }
 
@@ -213,6 +213,10 @@ func (lp *Service) Start(ctx context.Context) {
 	}
 
 	log.Info("LibP2PService has stopped.")
+}
+
+func (lp *Service) Stop(ctx context.Context) {
+	_ = lp.messageTopic.Close()
 }
 
 func (lp *Service) connectToBootNodes(ctx context.Context, self host.Host) {

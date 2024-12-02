@@ -138,13 +138,13 @@ var ErrCoinType = fmt.Errorf("error coin type")
 
 func getCoinTypeByChain(chain uint8) int {
 	switch chain {
-	case db.WalletTypeEVM:
-		return 60
-	case db.WalletTypeBTC:
+	case db.ChainBitcoin:
 		return 0
-	case db.WalletTypeSOL:
+	case db.ChainEthereum:
+		return 60
+	case db.ChainSolana:
 		return 501
-	case db.WalletTypeSUI:
+	case db.ChainSui:
 		return 784
 	default:
 		panic(ErrCoinType)
@@ -308,4 +308,12 @@ func RunParty(
 	helper.RunParty(ctx, party, errCh, outCh, transport, false)
 
 	return party, endCh, errCh
+}
+
+func secp256k1Signature(data *tsscommon.SignatureData) []byte {
+	first := data.SignatureRecovery[0]
+	if first < 27 {
+		first += 27
+	}
+	return append(data.Signature, first)
 }

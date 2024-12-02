@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/chenzhijie/go-web3/crypto"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -42,7 +43,7 @@ func (m *Scheduler) Validate(msg SessionMessage[ProposalID, Proposal]) error {
 }
 
 func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
-	t := m.pendingTasks.Get(taskID)
+	t := m.taskQueue.Get(taskID)
 	if t != nil {
 		return t, nil
 	}
@@ -67,7 +68,7 @@ func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
 }
 
 func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
-	t, err := m.voterContract.Tasks(big.NewInt(int64(taskId)))
+	t, err := m.voterContract.Tasks(taskId)
 	if err != nil {
 		return nil, err
 	}
@@ -271,21 +272,24 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 	return nil
 }
 
-func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation) {
+func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
 		Operation: ops,
+		Hash:      hash,
+		DataHash:  dataHash,
 	}
-	m.operations.Add(operations)
+	m.operationsQueue.Add(operations)
+	m.currentNonce.Store(nonce.Uint64())
 }
 
 func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Proposal]) error {
 	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
-	tasks := m.pendingTasks.BatchGet(msg.Data)
+	tasks := m.taskQueue.BatchGet(msg.Data)
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
 
-	nonce, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
 		return fmt.Errorf("batch task generate verify task unsign msg err:%v", err)
 	}
@@ -305,7 +309,7 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 		&msg.Proposal,
 		msg.Data,
 	)
-	m.saveOperations(nonce, operations)
+	m.saveOperations(nonce, operations, dataHash, unSignMsg)
 
 	return nil
 }

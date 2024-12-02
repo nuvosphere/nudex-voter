@@ -54,3 +54,7 @@ func (bl *BTCListener) Start(ctx context.Context) {
 	<-ctx.Done()
 	log.Info("BTCListener is stopping...")
 }
+
+func (bl *BTCListener) Stop(ctx context.Context) {
+	log.Info("BTCListener is stopped...")
+}

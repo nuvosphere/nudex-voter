@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,9 +25,9 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Scheduler struct {
@@ -47,9 +48,10 @@ type Scheduler struct {
 	proposer           *atomic.Value // current submitter
 	partners           *atomic.Value // types.Participants
 	ecCount            *atomic.Int64
-	newGroup           *atomic.Value // *NewGroup
-	pendingTasks       *pool.Pool[uint64]
-	operations         *pool.Pool[ProposalID]
+	newGroup           *atomic.Value          // *NewGroup
+	taskQueue          *pool.Pool[uint64]     // created state task
+	pendingStateTasks  *pool.Pool[uint64]     // pending state task
+	operationsQueue    *pool.Pool[ProposalID] // pending batch task
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
 	stateDB            *gorm.DB
@@ -58,6 +60,7 @@ type Scheduler struct {
 	tssMsgCh           <-chan any // eventbus channel
 	pendingTask        <-chan any // eventbus channel
 	handleSigFinish    func(*Operations)
+	currentNonce       *atomic.Uint64
 }
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
@@ -86,6 +89,11 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 	}
 	log.Infof("partners: %v", partners)
 	p.UpdateParticipants(partners)
+	currentNonce := &atomic.Uint64{}
+	nonce, _ := voterContract.TssNonce()
+	if nonce != nil {
+		currentNonce.Store(nonce.Uint64())
+	}
 
 	newGroup := &atomic.Value{}
 	newGroup.Store(nullNewGroup)
@@ -107,12 +115,15 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm
 		proposer:           &pp,
 		partners:           &ps,
 		newGroup:           newGroup,
-		pendingTasks:       pool.NewTxPool[uint64](),
+		taskQueue:          pool.NewTxPool[uint64](),
+		pendingStateTasks:  pool.NewTxPool[uint64](),
+		operationsQueue:    pool.NewTxPool[ProposalID](),
 		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
 		notify:             make(chan struct{}, 1024),
 		stateDB:            stateDB,
 		voterContract:      voterContract,
 		partyData:          NewPartyData(config.AppConfig.DbDir),
+		currentNonce:       currentNonce,
 	}
 }
 
@@ -137,10 +148,12 @@ func (m *Scheduler) Start() {
 	}
 
 	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(types.ECDSA).Address())
+	log.Infof("localSubmitter: %v, proposer: %v", m.LocalSubmitter(), m.Proposer())
 	// loop approveProposal
 	m.loopApproveProposal()
 	m.reGroupResultLoop()
 	m.loopSigInToOut()
+	m.loopDetectionCondition()
 	log.Info("Scheduler stared success!")
 }
 
@@ -320,17 +333,20 @@ func (m *Scheduler) loopApproveProposal() {
 }
 
 func (m *Scheduler) BatchTask() {
-	if m.isCanProposal() {
+	if m.isCanProposal() && m.isCanNext() {
 		log.Info("batch proposal")
-		m.BlockDetectionThreshold()
-		tasks := m.pendingTasks.GetTopN(TopN)
+		tasks := m.taskQueue.GetTopN(TopN)
 		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
-
-		nonce, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+		if len(operations) == 0 {
+			log.Warnf("operationsQueue is empty")
+			return
+		}
+		nonce, dataHash, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 		if err != nil {
 			log.Errorf("batch task generate verify task unsign msg err:%v", err)
 			return
 		}
+		log.Infof("nonce: %v, dataHash: %v, msg: %v", nonce, dataHash, msg)
 
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
@@ -339,14 +355,25 @@ func (m *Scheduler) BatchTask() {
 			msg.Big(),
 			lo.Map(tasks, func(item pool.Task[uint64], index int) ProposalID { return item.TaskID() }),
 		)
-		m.saveOperations(nonce, operations)
+		m.saveOperations(nonce, operations, dataHash, msg)
 	}
+}
+
+func (m *Scheduler) isCanNext() bool {
+	op := m.operationsQueue.Last()
+	if op == nil {
+		return true
+	}
+	if op.(*Operations).Signature != nil {
+		return true
+	}
+	return false
 }
 
 func (m *Scheduler) IsDiscussed(taskID uint64) bool {
 	_, ok := m.discussedTaskCache.Get(fmt.Sprintf("%d", taskID))
 	if !ok {
-		ok, _ = m.voterContract.IsTaskCompleted(decimal.NewFromUint64(taskID).BigInt())
+		ok, _ = m.voterContract.IsTaskCompleted(taskID)
 	}
 
 	return ok
@@ -360,12 +387,17 @@ func (m *Scheduler) LocalSubmitter() common.Address {
 	return m.localSubmitter
 }
 
+var zeroAddress = common.Address{}
+
 func (m *Scheduler) Proposer() common.Address {
 	p := m.proposer.Load()
 	if p != nil {
 		return p.(common.Address)
 	}
-	proposer, _ := m.voterContract.Proposer()
+	proposer, err := m.voterContract.Proposer()
+	if proposer != zeroAddress && err == nil {
+		m.proposer.Store(proposer)
+	}
 	return proposer
 }
 
@@ -401,6 +433,7 @@ func (m *Scheduler) p2pLoop() {
 
 const TopN = 20
 
+// from layer2 log event
 func (m *Scheduler) proposalLoop() {
 	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
 
@@ -414,13 +447,13 @@ func (m *Scheduler) proposalLoop() {
 				log.Info("received task from layer2 log scan: ", data)
 
 				switch v := data.(type) {
-				case pool.Task[uint64]:
+				case pool.Task[uint64]: // task create
 					if m.IsDiscussed(v.TaskID()) {
 						log.Errorf("received task from layer2 is discussed : %v", v.TaskID())
 					} else {
-						m.pendingTasks.Add(v)
+						m.taskQueue.Add(v)
 
-						if m.pendingTasks.Len() >= TopN {
+						if m.taskQueue.Len() >= TopN {
 							m.notify <- struct{}{}
 						}
 					}
@@ -432,6 +465,30 @@ func (m *Scheduler) proposalLoop() {
 					m.proposer.Store(common.HexToAddress(v.Submitter))
 
 				case *db.TaskUpdatedEvent: // todo
+					switch v.State {
+					case db.Pending:
+						// todo withdraw
+						task := &db.Task{}
+						err := m.stateDB.
+							Model(task).
+							Preload(clause.Associations).
+							Where("task_id = ?", v.TaskId).
+							First(task).
+							Error
+						if err != nil {
+							log.Errorf("get task err:%v", err)
+						} else {
+							// todo
+							m.pendingStateTasks.Add(task)
+						}
+
+					case db.Completed, db.Failed:
+						m.taskQueue.Remove(v.TaskId)
+						m.AddDiscussedTask(v.TaskId)
+					default:
+						log.Errorf("invalid task state : %v", v.State)
+					}
+
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
 				}
 			}
@@ -440,6 +497,7 @@ func (m *Scheduler) proposalLoop() {
 
 	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
 
+	// test branch
 	go func() {
 		for {
 			select {
@@ -451,7 +509,7 @@ func (m *Scheduler) proposalLoop() {
 
 				switch v := data.(type) {
 				case pool.Task[uint64]:
-					m.pendingTasks.Add(v)
+					m.taskQueue.Add(v)
 
 					if m.isCanProposal() {
 						log.Info("proposal task", v)
@@ -466,6 +524,10 @@ func (m *Scheduler) proposalLoop() {
 
 				case *db.TaskUpdatedEvent: // todo
 					log.Infof("taskID: %d completed on blockchain", v.TaskId)
+					if v.State == db.Completed {
+						m.taskQueue.Remove(v.TaskId)
+						m.AddDiscussedTask(v.TaskId)
+					}
 				}
 			}
 		}
@@ -499,6 +561,13 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 		})
 
 		if m.isCanProposal() {
+			for {
+				if m.p2p.IsOnline(strings.ToLower(joinAddress.String())) {
+					break
+				}
+				time.Sleep(1 * time.Second)
+			}
+
 			_ = m.NewReShareGroupSession(
 				types.ECDSA,
 				types.SenateSessionIDOfECDSA,
@@ -559,13 +628,16 @@ func (m *Scheduler) loopSigInToOut() {
 				} else {
 					switch result.Type {
 					case SignBatchTaskSessionType:
-						ops := m.operations.Get(result.ProposalID).(*Operations)
-						ops.Signature = result.Data.SignatureRecovery
+						ops := m.operationsQueue.Get(result.ProposalID).(*Operations)
+						ops.Signature = secp256k1Signature(result.Data)
+						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
+						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
+						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
 						if m.handleSigFinish != nil {
 							m.handleSigFinish(ops)
 						}
 						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
-						m.operations.RemoveTopN(ops.TaskID() - 1) // todo
+						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
 					default:
 						log.Infof("tss signature result: %v", result)
 					}
@@ -575,8 +647,30 @@ func (m *Scheduler) loopSigInToOut() {
 	}()
 }
 
+func (m *Scheduler) loopDetectionCondition() {
+	ticker := time.NewTicker(20 * time.Second)
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("detection condition loop stopped")
+			case <-ticker.C:
+				latestProposer, err := m.voterContract.Proposer()
+				if err != nil {
+					log.Errorf("voterContract.Proposer err: %v", err)
+				} else {
+					proposer := m.Proposer()
+					if proposer != latestProposer {
+						m.proposer.Store(latestProposer)
+					}
+				}
+			}
+		}
+	}()
+}
+
 func (m *Scheduler) GetDiscussedOperation(id uint64) *Operations {
-	ops := m.operations.Get(id)
+	ops := m.operationsQueue.Get(id)
 	if ops == nil {
 		return nil
 	}
@@ -585,7 +679,11 @@ func (m *Scheduler) GetDiscussedOperation(id uint64) *Operations {
 
 func (m *Scheduler) isCanProposal() bool {
 	m.BlockDetectionThreshold()
-	return m.LocalSubmitter() == m.Proposer() && m.isJoined()
+	proposer, err := m.voterContract.Proposer()
+	if err != nil || proposer == zeroAddress {
+		proposer = m.Proposer()
+	}
+	return m.LocalSubmitter() == proposer && m.isJoined()
 }
 
 func (m *Scheduler) isJoined() bool {

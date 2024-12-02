@@ -136,6 +136,10 @@ func DialEthClient() (*ethclient.Client, error) {
 	return ethclient.NewClient(client), nil
 }
 
+func (l *Layer2Listener) Stop(ctx context.Context) {
+	log.Infof("Stoped layer2 listener")
+}
+
 func (l *Layer2Listener) Start(ctx context.Context) {
 	// Get latest sync height
 	var syncStatus db.EVMSyncStatus
@@ -151,17 +155,26 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 		log.Fatalf("Error querying sync status: %v", result.Error)
 	}
 
-L:
+	ticker := time.NewTicker(config.AppConfig.L2RequestInterval * time.Second)
+	defer ticker.Stop()
+
+	log.Infof("Layer2Listener: begin scan log: begin height: %v", syncStatus.LastSyncBlock)
 	for {
-		isContinue, err := l.scan(ctx, &syncStatus)
-		if err != nil {
-			log.Errorf("scan : %v", err)
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		L:
+			for {
+				isContinue, err := l.scan(ctx, &syncStatus)
+				if err != nil {
+					log.Errorf("scan : %v", err)
+				}
+				if !isContinue {
+					break L
+				}
+			}
 		}
-		if isContinue {
-			continue L
-		}
-		// Next loop
-		time.Sleep(config.AppConfig.L2RequestInterval)
 	}
 }
 
@@ -179,6 +192,8 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 
 		targetBlock = 0
 	}
+
+	log.Infof("syncStatus.LastSyncBlock: %v, targetBlock: %v", syncStatus.LastSyncBlock, targetBlock)
 
 	if syncStatus.LastSyncBlock < targetBlock {
 		fromBlock := syncStatus.LastSyncBlock + 1
