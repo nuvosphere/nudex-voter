@@ -72,7 +72,14 @@ abi: ## generate abi go file
 	abigen --abi internal/layer2/abis/VotingManager.json --pkg contracts --type VotingManagerContract --out internal/layer2/contracts/voting_manager.go
 	abigen --abi internal/layer2/abis/DepositManager.json --pkg contracts --type DepositManagerContract --out internal/layer2/contracts/deposit_manager.go
 	abigen --abi internal/layer2/abis/TaskPayload.json --pkg contracts --type TaskPayloadContract --out internal/layer2/contracts/task_payload.go
-	abigen --abi internal/layer2/abis/codec/VoterCodec.json --pkg codec --type VoterCodec --out internal/layer2/contracts/codec/voter_codec.go
+	abigen --abi internal/layer2/abis/codec/Codec.json --pkg codec --type VoterCodec --out internal/layer2/contracts/codec/codec.go
+
+contract:
+	solc --pretty-json --optimize --abi  --overwrite  -o internal/layer2/abis/codec/    ./internal/layer2/contracts/Codec.sol
+	mv internal/layer2/abis/codec/Codec.abi internal/layer2/abis/codec/Codec.json
+	solc --pretty-json --optimize --abi  --overwrite  -o internal/layer2//contracts/    ./internal/layer2/contracts/TaskPayload.sol
+	mv internal/layer2/contracts/TaskPayload.abi internal/layer2/abis/TaskPayload.json
+	
 
 .PHONY: ci
 ci: abi fix fmt lint build test 

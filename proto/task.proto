@@ -85,8 +85,8 @@ message WithdrawalResult {
 }
 
 enum Chain {
-  ETHEREUM = 0;
-  BITCOIN = 1;
+  BITCOIN = 0;
+  ETHEREUM = 1;
   SOLANA = 2;
   SUI = 3;
 }
