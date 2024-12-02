@@ -148,6 +148,7 @@ func (m *Scheduler) Start() {
 	}
 
 	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(types.ECDSA).Address())
+	log.Infof("localSubmitter: %v, proposer: %v", m.LocalSubmitter(), m.Proposer())
 	// loop approveProposal
 	m.loopApproveProposal()
 	m.reGroupResultLoop()
@@ -337,7 +338,7 @@ func (m *Scheduler) BatchTask() {
 		tasks := m.taskQueue.GetTopN(TopN)
 		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
 		if len(operations) == 0 {
-			log.Errorf("operationsQueue is empty")
+			log.Warnf("operationsQueue is empty")
 			return
 		}
 		nonce, dataHash, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
@@ -386,13 +387,17 @@ func (m *Scheduler) LocalSubmitter() common.Address {
 	return m.localSubmitter
 }
 
+var zeroAddress = common.Address{}
+
 func (m *Scheduler) Proposer() common.Address {
 	p := m.proposer.Load()
 	if p != nil {
 		return p.(common.Address)
 	}
-	proposer, _ := m.voterContract.Proposer()
-	m.proposer.Store(proposer)
+	proposer, err := m.voterContract.Proposer()
+	if proposer != zeroAddress && err == nil {
+		m.proposer.Store(proposer)
+	}
 	return proposer
 }
 
@@ -675,7 +680,7 @@ func (m *Scheduler) GetDiscussedOperation(id uint64) *Operations {
 func (m *Scheduler) isCanProposal() bool {
 	m.BlockDetectionThreshold()
 	proposer, err := m.voterContract.Proposer()
-	if err != nil {
+	if err != nil || proposer == zeroAddress {
 		proposer = m.Proposer()
 	}
 	return m.LocalSubmitter() == proposer && m.isJoined()

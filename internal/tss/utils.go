@@ -138,13 +138,13 @@ var ErrCoinType = fmt.Errorf("error coin type")
 
 func getCoinTypeByChain(chain uint8) int {
 	switch chain {
-	case db.WalletTypeBTC:
+	case db.ChainBitcoin:
 		return 0
-	case db.WalletTypeEVM:
+	case db.ChainEthereum:
 		return 60
-	case db.WalletTypeSOL:
+	case db.ChainSolana:
 		return 501
-	case db.WalletTypeSUI:
+	case db.ChainSui:
 		return 784
 	default:
 		panic(ErrCoinType)

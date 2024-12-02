@@ -47,7 +47,7 @@ func (l *Layer2Listener) ContractVotingManager() *contracts.VotingManagerContrac
 }
 
 func (l *Layer2Listener) Proposer() (common.Address, error) {
-	return l.contractVotingManager.NextSubmitter(nil)
+	return l.NextSubmitter()
 }
 
 func (l *Layer2Listener) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, common.Hash, error) {

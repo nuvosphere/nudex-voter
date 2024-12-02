@@ -43,6 +43,8 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 		submitterChosenEvent := contracts.VotingManagerContractSubmitterRotationRequested{}
 		contracts.UnpackEventLog(contracts.VotingManagerContractMetaData, &submitterChosenEvent, eventName, vLog)
 		submitter = submitterChosenEvent.CurrentSubmitter.Hex()
+	default:
+		return errors.New("invalid topic")
 	}
 
 	submitterChosen.Submitter = submitter
@@ -112,6 +114,8 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		if taskUpdatedEvent != nil {
 			l.postTask(taskUpdatedEvent)
 		}
+	default:
+		return errors.New("invalid topic")
 	}
 
 	return nil
@@ -200,6 +204,8 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 
 			return errors.Join(removedErr, vlogErr)
 		})
+	default:
+		return errors.New("invalid topic")
 	}
 
 	if err != nil {

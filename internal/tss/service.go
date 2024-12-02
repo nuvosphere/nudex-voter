@@ -61,7 +61,7 @@ func (t *Service) handleSigFinish(operations *Operations) {
 	t.scheduler.stateDB.Save(&db.Operations{
 		Nonce:  decimal.NewFromBigInt(operations.Nonce, 0),
 		Data:   string(data),
-		Status: 0,
+		Status: db.Created,
 	})
 	if t.scheduler.IsProposer() {
 		log.Info("proposer submit signature")
@@ -88,6 +88,7 @@ func (t *Service) handleSigFinish(operations *Operations) {
 		if err != nil {
 			log.Fatalf("failed to send transaction: %v", err)
 		}
+		// updated status to pending
 
 		receipt, err := t.wallet.WaitTxSuccess(context.Background(), signedTx.Hash())
 		if err != nil {
@@ -95,8 +96,10 @@ func (t *Service) handleSigFinish(operations *Operations) {
 		}
 
 		if receipt.Status == 0 {
+			// updated status to fail
 			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), signedTx.Hash().String())
 		} else {
+			// updated status to completed
 			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), signedTx.Hash().String())
 		}
 	}
