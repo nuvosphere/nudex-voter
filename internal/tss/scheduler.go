@@ -142,7 +142,7 @@ func (m *Scheduler) Start() {
 		}
 
 		m.saveSenateData()
-		log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), "proposer: ", m.Proposer())
+		log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), " proposer: ", m.Proposer(), " ECDSA PublicKey: ", m.partyData.ECDSALocalData().PublicKeyBase58(), " EDDSA PublicKey: ", m.partyData.EDDSALocalData().PublicKeyBase58())
 	} else {
 		log.Info("local data already exists: scheduler begin running")
 	}
