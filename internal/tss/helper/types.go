@@ -2,11 +2,12 @@ package helper
 
 import (
 	"crypto/elliptic"
-	"github.com/btcsuite/btcutil/base58"
+
 
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
