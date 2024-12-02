@@ -2,6 +2,7 @@ package helper
 
 import (
 	"crypto/elliptic"
+	"github.com/btcsuite/btcutil/base58"
 
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
@@ -131,6 +132,21 @@ func (d *LocalPartySaveData) Address() string {
 	switch d.ty {
 	case ECDSA:
 		return crypto.PubkeyToAddress(*d.ECDSAData().ECDSAPub.ToECDSAPubKey()).String()
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) PublicKeyBase58() string {
+	switch d.ty {
+	case ECDSA:
+		pubKey := d.ECDSAData().ECDSAPub.ToECDSAPubKey()
+		pubKeyBytes := crypto.FromECDSAPub(pubKey)
+		return base58.Encode(pubKeyBytes)
+	case EDDSA:
+		pubKey := d.EDDSAData().EDDSAPub.ToECDSAPubKey()
+		pubKeyBytes := crypto.FromECDSAPub(pubKey)
+		return base58.Encode(pubKeyBytes)
 	default:
 		panic("implement me")
 	}
