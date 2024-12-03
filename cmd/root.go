@@ -23,20 +23,13 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version number of voter",
-	Long:  `All software has versions. This is voter's`,
-	Run: func(cmd *cobra.Command, args []string) {
-		version.PrintVersion(os.Stdout)
-	},
-}
-
 func init() {
 	toolCmd.AddCommand(
 		printPublicKeyCmd,
 		printAddressCmd,
+		printTssAddressCmd,
 		printPeerIDCmd,
+		printP2pFullAddressCmd,
 	)
 	rootCmd.AddCommand(
 		versionCmd,

@@ -5,8 +5,13 @@ import (
 	"fmt"
 
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
+	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/p2p"
+	"github.com/nuvosphere/nudex-voter/internal/tss"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -58,5 +63,35 @@ var printAddressCmd = &cobra.Command{
 		utils.Assert(err)
 		address := ethCrypto.PubkeyToAddress(*pubkey)
 		fmt.Println(address)
+	},
+}
+
+var printTssAddressCmd = &cobra.Command{
+	Use:     "tssAddress",
+	Short:   "print master tss eth address from data",
+	Example: `nudex-voter tool tssAddress`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		partyData := tss.NewPartyData(config.AppConfig.DbDir)
+		fmt.Println(partyData.ECDSALocalData().Address())
+	},
+}
+
+var printP2pFullAddressCmd = &cobra.Command{
+	Use:     "p2pFullAddr",
+	Short:   "print p2p full address from config",
+	Example: `nudex-voter tool p2pFullAddr`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		secp256k1PrivateKey, err := crypto.UnmarshalSecp256k1PrivateKey(ethCrypto.FromECDSA(config.L2PrivateKey))
+		utils.Assert(err)
+		listenAddr := p2p.ListenAddr()
+		node, err := libp2p.New(
+			libp2p.Identity(secp256k1PrivateKey),
+			libp2p.Transport(tcp.NewTCPTransport), // TCP only
+			libp2p.ListenAddrStrings(listenAddr),  // ipv4 only
+		)
+		utils.Assert(err)
+		p2p.PrintNodeAddrInfo(node)
 	},
 }
