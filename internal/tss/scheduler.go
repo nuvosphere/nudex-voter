@@ -209,7 +209,13 @@ L:
 			count := m.p2p.OnlinePeerCount()
 			threshold := m.Threshold()
 			if count > 0 && threshold > 0 && count > threshold {
-				break L
+				if m.IsGenesis() {
+					if count >= m.Participants().Len() {
+						break
+					}
+				} else {
+					break L
+				}
 			}
 			log.Infof("detection online peer count:%d, threshold:%d", count, threshold)
 			time.Sleep(time.Second)
