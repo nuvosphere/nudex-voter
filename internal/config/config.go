@@ -69,10 +69,9 @@ func InitConfig() {
 	viper.AddConfigPath("/etc")
 
 	err := viper.ReadInConfig()
-	if !errors.Is(err, viper.ConfigFileNotFoundError{}) {
-		if err != nil && errors.Is(err, viper.ConfigFileNotFoundError{}) {
-			panic(err)
-		}
+	notFound := viper.ConfigFileNotFoundError{}
+	if !errors.As(err, &notFound) {
+		logrus.Info("load yaml config")
 		err = viper.Unmarshal(&AppConfig)
 		if err != nil {
 			panic(err)
@@ -81,19 +80,14 @@ func InitConfig() {
 		setL2PrivateKey(AppConfig.L2PrivateKey)
 		setL2ChainId(AppConfig.L2ChainID)
 		setTssPublicKeys(strings.Join(AppConfig.TssPublicKeys, ","))
-		println("TssPublicKeys", AppConfig.TssPublicKeys)
-
 		return
 	}
 
+	logrus.Info("load .env config")
 	viper.AutomaticEnv()
-	//viper.Debug()
-	//viper.SetConfigType("env")
-	//viper.AddConfigPath(".")
-	//viper.SetConfigFile(".env")
-	//if err := viper.ReadInConfig(); err != nil {
-	//	panic(err)
-	//}
+	// viper.Debug()
+	viper.SetConfigType("env")
+	viper.AddConfigPath(".")
 
 	// Default config
 	viper.SetDefault("HTTP_PORT", "8080")
