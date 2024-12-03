@@ -1,309 +1,316 @@
 [
   {
-    "type": "event",
+    "anonymous": false,
+    "inputs":
+    [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "taskType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "targetAddress",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "amount",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum TaskPayload.Chain",
+        "name": "chain",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "chainId",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "blockHeight",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "txHash",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "contractAddress",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum TaskPayload.AssetType",
+        "name": "assetType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "decimal",
+        "type": "uint8"
+      }
+    ],
     "name": "DepositRequest",
-    "inputs": [
-      {
-        "name": "version",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
-        "name": "taskType",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
-        "name": "targetAddress",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "amount",
-        "type": "uint64",
-        "indexed": false,
-        "internalType": "uint64"
-      },
-      {
-        "name": "chain",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum TaskPayload.Chain"
-      },
-      {
-        "name": "chainId",
-        "type": "uint32",
-        "indexed": false,
-        "internalType": "uint32"
-      },
-      {
-        "name": "blockHeight",
-        "type": "uint64",
-        "indexed": false,
-        "internalType": "uint64"
-      },
-      {
-        "name": "txHash",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "contractAddress",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "ticker",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "assetType",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum TaskPayload.AssetType"
-      },
-      {
-        "name": "decimal",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
-    "type": "event",
+    "anonymous": false,
+    "inputs":
+    [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "success",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "errorCode",
+        "type": "uint8"
+      }
+    ],
     "name": "DepositResult",
-    "inputs": [
-      {
-        "name": "version",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
-        "name": "success",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
-      },
-      {
-        "name": "errorCode",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
-    "type": "event",
+    "anonymous": false,
+    "inputs":
+    [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "success",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "errorCode",
+        "type": "uint8"
+      }
+    ],
     "name": "TaskResult",
-    "inputs": [
-      {
-        "name": "version",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
-        "name": "success",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
-      },
-      {
-        "name": "errorCode",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
-    "type": "event",
-    "name": "WalletCreationRequest",
-    "inputs": [
+    "anonymous": false,
+    "inputs":
+    [
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "version",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "taskType",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "uint32",
         "name": "account",
-        "type": "uint32",
-        "indexed": false,
-        "internalType": "uint32"
+        "type": "uint32"
       },
       {
+        "indexed": false,
+        "internalType": "enum TaskPayload.Chain",
         "name": "chain",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum TaskPayload.Chain"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "index",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       }
     ],
-    "anonymous": false
+    "name": "WalletCreationRequest",
+    "type": "event"
   },
   {
-    "type": "event",
-    "name": "WalletCreationResult",
-    "inputs": [
+    "anonymous": false,
+    "inputs":
+    [
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "version",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "bool",
         "name": "success",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
+        "type": "bool"
       },
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "errorCode",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "string",
         "name": "walletAddress",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        "type": "string"
       }
     ],
-    "anonymous": false
+    "name": "WalletCreationResult",
+    "type": "event"
   },
   {
-    "type": "event",
-    "name": "WithdrawalRequest",
-    "inputs": [
+    "anonymous": false,
+    "inputs":
+    [
       {
-        "name": "version",
-        "type": "uint8",
         "indexed": false,
-        "internalType": "uint8"
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "taskType",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "string",
         "name": "targetAddress",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        "type": "string"
       },
       {
+        "indexed": false,
+        "internalType": "uint64",
         "name": "amount",
-        "type": "uint64",
-        "indexed": false,
-        "internalType": "uint64"
+        "type": "uint64"
       },
       {
+        "indexed": false,
+        "internalType": "enum TaskPayload.Chain",
         "name": "chain",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum TaskPayload.Chain"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "uint32",
         "name": "chainId",
-        "type": "uint32",
-        "indexed": false,
-        "internalType": "uint32"
+        "type": "uint32"
       },
       {
+        "indexed": false,
+        "internalType": "uint64",
         "name": "blockHeight",
-        "type": "uint64",
-        "indexed": false,
-        "internalType": "uint64"
+        "type": "uint64"
       },
       {
+        "indexed": false,
+        "internalType": "string",
         "name": "txHash",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        "type": "string"
       },
       {
+        "indexed": false,
+        "internalType": "string",
         "name": "contractAddress",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        "type": "string"
       },
       {
+        "indexed": false,
+        "internalType": "string",
         "name": "ticker",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        "type": "string"
       },
       {
+        "indexed": false,
+        "internalType": "enum TaskPayload.AssetType",
         "name": "assetType",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum TaskPayload.AssetType"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "decimal",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       },
       {
-        "name": "fee",
-        "type": "uint64",
         "indexed": false,
-        "internalType": "uint64"
+        "internalType": "uint64",
+        "name": "fee",
+        "type": "uint64"
       }
     ],
-    "anonymous": false
+    "name": "WithdrawalRequest",
+    "type": "event"
   },
   {
-    "type": "event",
-    "name": "WithdrawalResult",
-    "inputs": [
+    "anonymous": false,
+    "inputs":
+    [
       {
+        "indexed": false,
+        "internalType": "uint8",
         "name": "version",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
+        "type": "uint8"
       },
       {
+        "indexed": false,
+        "internalType": "bool",
         "name": "success",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
+        "type": "bool"
       },
       {
-        "name": "errorCode",
-        "type": "uint8",
         "indexed": false,
-        "internalType": "uint8"
+        "internalType": "uint8",
+        "name": "errorCode",
+        "type": "uint8"
       }
     ],
-    "anonymous": false
+    "name": "WithdrawalResult",
+    "type": "event"
   }
 ]

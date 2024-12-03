@@ -39,7 +39,7 @@ type Operation struct {
 
 // VoterCodecMetaData contains all meta data concerning the VoterCodec contract.
 var VoterCodecMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"opts\",\"type\":\"tuple[]\",\"internalType\":\"structOperation[]\",\"components\":[{\"name\":\"managerAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"optData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"nonpayable\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"managerAddr\",\"type\":\"address\"},{\"internalType\":\"enumState\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"taskId\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"optData\",\"type\":\"bytes\"}],\"internalType\":\"structOperation[]\",\"name\":\"opts\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}]",
 }
 
 // VoterCodecABI is the input ABI used to generate the binding from.

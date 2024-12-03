@@ -342,7 +342,7 @@ func TestSchedulerOfReGroupForRemoveAccount(t *testing.T) {
 	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
-// remove one submitter.
+// generate signature
 func TestSchedulerSignature(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)
@@ -402,7 +402,7 @@ func TestSchedulerSignature(t *testing.T) {
 
 	// 3.send tx to contact online by owner
 
-	// generate `ParticipantEvent`
+	// generate `CreateWalletTask`
 	task := &db.CreateWalletTask{
 		BaseTask: db.BaseTask{
 			TaskType: db.TaskTypeCreateWallet,
@@ -414,8 +414,7 @@ func TestSchedulerSignature(t *testing.T) {
 	}
 
 	t.Log("send create wallet task")
-	// 6.leader(proposer) listen contact task(ParticipantEvent)
-	// start regroup
+	// 6.leader(proposer) listen contact task(CreateWalletTask)
 	bus.Publish(eventbus.EventTestTask{}, task)
 
 	// 7.wait end
@@ -491,7 +490,7 @@ func TestValue(t *testing.T) {
 	t.Logf("&loadValue = %p, &newGroup = %p", &loadValue, &newGroup)
 }
 
-func TestRecveor(t *testing.T) {
+func TestVerifySig(t *testing.T) {
 	signature, err := hexutil.Decode("0x7b5271a558d9319c395ac0c0403baa3a1cff47c2790870fb327fe89b8d801ea7531563c7763bc364dce8df59cf22d59f59f0272a506f01715985ecd3562f597801")
 	assert.NoError(t, err)
 	err = utils.VerifySig(common.HexToHash("0x0ff92700e1f5c45afab5763ddda39c503dd2fba606aef046278882b13d14ee50"), signature, common.HexToAddress("0xB43EB0e9Ec8040737FFcc144073C72Cf68bC4bab"))

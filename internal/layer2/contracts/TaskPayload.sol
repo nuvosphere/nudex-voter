@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 contract TaskPayload {
     enum Chain {
-        ETHEREUM,
         BITCOIN,
+        ETHEREUM,
         SOLANA,
         SUI
     }

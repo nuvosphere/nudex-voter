@@ -1,0 +1,42 @@
+[
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "components":
+        [
+          {
+            "internalType": "address",
+            "name": "managerAddr",
+            "type": "address"
+          },
+          {
+            "internalType": "enum State",
+            "name": "state",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "taskId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bytes",
+            "name": "optData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Operation[]",
+        "name": "opts",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  }
+]
