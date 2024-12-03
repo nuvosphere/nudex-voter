@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,8 +31,6 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	config.InitConfig()
-
 	dbm := db.NewDatabaseManager()
 	stateDB := state.InitializeState(dbm)
 	libP2PService := p2p.NewLibP2PService(stateDB, config.L2PrivateKey)
@@ -82,9 +81,17 @@ func (app *Application) Run() {
 	log.Info("Server stopped")
 }
 
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
 func main() {
-	app := NewApplication()
-	app.Run()
+	// app := NewApplication()
+	// app.Run()
+	Execute()
 }
 
 type Module interface {

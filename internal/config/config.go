@@ -61,12 +61,13 @@ var (
 	L2ChainId     *big.Int
 )
 
-func InitConfig() {
+func InitConfig(configPath string) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("$HOME/.config")
 	viper.AddConfigPath("/etc")
+	viper.SetConfigFile(configPath)
 
 	err := viper.ReadInConfig()
 	notFound := viper.ConfigFileNotFoundError{}

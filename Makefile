@@ -1,5 +1,17 @@
 # Makefile for nudex_voter
 
+VERSION := $(shell git describe --tags --always)
+GITREV := $(shell git rev-parse --short HEAD)
+GITBRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+DATE := $(shell LANG=US date +"%a, %d %b %Y %X %z")
+
+GOMOD := github.com/nuvosphere/nudex-voter
+
+LDFLAGS += -X '$(GOMOD)/version.Version=$(VERSION)'
+LDFLAGS += -X '$(GOMOD)/version.GitRev=$(GITREV)'
+LDFLAGS += -X '$(GOMOD)/version.GitBranch=$(GITBRANCH)'
+LDFLAGS += -X '$(GOMOD)/version.BuildDate=$(DATE)'
+
 # Go parameters
 GOCMD=go
 GOBUILD=$(GOCMD) build
@@ -12,7 +24,7 @@ BINARY_NAME=nudex-voter
 all: build
 
 build:
-	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd
+	$(GOBUILD) -ldflags "all=$(LDFLAGS)" -o $(BINARY_NAME) -v ./cmd
 
 clean:
 	$(GOCLEAN)
