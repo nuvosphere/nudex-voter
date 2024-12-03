@@ -211,7 +211,7 @@ L:
 			if count > 0 && threshold > 0 && count > threshold {
 				if m.IsGenesis() {
 					if count >= m.Participants().Len() {
-						break
+						break L
 					}
 				} else {
 					break L
