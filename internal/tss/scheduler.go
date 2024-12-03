@@ -145,6 +145,7 @@ func (m *Scheduler) Start() {
 		log.Info("TSS keygen success!", "localSubmitter:", m.LocalSubmitter(), " proposer: ", m.Proposer(), " ECDSA PublicKey: ", m.partyData.ECDSALocalData().PublicKeyBase58(), " EDDSA PublicKey: ", m.partyData.EDDSALocalData().PublicKeyBase58())
 	} else {
 		log.Info("local data already exists: scheduler begin running")
+		log.Info("ECDSA PublicKey: ", m.partyData.ECDSALocalData().PublicKeyBase58(), " EDDSA PublicKey: ", m.partyData.EDDSALocalData().PublicKeyBase58())
 	}
 
 	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(types.ECDSA).Address())
@@ -209,7 +210,13 @@ L:
 			count := m.p2p.OnlinePeerCount()
 			threshold := m.Threshold()
 			if count > 0 && threshold > 0 && count > threshold {
-				break L
+				if m.IsGenesis() {
+					if count >= m.Participants().Len() {
+						break L
+					}
+				} else {
+					break L
+				}
 			}
 			log.Infof("detection online peer count:%d, threshold:%d", count, threshold)
 			time.Sleep(time.Second)
