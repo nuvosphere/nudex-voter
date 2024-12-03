@@ -83,6 +83,7 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 	var errs []error
 
 	chainId, err := self.ChainID(context.Background())
+	utils.Assert(err)
 	self.chainID.Store(chainId.Int64())
 
 	if chainId.Int64() != config.L2ChainId.Int64() {

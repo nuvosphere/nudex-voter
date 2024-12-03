@@ -69,7 +69,7 @@ func (app *Application) Run() {
 		app.HTTPServer,
 	}
 	moules = append(moules, otherModules...)
-	parallel.ForEach(moules, func(module Module, _ int) { module.Start(ctx) })
+	go parallel.ForEach(moules, func(module Module, _ int) { module.Start(ctx) })
 
 	<-stop
 	log.Info("Receiving exit signal...")
