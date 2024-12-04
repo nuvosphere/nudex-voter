@@ -14,9 +14,10 @@ import (
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	ecdsaResharing "github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	eddsaResharing "github.com/bnb-chain/tss-lib/v2/eddsa/resharing"
+	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -294,11 +295,16 @@ func RunParty(
 	switch key.CurveType() {
 	case types.ECDSA:
 		if keyDerivationDelta != nil {
-			party = signing.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
+			party = ecdsaSigning.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {
-			party = signing.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
+			party = ecdsaSigning.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
 		}
-
+	case types.EDDSA:
+		if keyDerivationDelta != nil {
+			party = eddsaSigning.NewLocalPartyWithKDD(msg, params, *key.EDDSAData(), keyDerivationDelta, outCh, endCh)
+		} else {
+			party = eddsaSigning.NewLocalParty(msg, params, *key.EDDSAData(), outCh, endCh)
+		}
 	default:
 		panic("implement me")
 	}
