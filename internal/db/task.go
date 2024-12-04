@@ -214,6 +214,7 @@ const (
 
 const (
 	TaskErrorCodeSuccess = iota
+	TaskErrorCodePending
 	TaskErrorCodeChainNotSupported
 	TaskErrorCodeCheckWithdrawalTxFailed
 	TaskErrorCodeCheckWithdrawalBalanceFailed

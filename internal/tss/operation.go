@@ -2,7 +2,6 @@ package tss
 
 import (
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/tss/withdrawal"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,6 +9,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/tss/withdrawal"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
 )
@@ -75,7 +75,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 
 			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 			operation.OptData = data
-			operation.State = db.Pending
+			operation.State = db.Failed
 			return operation
 		}
 
@@ -96,20 +96,33 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 
 			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 			operation.OptData = data
-			operation.State = db.Pending
+			operation.State = db.Failed
 			return operation
 		}
 
-		data := m.voterContract.EncodeRecordWithdrawal(
-			common.HexToAddress(task.TargetAddress),
-			big.NewInt(int64(task.Amount)),
-			uint64(task.ChainId),
-			common.HexToHash(task.TxHash).Bytes(), // todo
-			nil,
-		)
+		taskResult := contracts.TaskPayloadContractWithdrawalResult{
+			Version:   uint8(db.TaskVersionV1),
+			Success:   false,
+			ErrorCode: uint8(db.TaskErrorCodePending),
+		}
+		taskBytes, err := db.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
+		if err != nil {
+			panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
+		}
+
+		data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 		operation.OptData = data
-		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
-		operation.State = db.Pending
+		operation.State = db.Failed
+		//data := m.voterContract.EncodeRecordWithdrawal(
+		//	common.HexToAddress(task.TargetAddress),
+		//	big.NewInt(int64(task.Amount)),
+		//	uint64(task.ChainId),
+		//	common.HexToHash(task.TxHash).Bytes(), // todo
+		//	nil,
+		//)
+		//operation.OptData = data
+		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		//operation.State = db.Pending
 	default:
 		log.Errorf("unhandled default case")
 		operation.State = db.Completed
