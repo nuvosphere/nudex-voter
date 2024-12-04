@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	golog "github.com/ipfs/go-log/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
+	Env                 string        `yaml:"env"` // dev、test、prod
 	HttpPort            string        `yaml:"httpPort"`
 	P2pPort             int           `yaml:"p2PPort"`
 	P2pBootNodes        string        `yaml:"p2PBootNodes"`
@@ -45,13 +45,17 @@ type Config struct {
 	ParticipantContract string        `yaml:"participantContract"`
 	DepositContract     string        `yaml:"depositContract"`
 	L2ChainID           string        `yaml:"l2ChainID"`
-	LogLevel            logrus.Level  `yaml:"logLevel"`
+	LogLevel            string        `yaml:"logLevel"`
 	L2PrivateKey        string        `yaml:"l2PrivateKey"`
 	TssPublicKeys       []string      `yaml:"tssPublicKeys"`
 
 	// TssPublicKeys []*ecdsa.PublicKey
 	// L2PrivateKey  *ecdsa.PrivateKey
 	// L2ChainId     *big.Int
+}
+
+func (c *Config) IsProd() bool {
+	return c.Env == "prod"
 }
 
 var (
@@ -61,12 +65,13 @@ var (
 	L2ChainId     *big.Int
 )
 
-func InitConfig() {
+func InitConfig(configPath string) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("$HOME/.config")
 	viper.AddConfigPath("/etc")
+	viper.SetConfigFile(configPath)
 
 	err := viper.ReadInConfig()
 	notFound := viper.ConfigFileNotFoundError{}
@@ -80,6 +85,7 @@ func InitConfig() {
 		setL2PrivateKey(AppConfig.L2PrivateKey)
 		setL2ChainId(AppConfig.L2ChainID)
 		setTssPublicKeys(strings.Join(AppConfig.TssPublicKeys, ","))
+		setLogLevel()
 		return
 	}
 
@@ -121,11 +127,6 @@ func InitConfig() {
 	viper.SetDefault("TSS_THRESHOLD", "1")
 	viper.SetDefault("TSS_SIG_TIMEOUT", "300s")
 
-	logLevel, err := logrus.ParseLevel(strings.ToLower(viper.GetString("LOG_LEVEL")))
-	if err != nil {
-		logrus.Fatalf("Invalid log level: %v", err)
-	}
-
 	setL2PrivateKey(viper.GetString("L2_PRIVATE_KEY"))
 	setL2ChainId(viper.GetString("L2_CHAIN_ID"))
 	setTssPublicKeys(viper.GetString("TSS_PUBLIC_KEYS"))
@@ -151,7 +152,7 @@ func InitConfig() {
 		EnableWebhook:       viper.GetBool("ENABLE_WEBHOOK"),
 		EnableRelayer:       viper.GetBool("ENABLE_RELAYER"),
 		DbDir:               viper.GetString("DB_DIR"),
-		LogLevel:            logLevel,
+		LogLevel:            viper.GetString("LOG_LEVEL"),
 		VotingContract:      viper.GetString("VOTING_CONTRACT"),
 		AccountContract:     viper.GetString("ACCOUNT_CONTRACT"),
 		ParticipantContract: viper.GetString("PARTICIPANT_CONTRACT"),
@@ -189,14 +190,16 @@ func setL2PrivateKey(pk string) {
 
 func setLogLevel() {
 	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(AppConfig.LogLevel)
-
-	logLvl, err := golog.LevelFromString(AppConfig.LogLevel.String())
+	logLvl, err := logrus.ParseLevel(AppConfig.LogLevel)
 	if err != nil {
-		logrus.Fatalf("LevelFromString: %v", err)
+		logLvl = logrus.WarnLevel
 	}
 
-	golog.SetAllLoggers(logLvl)
+	logrus.SetLevel(logLvl)
+
+	if !AppConfig.IsProd() {
+		logrus.SetReportCaller(true)
+	}
 }
 
 // ParseECDSAPublicKeys parses a comma-separated string of 132-character public keys with '0x' prefix

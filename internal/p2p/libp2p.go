@@ -23,6 +23,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/state"
@@ -153,7 +154,7 @@ func (lp *Service) Start(ctx context.Context) {
 
 	lp.selfPeerID = self.ID()
 
-	printNodeAddrInfo(self)
+	PrintNodeAddrInfo(self)
 
 	self.SetStreamHandler(handshakeProtocol, func(s network.Stream) {
 		log.Println("New handshake stream")
@@ -354,13 +355,17 @@ func (lp *Service) sendHandshake(s network.Stream, self host.Host) error {
 	return nil
 }
 
+func ListenAddr() string {
+	return fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.AppConfig.P2pPort)
+}
+
 func (lp *Service) createNodeWithPubSub(ctx context.Context) (host.Host, *pubsub.PubSub, error) {
 	secp256k1PrivateKey, err := crypto.UnmarshalSecp256k1PrivateKey(ethCrypto.FromECDSA(config.L2PrivateKey))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	listenAddr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.AppConfig.P2pPort)
+	listenAddr := ListenAddr()
 
 	node, err := libp2p.New(
 		libp2p.Identity(secp256k1PrivateKey),
@@ -417,12 +422,16 @@ func loadOrCreatePrivateKey(fileName string) (crypto.PrivKey, error) {
 	return privKey, nil
 }
 
-func printNodeAddrInfo(node host.Host) {
+func FullAddr(addr ma.Multiaddr, peerID peer.ID) string {
+	return fmt.Sprintf("%s/p2p/%s", addr.String(), peerID.String())
+}
+
+func PrintNodeAddrInfo(node host.Host) {
 	addrs := node.Addrs()
-	peerID := node.ID().String()
+	peerID := node.ID()
 
 	for _, addr := range addrs {
-		fullAddr := fmt.Sprintf("%s/p2p/%s", addr, peerID)
+		fullAddr := FullAddr(addr, peerID)
 		log.Infof("Bootnode address: %s", fullAddr)
 	}
 }

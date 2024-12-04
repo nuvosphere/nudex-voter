@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -82,6 +83,7 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 	var errs []error
 
 	chainId, err := self.ChainID(context.Background())
+	utils.Assert(err)
 	self.chainID.Store(chainId.Int64())
 
 	if chainId.Int64() != config.L2ChainId.Int64() {
@@ -212,7 +214,15 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 			// Topics:    batch,
 		}
 
-		logs, err := l.ethClient.FilterLogs(context.Background(), filterQuery)
+		var logs []types.Log
+
+		err = backoff.Retry(
+			func() error {
+				logs, err = l.ethClient.FilterLogs(context.Background(), filterQuery)
+				return err
+			},
+			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+		)
 		if err != nil {
 			return false, fmt.Errorf("failed to filter logs: %w", err)
 		}

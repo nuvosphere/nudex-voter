@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -93,7 +94,18 @@ func (s *Wallet) BalanceAt(owner common.Address) (*big.Int, error) {
 
 func (s *Wallet) ChainID(ctx context.Context) (*big.Int, error) {
 	if s.chainID.Load() == 0 {
-		chainID, err := s.client.ChainID(ctx)
+		var (
+			chainID *big.Int
+			err     error
+		)
+
+		err = backoff.Retry(
+			func() error {
+				chainID, err = s.client.ChainID(ctx)
+				return err
+			},
+			backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 3),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("chainID error: %w", err)
 		}
