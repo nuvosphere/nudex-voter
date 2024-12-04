@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
+	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/chenzhijie/go-web3/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -396,12 +399,18 @@ func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) 
 
 	l := *localPartySaveData
 
+	var chainCode []byte
+
 	switch ec {
 	case types.ECDSA:
-		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(*l.ECDSAData().ECDSAPub.ToECDSAPubKey(), param.Indexes())
+		keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECDSAData().ECDSAPub, chainCode, param.Indexes(), ec.EC())
 		utils.Assert(err)
-
-		err = wallet.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, l.ECDSAData(), &extendedChildPk.PublicKey, ec.EC())
+		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			[]ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()},
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
 		utils.Assert(err)
 
 		return l, keyDerivationDelta, big.NewInt(100) // todo

@@ -9,10 +9,12 @@ import (
 	"testing"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/stretchr/testify/assert"
@@ -43,10 +45,13 @@ func TestHDSign(t *testing.T) {
 
 	msgHash := crypto.Keccak256([]byte("hello world"))
 
-	keyDerivationDelta, extendedChildPk, errorDerivation := wallet.DerivingPubKeyFromPath(*(keys[0].ECDSAPub.ToECDSAPubKey()), []uint32{44, 60, 0, 0, 0})
+	var chainCode []byte
+
+	curveType := types.ECDSA
+	keyDerivationDelta, extendedChildPk, errorDerivation := ckd.DerivingPubkeyFromPath(keys[0].ECDSAPub, chainCode, []uint32{44, 60, 0, 0, 0}, curveType.EC())
 	assert.NoErrorf(t, errorDerivation, "there should not be an error deriving the child public key")
 
-	err := signing.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, keys, &extendedChildPk.PublicKey, Curve)
+	err := signing.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, keys, extendedChildPk.PublicKey, Curve)
 	assert.NoErrorf(t, err, "there should not be an error setting the derived keys")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -104,15 +109,15 @@ func TestHDSign(t *testing.T) {
 				continue
 			}
 
-			crypto.VerifySignature(crypto.CompressPubkey(&extendedChildPk.PublicKey), msgHash, sig.SignatureRecovery)
-			t.Log(crypto.VerifySignature(crypto.CompressPubkey(&extendedChildPk.PublicKey), msgHash, sig.SignatureRecovery))
+			crypto.VerifySignature(crypto.CompressPubkey(extendedChildPk.PublicKey.ToECDSAPubKey()), msgHash, sig.SignatureRecovery)
+			t.Log(crypto.VerifySignature(crypto.CompressPubkey(extendedChildPk.PublicKey.ToECDSAPubKey()), msgHash, sig.SignatureRecovery))
 			// make sure everyone has the same signature
 			assert.True(t, bytes.Equal(sig.Signature, sig2.Signature))
 		}
 	}
 
 	// Verify signature
-	pkX, pkY := extendedChildPk.X, extendedChildPk.Y
+	pkX, pkY := extendedChildPk.PublicKey.X(), extendedChildPk.PublicKey.Y()
 	pk := ecdsa.PublicKey{
 		Curve: Curve,
 		X:     pkX,
