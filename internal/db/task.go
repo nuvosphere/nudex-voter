@@ -215,6 +215,7 @@ const (
 const (
 	TaskErrorCodeSuccess = iota
 	TaskErrorCodeChainNotSupported
+	TaskErrorCodeCheckWithdrawalTxFailed
 )
 
 type TaskUpdatedEvent struct {

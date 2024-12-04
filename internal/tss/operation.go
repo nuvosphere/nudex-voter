@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/tss/withdrawal"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -56,6 +58,31 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = db.Completed
 	case *db.WithdrawalTask:
+		txCheckSuccess, err := withdrawal.CheckTx(task)
+		if err != nil {
+			panic(fmt.Errorf("check tx failed for task %d: %w", task.TaskId, err))
+		}
+		if !txCheckSuccess {
+			taskResult := contracts.TaskPayloadContractWithdrawalResult{
+				Version:   uint8(db.TaskVersionV1),
+				Success:   false,
+				ErrorCode: uint8(db.TaskErrorCodeCheckWithdrawalTxFailed),
+			}
+			taskBytes, err := db.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
+			if err != nil {
+				panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
+			}
+
+			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
+			operation.OptData = data
+			operation.ManagerAddr = common.HexToAddress(config.AppConfig.TaskManagerContract)
+			operation.State = db.Pending
+			return operation
+		}
+
+		// @todo
+		// check system wallet balance
+
 		data := m.voterContract.EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
