@@ -75,13 +75,30 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 
 			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 			operation.OptData = data
-			operation.ManagerAddr = common.HexToAddress(config.AppConfig.TaskManagerContract)
 			operation.State = db.Pending
 			return operation
 		}
 
-		// @todo
-		// check system wallet balance
+		balanceCheckSuccess, err := withdrawal.CheckBalance(task)
+		if err != nil {
+			panic(fmt.Errorf("check balance failed for task %d: %w", task.TaskId, err))
+		}
+		if !balanceCheckSuccess {
+			taskResult := contracts.TaskPayloadContractWithdrawalResult{
+				Version:   uint8(db.TaskVersionV1),
+				Success:   false,
+				ErrorCode: uint8(db.TaskErrorCodeCheckWithdrawalBalanceFailed),
+			}
+			taskBytes, err := db.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
+			if err != nil {
+				panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
+			}
+
+			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
+			operation.OptData = data
+			operation.State = db.Pending
+			return operation
+		}
 
 		data := m.voterContract.EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
