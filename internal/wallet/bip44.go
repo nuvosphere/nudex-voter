@@ -246,23 +246,18 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 	case types.CoinTypeBTC:
 		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 		utils.Assert(err)
-		var (
-			x = &btcec.FieldVal{}
-			y = &btcec.FieldVal{}
-		)
-		x.SetByteSlice(extendKey.PublicKey.X().Bytes())
-		y.SetByteSlice(extendKey.PublicKey.Y().Bytes())
-		pubKey := btcec.NewPublicKey(x, y)
-		addr, err := btcutil.NewAddressPubKey(pubKey.SerializeCompressed(), &chaincfg.MainNetParams)
-		utils.Assert(fmt.Errorf("invalid public key: %w", err))
-		return addr.EncodeAddress()
+		addr, err := GenerateUnCompressedBTCAddress(extendKey.PublicKey)
+		utils.Assert(err)
+		return addr
 	case types.CoinTypeEVM:
 		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 		utils.Assert(err)
 		return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey()).String()
 	case types.CoinTypeSOL:
 		curveType = types.EDDSA
-		return ""
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		utils.Assert(err)
+		return SolanaAddress(extendKey.PublicKey)
 	case types.CoinTypeSUI:
 		return ""
 	default:
