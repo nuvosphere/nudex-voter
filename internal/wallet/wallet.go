@@ -53,7 +53,7 @@ func (s *Wallet) SetTssPublicKey(tssPublicKey ecdsa.PublicKey) {
 }
 
 func (s *Wallet) Address(coinType, account uint32, index uint8) common.Address {
-	return GenerateAddressByPath(s.tssPublicKey, coinType, account, index)
+	return GenerateEthAddressByPath(ECPoint(&s.tssPublicKey), coinType, account, index)
 }
 
 func (s *Wallet) HotAddressOfCoin(coinType uint32) common.Address {

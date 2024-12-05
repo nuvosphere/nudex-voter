@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -374,12 +375,13 @@ func (m *Scheduler) CurveType(task pool.Task[uint64]) types.CurveType {
 func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int) {
 	coinType := types.GetCoinTypeByChain(task.Chain)
 
-	ec := m.CurveType(&task.Task)
+	ec := types.GetCurveTypeByCoinType(coinType)
+
 	switch ec {
 	case types.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
-		userAddress := wallet.GenerateAddressByPath(*localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey(), uint32(coinType), task.Account, task.Index)
-		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())
+		userAddress := wallet.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
+		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		msg = crypto.Keccak256Hash(msg)
 
 		return *localPartySaveData, new(big.Int).SetBytes(msg)
@@ -394,7 +396,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) 
 	param, err := path.ToParams()
 	utils.Assert(err)
 
-	ec := m.CurveType(&task.Task)
+	ec := types.GetCurveTypeByCoinType(coinType)
 	localPartySaveData := m.partyData.GetData(ec)
 
 	l := *localPartySaveData

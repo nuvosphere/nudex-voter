@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 
+	tssCrypto "github.com/bnb-chain/tss-lib/v2/crypto"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
@@ -144,6 +145,17 @@ func (d *LocalPartySaveData) ToECDSAPubKey() *ecdsa.PublicKey {
 		return d.ECDSAData().ECDSAPub.ToECDSAPubKey()
 	case EDDSA:
 		return d.EDDSAData().EDDSAPub.ToECDSAPubKey()
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) ECPoint() *tssCrypto.ECPoint {
+	switch d.ty {
+	case ECDSA:
+		return d.ECDSAData().ECDSAPub
+	case EDDSA:
+		return d.EDDSAData().EDDSAPub
 	default:
 		panic("implement me")
 	}

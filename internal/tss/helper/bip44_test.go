@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -23,10 +24,10 @@ import (
 
 func TestBip44GenerateAddress(t *testing.T) {
 	localData := testutil.ReadTestKey(1)
-	masterPublicKey := *(localData.ECDSAPub.ToECDSAPubKey())
-	t.Log("master address: ", crypto.PubkeyToAddress(masterPublicKey))
-	address := wallet.GenerateAddressByPath(masterPublicKey, 60, 0, 0)
+	t.Log("master address: ", crypto.PubkeyToAddress(*localData.ECDSAPub.ToECDSAPubKey()))
+	address := wallet.GenerateEthAddressByPath(localData.ECDSAPub, types.CoinTypeEVM, 0, 0)
 	t.Log("address: ", address)
+	assert.Equal(t, strings.ToLower("0x948A758bEe50949ecfb12C67ebfb2a6517c5E4E0"), strings.ToLower(address.String()))
 }
 
 func TestHDSign(t *testing.T) {

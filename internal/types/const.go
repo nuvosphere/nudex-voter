@@ -54,3 +54,18 @@ func GetChainByCoinType(coinType int) uint8 {
 		panic(ErrCoinType)
 	}
 }
+
+func GetCurveTypeByChain(chain uint8) CurveType {
+	switch chain {
+	case ChainBitcoin, ChainEthereum, ChainSui:
+		return ECDSA
+	case ChainSolana:
+		return EDDSA
+	default:
+		panic("implement me")
+	}
+}
+
+func GetCurveTypeByCoinType(coinType int) CurveType {
+	return GetCurveTypeByChain(GetChainByCoinType(coinType))
+}
