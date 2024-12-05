@@ -37,7 +37,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
-		coinType := getCoinTypeByChain(task.Chain)
+		coinType := GetCoinTypeByChain(task.Chain)
 
 		userAddress := wallet.GenerateAddressByPath(*m.partyData.ECDSALocalData().ECDSAData().ECDSAPub.ToECDSAPubKey(), uint32(coinType), task.Account, task.Index)
 		data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())

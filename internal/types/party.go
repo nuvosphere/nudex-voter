@@ -1,6 +1,7 @@
 package types
 
 import (
+	"crypto/ecdsa"
 	"crypto/elliptic"
 
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
@@ -132,6 +133,17 @@ func (d *LocalPartySaveData) Address() string {
 	switch d.ty {
 	case ECDSA:
 		return crypto.PubkeyToAddress(*d.ECDSAData().ECDSAPub.ToECDSAPubKey()).String()
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) ToECDSAPubKey() *ecdsa.PublicKey {
+	switch d.ty {
+	case ECDSA:
+		return d.ECDSAData().ECDSAPub.ToECDSAPubKey()
+	case EDDSA:
+		return d.EDDSAData().EDDSAPub.ToECDSAPubKey()
 	default:
 		panic("implement me")
 	}

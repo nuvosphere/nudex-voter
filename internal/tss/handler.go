@@ -372,7 +372,7 @@ func (m *Scheduler) CurveType(task pool.Task[uint64]) types.CurveType {
 }
 
 func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int) {
-	coinType := getCoinTypeByChain(task.Chain)
+	coinType := GetCoinTypeByChain(task.Chain)
 
 	ec := m.CurveType(&task.Task)
 	switch ec {
@@ -389,7 +389,7 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.Local
 }
 
 func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int, *big.Int) {
-	coinType := getCoinTypeByChain(task.Chain)
+	coinType := GetCoinTypeByChain(task.Chain)
 	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
 	param, err := path.ToParams()
 	utils.Assert(err)

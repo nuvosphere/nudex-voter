@@ -135,18 +135,25 @@ func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
 	return append(append(nonceBytes, lengthBytes...), data...), nil
 }
 
+const (
+	CoinTypeBTC = 0
+	CoinTypeEVM = 60
+	CoinTypeSOL = 501
+	CoinTypeSUI = 784
+)
+
 var ErrCoinType = fmt.Errorf("error coin type")
 
-func getCoinTypeByChain(chain uint8) int {
+func GetCoinTypeByChain(chain uint8) int {
 	switch chain {
 	case db.ChainBitcoin:
-		return 0
+		return CoinTypeBTC
 	case db.ChainEthereum:
-		return 60
+		return CoinTypeEVM
 	case db.ChainSolana:
-		return 501
+		return CoinTypeSOL
 	case db.ChainSui:
-		return 784
+		return CoinTypeSUI
 	default:
 		panic(ErrCoinType)
 	}
