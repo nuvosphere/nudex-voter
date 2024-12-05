@@ -404,6 +404,9 @@ func (m *Scheduler) BatchPendingTask() {
 		}
 		log.Infof("batch pending transactions: %v", transactions)
 		// @todo check system balance
+		// @todo check erc20 balances
+		// @todo check gas balance
+		// @todo send signTx proposal
 	}
 }
 
