@@ -112,7 +112,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 
 		data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 		operation.OptData = data
-		operation.State = db.Failed
+		operation.State = db.Pending
 		//data := m.voterContract.EncodeRecordWithdrawal(
 		//	common.HexToAddress(task.TargetAddress),
 		//	big.NewInt(int64(task.Amount)),
@@ -121,7 +121,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		//	nil,
 		//)
 		//operation.OptData = data
-		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.WithdrawContract)
 		//operation.State = db.Pending
 	default:
 		log.Errorf("unhandled default case")

@@ -13,6 +13,7 @@ import (
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/ethereum/go-ethereum/common"
+	ethereumTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -21,6 +22,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/tss/withdrawal"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
@@ -152,6 +154,7 @@ func (m *Scheduler) Start() {
 	log.Infof("localSubmitter: %v, proposer: %v", m.LocalSubmitter(), m.Proposer())
 	// loop approveProposal
 	m.loopApproveProposal()
+	m.loopPendingProposal()
 	m.reGroupResultLoop()
 	m.loopSigInToOut()
 	m.loopDetectionCondition()
@@ -339,6 +342,23 @@ func (m *Scheduler) loopApproveProposal() {
 	}()
 }
 
+func (m *Scheduler) loopPendingProposal() {
+	ticker := time.NewTicker(30 * time.Second)
+
+	go func() {
+		select {
+		case <-m.ctx.Done():
+			log.Info("pending proposal done")
+
+		case <-ticker.C:
+			m.BatchPendingTask()
+
+		case <-m.notify:
+			m.BatchPendingTask()
+		}
+	}()
+}
+
 func (m *Scheduler) BatchTask() {
 	if m.isCanProposal() && m.isCanNext() {
 		log.Info("batch proposal")
@@ -363,6 +383,27 @@ func (m *Scheduler) BatchTask() {
 			lo.Map(tasks, func(item pool.Task[uint64], index int) ProposalID { return item.TaskID() }),
 		)
 		m.saveOperations(nonce, operations, dataHash, msg)
+	}
+}
+
+func (m *Scheduler) BatchPendingTask() {
+	if m.isCanProposal() {
+		log.Info("batch withdrawal")
+		// @todo Split by chainId
+		tasks := m.pendingStateTasks.GetTopN(TopN)
+
+		var transactions []*ethereumTypes.Transaction
+
+		for _, task := range tasks {
+			tx, err := withdrawal.BuildTransaction(task)
+			if err != nil {
+				log.Errorf("batch pending task build transaction err:%v", err)
+				return
+			}
+			transactions = append(transactions, tx)
+		}
+		log.Infof("batch pending transactions: %v", transactions)
+		// @todo check system balance
 	}
 }
 
@@ -474,7 +515,6 @@ func (m *Scheduler) proposalLoop() {
 				case *db.TaskUpdatedEvent: // todo
 					switch v.State {
 					case db.Pending:
-						// todo withdraw
 						task := &db.Task{}
 						err := m.stateDB.
 							Model(task).
@@ -485,7 +525,6 @@ func (m *Scheduler) proposalLoop() {
 						if err != nil {
 							log.Errorf("get task err:%v", err)
 						} else {
-							// todo
 							m.pendingStateTasks.Add(task)
 						}
 
