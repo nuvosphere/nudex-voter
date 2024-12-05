@@ -7,7 +7,7 @@ import (
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -129,7 +129,7 @@ func (d *LocalPartySaveData) EDDSAData() *eddsaKeygen.LocalPartySaveData {
 	return nil
 }
 
-func (d *LocalPartySaveData) Address() string {
+func (d *LocalPartySaveData) TssSigner() string {
 	switch d.ty {
 	case ECDSA:
 		return crypto.PubkeyToAddress(*d.ECDSAData().ECDSAPub.ToECDSAPubKey()).String()

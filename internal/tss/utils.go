@@ -22,7 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -133,30 +132,6 @@ func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
 	binary.BigEndian.PutUint64(nonceBytes, nonce)
 
 	return append(append(nonceBytes, lengthBytes...), data...), nil
-}
-
-const (
-	CoinTypeBTC = 0
-	CoinTypeEVM = 60
-	CoinTypeSOL = 501
-	CoinTypeSUI = 784
-)
-
-var ErrCoinType = fmt.Errorf("error coin type")
-
-func GetCoinTypeByChain(chain uint8) int {
-	switch chain {
-	case db.ChainBitcoin:
-		return CoinTypeBTC
-	case db.ChainEthereum:
-		return CoinTypeEVM
-	case db.ChainSolana:
-		return CoinTypeSOL
-	case db.ChainSui:
-		return CoinTypeSUI
-	default:
-		panic(ErrCoinType)
-	}
 }
 
 // RunKeyGen starts the local keygen party and handles incoming and outgoing

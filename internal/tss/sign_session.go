@@ -62,7 +62,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 		m.p2p,
 		m,
 		sessionID,
-		common.HexToAddress(key.Address()),
+		common.HexToAddress(key.TssSigner()),
 		m.Proposer(),
 		proposalID,
 		msg,
