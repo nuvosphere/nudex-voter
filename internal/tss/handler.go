@@ -4,7 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
+	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
+	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/chenzhijie/go-web3/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -369,14 +373,15 @@ func (m *Scheduler) CurveType(task pool.Task[uint64]) types.CurveType {
 }
 
 func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int) {
-	coinType := getCoinTypeByChain(task.Chain)
+	coinType := types.GetCoinTypeByChain(task.Chain)
 
-	ec := m.CurveType(&task.Task)
+	ec := types.GetCurveTypeByCoinType(coinType)
+
 	switch ec {
 	case types.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
-		userAddress := wallet.GenerateAddressByPath(*localPartySaveData.ECDSAData().ECDSAPub.ToECDSAPubKey(), uint32(coinType), task.Account, task.Index)
-		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), userAddress.Hex())
+		userAddress := wallet.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
+		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		msg = crypto.Keccak256Hash(msg)
 
 		return *localPartySaveData, new(big.Int).SetBytes(msg)
@@ -386,22 +391,28 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.Local
 }
 
 func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int, *big.Int) {
-	coinType := getCoinTypeByChain(task.Chain)
+	coinType := types.GetCoinTypeByChain(task.Chain)
 	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
 	param, err := path.ToParams()
 	utils.Assert(err)
 
-	ec := m.CurveType(&task.Task)
+	ec := types.GetCurveTypeByCoinType(coinType)
 	localPartySaveData := m.partyData.GetData(ec)
 
 	l := *localPartySaveData
 
+	var chainCode []byte
+
 	switch ec {
 	case types.ECDSA:
-		keyDerivationDelta, extendedChildPk, err := wallet.DerivingPubKeyFromPath(*l.ECDSAData().ECDSAPub.ToECDSAPubKey(), param.Indexes())
+		keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECDSAData().ECDSAPub, chainCode, param.Indexes(), ec.EC())
 		utils.Assert(err)
-
-		err = wallet.UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta, l.ECDSAData(), &extendedChildPk.PublicKey, ec.EC())
+		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			[]ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()},
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
 		utils.Assert(err)
 
 		return l, keyDerivationDelta, big.NewInt(100) // todo
@@ -436,8 +447,8 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 		}
 
 		switch taskData.AssetType {
-		case db.AssetTypeMain:
-		case db.AssetTypeErc20:
+		case types.AssetTypeMain:
+		case types.AssetTypeErc20:
 		default:
 			log.Errorf("unknown asset type: %v", taskData.AssetType)
 		}

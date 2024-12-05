@@ -2,9 +2,6 @@ package wallet
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/hmac"
-	"crypto/sha512"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -12,9 +9,10 @@ import (
 
 	"github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/ethereum/go-ethereum/common"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
 const (
@@ -170,46 +168,100 @@ func (p *DerivePathParams) Indexes() []uint32 {
 // DerivingPubKeyFromPath EDDSA hd support:
 // https://github.com/bnb-chain/tss-lib/pull/299/files
 // https://github.com/bnb-chain/tss-lib/pull/300
-func DerivingPubKeyFromPath(masterPub ecdsa.PublicKey, path []uint32) (*big.Int, *ckd.ExtendedKey, error) {
-	// Generate key and chaincode
-	// h := hmac.New(sha512.New, []byte("Bitcoin seed"))
-	h := hmac.New(sha512.New, append(masterPub.X.Bytes(), masterPub.Y.Bytes()...)) // todo
-	intermediary := h.Sum(nil)
-	// Split it into our key and chain code
-	// keyBytes := intermediary[:32]
-	chainCode := intermediary[32:] // todo
-	net := &chaincfg.MainNetParams // todo
-	extendedParentPk := &ckd.ExtendedKey{
-		PublicKey:  masterPub,
-		Depth:      0,
-		ChildIndex: 0,
-		ChainCode:  chainCode[:],
-		ParentFP:   []byte{0x00, 0x00, 0x00, 0x00},
-		Version:    net.HDPrivateKeyID[:],
-	}
+//func DerivingPubKeyFromPath(masterPub ecdsa.PublicKey, path []uint32) (*big.Int, *ckd.ExtendedKey, error) {
+//	// Generate key and chaincode
+//	// h := hmac.New(sha512.New, []byte("Bitcoin seed"))
+//	h := hmac.New(sha512.New, append(masterPub.X.Bytes(), masterPub.Y.Bytes()...)) // todo
+//	intermediary := h.Sum(nil)
+//	// Split it into our key and chain code
+//	// keyBytes := intermediary[:32]
+//	chainCode := intermediary[32:] // todo
+//	net := &chaincfg.MainNetParams // todo
+//	extendedParentPk := &ckd.ExtendedKey{
+//		PublicKey:  masterPub,
+//		Depth:      0,
+//		ChildIndex: 0,
+//		ChainCode:  chainCode[:],
+//		ParentFP:   []byte{0x00, 0x00, 0x00, 0x00},
+//		Version:    net.HDPrivateKeyID[:],
+//	}
+//
+//	ec := btcec.S256()
+//
+//	return ckd.DeriveChildKeyFromHierarchy(path, extendedParentPk, ec.Params().N, ec)
+//}
 
-	ec := btcec.S256()
-
-	return ckd.DeriveChildKeyFromHierarchy(path, extendedParentPk, ec.Params().N, ec)
+func Bip44DerivationPath(coinType, account uint32, index uint8) DerivePath {
+	// https://learnblockchain.cn/2018/09/28/hdwallet
+	// m / purpose' / coin' / account' / change / address_index
+	// coin list https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+	return DerivePath(fmt.Sprintf("m/44/%d/%d/0/%d", coinType, account, index))
 }
 
-func UpdatePublicKeyAndAdjustBigXj(keyDerivationDelta *big.Int, key *keygen.LocalPartySaveData, extendedChildPk *ecdsa.PublicKey, ec elliptic.Curve) error {
-	var err error
+//func GenerateAddressByPath(masterPubKey ecdsa.PublicKey, coinType, account uint32, index uint8) common.Address {
+//	bip44Path := Bip44DerivationPath(coinType, account, index)
+//
+//	p, err := bip44Path.ToParams()
+//	utils.Assert(err)
+//
+//	var chainCode []byte
+//
+//	curveType := types.ECDSA
+//	_, extendKey, err := ckd.DerivingPubkeyFromPath(
+//		crypto.NewECPointNoCurveCheck(masterPubKey.Curve,
+//			masterPubKey.X,
+//			masterPubKey.Y,
+//		), chainCode, p.Indexes(), curveType.EC())
+//	utils.Assert(err)
+//
+//	return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey())
+//}
 
-	gDelta := crypto.ScalarBaseMult(ec, keyDerivationDelta)
+func GenerateEthAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint32, index uint8) common.Address {
+	bip44Path := Bip44DerivationPath(coinType, account, index)
 
-	key.ECDSAPub, err = crypto.NewECPoint(ec, extendedChildPk.X, extendedChildPk.Y)
-	if err != nil {
-		return fmt.Errorf("error creating new extended child public key: %w", err)
+	p, err := bip44Path.ToParams()
+	utils.Assert(err)
+
+	var chainCode []byte
+	curveType := types.ECDSA
+	_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+	utils.Assert(err)
+
+	return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey())
+}
+
+func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint32, index uint8) string {
+	bip44Path := Bip44DerivationPath(coinType, account, index)
+
+	p, err := bip44Path.ToParams()
+	utils.Assert(err)
+
+	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
+	curveType := types.ECDSA
+	switch coinType {
+	case types.CoinTypeBTC:
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		utils.Assert(err)
+		addr, err := GenerateUnCompressedBTCAddress(extendKey.PublicKey)
+		utils.Assert(err)
+		return addr
+	case types.CoinTypeEVM:
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		utils.Assert(err)
+		return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey()).String()
+	case types.CoinTypeSOL:
+		curveType = types.EDDSA
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		utils.Assert(err)
+		return SolanaAddress(extendKey.PublicKey)
+	case types.CoinTypeSUI:
+		return ""
+	default:
+		panic("invalid coin type")
 	}
-	// Suppose X_j has shamir shares X_j0,     X_j1,     ..., X_jn
-	// So X_j + D has shamir shares  X_j0 + D, X_j1 + D, ..., X_jn + D
-	for j := range key.BigXj {
-		key.BigXj[j], err = key.BigXj[j].Add(gDelta)
-		if err != nil {
-			return fmt.Errorf("error in delta operation: %w", err)
-		}
-	}
+}
 
-	return nil
+func ECPoint(key *ecdsa.PublicKey) *crypto.ECPoint {
+	return crypto.NewECPointNoCurveCheck(key.Curve, key.X, key.Y)
 }

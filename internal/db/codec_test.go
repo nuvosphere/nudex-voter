@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +16,7 @@ func TestEncodeCreateWalletTask(t *testing.T) {
 			TaskId: 100,
 		},
 		Account: uint32(10001),
-		Chain:   uint8(ChainEthereum),
+		Chain:   uint8(types.ChainEthereum),
 		Index:   uint8(0),
 	}
 	taskBytes, err := EncodeTask(TaskTypeCreateWallet, task)
@@ -33,13 +34,13 @@ func TestEncodeDepositTask(t *testing.T) {
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Amount:          uint64(1000000000000000000),
-		Chain:           uint8(ChainEthereum),
+		Chain:           uint8(types.ChainEthereum),
 		ChainId:         uint32(1),
 		BlockHeight:     uint64(21133979),
 		TxHash:          "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8",
 		ContractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
 		Ticker:          "USDC",
-		AssetType:       uint8(AssetTypeErc20),
+		AssetType:       uint8(types.AssetTypeErc20),
 		Decimal:         uint8(18),
 	}
 	taskBytes, err := EncodeTask(TaskTypeDeposit, task)
@@ -57,13 +58,13 @@ func TestEncodeWithdrawalTask(t *testing.T) {
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 		Amount:          uint64(1000000000000000000),
-		Chain:           uint8(ChainEthereum),
+		Chain:           uint8(types.ChainEthereum),
 		ChainId:         uint32(1),
 		BlockHeight:     uint64(21133979),
 		TxHash:          "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8",
 		ContractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
 		Ticker:          "USDC",
-		AssetType:       uint8(AssetTypeErc20),
+		AssetType:       uint8(types.AssetTypeErc20),
 		Decimal:         18,
 		Fee:             uint64(100000000000000),
 	}
