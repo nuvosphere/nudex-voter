@@ -37,8 +37,8 @@
     "inputs": [
       {
         "name": "_salt",
-        "type": "address",
-        "internalType": "address"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [

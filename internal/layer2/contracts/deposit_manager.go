@@ -32,7 +32,7 @@ var (
 // IDepositManagerDepositInfo is an auto generated low-level Go binding around an user-defined struct.
 type IDepositManagerDepositInfo struct {
 	TargetAddress common.Address
-	ChainId       uint64
+	ChainId       *big.Int
 	Amount        *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
@@ -42,14 +42,14 @@ type IDepositManagerDepositInfo struct {
 type IDepositManagerWithdrawalInfo struct {
 	TargetAddress common.Address
 	Amount        *big.Int
-	ChainId       uint64
+	ChainId       *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
 }
 
 // DepositManagerContractMetaData contains all meta data concerning the DepositManagerContract contract.
 var DepositManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"deposits\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposit\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIDepositManager.DepositInfo\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposits\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIDepositManager.DepositInfo[]\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawal\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIDepositManager.WithdrawalInfo\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawals\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIDepositManager.WithdrawalInfo[]\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_nip20Contract\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nip20Contract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINIP20\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"recordDeposit\",\"inputs\":[{\"name\":\"_targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"_txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"recordWithdrawal\",\"inputs\":[{\"name\":\"_targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"_txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawals\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"DepositRecorded\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRecorded\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"deposits\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposit\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIDepositManager.DepositInfo\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposits\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIDepositManager.DepositInfo[]\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawal\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIDepositManager.WithdrawalInfo\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawals\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIDepositManager.WithdrawalInfo[]\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"recordDeposit\",\"inputs\":[{\"name\":\"_targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"recordWithdrawal\",\"inputs\":[{\"name\":\"_targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawals\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"DepositRecorded\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRecorded\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
 }
 
 // DepositManagerContractABI is the input ABI used to generate the binding from.
@@ -200,10 +200,10 @@ func (_DepositManagerContract *DepositManagerContractTransactorRaw) Transact(opt
 
 // Deposits is a free data retrieval call binding the contract method 0xd6d68177.
 //
-// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint64 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
+// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint256 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
 func (_DepositManagerContract *DepositManagerContractCaller) Deposits(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (struct {
 	TargetAddress common.Address
-	ChainId       uint64
+	ChainId       *big.Int
 	Amount        *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
@@ -213,7 +213,7 @@ func (_DepositManagerContract *DepositManagerContractCaller) Deposits(opts *bind
 
 	outstruct := new(struct {
 		TargetAddress common.Address
-		ChainId       uint64
+		ChainId       *big.Int
 		Amount        *big.Int
 		TxInfo        []byte
 		ExtraInfo     []byte
@@ -223,7 +223,7 @@ func (_DepositManagerContract *DepositManagerContractCaller) Deposits(opts *bind
 	}
 
 	outstruct.TargetAddress = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-	outstruct.ChainId = *abi.ConvertType(out[1], new(uint64)).(*uint64)
+	outstruct.ChainId = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
 	outstruct.Amount = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
 	outstruct.TxInfo = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
 	outstruct.ExtraInfo = *abi.ConvertType(out[4], new([]byte)).(*[]byte)
@@ -234,10 +234,10 @@ func (_DepositManagerContract *DepositManagerContractCaller) Deposits(opts *bind
 
 // Deposits is a free data retrieval call binding the contract method 0xd6d68177.
 //
-// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint64 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
+// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint256 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
 func (_DepositManagerContract *DepositManagerContractSession) Deposits(arg0 common.Address, arg1 *big.Int) (struct {
 	TargetAddress common.Address
-	ChainId       uint64
+	ChainId       *big.Int
 	Amount        *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
@@ -247,10 +247,10 @@ func (_DepositManagerContract *DepositManagerContractSession) Deposits(arg0 comm
 
 // Deposits is a free data retrieval call binding the contract method 0xd6d68177.
 //
-// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint64 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
+// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint256 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
 func (_DepositManagerContract *DepositManagerContractCallerSession) Deposits(arg0 common.Address, arg1 *big.Int) (struct {
 	TargetAddress common.Address
-	ChainId       uint64
+	ChainId       *big.Int
 	Amount        *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
@@ -260,7 +260,7 @@ func (_DepositManagerContract *DepositManagerContractCallerSession) Deposits(arg
 
 // GetDeposit is a free data retrieval call binding the contract method 0x2726b506.
 //
-// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint64,uint256,bytes,bytes))
+// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
 func (_DepositManagerContract *DepositManagerContractCaller) GetDeposit(opts *bind.CallOpts, targetAddress common.Address, index *big.Int) (IDepositManagerDepositInfo, error) {
 	var out []interface{}
 	err := _DepositManagerContract.contract.Call(opts, &out, "getDeposit", targetAddress, index)
@@ -277,21 +277,21 @@ func (_DepositManagerContract *DepositManagerContractCaller) GetDeposit(opts *bi
 
 // GetDeposit is a free data retrieval call binding the contract method 0x2726b506.
 //
-// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint64,uint256,bytes,bytes))
+// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
 func (_DepositManagerContract *DepositManagerContractSession) GetDeposit(targetAddress common.Address, index *big.Int) (IDepositManagerDepositInfo, error) {
 	return _DepositManagerContract.Contract.GetDeposit(&_DepositManagerContract.CallOpts, targetAddress, index)
 }
 
 // GetDeposit is a free data retrieval call binding the contract method 0x2726b506.
 //
-// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint64,uint256,bytes,bytes))
+// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
 func (_DepositManagerContract *DepositManagerContractCallerSession) GetDeposit(targetAddress common.Address, index *big.Int) (IDepositManagerDepositInfo, error) {
 	return _DepositManagerContract.Contract.GetDeposit(&_DepositManagerContract.CallOpts, targetAddress, index)
 }
 
 // GetDeposits is a free data retrieval call binding the contract method 0x94f649dd.
 //
-// Solidity: function getDeposits(address targetAddress) view returns((address,uint64,uint256,bytes,bytes)[])
+// Solidity: function getDeposits(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
 func (_DepositManagerContract *DepositManagerContractCaller) GetDeposits(opts *bind.CallOpts, targetAddress common.Address) ([]IDepositManagerDepositInfo, error) {
 	var out []interface{}
 	err := _DepositManagerContract.contract.Call(opts, &out, "getDeposits", targetAddress)
@@ -308,21 +308,21 @@ func (_DepositManagerContract *DepositManagerContractCaller) GetDeposits(opts *b
 
 // GetDeposits is a free data retrieval call binding the contract method 0x94f649dd.
 //
-// Solidity: function getDeposits(address targetAddress) view returns((address,uint64,uint256,bytes,bytes)[])
+// Solidity: function getDeposits(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
 func (_DepositManagerContract *DepositManagerContractSession) GetDeposits(targetAddress common.Address) ([]IDepositManagerDepositInfo, error) {
 	return _DepositManagerContract.Contract.GetDeposits(&_DepositManagerContract.CallOpts, targetAddress)
 }
 
 // GetDeposits is a free data retrieval call binding the contract method 0x94f649dd.
 //
-// Solidity: function getDeposits(address targetAddress) view returns((address,uint64,uint256,bytes,bytes)[])
+// Solidity: function getDeposits(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
 func (_DepositManagerContract *DepositManagerContractCallerSession) GetDeposits(targetAddress common.Address) ([]IDepositManagerDepositInfo, error) {
 	return _DepositManagerContract.Contract.GetDeposits(&_DepositManagerContract.CallOpts, targetAddress)
 }
 
 // GetWithdrawal is a free data retrieval call binding the contract method 0x5be4f765.
 //
-// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint64,bytes,bytes))
+// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
 func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawal(opts *bind.CallOpts, targetAddress common.Address, index *big.Int) (IDepositManagerWithdrawalInfo, error) {
 	var out []interface{}
 	err := _DepositManagerContract.contract.Call(opts, &out, "getWithdrawal", targetAddress, index)
@@ -339,21 +339,21 @@ func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawal(opts 
 
 // GetWithdrawal is a free data retrieval call binding the contract method 0x5be4f765.
 //
-// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint64,bytes,bytes))
+// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
 func (_DepositManagerContract *DepositManagerContractSession) GetWithdrawal(targetAddress common.Address, index *big.Int) (IDepositManagerWithdrawalInfo, error) {
 	return _DepositManagerContract.Contract.GetWithdrawal(&_DepositManagerContract.CallOpts, targetAddress, index)
 }
 
 // GetWithdrawal is a free data retrieval call binding the contract method 0x5be4f765.
 //
-// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint64,bytes,bytes))
+// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
 func (_DepositManagerContract *DepositManagerContractCallerSession) GetWithdrawal(targetAddress common.Address, index *big.Int) (IDepositManagerWithdrawalInfo, error) {
 	return _DepositManagerContract.Contract.GetWithdrawal(&_DepositManagerContract.CallOpts, targetAddress, index)
 }
 
 // GetWithdrawals is a free data retrieval call binding the contract method 0x3a2b643a.
 //
-// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint64,bytes,bytes)[])
+// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
 func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawals(opts *bind.CallOpts, targetAddress common.Address) ([]IDepositManagerWithdrawalInfo, error) {
 	var out []interface{}
 	err := _DepositManagerContract.contract.Call(opts, &out, "getWithdrawals", targetAddress)
@@ -370,47 +370,16 @@ func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawals(opts
 
 // GetWithdrawals is a free data retrieval call binding the contract method 0x3a2b643a.
 //
-// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint64,bytes,bytes)[])
+// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
 func (_DepositManagerContract *DepositManagerContractSession) GetWithdrawals(targetAddress common.Address) ([]IDepositManagerWithdrawalInfo, error) {
 	return _DepositManagerContract.Contract.GetWithdrawals(&_DepositManagerContract.CallOpts, targetAddress)
 }
 
 // GetWithdrawals is a free data retrieval call binding the contract method 0x3a2b643a.
 //
-// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint64,bytes,bytes)[])
+// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
 func (_DepositManagerContract *DepositManagerContractCallerSession) GetWithdrawals(targetAddress common.Address) ([]IDepositManagerWithdrawalInfo, error) {
 	return _DepositManagerContract.Contract.GetWithdrawals(&_DepositManagerContract.CallOpts, targetAddress)
-}
-
-// Nip20Contract is a free data retrieval call binding the contract method 0xb8f5e2f9.
-//
-// Solidity: function nip20Contract() view returns(address)
-func (_DepositManagerContract *DepositManagerContractCaller) Nip20Contract(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "nip20Contract")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// Nip20Contract is a free data retrieval call binding the contract method 0xb8f5e2f9.
-//
-// Solidity: function nip20Contract() view returns(address)
-func (_DepositManagerContract *DepositManagerContractSession) Nip20Contract() (common.Address, error) {
-	return _DepositManagerContract.Contract.Nip20Contract(&_DepositManagerContract.CallOpts)
-}
-
-// Nip20Contract is a free data retrieval call binding the contract method 0xb8f5e2f9.
-//
-// Solidity: function nip20Contract() view returns(address)
-func (_DepositManagerContract *DepositManagerContractCallerSession) Nip20Contract() (common.Address, error) {
-	return _DepositManagerContract.Contract.Nip20Contract(&_DepositManagerContract.CallOpts)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -446,11 +415,11 @@ func (_DepositManagerContract *DepositManagerContractCallerSession) Owner() (com
 
 // Withdrawals is a free data retrieval call binding the contract method 0x422b1077.
 //
-// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint64 chainId, bytes txInfo, bytes extraInfo)
+// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint256 chainId, bytes txInfo, bytes extraInfo)
 func (_DepositManagerContract *DepositManagerContractCaller) Withdrawals(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (struct {
 	TargetAddress common.Address
 	Amount        *big.Int
-	ChainId       uint64
+	ChainId       *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
 }, error) {
@@ -460,7 +429,7 @@ func (_DepositManagerContract *DepositManagerContractCaller) Withdrawals(opts *b
 	outstruct := new(struct {
 		TargetAddress common.Address
 		Amount        *big.Int
-		ChainId       uint64
+		ChainId       *big.Int
 		TxInfo        []byte
 		ExtraInfo     []byte
 	})
@@ -470,7 +439,7 @@ func (_DepositManagerContract *DepositManagerContractCaller) Withdrawals(opts *b
 
 	outstruct.TargetAddress = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
 	outstruct.Amount = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.ChainId = *abi.ConvertType(out[2], new(uint64)).(*uint64)
+	outstruct.ChainId = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
 	outstruct.TxInfo = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
 	outstruct.ExtraInfo = *abi.ConvertType(out[4], new([]byte)).(*[]byte)
 
@@ -480,11 +449,11 @@ func (_DepositManagerContract *DepositManagerContractCaller) Withdrawals(opts *b
 
 // Withdrawals is a free data retrieval call binding the contract method 0x422b1077.
 //
-// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint64 chainId, bytes txInfo, bytes extraInfo)
+// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint256 chainId, bytes txInfo, bytes extraInfo)
 func (_DepositManagerContract *DepositManagerContractSession) Withdrawals(arg0 common.Address, arg1 *big.Int) (struct {
 	TargetAddress common.Address
 	Amount        *big.Int
-	ChainId       uint64
+	ChainId       *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
 }, error) {
@@ -493,77 +462,77 @@ func (_DepositManagerContract *DepositManagerContractSession) Withdrawals(arg0 c
 
 // Withdrawals is a free data retrieval call binding the contract method 0x422b1077.
 //
-// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint64 chainId, bytes txInfo, bytes extraInfo)
+// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint256 chainId, bytes txInfo, bytes extraInfo)
 func (_DepositManagerContract *DepositManagerContractCallerSession) Withdrawals(arg0 common.Address, arg1 *big.Int) (struct {
 	TargetAddress common.Address
 	Amount        *big.Int
-	ChainId       uint64
+	ChainId       *big.Int
 	TxInfo        []byte
 	ExtraInfo     []byte
 }, error) {
 	return _DepositManagerContract.Contract.Withdrawals(&_DepositManagerContract.CallOpts, arg0, arg1)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
 //
-// Solidity: function initialize(address _owner, address _nip20Contract) returns()
-func (_DepositManagerContract *DepositManagerContractTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address, _nip20Contract common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.contract.Transact(opts, "initialize", _owner, _nip20Contract)
+// Solidity: function initialize(address _owner) returns()
+func (_DepositManagerContract *DepositManagerContractTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "initialize", _owner)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
 //
-// Solidity: function initialize(address _owner, address _nip20Contract) returns()
-func (_DepositManagerContract *DepositManagerContractSession) Initialize(_owner common.Address, _nip20Contract common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner, _nip20Contract)
+// Solidity: function initialize(address _owner) returns()
+func (_DepositManagerContract *DepositManagerContractSession) Initialize(_owner common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0x485cc955.
+// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
 //
-// Solidity: function initialize(address _owner, address _nip20Contract) returns()
-func (_DepositManagerContract *DepositManagerContractTransactorSession) Initialize(_owner common.Address, _nip20Contract common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner, _nip20Contract)
+// Solidity: function initialize(address _owner) returns()
+func (_DepositManagerContract *DepositManagerContractTransactorSession) Initialize(_owner common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner)
 }
 
-// RecordDeposit is a paid mutator transaction binding the contract method 0x90cf4126.
+// RecordDeposit is a paid mutator transaction binding the contract method 0xbac89758.
 //
-// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint64 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactor) RecordDeposit(opts *bind.TransactOpts, _targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
+// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactor) RecordDeposit(opts *bind.TransactOpts, _targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
 	return _DepositManagerContract.contract.Transact(opts, "recordDeposit", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }
 
-// RecordDeposit is a paid mutator transaction binding the contract method 0x90cf4126.
+// RecordDeposit is a paid mutator transaction binding the contract method 0xbac89758.
 //
-// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint64 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractSession) RecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
+// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractSession) RecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
 	return _DepositManagerContract.Contract.RecordDeposit(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }
 
-// RecordDeposit is a paid mutator transaction binding the contract method 0x90cf4126.
+// RecordDeposit is a paid mutator transaction binding the contract method 0xbac89758.
 //
-// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint64 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
+// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
 	return _DepositManagerContract.Contract.RecordDeposit(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }
 
-// RecordWithdrawal is a paid mutator transaction binding the contract method 0xe7a2d456.
+// RecordWithdrawal is a paid mutator transaction binding the contract method 0x57673f43.
 //
-// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint64 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactor) RecordWithdrawal(opts *bind.TransactOpts, _targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
+// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactor) RecordWithdrawal(opts *bind.TransactOpts, _targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
 	return _DepositManagerContract.contract.Transact(opts, "recordWithdrawal", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }
 
-// RecordWithdrawal is a paid mutator transaction binding the contract method 0xe7a2d456.
+// RecordWithdrawal is a paid mutator transaction binding the contract method 0x57673f43.
 //
-// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint64 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractSession) RecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
+// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractSession) RecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
 	return _DepositManagerContract.Contract.RecordWithdrawal(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }
 
-// RecordWithdrawal is a paid mutator transaction binding the contract method 0xe7a2d456.
+// RecordWithdrawal is a paid mutator transaction binding the contract method 0x57673f43.
 //
-// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint64 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
+// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
 	return _DepositManagerContract.Contract.RecordWithdrawal(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }
 
