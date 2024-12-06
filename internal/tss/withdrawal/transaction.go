@@ -16,7 +16,7 @@ func BuildTransaction(detailTask pool.Task[uint64]) (*ethereumTypes.Transaction,
 	switch task := detailTask.(type) {
 	case *db.WithdrawalTask:
 		targetAddress := common.HexToAddress(task.TargetAddress)
-		toAddress := common.HexToAddress("0x00")
+		var toAddress common.Address
 
 		var calldata []byte
 		value := big.NewInt(0)
@@ -24,8 +24,9 @@ func BuildTransaction(detailTask pool.Task[uint64]) (*ethereumTypes.Transaction,
 			toAddress = targetAddress
 			value = big.NewInt(int64(task.Amount))
 		} else {
-			// from = system address
+			// @todo from = system address
 			fromAddress := common.HexToAddress("0x00")
+			toAddress = common.HexToAddress(task.ContractAddress)
 			calldata = contracts.EncodeTransferOfERC20(fromAddress, toAddress, big.NewInt(int64(task.Amount)))
 		}
 		baseTx := &ethereumTypes.DynamicFeeTx{

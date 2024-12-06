@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"slices"
 	"strings"
 	"sync"
@@ -402,11 +403,44 @@ func (m *Scheduler) BatchPendingTask() {
 			}
 			transactions = append(transactions, tx)
 		}
-		log.Infof("batch pending transactions: %v", transactions)
+
 		// @todo check system balance
 		// @todo check erc20 balances
+
+		type Call struct {
+			Target   common.Address
+			CallData []byte
+		}
+
+		calls := make([]Call, 0, len(transactions))
+		totalValue := big.NewInt(0)
+		for _, tx := range transactions {
+			if tx.To() == nil {
+				continue
+			}
+			call := Call{
+				Target:   *tx.To(),
+				CallData: tx.Data(),
+			}
+
+			calls = append(calls, call)
+			totalValue.Add(totalValue, tx.Value())
+		}
+
 		// @todo check gas balance
-		// @todo send signTx proposal
+		calldata := contracts.EncodeFun(contracts.Multicall3ABI, "aggregate", calls)
+
+		// @todo get multicall contract address by chain
+		multicallAddress := common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
+		baseTx := &ethereumTypes.DynamicFeeTx{
+			To:    &multicallAddress,
+			Value: totalValue,
+			Data:  calldata,
+		}
+		multicallTransaction := ethereumTypes.NewTx(baseTx)
+		log.Infof("%v", multicallTransaction)
+
+		// @todo sign tx
 	}
 }
 
