@@ -36,6 +36,17 @@ func (m *Scheduler) NewMasterSignBatchSession(
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType, data)
 }
 
+func (m *Scheduler) NewSignBatchSession(
+	sessionID types.SessionID,
+	proposalID ProposalID,
+	msg *Proposal,
+	key types.LocalPartySaveData,
+	keyDerivationDelta *big.Int,
+	data []ProposalID,
+) types.SessionID {
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignBatchTaskSessionType, data)
+}
+
 func (m *Scheduler) NewSignSession(
 	sessionID types.SessionID,
 	proposalID ProposalID,
