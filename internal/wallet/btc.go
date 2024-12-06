@@ -34,3 +34,15 @@ func NewPublicKeyOfBtc(p *crypto.ECPoint) *btcec.PublicKey {
 	y.SetByteSlice(p.Y().Bytes())
 	return btcec.NewPublicKey(x, y)
 }
+
+func GenerateCompressedSegWitBTCAddress(p *crypto.ECPoint) (string, error) {
+	return P2WPKHAddress(NewPublicKeyOfBtc(p).SerializeCompressed())
+}
+
+func P2WPKHAddress(serializedPubKey []byte) (string, error) {
+	addr, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(serializedPubKey), &chaincfg.MainNetParams)
+	if err != nil {
+		return "", fmt.Errorf("invalid public key: %w", err)
+	}
+	return addr.EncodeAddress(), nil
+}
