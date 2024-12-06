@@ -22,8 +22,8 @@
       },
       {
         "name": "chainId",
-        "type": "uint64",
-        "internalType": "uint64"
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
         "name": "amount",
@@ -71,8 +71,8 @@
           },
           {
             "name": "chainId",
-            "type": "uint64",
-            "internalType": "uint64"
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
             "name": "amount",
@@ -117,8 +117,8 @@
           },
           {
             "name": "chainId",
-            "type": "uint64",
-            "internalType": "uint64"
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
             "name": "amount",
@@ -173,8 +173,8 @@
           },
           {
             "name": "chainId",
-            "type": "uint64",
-            "internalType": "uint64"
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
             "name": "txInfo",
@@ -219,8 +219,8 @@
           },
           {
             "name": "chainId",
-            "type": "uint64",
-            "internalType": "uint64"
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
             "name": "txInfo",
@@ -245,28 +245,10 @@
         "name": "_owner",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "_nip20Contract",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "nip20Contract",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract INIP20"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -297,8 +279,8 @@
       },
       {
         "name": "_chainId",
-        "type": "uint64",
-        "internalType": "uint64"
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
         "name": "_txInfo",
@@ -336,8 +318,8 @@
       },
       {
         "name": "_chainId",
-        "type": "uint64",
-        "internalType": "uint64"
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
         "name": "_txInfo",
@@ -407,8 +389,8 @@
       },
       {
         "name": "chainId",
-        "type": "uint64",
-        "internalType": "uint64"
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
         "name": "txInfo",
@@ -528,6 +510,11 @@
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "InvalidAddress",
+    "inputs": []
   },
   {
     "type": "error",

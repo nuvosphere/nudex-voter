@@ -14,14 +14,14 @@ import (
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	ecdsaResharing "github.com/bnb-chain/tss-lib/v2/ecdsa/resharing"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	eddsaResharing "github.com/bnb-chain/tss-lib/v2/eddsa/resharing"
+	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
-	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -132,23 +132,6 @@ func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
 	binary.BigEndian.PutUint64(nonceBytes, nonce)
 
 	return append(append(nonceBytes, lengthBytes...), data...), nil
-}
-
-var ErrCoinType = fmt.Errorf("error coin type")
-
-func getCoinTypeByChain(chain uint8) int {
-	switch chain {
-	case db.ChainBitcoin:
-		return 0
-	case db.ChainEthereum:
-		return 60
-	case db.ChainSolana:
-		return 501
-	case db.ChainSui:
-		return 784
-	default:
-		panic(ErrCoinType)
-	}
 }
 
 // RunKeyGen starts the local keygen party and handles incoming and outgoing
@@ -294,11 +277,16 @@ func RunParty(
 	switch key.CurveType() {
 	case types.ECDSA:
 		if keyDerivationDelta != nil {
-			party = signing.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
+			party = ecdsaSigning.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {
-			party = signing.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
+			party = ecdsaSigning.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
 		}
-
+	case types.EDDSA:
+		if keyDerivationDelta != nil {
+			party = eddsaSigning.NewLocalPartyWithKDD(msg, params, *key.EDDSAData(), keyDerivationDelta, outCh, endCh)
+		} else {
+			party = eddsaSigning.NewLocalParty(msg, params, *key.EDDSAData(), outCh, endCh)
+		}
 	default:
 		panic("implement me")
 	}

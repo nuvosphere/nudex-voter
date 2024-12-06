@@ -150,7 +150,7 @@ func (m *Scheduler) Start() {
 		log.Info("ECDSA PublicKey: ", m.partyData.ECDSALocalData().PublicKeyBase58(), " EDDSA PublicKey: ", m.partyData.EDDSALocalData().PublicKeyBase58())
 	}
 
-	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(types.ECDSA).Address())
+	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(types.ECDSA).TssSigner())
 	log.Infof("localSubmitter: %v, proposer: %v", m.LocalSubmitter(), m.Proposer())
 	// loop approveProposal
 	m.loopApproveProposal()

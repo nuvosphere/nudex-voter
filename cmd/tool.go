@@ -73,7 +73,7 @@ var printTssAddressCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitConfig(configPath)
 		partyData := tss.NewPartyData(config.AppConfig.DbDir)
-		fmt.Println(partyData.ECDSALocalData().Address())
+		fmt.Println(partyData.ECDSALocalData().TssSigner())
 	},
 }
 

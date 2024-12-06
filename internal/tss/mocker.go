@@ -153,7 +153,7 @@ func (v *VoterContractMocker) IsParticipant(participant common.Address) (bool, e
 	return slices.Contains(participants, participant), nil
 }
 
-func (v *VoterContractMocker) GetRandomParticipant(participant common.Address) (common.Address, error) {
+func (v *VoterContractMocker) GetRandomParticipant(_salt *big.Int) (common.Address, error) {
 	// TODO implement me
 	panic("implement me")
 }

@@ -5,7 +5,8 @@ import (
 	"math/big"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
@@ -61,7 +62,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 		m.p2p,
 		m,
 		sessionID,
-		common.HexToAddress(key.Address()),
+		common.HexToAddress(key.TssSigner()),
 		m.Proposer(),
 		proposalID,
 		msg,
@@ -111,9 +112,15 @@ func createSignParty(
 	switch key.CurveType() {
 	case types.ECDSA:
 		if keyDerivationDelta != nil {
-			party = signing.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
+			party = ecdsaSigning.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {
-			party = signing.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
+			party = ecdsaSigning.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
+		}
+	case types.EDDSA:
+		if keyDerivationDelta != nil {
+			party = eddsaSigning.NewLocalPartyWithKDD(msg, params, *key.EDDSAData(), keyDerivationDelta, outCh, endCh)
+		} else {
+			party = eddsaSigning.NewLocalParty(msg, params, *key.EDDSAData(), outCh, endCh)
 		}
 
 	default:

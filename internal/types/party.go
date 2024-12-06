@@ -1,12 +1,14 @@
 package types
 
 import (
+	"crypto/ecdsa"
 	"crypto/elliptic"
 
+	tssCrypto "github.com/bnb-chain/tss-lib/v2/crypto"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -128,10 +130,32 @@ func (d *LocalPartySaveData) EDDSAData() *eddsaKeygen.LocalPartySaveData {
 	return nil
 }
 
-func (d *LocalPartySaveData) Address() string {
+func (d *LocalPartySaveData) TssSigner() string {
 	switch d.ty {
 	case ECDSA:
 		return crypto.PubkeyToAddress(*d.ECDSAData().ECDSAPub.ToECDSAPubKey()).String()
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) ToECDSAPubKey() *ecdsa.PublicKey {
+	switch d.ty {
+	case ECDSA:
+		return d.ECDSAData().ECDSAPub.ToECDSAPubKey()
+	case EDDSA:
+		return d.EDDSAData().EDDSAPub.ToECDSAPubKey()
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) ECPoint() *tssCrypto.ECPoint {
+	switch d.ty {
+	case ECDSA:
+		return d.ECDSAData().ECDSAPub
+	case EDDSA:
+		return d.EDDSAData().EDDSAPub
 	default:
 		panic("implement me")
 	}
