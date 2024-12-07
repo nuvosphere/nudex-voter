@@ -11,6 +11,7 @@ import (
 	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/chenzhijie/go-web3/crypto"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -77,7 +78,7 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		return nil, err
 	}
 
-	detailTask := db.DecodeTask(t.Id, t.Context)
+	detailTask := codec.DecodeTask(t.Id, t.Context)
 
 	baseTask := db.Task{
 		TaskId:    t.Id,

@@ -1,14 +1,15 @@
-package db
+package codec
 
 import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
-func DecodeTask(taskId uint64, context []byte) DetailTask {
+func DecodeTask(taskId uint64, context []byte) db.DetailTask {
 	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
 	utils.Assert(err)
 
@@ -19,19 +20,19 @@ func DecodeTask(taskId uint64, context []byte) DetailTask {
 		err = parsedABI.UnpackIntoInterface(request, "WalletCreationRequest", context[32:])
 		utils.Assert(err)
 
-		return NewCreateWalletTask(taskId, request)
+		return db.NewCreateWalletTask(taskId, request)
 	case contracts.DepositRequestTopic:
 		request := &contracts.TaskPayloadContractDepositRequest{}
 		err = parsedABI.UnpackIntoInterface(request, "DepositRequest", context[32:])
 		utils.Assert(err)
 
-		return NewDepositTask(taskId, request)
+		return db.NewDepositTask(taskId, request)
 	case contracts.WithdrawalRequestTopic:
 		request := &contracts.TaskPayloadContractWithdrawalRequest{}
 		err = parsedABI.UnpackIntoInterface(request, "WithdrawalRequest", context[32:])
 		utils.Assert(err)
 
-		return NewWithdrawalTask(taskId, request)
+		return db.NewWithdrawalTask(taskId, request)
 	}
 
 	return nil
@@ -46,24 +47,24 @@ func EncodeTask(taskType uint8, task any) (bytes []byte, err error) {
 	}()
 
 	switch taskType {
-	case TaskTypeCreateWallet:
-		t := task.(CreateWalletTask)
+	case db.TaskTypeCreateWallet:
+		t := task.(db.CreateWalletTask)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WalletCreationRequest",
-			uint8(TaskVersionV1),
+			uint8(db.TaskVersionV1),
 			taskType,
 			t.Account,
 			t.Chain,
 			t.Index,
 		)
 
-	case TaskTypeDeposit:
-		t := task.(DepositTask)
+	case db.TaskTypeDeposit:
+		t := task.(db.DepositTask)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"DepositRequest",
-			uint8(TaskVersionV1),
+			uint8(db.TaskVersionV1),
 			taskType,
 			t.TargetAddress,
 			t.Amount,
@@ -77,12 +78,12 @@ func EncodeTask(taskType uint8, task any) (bytes []byte, err error) {
 			t.Decimal,
 		)
 
-	case TaskTypeWithdrawal:
-		t := task.(WithdrawalTask)
+	case db.TaskTypeWithdrawal:
+		t := task.(db.WithdrawalTask)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
 			"WithdrawalRequest",
-			uint8(TaskVersionV1),
+			uint8(db.TaskVersionV1),
 			taskType,
 			t.TargetAddress,
 			t.Amount,
@@ -114,7 +115,7 @@ func EncodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 	}()
 
 	switch taskType {
-	case TaskTypeCreateWallet:
+	case db.TaskTypeCreateWallet:
 		t := result.(contracts.TaskPayloadContractWalletCreationResult)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
@@ -124,7 +125,7 @@ func EncodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 			t.ErrorCode,
 			t.WalletAddress,
 		)
-	case TaskTypeDeposit:
+	case db.TaskTypeDeposit:
 		t := result.(contracts.TaskPayloadContractDepositResult)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,
@@ -133,7 +134,7 @@ func EncodeTaskResult(taskType uint8, result interface{}) (bytes []byte, err err
 			t.Success,
 			t.ErrorCode,
 		)
-	case TaskTypeWithdrawal:
+	case db.TaskTypeWithdrawal:
 		t := result.(contracts.TaskPayloadContractWithdrawalResult)
 		bytes = contracts.PackEvent(
 			contracts.TaskPayloadContractMetaData,

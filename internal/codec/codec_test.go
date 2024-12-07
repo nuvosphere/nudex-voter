@@ -1,25 +1,26 @@
-package db
+package codec
 
 import (
 	"bytes"
 	"encoding/hex"
 	"testing"
 
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEncodeCreateWalletTask(t *testing.T) {
-	task := CreateWalletTask{
-		BaseTask: BaseTask{
+	task := db.CreateWalletTask{
+		BaseTask: db.BaseTask{
 			TaskId: 100,
 		},
 		Account: uint32(10001),
 		Chain:   uint8(types.ChainEthereum),
 		Index:   uint8(0),
 	}
-	taskBytes, err := EncodeTask(TaskTypeCreateWallet, task)
+	taskBytes, err := EncodeTask(db.TaskTypeCreateWallet, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 	t.Log(hex.EncodeToString(taskBytes))
@@ -28,8 +29,8 @@ func TestEncodeCreateWalletTask(t *testing.T) {
 }
 
 func TestEncodeDepositTask(t *testing.T) {
-	task := DepositTask{
-		BaseTask: BaseTask{
+	task := db.DepositTask{
+		BaseTask: db.BaseTask{
 			TaskId: 1,
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
@@ -43,7 +44,7 @@ func TestEncodeDepositTask(t *testing.T) {
 		AssetType:       uint8(types.AssetTypeErc20),
 		Decimal:         uint8(18),
 	}
-	taskBytes, err := EncodeTask(TaskTypeDeposit, task)
+	taskBytes, err := EncodeTask(db.TaskTypeDeposit, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -52,8 +53,8 @@ func TestEncodeDepositTask(t *testing.T) {
 }
 
 func TestEncodeWithdrawalTask(t *testing.T) {
-	task := WithdrawalTask{
-		BaseTask: BaseTask{
+	task := db.WithdrawalTask{
+		BaseTask: db.BaseTask{
 			TaskId: 1,
 		},
 		TargetAddress:   "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
@@ -68,7 +69,7 @@ func TestEncodeWithdrawalTask(t *testing.T) {
 		Decimal:         18,
 		Fee:             uint64(100000000000000),
 	}
-	taskBytes, err := EncodeTask(TaskTypeWithdrawal, task)
+	taskBytes, err := EncodeTask(db.TaskTypeWithdrawal, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -83,10 +84,10 @@ func TestParseCreateWalletTask(t *testing.T) {
 	task := DecodeTask(1, context)
 
 	assert.NotNil(t, task)
-	assert.IsType(t, &CreateWalletTask{}, task)
+	assert.IsType(t, &db.CreateWalletTask{}, task)
 
-	request := task.(*CreateWalletTask)
-	assert.Equal(t, TaskTypeCreateWallet, request.TaskType)
+	request := task.(*db.CreateWalletTask)
+	assert.Equal(t, db.TaskTypeCreateWallet, request.TaskType)
 	assert.Equal(t, uint32(10001), request.Account)
 }
 
@@ -97,10 +98,10 @@ func TestParseDepositTask(t *testing.T) {
 	task := DecodeTask(1, context)
 
 	assert.NotNil(t, task)
-	assert.IsType(t, &DepositTask{}, task)
+	assert.IsType(t, &db.DepositTask{}, task)
 
-	request := task.(*DepositTask)
-	assert.Equal(t, TaskTypeDeposit, request.TaskType)
+	request := task.(*db.DepositTask)
+	assert.Equal(t, db.TaskTypeDeposit, request.TaskType)
 	assert.Equal(t, "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8", request.TxHash)
 }
 
@@ -111,21 +112,21 @@ func TestParseWithdrawalTask(t *testing.T) {
 	task := DecodeTask(1, context)
 
 	assert.NotNil(t, task)
-	assert.IsType(t, &WithdrawalTask{}, task)
+	assert.IsType(t, &db.WithdrawalTask{}, task)
 
-	request := task.(*WithdrawalTask)
-	assert.Equal(t, TaskTypeWithdrawal, request.TaskType)
+	request := task.(*db.WithdrawalTask)
+	assert.Equal(t, db.TaskTypeWithdrawal, request.TaskType)
 	assert.Equal(t, "0x01cfa36f443bca6774be814ef667ead31be4493c6101e0093ab9a1d5142cb5a8", request.TxHash)
 }
 
 func TestEncodeCreateWalletResult(t *testing.T) {
 	task := contracts.TaskPayloadContractWalletCreationResult{
-		Version:       uint8(TaskVersionV1),
+		Version:       uint8(db.TaskVersionV1),
 		Success:       true,
-		ErrorCode:     uint8(TaskErrorCodeSuccess),
+		ErrorCode:     uint8(db.TaskErrorCodeSuccess),
 		WalletAddress: "0xFa0c1810C5853348020e15a9C300c2363b5EBF41",
 	}
-	taskBytes, err := EncodeTaskResult(TaskTypeCreateWallet, task)
+	taskBytes, err := EncodeTaskResult(db.TaskTypeCreateWallet, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -135,11 +136,11 @@ func TestEncodeCreateWalletResult(t *testing.T) {
 
 func TestEncodeDepositResult(t *testing.T) {
 	task := contracts.TaskPayloadContractDepositResult{
-		Version:   uint8(TaskVersionV1),
+		Version:   uint8(db.TaskVersionV1),
 		Success:   true,
-		ErrorCode: uint8(TaskErrorCodeSuccess),
+		ErrorCode: uint8(db.TaskErrorCodeSuccess),
 	}
-	taskBytes, err := EncodeTaskResult(TaskTypeDeposit, task)
+	taskBytes, err := EncodeTaskResult(db.TaskTypeDeposit, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 
@@ -149,11 +150,11 @@ func TestEncodeDepositResult(t *testing.T) {
 
 func TestEncodeWithdrawResult(t *testing.T) {
 	task := contracts.TaskPayloadContractWithdrawalResult{
-		Version:   uint8(TaskVersionV1),
+		Version:   uint8(db.TaskVersionV1),
 		Success:   true,
-		ErrorCode: uint8(TaskErrorCodeSuccess),
+		ErrorCode: uint8(db.TaskErrorCodeSuccess),
 	}
-	taskBytes, err := EncodeTaskResult(TaskTypeWithdrawal, task)
+	taskBytes, err := EncodeTaskResult(db.TaskTypeWithdrawal, task)
 	assert.NoError(t, err)
 	assert.NotNil(t, taskBytes)
 

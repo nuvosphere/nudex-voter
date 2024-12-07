@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -64,7 +65,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, TaskSubmitted, vLog)
-		actualTask := db.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Context)
+		actualTask := codec.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Context)
 		task := db.Task{
 			TaskId:    actualTask.TaskID(),
 			TaskType:  actualTask.Type(),
