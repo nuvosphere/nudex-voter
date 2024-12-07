@@ -42,7 +42,7 @@ func TestTask(t *testing.T) {
 		Chain:   0,
 		Index:   0,
 	}
-	db := dbm.GetRelayerDB().Debug()
+	db := dbm.GetL2InfoDB().Debug()
 	db.DryRun = true
 	// err := db.Create(&task).Error
 	// err := db.Save(&task).Error
@@ -100,7 +100,7 @@ func TestUniqueTask(t *testing.T) {
 		Chain:   0,
 		Index:   0,
 	}
-	db := dbm.GetRelayerDB().Debug()
+	db := dbm.GetL2InfoDB().Debug()
 	db.DryRun = true
 	err := db.Save(&task).Error
 	// err := db.Save(&task).Error
@@ -124,7 +124,7 @@ func TestSubmitterChosenUniqueTask(t *testing.T) {
 		BlockNumber: 12,
 		Submitter:   "122",
 	}
-	db := dbm.GetRelayerDB().Debug()
+	db := dbm.GetL2InfoDB().Debug()
 	db.DryRun = true
 	err := db.Clauses(clause.OnConflict{UpdateAll: true}).Save(&s).Error
 	assert.Nil(t, err)
