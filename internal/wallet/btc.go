@@ -35,7 +35,8 @@ func NewPublicKeyOfBtc(p *crypto.ECPoint) *btcec.PublicKey {
 	return btcec.NewPublicKey(x, y)
 }
 
-func GenerateCompressedSegWitBTCAddress(p *crypto.ECPoint) (string, error) {
+// GenerateP2WPKHBTCAddress P2WPKH(pay to witness public key hash) address
+func GenerateP2WPKHBTCAddress(p *crypto.ECPoint) (string, error) {
 	return P2WPKHAddress(NewPublicKeyOfBtc(p).SerializeCompressed())
 }
 
