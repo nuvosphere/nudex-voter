@@ -256,6 +256,7 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 		utils.Assert(err)
 		return SolanaAddress(extendKey.PublicKey)
 	case types.CoinTypeSUI:
+		curveType = types.EDDSA
 		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 		utils.Assert(err)
 		return SuiEd25519Address(extendKey.PublicKey)
