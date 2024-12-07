@@ -25,6 +25,8 @@ type Config struct {
 	BtcRpcUser          string        `yaml:"btcRpcUser"`
 	BtcRpcPass          string        `yaml:"btcRpcPass"`
 	BtcStartHeight      int           `yaml:"btcStartHeight"`
+	SolRPC              string        `yaml:"solRPC"`
+	SuiRPC              string        `yaml:"suiRPC"`
 	L2Rpc               string        `yaml:"l2Rpc"`
 	L2JwtSecret         string        `yaml:"l2JwtSecret"`
 	L2StartHeight       int           `yaml:"l2StartHeight"`

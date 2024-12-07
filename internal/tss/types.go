@@ -17,13 +17,6 @@ const (
 )
 
 const (
-	TaskStateCreated = iota
-	TaskStatePending
-	TaskStateCompleted
-	TaskStateFailed
-)
-
-const (
 	GenKeySessionType        = "GenerateKeySession"
 	ReShareGroupSessionType  = "ReShareGroupSession"
 	SignTaskSessionType      = "SignTaskSession"
