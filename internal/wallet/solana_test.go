@@ -53,7 +53,7 @@ func TestSolanaAddress(t *testing.T) {
 	}
 }
 
-func TestGenerateAddress(t *testing.T) {
+func TestGenerateSolAddress(t *testing.T) {
 	data := base58.Decode("5ZnCSBuoktAiv1titQWUzHd9iqvy9sD8vQNMrHxZMR8KMzjwkM3GQyX7qfoZJ6cYU1HLEX6bT25B2rtRhKiM8MVc")
 	pk, pubKey := edwards.PrivKeyFromBytes(data)
 	assert.NotNil(t, pk)
@@ -64,7 +64,7 @@ func TestGenerateAddress(t *testing.T) {
 	assert.Equal(t, strings.ToLower("jxK4DrMrDevCn7UXGhiJPjT36e4XP12cJLFDvP9uvxX"), strings.ToLower(address))
 
 	client := rpc.New(rpc.DevNet_RPC)
-	pubkey := solana.MustPublicKeyFromBase58("jxK4DrMrDevCn7UXGhiJPjT36e4XP12cJLFDvP9uvxX")
+	pubkey := solana.MustPublicKeyFromBase58(address)
 	out, err := client.GetBalance(
 		context.Background(),
 		pubkey,
