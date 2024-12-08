@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
@@ -31,7 +32,7 @@ type Wallet struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
-	nonce               atomic.Uint64
+	evmState            *state.EvmState
 }
 
 func NewWallet(l2url string, submitterPrivateKey ecdsa.PrivateKey) *Wallet {
@@ -44,7 +45,6 @@ func NewWallet(l2url string, submitterPrivateKey ecdsa.PrivateKey) *Wallet {
 		submitter:           crypto.PubkeyToAddress(submitterPrivateKey.PublicKey),
 		pendingTx:           sync.Map{},
 		chainID:             atomic.Int64{},
-		nonce:               atomic.Uint64{},
 	}
 }
 
@@ -120,8 +120,7 @@ func (s *Wallet) EstimateGasAPI(ctx context.Context, msg ethereum.CallMsg) (uint
 	return gasLimit, err
 }
 
-func (s *Wallet) EstimateGas(ctx context.Context, contractAddress common.Address, data []byte) (uint64, error) {
-	account := s.submitter
+func (s *Wallet) EstimateGas(ctx context.Context, account, contractAddress common.Address, data []byte) (uint64, error) {
 	// Estimate GasPrice
 	// gasPrice := opt.GasPrice
 	price, err := s.client.SuggestGasPrice(ctx)
@@ -139,12 +138,23 @@ func (s *Wallet) EstimateGas(ctx context.Context, contractAddress common.Address
 	return s.EstimateGasAPI(ctx, msg)
 }
 
-func (s *Wallet) BuildUnsignTx(ctx context.Context, contractAddress common.Address, value *big.Int, calldata []byte) (*types.Transaction, error) {
+func (s *Wallet) BuildUnsignTx(ctx context.Context, account, contractAddress common.Address, value *big.Int, calldata []byte) (*types.Transaction, error) {
 	head, err := s.client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, wrapError(err)
 	}
 
+	// EIP1559
+	// https://learnblockchain.cn/article/8593
+	// https://blog.csdn.net/vigor2323/article/details/122817104
+	// https://metamask.io/1559/
+	// https://www.blocknative.com/blog/eip-1559-fees
+	// 1、Transaction Fee=GasUsed*GasPrice=GasUsed*(BaseFee+MaxPriorityFee)；
+	// 2、MaxFee = MaxGasPrice = (2*BaseFee)+MaxPriorityFee
+	// 3、Burnt=BaseFee*GasUsed
+	// 4、TxSavingsFees=MaxFee*GasUsed−(BaseFee+MaxPriorityFee)*GasUsed = (MaxFee-(BaseFee+MaxPriorityFee))*GasUsed
+	// 5、Tip(minter get fee) = Min(Max fee - Base fee, Max priority fee)
+	// 6、usedGasPrice = min(MaxPriorityFeePerGas + basefee, MaxFeePerGas)
 	gasTipCap, err := s.client.SuggestGasTipCap(ctx)
 	if err != nil {
 		return nil, wrapError(err)
@@ -160,7 +170,7 @@ func (s *Wallet) BuildUnsignTx(ctx context.Context, contractAddress common.Addre
 
 	// Estimate GasLimit
 	msg := ethereum.CallMsg{
-		From:      s.submitter,
+		From:      account,
 		To:        &contractAddress,
 		GasTipCap: gasTipCap,
 		GasFeeCap: gasFeeCap,
@@ -176,16 +186,16 @@ func (s *Wallet) BuildUnsignTx(ctx context.Context, contractAddress common.Addre
 	// extend gas limit 20%
 	gasLimit := decimal.NewFromUint64(gas).Mul(decimal.NewFromFloat(1.2))
 
-	nextNonce, err := s.client.PendingNonceAt(ctx, s.submitter)
+	nextNonce, err := s.client.PendingNonceAt(ctx, account)
 	if err != nil {
 		return nil, wrapError(err)
 	}
 
-	latestNonce := s.nonce.Load()
-	if latestNonce >= nextNonce {
-		nextNonce = latestNonce + 1
-		s.nonce.Store(nextNonce)
-	}
+	//latestNonce := s.nonce.Load()
+	//if latestNonce >= nextNonce {
+	//	nextNonce = latestNonce + 1
+	//	s.nonce.Store(nextNonce)
+	//}
 
 	baseTx := &types.DynamicFeeTx{
 		To:        &contractAddress,
@@ -197,7 +207,16 @@ func (s *Wallet) BuildUnsignTx(ctx context.Context, contractAddress common.Addre
 		Data:      calldata,
 	}
 
-	return types.NewTx(baseTx), nil
+	tx := types.NewTx(baseTx)
+
+	jsonData, err := tx.MarshalJSON()
+	if err != nil {
+		return nil, wrapError(err)
+	}
+
+	err = s.evmState.CreateTx(nil, account, decimal.NewFromUint64(nextNonce), jsonData, calldata, tx.Hash(), head.Number.Uint64())
+
+	return tx, err
 }
 
 func (s *Wallet) RawTxBytes(ctx context.Context, tx *types.Transaction) []byte {
