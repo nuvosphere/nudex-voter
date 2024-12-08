@@ -36,9 +36,7 @@ func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterCo
 
 	return &Service{
 		scheduler: scheduler,
-		wallet: wallet.NewWallet(
-			config.AppConfig.L2Rpc,
-			*config.L2PrivateKey),
+		wallet:    wallet.NewWallet(config.AppConfig.L2Rpc, config.L2PrivateKey),
 	}
 }
 
@@ -57,13 +55,6 @@ func (t *Service) Stop(ctx context.Context) {
 func (t *Service) handleSigFinish(operations *Operations) {
 	// 1. save db
 	// 2. update status
-	data, _ := json.Marshal(operations)
-	t.scheduler.stateDB.Save(&db.Operations{
-		Nonce:  decimal.NewFromBigInt(operations.Nonce, 0),
-		Data:   string(data),
-		Status: db.Created,
-	})
-
 	if t.scheduler.IsProposer() {
 		log.Info("proposer submit signature")
 
@@ -71,7 +62,18 @@ func (t *Service) handleSigFinish(operations *Operations) {
 
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
 
-		tx, err := t.wallet.BuildUnsignTx(context.Background(), t.scheduler.LocalSubmitter(), common.HexToAddress(config.AppConfig.VotingContract), big.NewInt(0), calldata)
+		data, _ := json.Marshal(operations)
+		tx, err := t.wallet.BuildUnsignTx(
+			context.Background(),
+			t.scheduler.LocalSubmitter(),
+			common.HexToAddress(config.AppConfig.VotingContract),
+			big.NewInt(0), // todo
+			calldata,
+			&db.Operations{
+				Nonce: decimal.NewFromBigInt(operations.Nonce, 0),
+				Data:  string(data),
+			}, nil, nil,
+		)
 		if err != nil {
 			log.Fatalf("failed to build unsigned transaction: %v", err)
 		}

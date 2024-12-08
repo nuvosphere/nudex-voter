@@ -28,17 +28,25 @@ func (d *EvmState) CreateTx(tx *gorm.DB,
 	txJsonData, calldata []byte,
 	txHash common.Hash,
 	buildHeight uint64,
+	Operations *db.Operations,
+	EvmWithdraw *db.EvmWithdraw,
+	EvmConsolidation *db.EvmConsolidation,
 ) error {
 	tx = d.tx(tx)
 	return tx.Create(&db.EvmTransaction{
-		Sender:       account,
-		TxNonce:      txNonce,
-		CalldataHash: crypto.Keccak256Hash(calldata),
-		Calldata:     calldata,
-		TxHash:       txHash,
-		TxJsonData:   txJsonData,
-		Status:       db.Created,
-		BuildHeight:  buildHeight,
+		CalldataHash:     crypto.Keccak256Hash(calldata),
+		Calldata:         calldata,
+		TxNonce:          txNonce,
+		TxHash:           txHash,
+		TxJsonData:       txJsonData,
+		Sender:           account,
+		BuildHeight:      buildHeight,
+		Status:           db.Created,
+		Error:            "",
+		Type:             0, // todo
+		Operations:       Operations,
+		EvmWithdraw:      EvmWithdraw,
+		EvmConsolidation: EvmConsolidation,
 	}).Error
 }
 
@@ -91,13 +99,17 @@ func (d *EvmState) UpdateTx(tx *gorm.DB, txHash common.Hash, status int, err err
 	return db.Error
 }
 
-func (d *EvmState) UpdateFailTx(tx *gorm.DB, txHash common.Hash, err error) error {
-	return d.UpdateTx(tx, txHash, db.Failed, err)
+func (d *EvmState) UpdateFailTx(txHash common.Hash, err error) error {
+	return d.UpdateTx(nil, txHash, db.Failed, err)
 }
 
-func (d *EvmState) UpdateBookedTx(tx *gorm.DB, txHash common.Hash) error {
+func (d *EvmState) UpdatePendingTx(txHash common.Hash) error {
+	return d.UpdateTx(nil, txHash, db.Pending, nil)
+}
+
+func (d *EvmState) UpdateBookedTx(txHash common.Hash) error {
 	return d.UpdateTx(
-		tx,
+		nil,
 		txHash,
 		db.Completed,
 		nil,
