@@ -5,6 +5,11 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/blocto/solana-go-sdk/client"
+	"github.com/blocto/solana-go-sdk/common"
+	"github.com/blocto/solana-go-sdk/program/system"
+	rpco "github.com/blocto/solana-go-sdk/rpc"
+	"github.com/blocto/solana-go-sdk/types"
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
@@ -128,4 +133,55 @@ func TestSolTransfer(t *testing.T) {
 	assert.Nil(t, err)
 	spew.Dump(out)
 	spew.Dump(out.Value) // total lamports on the account; 1 sol = 1000000000 lamports
+}
+
+func TestSolTransfer1(t *testing.T) {
+	utils.SkipCI(t)
+
+	data := base58.Decode("3VNyeZkEXWG7ewAiXrnGDNNWsrsUHBzMQmC6Mt7wjfagmEXHtu8Tx4C7pNujguc9yhr2DJbTerN6hdvJRzP7V6Aw")
+	// data := base58.Decode("5ZnCSBuoktAiv1titQWUzHd9iqvy9sD8vQNMrHxZMR8KMzjwkM3GQyX7qfoZJ6cYU1HLEX6bT25B2rtRhKiM8MVc")
+	pk, pubKey := edwards.PrivKeyFromBytes(data)
+	assert.NotNil(t, pk)
+	assert.NotNil(t, pubKey)
+	pubkey := common.PublicKeyFromString("2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59")
+	// pubkey := common.PublicKeyFromString("jxK4DrMrDevCn7UXGhiJPjT36e4XP12cJLFDvP9uvxX")
+	to := common.PublicKeyFromString("xJW6cfu7atWKje4bzcxr83Aqpb8aKt3w271pv3jKTPN")
+
+	c := client.NewClient(rpco.DevnetRPCEndpoint)
+
+	// to fetch recent blockhash
+	res, err := c.GetLatestBlockhash(context.Background())
+	assert.Nil(t, err)
+
+	// create a message
+	message := types.NewMessage(types.NewMessageParam{
+		FeePayer:        pubkey,
+		RecentBlockhash: res.Blockhash, // recent blockhash
+		Instructions: []types.Instruction{
+			system.Transfer(system.TransferParam{
+				From:   pubkey, // from
+				To:     to,     // to
+				Amount: 1e7,    // 1 SOL
+			}),
+		},
+	})
+
+	// create tx by message + signer
+	tx, err := types.NewTransaction(types.NewTransactionParam{
+		Message: message,
+		Signers: []types.Account{
+			{
+				PublicKey:  pubkey,
+				PrivateKey: pk.SerializeSecret(),
+			},
+		},
+	})
+
+	assert.Nil(t, err)
+
+	// send tx
+	txhash, err := c.SendTransaction(context.Background(), tx)
+	assert.Nil(t, err)
+
+	t.Log("txhash:", txhash)
 }
