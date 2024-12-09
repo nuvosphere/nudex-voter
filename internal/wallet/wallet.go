@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/state"
@@ -33,17 +34,17 @@ type Wallet struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
-	state               *state.WalletState
+	state               *state.WalletEvmState
 }
 
-func NewWallet(l2url string, submitterPrivateKey *ecdsa.PrivateKey) *Wallet {
-	client, err := ethclient.Dial(l2url)
+func NewWallet() *Wallet {
+	client, err := ethclient.Dial(config.AppConfig.L2Rpc)
 	utils.Assert(err)
 
 	return &Wallet{
 		client:              client,
-		submitterPrivateKey: submitterPrivateKey,
-		submitter:           crypto.PubkeyToAddress(submitterPrivateKey.PublicKey),
+		submitterPrivateKey: config.L2PrivateKey,
+		submitter:           crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 		pendingTx:           sync.Map{},
 		chainID:             atomic.Int64{},
 	}
@@ -265,12 +266,7 @@ func (s *Wallet) newTx(tx *db.EvmTransaction) (*types.Transaction, error) {
 		return nil, err
 	}
 
-	signedTx, err := unSignedTx.WithSignature(signer, signature)
-	if err != nil {
-		return nil, err
-	}
-
-	return signedTx, nil
+	return unSignedTx.WithSignature(signer, signature)
 }
 
 // SpeedSendOrderTx
@@ -399,6 +395,31 @@ func (s *Wallet) RawTxBytes(ctx context.Context, tx *types.Transaction) []byte {
 	signer := types.LatestSignerForChainID(chainID)
 
 	return signer.Hash(tx).Bytes()
+}
+
+func (s *Wallet) TransactionWithSignature(ctx context.Context, tx *types.Transaction, signature []byte) (*types.Transaction, error) {
+	chainID, err := s.ChainID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	signer := types.LatestSignerForChainID(chainID)
+
+	return tx.WithSignature(signer, signature)
+}
+
+func (s *Wallet) SendTransactionWithSignature(ctx context.Context, tx *types.Transaction, signature []byte) error {
+	chainID, err := s.ChainID(ctx)
+	if err != nil {
+		return err
+	}
+	signer := types.LatestSignerForChainID(chainID)
+
+	tx, err = tx.WithSignature(signer, signature)
+	if err != nil {
+		return fmt.Errorf("tx with signature: %w", err)
+	}
+
+	return s.sendTransaction(ctx, tx)
 }
 
 func (s *Wallet) WaitTxSuccess(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {

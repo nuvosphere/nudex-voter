@@ -36,7 +36,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, bus eventbus.Bus, 
 
 	return &Service{
 		scheduler: scheduler,
-		wallet:    wallet.NewWallet(config.AppConfig.L2Rpc, config.L2PrivateKey),
+		wallet:    wallet.NewWallet(),
 	}
 }
 

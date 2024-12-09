@@ -30,9 +30,11 @@ func (EvmTransaction) TableName() string {
 type EvmWithdraw struct {
 	gorm.Model
 	EvmTransactionID uint64 `gorm:"index"`
+	TaskID           uint64 `gorm:"index"`
 }
 
 type EvmConsolidation struct {
 	gorm.Model
 	EvmTransactionID uint64 `gorm:"index"`
+	TaskID           uint64 `gorm:"index"`
 }

@@ -57,7 +57,8 @@ type Scheduler struct {
 	submitterChosen    *db.SubmitterChosen
 	notify             chan struct{}
 	handleSigFinish    func(*Operations)
-	currentNonce       *atomic.Uint64
+	currentVoterNonce  *atomic.Uint64
+	txContext          sync.Map // taskID:TxContext
 }
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *state.ContractState, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
@@ -120,7 +121,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		stateDB:            stateDB,
 		voterContract:      voterContract,
 		partyData:          NewPartyData(config.AppConfig.DbDir),
-		currentNonce:       currentNonce,
+		currentVoterNonce:  currentNonce,
 	}
 }
 
@@ -485,6 +486,8 @@ func (m *Scheduler) proposalLoop() {
 						} else {
 							// todo
 							m.pendingStateTasks.Add(task)
+							// pending task
+							m.processPendingTaskSign(nil, task)
 						}
 
 					case db.Completed, db.Failed:
@@ -501,42 +504,44 @@ func (m *Scheduler) proposalLoop() {
 	}()
 
 	// test branch
-	go func() {
-		testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
-		for {
-			select {
-			case <-m.ctx.Done():
-				log.Info("proposal loop stopping...")
-				return
-			case data := <-testPendingTask: // from test task
-				log.Info("received task from layer2 log scan: ", data)
+	go m.proposalLoopForTest()
+	log.Info("proposal loop started")
+}
 
-				switch v := data.(type) {
-				case pool.Task[uint64]:
-					m.taskQueue.Add(v)
+func (m *Scheduler) proposalLoopForTest() {
+	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
+	for {
+		select {
+		case <-m.ctx.Done():
+			log.Info("proposal loop stopping...")
+			return
+		case data := <-testPendingTask: // from test task
+			log.Info("received task from layer2 log scan: ", data)
 
-					if m.isCanProposal() {
-						log.Info("proposal task", v)
-						m.processTaskProposal(v)
-					}
-				case *db.ParticipantEvent: // regroup
-					m.processReGroupProposal(v)
+			switch v := data.(type) {
+			case pool.Task[uint64]:
+				m.taskQueue.Add(v)
 
-				case *db.SubmitterChosen: // charge proposer
-					m.submitterChosen = v
-					m.proposer.Store(common.HexToAddress(v.Submitter))
+				if m.isCanProposal() {
+					log.Info("proposal task", v)
+					m.processTaskProposal(v)
+				}
+			case *db.ParticipantEvent: // regroup
+				m.processReGroupProposal(v)
 
-				case *db.TaskUpdatedEvent: // todo
-					log.Infof("taskID: %d completed on blockchain", v.TaskId)
-					if v.State == db.Completed {
-						m.taskQueue.Remove(v.TaskId)
-						m.AddDiscussedTask(v.TaskId)
-					}
+			case *db.SubmitterChosen: // charge proposer
+				m.submitterChosen = v
+				m.proposer.Store(common.HexToAddress(v.Submitter))
+
+			case *db.TaskUpdatedEvent: // todo
+				log.Infof("taskID: %d completed on blockchain", v.TaskId)
+				if v.State == db.Completed {
+					m.taskQueue.Remove(v.TaskId)
+					m.AddDiscussedTask(v.TaskId)
 				}
 			}
 		}
-	}()
-	log.Info("proposal loop started")
+	}
 }
 
 func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
@@ -642,6 +647,34 @@ func (m *Scheduler) loopSigInToOut() {
 						}
 						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
 						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
+
+					case TxSignatureSessionType:
+						txCtx, ok := m.txContext.Load(result.ProposalID)
+						if ok {
+							switch ctx := txCtx.(type) {
+							case *EvmTxContext:
+								hash := ctx.tx.Hash()
+								err := ctx.w.SendTransactionWithSignature(m.ctx, ctx.tx, secp256k1Signature(result.Data))
+								if err != nil {
+									log.Errorf("send transaction err: %v", err)
+								} else {
+									// updated status to pending
+									receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash)
+									if err != nil {
+										log.Errorf("failed to wait transaction success: %v", err)
+									} else {
+										if receipt.Status == 0 {
+											// updated status to fail
+											log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), hash)
+										} else {
+											// updated status to completed
+											log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), hash)
+										}
+									}
+								}
+							}
+						}
+
 					default:
 						log.Infof("tss signature result: %v", result)
 					}
