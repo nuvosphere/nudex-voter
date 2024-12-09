@@ -6,6 +6,9 @@ import (
 	"math/big"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
+	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -15,9 +18,72 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
+
+func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (types.LocalPartySaveData, *big.Int) {
+	// coinType := types.GetCoinTypeByChain(coinType)
+	path := wallet.Bip44DerivationPath(coinType, account, index)
+	param, err := path.ToParams()
+	utils.Assert(err)
+	ec := types.GetCurveTypeByCoinType(int(coinType))
+	localPartySaveData := m.partyData.GetData(ec)
+	l := *localPartySaveData
+	var chainCode []byte // todo
+	switch ec {
+	case types.ECDSA:
+		keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECDSAData().ECDSAPub, chainCode, param.Indexes(), ec.EC())
+		utils.Assert(err)
+		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			[]ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()},
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
+		utils.Assert(err)
+
+		return l, keyDerivationDelta
+	default:
+		panic(fmt.Errorf("unknown EC type: %v", ec))
+	}
+}
+
+func (m *Scheduler) loopSigInToOut() {
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("tss signature read result loop stopped")
+			case result := <-m.sigInToOut:
+				log.Infof("finish consensus success, sessionID:%s", result.SessionID)
+				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, ProposalID=%v", result.SessionID, result.GroupID, result.ProposalID)
+
+				if result.Err != nil {
+					log.Errorf("%s, result error:%v", info, result.Err)
+				} else {
+					switch result.Type {
+					case SignBatchTaskSessionType:
+						ops := m.operationsQueue.Get(result.ProposalID).(*Operations)
+						ops.Signature = secp256k1Signature(result.Data)
+						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
+						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
+						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
+						m.processOperationSignResult(ops)
+						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
+						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
+
+					case TxSignatureSessionType:
+						m.processTxSignResult(result.ProposalID, result.Data)
+					default:
+						log.Infof("tss signature result: %v", result)
+					}
+				}
+			}
+		}
+	}()
+}
 
 func (m *Scheduler) processOperationSignResult(operations *Operations) {
 	// 1. save db
@@ -183,7 +249,7 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 				return
 			}
 			// updated status to pending
-			receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash) //todo track error: re-sign、request
+			receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash) // todo track error: re-sign、request
 			if err != nil {
 				log.Errorf("failed to wait transaction success: %v", err)
 				return

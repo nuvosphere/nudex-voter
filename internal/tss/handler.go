@@ -6,9 +6,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
-	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/chenzhijie/go-web3/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/codec"
@@ -16,7 +13,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
@@ -130,6 +126,12 @@ func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
 func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
 	log.Debugf("process received proposal id: %v, basePath: %v", msg.ProposalID, m.partyData.basePath)
 
+	// todo
+	//err := m.Validate(msg)
+	//if err != nil {
+	//	return err
+	//}
+
 	ok := m.OpenSession(msg)
 	if ok {
 		log.Debugf("open session success, sessionID: %v", msg.SessionID)
@@ -200,30 +202,6 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 	return nil
 }
 
-func (m *Scheduler) isReShareGroup() bool {
-	newGroup := m.newGroup.Load().(*NewGroup)
-	if newGroup != nullNewGroup {
-		return true
-	}
-
-	// get latest participants compare local participants
-	partners, err := m.voterContract.Participants()
-	utils.Assert(err)
-
-	old := m.Participants()
-	if old.GroupID() != partners.GroupID() {
-		g := &NewGroup{
-			NewParts: partners,
-			OldParts: old,
-		}
-		m.newGroup.Store(g)
-
-		return true
-	}
-
-	return false
-}
-
 func (m *Scheduler) CurveTypeBySenateSession(sessionID types.SessionID) types.CurveType {
 	switch sessionID {
 	case types.SenateSessionIDOfEDDSA:
@@ -233,40 +211,6 @@ func (m *Scheduler) CurveTypeBySenateSession(sessionID types.SessionID) types.Cu
 	default:
 		panic("unimplemented")
 	}
-}
-
-func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Proposal]) error {
-	// todo How find new part?
-	is := m.isReShareGroup()
-	if !is {
-		return fmt.Errorf("not new group")
-	}
-
-	newGroup := m.newGroup.Load().(*NewGroup)
-	// check groupID
-	if msg.GroupID != newGroup.NewParts.GroupID() {
-		return fmt.Errorf("JoinReShareGroupSession: session id: %v, msg.SessionID, %w", msg.SessionID, ErrGroupIdWrong)
-	}
-	// check msg
-	unSignMsg := m.ReShareGroupProposal()
-	if unSignMsg.Cmp(&msg.Proposal) != 0 {
-		return fmt.Errorf("JoinReShareGroupSession: proposal error, session id: %v", msg.SessionID)
-	}
-
-	ec := m.CurveTypeBySenateSession(msg.SessionID)
-
-	_ = m.NewReShareGroupSession(
-		ec,
-		msg.SessionID,
-		msg.ProposalID,
-		&msg.Proposal,
-		newGroup.OldParts,
-		newGroup.NewParts,
-	)
-
-	m.OpenSession(msg)
-
-	return nil
 }
 
 func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
@@ -342,11 +286,6 @@ func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Propos
 	m.processTxSign(&msg, task)
 }
 
-func (m *Scheduler) CurveType(task pool.Task[uint64]) types.CurveType {
-	// todo
-	return types.ECDSA
-}
-
 func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int) {
 	coinType := types.GetCoinTypeByChain(task.Chain)
 
@@ -360,33 +299,6 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.Local
 		msg = crypto.Keccak256Hash(msg)
 
 		return *localPartySaveData, new(big.Int).SetBytes(msg)
-	default:
-		panic(fmt.Errorf("unknown EC type: %v", ec))
-	}
-}
-
-func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (types.LocalPartySaveData, *big.Int) {
-	// coinType := types.GetCoinTypeByChain(coinType)
-	path := wallet.Bip44DerivationPath(coinType, account, index)
-	param, err := path.ToParams()
-	utils.Assert(err)
-	ec := types.GetCurveTypeByCoinType(int(coinType))
-	localPartySaveData := m.partyData.GetData(ec)
-	l := *localPartySaveData
-	var chainCode []byte // todo
-	switch ec {
-	case types.ECDSA:
-		keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECDSAData().ECDSAPub, chainCode, param.Indexes(), ec.EC())
-		utils.Assert(err)
-		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
-			keyDerivationDelta,
-			[]ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()},
-			extendedChildPk.PublicKey,
-			ec.EC(),
-		)
-		utils.Assert(err)
-
-		return l, keyDerivationDelta
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}
