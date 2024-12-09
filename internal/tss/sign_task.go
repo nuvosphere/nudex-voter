@@ -78,12 +78,6 @@ func (m *Scheduler) processOperationSignResult(operations *Operations) {
 	}
 }
 
-type EvmTxContext struct {
-	w    *wallet.Wallet
-	tx   *ethtypes.Transaction
-	task pool.Task[uint64]
-}
-
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	switch taskData := task.(type) {
 	case *db.WithdrawalTask:
@@ -178,6 +172,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 
 func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.SignatureData) {
 	txCtx, ok := m.txContext.Load(taskID)
+	defer m.txContext.Delete(taskID)
 	if ok {
 		switch ctx := txCtx.(type) {
 		case *EvmTxContext:
@@ -188,7 +183,7 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 				return
 			}
 			// updated status to pending
-			receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash)
+			receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash) //todo track error: re-sign、request
 			if err != nil {
 				log.Errorf("failed to wait transaction success: %v", err)
 				return
