@@ -5,17 +5,19 @@ import (
 )
 
 type (
-	EventUnknown                   struct{}
-	EventTssMsg                    struct{}
-	EventSigStart                  struct{}
-	EventSigFailed                 struct{}
-	EventSigTimeout                struct{}
-	EventSigDepositReceive         struct{}
-	EventBlockScanned              struct{}
-	EventWithdrawRequest           struct{}
-	EventParticipantAddedOrRemoved struct{}
-	EventTask                      struct{}
-	EventTestTask                  struct{}
+	EventUnknown           struct{}
+	EventTssMsg            struct{}
+	EventSigStart          struct{}
+	EventSigFailed         struct{}
+	EventSigTimeout        struct{}
+	EventSigDepositReceive struct{}
+	EventBlockScanned      struct{}
+	EventWithdrawRequest   struct{}
+	EventTask              struct{}
+	EventTaskFailed        struct{}
+	EventTxStatusUpdate    struct{} // notify node by p2p
+	EventTxReSign          struct{} // request re-sign by p2p
+	EventTestTask          struct{}
 )
 
 type Event any

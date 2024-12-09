@@ -57,8 +57,6 @@ type Scheduler struct {
 	stateDB            *gorm.DB
 	submitterChosen    *db.SubmitterChosen
 	notify             chan struct{}
-	tssMsgCh           <-chan any // eventbus channel
-	pendingTask        <-chan any // eventbus channel
 	handleSigFinish    func(*Operations)
 	currentNonce       *atomic.Uint64
 }
@@ -414,7 +412,11 @@ func (m *Scheduler) IsProposer() bool {
 
 func (m *Scheduler) p2pLoop() {
 	m.p2p.Bind(p2p.MessageTypeTssMsg, eventbus.EventTssMsg{})
-	m.tssMsgCh = m.bus.Subscribe(eventbus.EventTssMsg{})
+	m.p2p.Bind(p2p.MessageTypeTxStatusUpdate, eventbus.EventTxStatusUpdate{})
+	m.p2p.Bind(p2p.MessageTypeTxReSign, eventbus.EventTxReSign{})
+	tssMsgCh := m.bus.Subscribe(eventbus.EventTssMsg{})
+	eventTxStatusUpdate := m.bus.Subscribe(eventbus.EventTxStatusUpdate{})
+	eventTxReSign := m.bus.Subscribe(eventbus.EventTxReSign{})
 
 	go func() {
 		for {
@@ -422,7 +424,7 @@ func (m *Scheduler) p2pLoop() {
 			case <-m.ctx.Done():
 				log.Info("Signer stopping...")
 				return
-			case event := <-m.tssMsgCh: // from p2p network
+			case event := <-tssMsgCh: // from p2p network
 				log.Debugf("Received m msg event")
 
 				e := event.(p2p.Message[json.RawMessage])
@@ -432,6 +434,10 @@ func (m *Scheduler) p2pLoop() {
 				if err != nil {
 					log.Warnf("handle session msg error, %v", err)
 				}
+			case <-eventTxStatusUpdate:
+				// updated task status
+			case <-eventTxReSign:
+				// rebuild signature
 			}
 		}
 	}()
@@ -442,15 +448,15 @@ const TopN = 20
 
 // from layer2 log event
 func (m *Scheduler) proposalLoop() {
-	m.pendingTask = m.bus.Subscribe(eventbus.EventTask{})
 
 	go func() {
+		pendingTask := m.bus.Subscribe(eventbus.EventTask{})
 		for {
 			select {
 			case <-m.ctx.Done():
 				log.Info("proposal loop stopping...")
 				return
-			case data := <-m.pendingTask: // from layer2 log scan
+			case data := <-pendingTask: // from layer2 log scan
 				log.Info("received task from layer2 log scan: ", data)
 
 				switch v := data.(type) {
@@ -502,10 +508,9 @@ func (m *Scheduler) proposalLoop() {
 		}
 	}()
 
-	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
-
 	// test branch
 	go func() {
+		testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
 		for {
 			select {
 			case <-m.ctx.Done():
