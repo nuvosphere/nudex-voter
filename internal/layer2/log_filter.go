@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -51,7 +52,7 @@ func (l *Layer2Listener) processVotingLog(vLog types.Log) error {
 	submitterChosen.BlockNumber = vLog.BlockNumber
 	submitterChosen.LogIndex = l.LogIndex(eventName, vLog)
 
-	result := l.db.GetRelayerDB().Create(&submitterChosen)
+	result := l.db.GetL2InfoDB().Create(&submitterChosen)
 	if result.RowsAffected > 0 {
 		l.postTask(submitterChosen)
 	}
@@ -64,7 +65,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, TaskSubmitted, vLog)
-		actualTask := db.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Context)
+		actualTask := codec.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Context)
 		task := db.Task{
 			TaskId:    actualTask.TaskID(),
 			TaskType:  actualTask.Type(),
@@ -74,7 +75,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		}
 		actualTask.SetBaseTask(task)
 
-		result := l.db.GetRelayerDB().Create(actualTask)
+		result := l.db.GetL2InfoDB().Create(actualTask)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -89,7 +90,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 		var taskUpdatedEvent *db.TaskUpdatedEvent
 
-		err := l.db.GetRelayerDB().Transaction(func(tx *gorm.DB) error {
+		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			taskErr := tx.
 				Model(&db.Task{}).
 				Where("task_id = ?", taskUpdated.TaskId).
@@ -152,7 +153,7 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 			LogIndex: l.LogIndex(AddressRegistered, vLog),
 		}
 
-		return l.db.GetRelayerDB().Create(&account).Error
+		return l.db.GetL2InfoDB().Create(&account).Error
 	}
 
 	return nil
@@ -172,7 +173,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		// save locked relayer member from db
 		participant := db.Participant{Address: newParticipant.String()}
 		err = l.db.
-			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
+			GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			err1 := tx.FirstOrCreate(&participant, "address = ?", participant.Address).Error
 			participantEvent = &db.ParticipantEvent{
 				EventName:   ParticipantAdded,
@@ -190,7 +191,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 		removedParticipant := participantRemovedEvent.Participant.Hex()
 
 		err = l.db.
-			GetRelayerDB().Transaction(func(tx *gorm.DB) error {
+			GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			removedErr := tx.Where("address = ?", removedParticipant).
 				Delete(&db.Participant{}).
 				Error
@@ -234,7 +235,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 			LogIndex:      l.LogIndex(DepositRecorded, vLog),
 		}
 
-		return l.db.GetRelayerDB().Save(&depositRecord).Error
+		return l.db.GetL2InfoDB().Save(&depositRecord).Error
 	case contracts.WithdrawalRecordedTopic:
 		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
 		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, WithdrawalRecorded, vLog)
@@ -247,7 +248,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 			LogIndex:      l.LogIndex(WithdrawalRecorded, vLog),
 		}
 
-		return l.db.GetRelayerDB().Save(&withdrawalRecord).Error
+		return l.db.GetL2InfoDB().Save(&withdrawalRecord).Error
 	}
 
 	return nil

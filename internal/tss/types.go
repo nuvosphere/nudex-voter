@@ -24,12 +24,11 @@ const (
 )
 
 const (
-	GenKeySessionType                  = "GenerateKeySession"
-	ReShareGroupSessionType            = "ReShareGroupSession"
-	SignTaskSessionType                = "SignTaskSession"
-	SignBatchTaskSessionType           = "SignBatchTaskSessionType"
-	SignBatchWithdrawalTaskSessionType = "SignBatchWithdrawalTaskSessionType"
-	TxSignatureSessionType             = "TxSignatureSession"
+	GenKeySessionType        = "GenerateKeySession"
+	ReShareGroupSessionType  = "ReShareGroupSession"
+	SignTaskSessionType      = "SignTaskSession"
+	SignBatchTaskSessionType = "SignBatchTaskSessionType"
+	TxSignatureSessionType   = "TxSignatureSession"
 )
 
 // convertMsgData converts the message data to the corresponding struct.
@@ -37,8 +36,7 @@ func convertMsgData(msg p2p.Message[json.RawMessage]) any {
 	switch msg.DataType {
 	case DataTypeTssKeygenMsg, DataTypeTssReSharingMsg, DataTypeTssSignMsg:
 		return unmarshal[types.TssMessage](msg.Data)
-	case GenKeySessionType, SignTaskSessionType, SignBatchTaskSessionType, SignBatchWithdrawalTaskSessionType,
-		ReShareGroupSessionType, TxSignatureSessionType:
+	case GenKeySessionType, SignTaskSessionType, SignBatchTaskSessionType, ReShareGroupSessionType, TxSignatureSessionType:
 		return unmarshal[SessionMessage[ProposalID, Proposal]](msg.Data)
 	}
 

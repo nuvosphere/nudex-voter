@@ -57,6 +57,16 @@ func (m *Scheduler) NewSignSession(
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType, nil)
 }
 
+func (m *Scheduler) NewTxSignSession(
+	sessionID types.SessionID,
+	proposalID ProposalID,
+	msg *Proposal,
+	key types.LocalPartySaveData,
+	keyDerivationDelta *big.Int,
+) types.SessionID {
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, TxSignatureSessionType, nil)
+}
+
 func (m *Scheduler) NewSignSessionWitKey(
 	sessionID types.SessionID,
 	proposalID ProposalID,

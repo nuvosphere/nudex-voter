@@ -11,18 +11,16 @@ import (
 	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/chenzhijie/go-web3/crypto"
 	"github.com/ethereum/go-ethereum/common"
-	ethereumTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
-	"github.com/nuvosphere/nudex-voter/internal/tss/withdrawal"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var (
@@ -54,13 +52,7 @@ func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
 		return t, nil
 	}
 
-	task := &db.Task{}
-
-	err := m.stateDB.
-		Preload(clause.Associations).
-		Where("task_id", taskID).
-		Last(task).
-		Error
+	task, err := m.stateDB.Task(taskID)
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return m.GetOnlineTask(taskID)
@@ -79,7 +71,7 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		return nil, err
 	}
 
-	detailTask := db.DecodeTask(t.Id, t.Context)
+	detailTask := codec.DecodeTask(t.Id, t.Context)
 
 	baseTask := db.Task{
 		TaskId:    t.Id,
@@ -168,8 +160,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		if errTask != nil {
 			return errTask
 		}
-
-		err = m.JoinTxSignatureSession(msg, task)
+		m.JoinTxSignatureSession(msg, task)
 	default:
 		err = fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}
@@ -286,7 +277,7 @@ func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, da
 		DataHash:  dataHash,
 	}
 	m.operationsQueue.Add(operations)
-	m.currentNonce.Store(nonce.Uint64())
+	m.currentVoterNonce.Store(nonce.Uint64())
 }
 
 func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Proposal]) error {
@@ -337,26 +328,8 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 			localPartySaveData,
 			nil,
 		)
-
 	case *db.DepositTask:
-		//_ = m.NewSignSession(
-	//	ec,
-	//	msg.SessionID,
-	//	msg.ProposalID,
-	//	&msg.Proposal,
-	//	*localPartySaveData,
-	//	keyDerivationDelta,
-	//)
-
 	case *db.WithdrawalTask:
-		//_ = m.NewSignSession(
-	//	ec,
-	//	msg.SessionID,
-	//	msg.ProposalID,
-	//	&msg.Proposal,
-	//	*localPartySaveData,
-	//	keyDerivationDelta,
-	//)
 
 	default:
 		return fmt.Errorf("taskID %d: %w: %v", task.TaskID(), ErrTaskIdWrong, task.Type())
@@ -365,8 +338,8 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 	return nil
 }
 
-func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) error {
-	return nil
+func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
+	m.processTxSign(&msg, task)
 }
 
 func (m *Scheduler) CurveType(task pool.Task[uint64]) types.CurveType {
@@ -392,85 +365,15 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.Local
 	}
 }
 
-func (m *Scheduler) CreateWithdrawalProposal(tasks []pool.Task[uint64]) (*big.Int, *types.LocalPartySaveData, common.Hash, error) {
-	switch task := tasks[0].(type) {
-	case *db.WithdrawalTask:
-		coinType := types.GetCoinTypeByChain(task.Chain)
-
-		ec := types.GetCurveTypeByCoinType(coinType)
-		switch ec {
-		case types.ECDSA:
-			localPartySaveData := m.partyData.GetData(ec)
-			nonce, err := m.voterContract.TssNonce()
-			if err != nil {
-				return nil, nil, common.Hash{}, err
-			}
-			transactions := make([]*ethereumTypes.Transaction, 0, len(tasks))
-
-			for _, task := range tasks {
-				tx, err := withdrawal.BuildTransaction(task)
-				if err != nil {
-					log.Errorf("batch pending task build transaction err:%v", err)
-					return nonce, nil, common.Hash{}, err
-				}
-				transactions = append(transactions, tx)
-			}
-
-			// @todo check system balance
-			// @todo check erc20 balances
-
-			type Call struct {
-				Target   common.Address
-				CallData []byte
-			}
-
-			calls := make([]Call, 0, len(transactions))
-			totalValue := big.NewInt(0)
-			for _, tx := range transactions {
-				if tx.To() == nil {
-					continue
-				}
-				call := Call{
-					Target:   *tx.To(),
-					CallData: tx.Data(),
-				}
-
-				calls = append(calls, call)
-				totalValue.Add(totalValue, tx.Value())
-			}
-
-			// @todo check gas balance
-			calldata := contracts.EncodeFun(contracts.Multicall3ABI, "aggregate", calls)
-
-			// @todo get multicall contract address by chain
-			multicallAddress := common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
-			baseTx := &ethereumTypes.DynamicFeeTx{
-				To:    &multicallAddress,
-				Value: totalValue,
-				Data:  calldata,
-			}
-			multicallTransaction := ethereumTypes.NewTx(baseTx)
-			return nonce, localPartySaveData, multicallTransaction.Hash(), err
-		default:
-			panic(fmt.Errorf("unknown EC type: %v", ec))
-		}
-	}
-	return nil, nil, common.Hash{}, fmt.Errorf("unknown task type: %T", tasks[0])
-}
-
-func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int, *big.Int) {
-	coinType := types.GetCoinTypeByChain(task.Chain)
-	path := wallet.Bip44DerivationPath(uint32(coinType), task.Account, task.Index)
+func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (types.LocalPartySaveData, *big.Int) {
+	// coinType := types.GetCoinTypeByChain(coinType)
+	path := wallet.Bip44DerivationPath(coinType, account, index)
 	param, err := path.ToParams()
 	utils.Assert(err)
-
-	ec := types.GetCurveTypeByCoinType(coinType)
+	ec := types.GetCurveTypeByCoinType(int(coinType))
 	localPartySaveData := m.partyData.GetData(ec)
-
 	l := *localPartySaveData
-
-	var chainCode []byte
-
+	var chainCode []byte // todo
 	switch ec {
 	case types.ECDSA:
 		keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECDSAData().ECDSAPub, chainCode, param.Indexes(), ec.EC())
@@ -483,7 +386,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) 
 		)
 		utils.Assert(err)
 
-		return l, keyDerivationDelta, big.NewInt(100) // todo
+		return l, keyDerivationDelta
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}
@@ -502,13 +405,7 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 			nil,
 		)
 	case *db.DepositTask:
-		account := &db.Account{}
-
-		err := m.stateDB.
-			Preload(clause.Associations).
-			Where("chain_id = ? AND address = ?", taskData.ChainId, taskData.TargetAddress).
-			Last(account).
-			Error
+		_, err := m.stateDB.Account(taskData.TargetAddress)
 		if err != nil {
 			log.Error("db.DepositTask get account error", err)
 			return

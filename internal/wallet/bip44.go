@@ -27,7 +27,7 @@ const (
 	CoinTypeSolana = uint32(0x800001f5)
 
 	// Bitcoin the derive key path of Bitcoin.
-	Bitcoin = DerivePath("m/44’/0’/0’/0/0")
+	Bitcoin = DerivePath("m/44'/0'/0'/0/0")
 	// Ethereum the derive key path of Ethereum.
 	Ethereum = DerivePath("m/44'/60'/0'/0/0")
 
@@ -223,7 +223,7 @@ func GenerateEthAddressByPath(masterPubKey *crypto.ECPoint, coinType, account ui
 	p, err := bip44Path.ToParams()
 	utils.Assert(err)
 
-	var chainCode []byte
+	var chainCode []byte // todo
 	curveType := types.ECDSA
 	_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 	utils.Assert(err)
@@ -243,7 +243,7 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 	case types.CoinTypeBTC:
 		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 		utils.Assert(err)
-		addr, err := GenerateUnCompressedBTCAddress(extendKey.PublicKey)
+		addr, err := GenerateP2WPKHBTCAddress(extendKey.PublicKey)
 		utils.Assert(err)
 		return addr
 	case types.CoinTypeEVM:
@@ -256,7 +256,10 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 		utils.Assert(err)
 		return SolanaAddress(extendKey.PublicKey)
 	case types.CoinTypeSUI:
-		return ""
+		curveType = types.EDDSA
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		utils.Assert(err)
+		return SuiEd25519Address(extendKey.PublicKey)
 	default:
 		panic("invalid coin type")
 	}
