@@ -2,16 +2,17 @@ package tss
 
 import (
 	"fmt"
-	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"math/big"
 	"strings"
 
+	"github.com/nuvosphere/nudex-voter/internal/codec"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
-	"github.com/nuvosphere/nudex-voter/internal/tss/withdrawal"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
@@ -61,36 +62,12 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = db.Completed
 	case *db.WithdrawalTask:
-		txCheckSuccess, err := withdrawal.CheckTx(task)
-		if err != nil {
-			panic(fmt.Errorf("check tx failed for task %d: %w", task.TaskId, err))
-		}
-		if !txCheckSuccess {
+		checkCode, err := m.checkTask(task)
+		if err != nil || checkCode != db.TaskErrorCodeSuccess {
 			taskResult := contracts.TaskPayloadContractWithdrawalResult{
 				Version:   uint8(db.TaskVersionV1),
 				Success:   false,
-				ErrorCode: uint8(db.TaskErrorCodeCheckWithdrawalTxFailed),
-			}
-			taskBytes, err := codec.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
-			if err != nil {
-				panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
-			}
-
-			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
-			operation.OptData = data
-			operation.State = db.Failed
-			return operation
-		}
-
-		balanceCheckSuccess, err := withdrawal.ChecgkBalance(task)
-		if err != nil {
-			panic(fmt.Errorf("check balance failed for task %d: %w", task.TaskId, err))
-		}
-		if !balanceCheckSuccess {
-			taskResult := contracts.TaskPayloadContractWithdrawalResult{
-				Version:   uint8(db.TaskVersionV1),
-				Success:   false,
-				ErrorCode: uint8(db.TaskErrorCodeCheckWithdrawalBalanceFailed),
+				ErrorCode: uint8(checkCode),
 			}
 			taskBytes, err := codec.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
 			if err != nil {
@@ -116,16 +93,6 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 		operation.OptData = data
 		operation.State = db.Pending
-		//data := m.voterContract.EncodeRecordWithdrawal(
-		//	common.HexToAddress(task.TargetAddress),
-		//	big.NewInt(int64(task.Amount)),
-		//	uint64(task.ChainId),
-		//	common.HexToHash(task.TxHash).Bytes(), // todo
-		//	nil,
-		//)
-		//operation.OptData = data
-		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.WithdrawContract)
-		//operation.State = db.Pending
 	default:
 		log.Errorf("unhandled default case")
 		operation.State = db.Completed
