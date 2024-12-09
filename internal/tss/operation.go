@@ -2,6 +2,7 @@ package tss
 
 import (
 	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"math/big"
 	"strings"
 
@@ -70,7 +71,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 				Success:   false,
 				ErrorCode: uint8(db.TaskErrorCodeCheckWithdrawalTxFailed),
 			}
-			taskBytes, err := db.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
+			taskBytes, err := codec.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
 			if err != nil {
 				panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
 			}
@@ -81,7 +82,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 			return operation
 		}
 
-		balanceCheckSuccess, err := withdrawal.CheckBalance(task)
+		balanceCheckSuccess, err := withdrawal.ChecgkBalance(task)
 		if err != nil {
 			panic(fmt.Errorf("check balance failed for task %d: %w", task.TaskId, err))
 		}
@@ -91,7 +92,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 				Success:   false,
 				ErrorCode: uint8(db.TaskErrorCodeCheckWithdrawalBalanceFailed),
 			}
-			taskBytes, err := db.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
+			taskBytes, err := codec.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
 			if err != nil {
 				panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
 			}
@@ -107,7 +108,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 			Success:   false,
 			ErrorCode: uint8(db.TaskErrorCodePending),
 		}
-		taskBytes, err := db.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
+		taskBytes, err := codec.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
 		if err != nil {
 			panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
 		}
