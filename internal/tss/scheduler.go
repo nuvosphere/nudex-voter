@@ -56,7 +56,6 @@ type Scheduler struct {
 	stateDB            *state.ContractState
 	submitterChosen    *db.SubmitterChosen
 	notify             chan struct{}
-	handleSigFinish    func(*Operations)
 	currentVoterNonce  *atomic.Uint64
 	txContext          sync.Map // taskID:TxContext
 }
@@ -487,7 +486,7 @@ func (m *Scheduler) proposalLoop() {
 							// todo
 							m.pendingStateTasks.Add(task)
 							// pending task
-							m.processPendingTaskSign(nil, task)
+							m.processTxSign(nil, task)
 						}
 
 					case db.Completed, db.Failed:
@@ -642,39 +641,12 @@ func (m *Scheduler) loopSigInToOut() {
 						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
 						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
 						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
-						if m.handleSigFinish != nil {
-							m.handleSigFinish(ops)
-						}
+						m.processOperationSignResult(ops)
 						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
 						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
 
 					case TxSignatureSessionType:
-						txCtx, ok := m.txContext.Load(result.ProposalID)
-						if ok {
-							switch ctx := txCtx.(type) {
-							case *EvmTxContext:
-								hash := ctx.tx.Hash()
-								err := ctx.w.SendTransactionWithSignature(m.ctx, ctx.tx, secp256k1Signature(result.Data))
-								if err != nil {
-									log.Errorf("send transaction err: %v", err)
-								} else {
-									// updated status to pending
-									receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash)
-									if err != nil {
-										log.Errorf("failed to wait transaction success: %v", err)
-									} else {
-										if receipt.Status == 0 {
-											// updated status to fail
-											log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), hash)
-										} else {
-											// updated status to completed
-											log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), hash)
-										}
-									}
-								}
-							}
-						}
-
+						m.processTxSignResult(result.ProposalID, result.Data)
 					default:
 						log.Infof("tss signature result: %v", result)
 					}

@@ -339,7 +339,7 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 }
 
 func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
-	m.processPendingTaskSign(&msg, task)
+	m.processTxSign(&msg, task)
 }
 
 func (m *Scheduler) CurveType(task pool.Task[uint64]) types.CurveType {
