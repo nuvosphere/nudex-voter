@@ -10,6 +10,8 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
+	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -33,11 +35,12 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, i
 	ec := types.GetCurveTypeByCoinType(int(coinType))
 	localPartySaveData := m.partyData.GetData(ec)
 	l := *localPartySaveData
-	var chainCode []byte // todo
+
+	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
+	keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECPoint(), chainCode, param.Indexes(), ec.EC())
+	utils.Assert(err)
 	switch ec {
 	case types.ECDSA:
-		keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECDSAData().ECDSAPub, chainCode, param.Indexes(), ec.EC())
-		utils.Assert(err)
 		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
 			keyDerivationDelta,
 			[]ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()},
@@ -47,6 +50,16 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, i
 		utils.Assert(err)
 
 		return l, keyDerivationDelta
+	case types.EDDSA:
+		err = eddsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			[]eddsaKeygen.LocalPartySaveData{*l.EDDSAData()},
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
+		utils.Assert(err)
+		return l, keyDerivationDelta
+
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}

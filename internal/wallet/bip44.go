@@ -223,7 +223,7 @@ func GenerateEthAddressByPath(masterPubKey *crypto.ECPoint, coinType, account ui
 	p, err := bip44Path.ToParams()
 	utils.Assert(err)
 
-	var chainCode []byte // todo
+	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
 	curveType := types.ECDSA
 	_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 	utils.Assert(err)
