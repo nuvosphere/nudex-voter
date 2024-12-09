@@ -393,56 +393,69 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.Local
 }
 
 func (m *Scheduler) CreateWithdrawalProposal(tasks []pool.Task[uint64]) (*big.Int, *types.LocalPartySaveData, common.Hash, error) {
-	nonce, err := m.voterContract.TssNonce()
-	if err != nil {
-		return nil, nil, common.Hash{}, err
-	}
-	transactions := make([]*ethereumTypes.Transaction, 0, len(tasks))
+	switch task := tasks[0].(type) {
+	case *db.WithdrawalTask:
+		coinType := types.GetCoinTypeByChain(task.Chain)
 
-	for _, task := range tasks {
-		tx, err := withdrawal.BuildTransaction(task)
-		if err != nil {
-			log.Errorf("batch pending task build transaction err:%v", err)
-			return nonce, nil, common.Hash{}, err
+		ec := types.GetCurveTypeByCoinType(coinType)
+		switch ec {
+		case types.ECDSA:
+			localPartySaveData := m.partyData.GetData(ec)
+			nonce, err := m.voterContract.TssNonce()
+			if err != nil {
+				return nil, nil, common.Hash{}, err
+			}
+			transactions := make([]*ethereumTypes.Transaction, 0, len(tasks))
+
+			for _, task := range tasks {
+				tx, err := withdrawal.BuildTransaction(task)
+				if err != nil {
+					log.Errorf("batch pending task build transaction err:%v", err)
+					return nonce, nil, common.Hash{}, err
+				}
+				transactions = append(transactions, tx)
+			}
+
+			// @todo check system balance
+			// @todo check erc20 balances
+
+			type Call struct {
+				Target   common.Address
+				CallData []byte
+			}
+
+			calls := make([]Call, 0, len(transactions))
+			totalValue := big.NewInt(0)
+			for _, tx := range transactions {
+				if tx.To() == nil {
+					continue
+				}
+				call := Call{
+					Target:   *tx.To(),
+					CallData: tx.Data(),
+				}
+
+				calls = append(calls, call)
+				totalValue.Add(totalValue, tx.Value())
+			}
+
+			// @todo check gas balance
+			calldata := contracts.EncodeFun(contracts.Multicall3ABI, "aggregate", calls)
+
+			// @todo get multicall contract address by chain
+			multicallAddress := common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
+			baseTx := &ethereumTypes.DynamicFeeTx{
+				To:    &multicallAddress,
+				Value: totalValue,
+				Data:  calldata,
+			}
+			multicallTransaction := ethereumTypes.NewTx(baseTx)
+			return nonce, localPartySaveData, multicallTransaction.Hash(), err
+		default:
+			panic(fmt.Errorf("unknown EC type: %v", ec))
 		}
-		transactions = append(transactions, tx)
 	}
-
-	// @todo check system balance
-	// @todo check erc20 balances
-
-	type Call struct {
-		Target   common.Address
-		CallData []byte
-	}
-
-	calls := make([]Call, 0, len(transactions))
-	totalValue := big.NewInt(0)
-	for _, tx := range transactions {
-		if tx.To() == nil {
-			continue
-		}
-		call := Call{
-			Target:   *tx.To(),
-			CallData: tx.Data(),
-		}
-
-		calls = append(calls, call)
-		totalValue.Add(totalValue, tx.Value())
-	}
-
-	// @todo check gas balance
-	calldata := contracts.EncodeFun(contracts.Multicall3ABI, "aggregate", calls)
-
-	// @todo get multicall contract address by chain
-	multicallAddress := common.HexToAddress("0xcA11bde05977b3631167028862bE2a173976CA11")
-	baseTx := &ethereumTypes.DynamicFeeTx{
-		To:    &multicallAddress,
-		Value: totalValue,
-		Data:  calldata,
-	}
-	multicallTransaction := ethereumTypes.NewTx(baseTx)
-	return nonce, nil, multicallTransaction.Hash(), err
+	return nil, nil, common.Hash{}, fmt.Errorf("unknown task type: %T", tasks[0])
 }
 
 func (m *Scheduler) GenerateDerivationWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int, *big.Int) {

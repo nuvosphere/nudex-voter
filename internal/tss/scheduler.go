@@ -396,7 +396,7 @@ func (m *Scheduler) BatchPendingWithdrawalTask() {
 		}
 		log.Infof("nonce: %v, data: %v, msg: %v", nonce, data, unSignMsg)
 
-		// @todo get key and keyDerivationDelta
+		// @todo get key and
 		m.NewMasterSignBatchSession(
 			types.ZeroSessionID,
 			nonce.Uint64(),
