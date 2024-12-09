@@ -146,7 +146,7 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 	// Get latest sync height
 	var syncStatus db.EVMSyncStatus
 
-	relayerDB := l.db.GetRelayerDB()
+	relayerDB := l.db.GetL2InfoDB()
 
 	result := relayerDB.First(&syncStatus)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -234,7 +234,7 @@ func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus)
 		// Save sync status
 		syncStatus.LastSyncBlock = toBlock
 		syncStatus.UpdatedAt = time.Now()
-		l.db.GetRelayerDB().Save(syncStatus)
+		l.db.GetL2InfoDB().Save(syncStatus)
 
 		return true, nil
 	}

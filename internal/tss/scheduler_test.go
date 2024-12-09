@@ -15,6 +15,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -139,7 +140,7 @@ func TestSchedulerOfNewGroup(t *testing.T) {
 		voterContractMocker.SetParticipants(copyParts)
 		voterContractMocker.SetProposer(proposer)
 
-		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		s := NewScheduler(false, p2pMocker, bus, state.NewContractState(stateDB), voterContractMocker, submitter)
 		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)
@@ -206,7 +207,7 @@ func TestSchedulerOfReGroupForAddAccount(t *testing.T) {
 		voterContractMocker.SetParticipants(copyParts)
 		voterContractMocker.SetProposer(proposer)
 
-		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		s := NewScheduler(false, p2pMocker, bus, state.NewContractState(stateDB), voterContractMocker, submitter)
 		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)
@@ -299,7 +300,7 @@ func TestSchedulerOfReGroupForRemoveAccount(t *testing.T) {
 		voterContractMocker.SetParticipants(copyParts)
 		voterContractMocker.SetProposer(proposer)
 
-		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		s := NewScheduler(false, p2pMocker, bus, state.NewContractState(stateDB), voterContractMocker, submitter)
 		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)
@@ -376,7 +377,7 @@ func TestSchedulerSignature(t *testing.T) {
 		voterContractMocker.SetParticipants(copyParts)
 		voterContractMocker.SetProposer(proposer)
 
-		s := NewScheduler(false, p2pMocker, bus, stateDB, voterContractMocker, submitter)
+		s := NewScheduler(false, p2pMocker, bus, state.NewContractState(stateDB), voterContractMocker, submitter)
 		basePath := filepath.Join("./", strconv.Itoa(index))
 		err := os.MkdirAll(basePath, os.ModePerm)
 		assert.NoError(t, err)

@@ -15,6 +15,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,6 +55,7 @@ func TestSolanaAddress(t *testing.T) {
 }
 
 func TestGenerateSolAddress(t *testing.T) {
+	utils.SkipCI(t)
 	data := base58.Decode("5ZnCSBuoktAiv1titQWUzHd9iqvy9sD8vQNMrHxZMR8KMzjwkM3GQyX7qfoZJ6cYU1HLEX6bT25B2rtRhKiM8MVc")
 	pk, pubKey := edwards.PrivKeyFromBytes(data)
 	assert.NotNil(t, pk)

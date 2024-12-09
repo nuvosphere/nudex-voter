@@ -36,7 +36,7 @@ func NewApplication() *Application {
 	libP2PService := p2p.NewLibP2PService(stateDB, config.L2PrivateKey)
 	layer2Listener := layer2.NewLayer2Listener(libP2PService, stateDB, dbm)
 	btcListener := btc.NewBTCListener(libP2PService, stateDB, dbm)
-	tssService := tss.NewTssService(libP2PService, dbm.GetRelayerDB(), stateDB.Bus(), layer2Listener)
+	tssService := tss.NewTssService(libP2PService, dbm, stateDB.Bus(), layer2Listener)
 	httpServer := http.NewHTTPServer(libP2PService, stateDB, dbm)
 
 	return &Application{

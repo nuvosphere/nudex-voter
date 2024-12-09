@@ -7,9 +7,9 @@ import (
 
 type Operations struct {
 	gorm.Model
-	Nonce  decimal.Decimal `gorm:"index"`
-	Data   string
-	Status int
+	Nonce            decimal.Decimal `gorm:"index"`
+	Data             string
+	EvmTransactionID uint64 `gorm:"index"`
 }
 
 func (*Operations) TableName() string {

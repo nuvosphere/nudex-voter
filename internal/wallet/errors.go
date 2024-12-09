@@ -16,6 +16,8 @@ var (
 	ErrSendTransaction    = errors.Join(fmt.Errorf("send transaction"), ErrWallet)
 	ErrEstimateGas        = errors.Join(fmt.Errorf("estimate gas"), ErrWallet)
 	ErrTxFoundTimeOut     = errors.Join(fmt.Errorf("tx found time out"), ErrWallet)
+	ErrTxPending          = fmt.Errorf("tx pending: %w", ErrWallet)
+	ErrTxCompleted        = fmt.Errorf("tx completed: %w", ErrWallet)
 )
 
 var wrapErrorList = []error{
