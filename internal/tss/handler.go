@@ -21,7 +21,6 @@ import (
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var (
@@ -53,13 +52,7 @@ func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
 		return t, nil
 	}
 
-	task := &db.Task{}
-
-	err := m.stateDB.
-		Preload(clause.Associations).
-		Where("task_id", taskID).
-		Last(task).
-		Error
+	task, err := m.stateDB.Task(taskID)
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return m.GetOnlineTask(taskID)
@@ -435,13 +428,7 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 			nil,
 		)
 	case *db.DepositTask:
-		account := &db.Account{}
-
-		err := m.stateDB.
-			Preload(clause.Associations).
-			Where("chain_id = ? AND address = ?", taskData.ChainId, taskData.TargetAddress).
-			Last(account).
-			Error
+		_, err := m.stateDB.Account(taskData.TargetAddress)
 		if err != nil {
 			log.Error("db.DepositTask get account error", err)
 			return

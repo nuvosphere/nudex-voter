@@ -13,10 +13,10 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type Service struct {
@@ -24,12 +24,12 @@ type Service struct {
 	wallet    *wallet.Wallet
 }
 
-func NewTssService(p p2p.P2PService, stateDB *gorm.DB, bus eventbus.Bus, voterContract layer2.VoterContract) *Service {
+func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, bus eventbus.Bus, voterContract layer2.VoterContract) *Service {
 	scheduler := NewScheduler(
 		true,
 		p,
 		bus,
-		stateDB,
+		state.NewContractState(dbm.GetL2SyncDB()),
 		voterContract,
 		crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 	)

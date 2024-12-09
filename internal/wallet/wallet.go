@@ -33,7 +33,7 @@ type Wallet struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
-	evmState            *state.EvmState
+	state               *state.WalletState
 }
 
 func NewWallet(l2url string, submitterPrivateKey *ecdsa.PrivateKey) *Wallet {
@@ -217,7 +217,7 @@ func (s *Wallet) BuildUnsignTx(
 		return nil, wrapError(err)
 	}
 
-	err = s.evmState.CreateTx(
+	err = s.state.CreateTx(
 		nil,
 		account,
 		decimal.NewFromUint64(nextNonce),
@@ -297,7 +297,7 @@ func (s *Wallet) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransac
 		return signedTx, wrapError(err)
 	}
 
-	err = s.evmState.CreateTx(nil,
+	err = s.state.CreateTx(nil,
 		oldOrderTx.Sender,
 		oldOrderTx.TxNonce,
 		jsonData,
@@ -323,7 +323,7 @@ func (s *Wallet) sendTransaction(ctx context.Context, tx *types.Transaction) err
 		err = errors.Join(ErrSendTransaction, wrapError(err))
 	}
 
-	dbErr := s.evmState.UpdatePendingTx(tx.Hash())
+	dbErr := s.state.UpdatePendingTx(tx.Hash())
 
 	time.Sleep(2 * time.Second)
 
@@ -378,12 +378,12 @@ func (s *Wallet) AgainSendOrderTx(ctx context.Context, tx *db.EvmTransaction) (c
 	err = s.sendTransaction(ctx, orderTx)
 	if err != nil {
 		if errors.Is(err, ErrIntrinsicGasTooLow) || errors.Is(err, ErrReplacement) || errors.Is(err, ErrAlreadyKnown) {
-			_ = s.evmState.UpdateFailTx(txHash, err)
+			_ = s.state.UpdateFailTx(txHash, err)
 			return s.SpeedSendOrderTx(ctx, tx)
 		}
 
 		if errors.Is(err, ErrNonceTooLow) {
-			_ = s.evmState.UpdateFailTx(txHash, err) // todo
+			_ = s.state.UpdateFailTx(txHash, err) // todo
 		}
 
 		return txHash, nil, err
@@ -427,7 +427,7 @@ func (s *Wallet) waitTxSuccess(ctx context.Context, txHash common.Hash) (*types.
 				return nil, errors.Join(fmt.Errorf("call TransactionReceipt method error, txHash: %s", txHash), err, ErrWallet)
 			}
 		} else {
-			dbErr := s.evmState.UpdateBookedTx(txHash)
+			dbErr := s.state.UpdateBookedTx(txHash)
 			return r, dbErr
 		}
 	}

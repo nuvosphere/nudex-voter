@@ -8,13 +8,14 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-type EvmState struct {
+type WalletState struct {
 	pool *gorm.DB
 }
 
-func (d *EvmState) tx(tx *gorm.DB) *gorm.DB {
+func (d *WalletState) tx(tx *gorm.DB) *gorm.DB {
 	if tx == nil {
 		tx = d.pool
 	}
@@ -22,7 +23,7 @@ func (d *EvmState) tx(tx *gorm.DB) *gorm.DB {
 	return tx
 }
 
-func (d *EvmState) CreateTx(tx *gorm.DB,
+func (d *WalletState) CreateTx(tx *gorm.DB,
 	account common.Address,
 	txNonce decimal.Decimal,
 	txJsonData, calldata []byte,
@@ -50,7 +51,7 @@ func (d *EvmState) CreateTx(tx *gorm.DB,
 	}).Error
 }
 
-func (d *EvmState) PendingBlockchainTransaction(tx *gorm.DB, txHash common.Hash) (*db.EvmTransaction, error) {
+func (d *WalletState) PendingBlockchainTransaction(tx *gorm.DB, txHash common.Hash) (*db.EvmTransaction, error) {
 	tx = d.tx(tx)
 	bt := &db.EvmTransaction{}
 
@@ -66,7 +67,7 @@ func (d *EvmState) PendingBlockchainTransaction(tx *gorm.DB, txHash common.Hash)
 	return bt, nil
 }
 
-func (d *EvmState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Decimal, error) {
+func (d *WalletState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Decimal, error) {
 	tx = d.tx(tx)
 	bt := &db.EvmTransaction{}
 	result := tx.
@@ -81,7 +82,7 @@ func (d *EvmState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Dec
 	return bt.TxNonce, result.Error
 }
 
-func (d *EvmState) UpdateTx(tx *gorm.DB, txHash common.Hash, status int, err error) error {
+func (d *WalletState) UpdateTx(tx *gorm.DB, txHash common.Hash, status int, err error) error {
 	db := d.tx(tx).
 		Model(&db.EvmTransaction{}).
 		Where("tx_hash = ? AND status != ?", txHash, db.Completed)
@@ -99,19 +100,49 @@ func (d *EvmState) UpdateTx(tx *gorm.DB, txHash common.Hash, status int, err err
 	return db.Error
 }
 
-func (d *EvmState) UpdateFailTx(txHash common.Hash, err error) error {
+func (d *WalletState) UpdateFailTx(txHash common.Hash, err error) error {
 	return d.UpdateTx(nil, txHash, db.Failed, err)
 }
 
-func (d *EvmState) UpdatePendingTx(txHash common.Hash) error {
+func (d *WalletState) UpdatePendingTx(txHash common.Hash) error {
 	return d.UpdateTx(nil, txHash, db.Pending, nil)
 }
 
-func (d *EvmState) UpdateBookedTx(txHash common.Hash) error {
+func (d *WalletState) UpdateBookedTx(txHash common.Hash) error {
 	return d.UpdateTx(
 		nil,
 		txHash,
 		db.Completed,
 		nil,
 	)
+}
+
+type ContractState struct {
+	l2SyncDb *gorm.DB
+}
+
+func NewContractState(l2SyncDb *gorm.DB) *ContractState {
+	return &ContractState{
+		l2SyncDb: l2SyncDb,
+	}
+}
+
+func (s *ContractState) Account(address string) (*db.Account, error) {
+	account := &db.Account{}
+	err := s.l2SyncDb.
+		Preload(clause.Associations).
+		Where("address = ?", address).
+		Last(account).
+		Error
+	return account, err
+}
+
+func (s *ContractState) Task(taskID uint64) (*db.Task, error) {
+	task := &db.Task{}
+	err := s.l2SyncDb.
+		Preload(clause.Associations).
+		Where("task_id", taskID).
+		Last(task).
+		Error
+	return task, err
 }

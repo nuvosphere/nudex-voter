@@ -21,13 +21,12 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Scheduler struct {
@@ -54,14 +53,14 @@ type Scheduler struct {
 	operationsQueue    *pool.Pool[ProposalID] // pending batch task
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
-	stateDB            *gorm.DB
+	stateDB            *state.ContractState
 	submitterChosen    *db.SubmitterChosen
 	notify             chan struct{}
 	handleSigFinish    func(*Operations)
 	currentNonce       *atomic.Uint64
 }
 
-func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *gorm.DB, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
+func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *state.ContractState, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
 	ctx, cancel := context.WithCancel(context.Background())
 	pp := atomic.Value{}
 
@@ -448,7 +447,6 @@ const TopN = 20
 
 // from layer2 log event
 func (m *Scheduler) proposalLoop() {
-
 	go func() {
 		pendingTask := m.bus.Subscribe(eventbus.EventTask{})
 		for {
@@ -481,13 +479,7 @@ func (m *Scheduler) proposalLoop() {
 					switch v.State {
 					case db.Pending:
 						// todo withdraw
-						task := &db.Task{}
-						err := m.stateDB.
-							Model(task).
-							Preload(clause.Associations).
-							Where("task_id = ?", v.TaskId).
-							First(task).
-							Error
+						task, err := m.stateDB.Task(v.TaskId)
 						if err != nil {
 							log.Errorf("get task err:%v", err)
 						} else {
