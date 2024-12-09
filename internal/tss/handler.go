@@ -329,7 +329,7 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 		default:
 			log.Errorf("unknown asset type: %v", taskData.AssetType)
 		}
-
 	case *db.WithdrawalTask:
+		m.processTxSign(nil, taskData)
 	}
 }

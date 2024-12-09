@@ -484,7 +484,9 @@ func (m *Scheduler) proposalLoop() {
 							// todo
 							m.pendingStateTasks.Add(task)
 							// pending task
-							m.processTxSign(nil, task)
+							if m.isCanProposal() {
+								m.processTxSign(nil, task)
+							}
 						}
 
 					case db.Completed, db.Failed:

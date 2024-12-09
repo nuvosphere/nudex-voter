@@ -116,7 +116,7 @@ func TestSolTransfer(t *testing.T) {
 	sigData := base58.Encode(sin.Serialize())
 	t.Log("sigData", sigData)
 
-	signature, err := c.SendTransaction(context.Background(), (*types.Transaction)(signedTx))
+	signature, err := c.SyncSendTransaction(context.Background(), (*types.Transaction)(signedTx))
 	assert.Nil(t, err)
 	t.Log("signature", signature)
 

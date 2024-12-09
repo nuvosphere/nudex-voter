@@ -87,6 +87,10 @@ func (c *SolClient) BuildTokenTransfer(splToken, from, to, t common.PublicKey, a
 	return &UnSignTx{tx}, nil
 }
 
+func (c *SolClient) BuildSolTransferWithAddress(from, to string, amount uint64) (*UnSignTx, error) {
+	return c.BuildSolTransfer(common.PublicKeyFromString(from), common.PublicKeyFromString(to), amount)
+}
+
 // BuildSolTransfer https://docs.anza.xyz/runtime/programs/#system-program
 func (c *SolClient) BuildSolTransfer(from, to common.PublicKey, amount uint64) (*UnSignTx, error) {
 	// to fetch recent blockhash
@@ -136,6 +140,14 @@ func (c *SolClient) getPrioritizationFees(from common.PublicKey) uint64 {
 
 // SendTransaction https://solana.com/zh/docs/rpc/http/sendtransaction
 func (c *SolClient) SendTransaction(ctx context.Context, tx *types.Transaction) (string, error) {
+	sig, err := c.client.SendTransaction(ctx, *tx)
+	if err != nil {
+		return sig, fmt.Errorf("send transaction: %w", err)
+	}
+	return sig, nil
+}
+
+func (c *SolClient) SyncSendTransaction(ctx context.Context, tx *types.Transaction) (string, error) {
 	sig, err := c.client.SendTransaction(ctx, *tx)
 	if err != nil {
 		return sig, fmt.Errorf("send transaction: %w", err)
