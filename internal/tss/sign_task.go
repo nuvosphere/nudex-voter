@@ -41,23 +41,26 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, i
 	utils.Assert(err)
 	switch ec {
 	case types.ECDSA:
+		data := []ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()}
 		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
 			keyDerivationDelta,
-			[]ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()},
+			data,
 			extendedChildPk.PublicKey,
 			ec.EC(),
 		)
 		utils.Assert(err)
-
+		l.SetData(&data[0])
 		return l, keyDerivationDelta
 	case types.EDDSA:
+		data := []eddsaKeygen.LocalPartySaveData{*l.EDDSAData()}
 		err = eddsaSigning.UpdatePublicKeyAndAdjustBigXj(
 			keyDerivationDelta,
-			[]eddsaKeygen.LocalPartySaveData{*l.EDDSAData()},
+			data,
 			extendedChildPk.PublicKey,
 			ec.EC(),
 		)
 		utils.Assert(err)
+		l.SetData(&data[0])
 		return l, keyDerivationDelta
 
 	default:
@@ -76,7 +79,7 @@ func (m *Scheduler) loopSigInToOut() {
 				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, ProposalID=%v", result.SessionID, result.GroupID, result.ProposalID)
 
 				if result.Err != nil {
-					log.Errorf("%s, result error:%v", info, result.Err)
+					log.Errorf("result error:%v, error: %v", result.Err, info)
 				} else {
 					switch result.Type {
 					case SignBatchTaskSessionType:
@@ -160,8 +163,10 @@ func (m *Scheduler) processOperationSignResult(operations *Operations) {
 }
 
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
+	log.Debugf("processTxSign taskId: %v", task.TaskID())
 	switch taskData := task.(type) {
 	case *db.WithdrawalTask:
+		log.Debugf("processTxSign task: %v", taskData)
 		switch taskData.Chain {
 		case types.CoinTypeBTC: // todo
 			switch taskData.AssetType {
@@ -173,7 +178,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			}
 		case types.ChainEthereum:
 			w := wallet.NewWallet()
-			from := w.HotAddressOfCoin(types.CoinTypeEVM)
+			hotAddress := w.HotAddressOfCoin(types.CoinTypeEVM)
 			to := common.HexToAddress(taskData.TargetAddress)
 			var tx *ethtypes.Transaction
 			var err error
@@ -184,17 +189,17 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			case types.AssetTypeMain:
 				tx, err = w.BuildUnsignTx(
 					m.ctx,
-					from,
+					hotAddress,
 					to,
 					big.NewInt(int64(taskData.Amount)), nil, nil, withdraw, nil,
 				)
 			case types.AssetTypeErc20:
 				tx, err = w.BuildUnsignTx(
 					m.ctx,
-					from,
+					hotAddress,
 					common.HexToAddress(taskData.ContractAddress),
 					nil,
-					contracts.EncodeTransferOfERC20(from, to, big.NewInt(int64(taskData.Amount))), nil, withdraw, nil,
+					contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(taskData.Amount))), nil, withdraw, nil,
 				)
 			default:
 				log.Errorf("unknown asset type: %v", taskData.AssetType)
@@ -208,10 +213,16 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			sessionId := types.ZeroSessionID
 			if msg != nil {
 				if msg.Proposal.Cmp(hash.Big()) != 0 {
-					log.Errorf("the proposal is incorrect")
+					log.Errorf("the proposal is incorrect of evm")
 					return
 				}
 				sessionId = msg.SessionID
+			} else {
+				m.txContext.Store(task.TaskID(), &EvmTxContext{
+					w:    w,
+					tx:   tx,
+					task: taskData,
+				})
 			}
 			// coinType := types.GetCoinTypeByChain(coinType)
 			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeEVM, 0, 0)
@@ -221,17 +232,18 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				hash.Big(),
 				localData,
 				keyDerivationDelta,
+				hotAddress.String(),
 			)
-			m.txContext.Store(task.TaskID(), &EvmTxContext{
-				w:    w,
-				tx:   tx,
-				task: taskData,
-			})
 
 		case types.ChainSolana:
-			c := solana.NewDevSolClient()
+			var c *solana.SolClient
+			if m.isProd {
+				c = solana.NewSolClient()
+			} else {
+				c = solana.NewDevSolClient()
+			}
 			hotAddress := wallet.HotAddressOfSolanaCoin(m.partyData.GetData(types.EDDSA).ECPoint())
-
+			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			var (
 				tx  *solana.UnSignTx
 				err error
@@ -254,15 +266,24 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				log.Errorf("failed to build unsign tx: %v", err)
 				return
 			}
+			log.Infof("raw: %x", raw)
 			proposal := new(big.Int).SetBytes(raw)
-
 			sessionId := types.ZeroSessionID
 			if msg != nil {
-				if msg.Proposal.Cmp(proposal) != 0 { // todo
-					log.Errorf("the proposal is incorrect")
-					return
-				}
+				log.Infof("msg.Proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
+				// todo
+				//if msg.Proposal.Cmp(proposal) != 0 {
+				//	log.Errorf("the proposal is incorrect of solana")
+				//	return
+				//}
+				proposal = &msg.Proposal // todo
 				sessionId = msg.SessionID
+			} else {
+				m.txContext.Store(task.TaskID(), &SolTxContext{
+					c:    c,
+					tx:   tx,
+					task: taskData,
+				})
 			}
 			// coinType := types.GetCoinTypeByChain(coinType)
 			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeSOL, 0, 0)
@@ -272,12 +293,8 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				proposal,
 				localData,
 				keyDerivationDelta,
+				hotAddress,
 			)
-			m.txContext.Store(task.TaskID(), &SolTxContext{
-				c:    c,
-				tx:   tx,
-				task: taskData,
-			})
 
 		case types.ChainSui:
 			switch taskData.AssetType {
@@ -322,6 +339,8 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 			}
 
 		case *SolTxContext:
+			unSignRawData, _ := ctx.tx.RawData()
+			log.Debugf("SolTxContext: unSignRawData: %x, signature: %x", unSignRawData, data.Signature)
 			sig, err := ctx.c.SyncSendTransaction(m.ctx, (*soltypes.Transaction)(ctx.tx.BuildSolTransaction(data.Signature)))
 			if err != nil {
 				log.Errorf("send transaction err: %v", err)
