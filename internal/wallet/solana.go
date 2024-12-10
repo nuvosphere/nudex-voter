@@ -15,5 +15,5 @@ func SolanaAddress(p *crypto.ECPoint) string {
 }
 
 func HotAddressOfSolanaCoin(masterPubKey *crypto.ECPoint) string {
-	return GenerateAddressByPath(masterPubKey, types.ChainSolana, 0, 0)
+	return GenerateAddressByPath(masterPubKey, types.CoinTypeSOL, 0, 0)
 }

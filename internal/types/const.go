@@ -11,6 +11,14 @@ const (
 	ChainSui
 )
 
+// https://docs.expand.network/ids/chain-ids
+const (
+	ChainIdBitcoin  = 1800
+	ChainIdEthereum = 1
+	ChainIdSolana   = 900
+	ChainIdSui      = 101
+)
+
 const (
 	CoinTypeBTC = 0
 	CoinTypeEVM = 60
@@ -57,9 +65,9 @@ func GetChainByCoinType(coinType int) uint8 {
 
 func GetCurveTypeByChain(chain uint8) CurveType {
 	switch chain {
-	case ChainBitcoin, ChainEthereum, ChainSui:
+	case ChainBitcoin, ChainEthereum:
 		return ECDSA
-	case ChainSolana:
+	case ChainSolana, ChainSui:
 		return EDDSA
 	default:
 		panic("implement me")
