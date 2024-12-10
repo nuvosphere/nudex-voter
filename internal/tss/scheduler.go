@@ -5,8 +5,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
-	"slices"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -174,14 +172,14 @@ func (m *Scheduler) Genesis() {
 		types.ECDSA,
 		types.SenateProposalIDOfECDSA,
 		types.SenateSessionIDOfECDSA,
-		common.Address{},
+		"",
 		types.SenateProposal,
 	)
 	_ = m.NewGenerateKeySession(
 		types.EDDSA,
 		types.SenateProposalIDOfEDDSA,
 		types.SenateSessionIDOfEDDSA,
-		common.Address{},
+		"",
 		types.SenateProposal,
 	)
 }
@@ -486,7 +484,9 @@ func (m *Scheduler) proposalLoop() {
 							// todo
 							m.pendingStateTasks.Add(task)
 							// pending task
-							m.processTxSign(nil, task)
+							if m.isCanProposal() {
+								m.processTxSign(nil, task)
+							}
 						}
 
 					case db.Completed, db.Failed:
@@ -519,8 +519,8 @@ func (m *Scheduler) proposalLoopForTest() {
 
 			switch v := data.(type) {
 			case pool.Task[uint64]:
-				m.taskQueue.Add(v)
-
+				// m.taskQueue.Add(v)
+				m.pendingStateTasks.Add(v)
 				if m.isCanProposal() {
 					log.Info("proposal task", v)
 					m.processTaskProposal(v)
@@ -541,119 +541,6 @@ func (m *Scheduler) proposalLoopForTest() {
 			}
 		}
 	}
-}
-
-func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
-	joinAddress := common.HexToAddress(v.Address)
-	newParts := types.Participants{}
-	oldParts := m.Participants()
-
-	log.Debugf("ParticipantEvent: %v, address: %v", v.EventName, v.Address)
-
-	switch v.EventName {
-	case layer2.ParticipantAdded:
-		if !slices.Contains(oldParts, joinAddress) {
-			newParts = append(oldParts, joinAddress)
-		}
-	case layer2.ParticipantRemoved:
-		newParts = lo.Filter(oldParts, func(item common.Address, index int) bool { return item != joinAddress })
-	}
-
-	log.Debugf("newParts: %v, oldParts: %v, joinAddress:%v ", newParts, oldParts, joinAddress)
-
-	if len(newParts) > 0 && newParts.GroupID() != oldParts.GroupID() {
-		m.newGroup.Store(&NewGroup{
-			Event:    v,
-			NewParts: newParts,
-			OldParts: oldParts,
-		})
-
-		if m.isCanProposal() {
-			for {
-				if m.p2p.IsOnline(strings.ToLower(joinAddress.String())) {
-					break
-				}
-				time.Sleep(1 * time.Second)
-			}
-
-			_ = m.NewReShareGroupSession(
-				types.ECDSA,
-				types.SenateSessionIDOfECDSA,
-				types.SenateProposalIDOfECDSA,
-				types.SenateProposal,
-				oldParts,
-				newParts,
-			)
-			_ = m.NewReShareGroupSession(
-				types.EDDSA,
-				types.SenateSessionIDOfEDDSA,
-				types.SenateProposalIDOfEDDSA,
-				types.SenateProposal,
-				oldParts,
-				newParts,
-			)
-
-			log.Info("Leader NewReShareGroupSession stared")
-		} else {
-			log.Info("Candidate NewReShareGroupSession stared")
-		}
-	}
-}
-
-func (m *Scheduler) reGroupResultLoop() {
-	go func() {
-		for {
-			select {
-			case <-m.ctx.Done():
-				log.Info("reGroup result loop stopping...")
-			case sessionResult := <-m.senateInToOut:
-				m.SaveSenateSessionResult(sessionResult)
-				m.ecCount.Add(-1)
-
-				if m.ecCount.Load() == 0 {
-					newGroup := m.newGroup.Swap(nullNewGroup).(*NewGroup)
-					m.partners.Store(newGroup.NewParts)
-					m.p2p.UpdateParticipants(newGroup.NewParts)
-					log.Infof("regroup success!!!: new groupID: %v", newGroup.NewParts.GroupID())
-				}
-			}
-		}
-	}()
-}
-
-func (m *Scheduler) loopSigInToOut() {
-	go func() {
-		for {
-			select {
-			case <-m.ctx.Done():
-				log.Info("tss signature read result loop stopped")
-			case result := <-m.sigInToOut:
-				log.Infof("finish consensus success, sessionID:%s", result.SessionID)
-				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, ProposalID=%v", result.SessionID, result.GroupID, result.ProposalID)
-
-				if result.Err != nil {
-					log.Errorf("%s, result error:%v", info, result.Err)
-				} else {
-					switch result.Type {
-					case SignBatchTaskSessionType:
-						ops := m.operationsQueue.Get(result.ProposalID).(*Operations)
-						ops.Signature = secp256k1Signature(result.Data)
-						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
-						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
-						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
-						m.processOperationSignResult(ops)
-						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
-						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
-
-					case TxSignatureSessionType:
-						m.processTxSignResult(result.ProposalID, result.Data)
-					default:
-						log.Infof("tss signature result: %v", result)
-					}
-				}
-			}
-		}
-	}()
 }
 
 func (m *Scheduler) loopDetectionCondition() {

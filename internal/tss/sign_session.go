@@ -33,7 +33,7 @@ func (m *Scheduler) NewMasterSignBatchSession(
 	msg *Proposal,
 	data []ProposalID,
 ) types.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType, data)
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType, data, m.partyData.ECDSALocalData().TssSigner())
 }
 
 func (m *Scheduler) NewSignSession(
@@ -43,7 +43,7 @@ func (m *Scheduler) NewSignSession(
 	key types.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) types.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType, nil)
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType, nil, key.TssSigner())
 }
 
 func (m *Scheduler) NewTxSignSession(
@@ -52,8 +52,9 @@ func (m *Scheduler) NewTxSignSession(
 	msg *Proposal,
 	key types.LocalPartySaveData,
 	keyDerivationDelta *big.Int,
+	signer string, // current signer
 ) types.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, TxSignatureSessionType, nil)
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, TxSignatureSessionType, nil, signer)
 }
 
 func (m *Scheduler) NewSignSessionWitKey(
@@ -64,6 +65,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 	keyDerivationDelta *big.Int,
 	ty string,
 	data []ProposalID,
+	signer string, // current signer
 ) types.SessionID {
 	allPartners := m.Participants()
 	params, partyIdMap := NewParam(key.CurveType(), m.LocalSubmitter(), allPartners)
@@ -72,7 +74,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 		m.p2p,
 		m,
 		sessionID,
-		common.HexToAddress(key.TssSigner()),
+		signer,
 		m.Proposer(),
 		proposalID,
 		msg,

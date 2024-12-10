@@ -11,7 +11,10 @@ import (
 	rpco "github.com/blocto/solana-go-sdk/rpc"
 	"github.com/blocto/solana-go-sdk/types"
 	"github.com/btcsuite/btcd/btcutil/base58"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
+	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -85,44 +88,51 @@ func TestSolTransfer(t *testing.T) {
 	pk, pubKey := edwards.PrivKeyFromBytes(data)
 	assert.NotNil(t, pk)
 	assert.NotNil(t, pubKey)
-	c := NewDevSolClient()
-
-	p := common.PublicKeyFromBytes(pubKey.Serialize())
-	t.Log("p", p.String())
-
-	pubkey := common.PublicKeyFromString("2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59")
-	// pubkey := common.PublicKeyFromString("jxK4DrMrDevCn7UXGhiJPjT36e4XP12cJLFDvP9uvxX")
-	to := common.PublicKeyFromString("xJW6cfu7atWKje4bzcxr83Aqpb8aKt3w271pv3jKTPN")
+	client := rpc.New(rpc.DevNet_RPC)
+	pubkey := solana.MustPublicKeyFromBase58("2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59")
+	to := solana.MustPublicKeyFromBase58("xJW6cfu7atWKje4bzcxr83Aqpb8aKt3w271pv3jKTPN")
 	t.Log(pubkey.String())
-	out, err := c.GetBalanceOfSol(context.Background(), pubkey)
+	out, err := client.GetBalance(
+		context.Background(),
+		pubkey,
+		rpc.CommitmentFinalized,
+	)
 	assert.Nil(t, err)
-	t.Log("from balance:", out)
+	spew.Dump(out)
+	spew.Dump(out.Value) // total lamports on the account; 1 sol = 1000000000 lamports
 
-	out, err = c.GetBalanceOfSol(context.Background(), to)
-	assert.Nil(t, err)
-	t.Log("to balance:", out)
+	lamportsOnAccount := new(big.Float).SetUint64(out.Value)
+	// Convert lamports to sol:
+	solBalance := new(big.Float).Quo(lamportsOnAccount, new(big.Float).SetUint64(solana.LAMPORTS_PER_SOL))
+	// WARNING: this is not a precise conversion.
+	t.Log("◎", solBalance.Text('f', 10)) // 500000000
 
-	unSignTx, err := c.BuildSolTransfer(pubkey, to, 5000)
-	assert.Nil(t, err)
-
-	raw, err := unSignTx.RawData()
-	assert.Nil(t, err)
-
-	sin, err := pk.Sign(raw)
+	c := NewDevSolClient()
+	unSignTx, err := c.BuildSolTransfer(pubkey, to, 500000)
 	assert.Nil(t, err)
 
-	signedTx := unSignTx.BuildSolTransaction(sin.Serialize())
-
-	sigData := base58.Encode(sin.Serialize())
-	t.Log("sigData", sigData)
-
-	signature, err := c.SyncSendTransaction(context.Background(), (*types.Transaction)(signedTx))
+	sign, err := unSignTx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+		p := pk.SerializeSecret()
+		pp := (*solana.PrivateKey)(&p)
+		t.Logf("pk: %s, pubkey: %s, key: %s", pp.String(), pp.PublicKey().String(), key.String())
+		return pp
+	})
 	assert.Nil(t, err)
-	t.Log("signature", signature)
+	t.Log(sign)
 
-	out, err = c.GetBalanceOfSol(context.Background(), to)
+	signTx := unSignTx.BuildSolTransaction(sign[0])
+
+	err = c.SendTransaction(context.Background(), (*solana.Transaction)(signTx))
+
 	assert.Nil(t, err)
-	t.Log("to balance:", out)
+	out, err = client.GetBalance(
+		context.Background(),
+		to,
+		rpc.CommitmentFinalized,
+	)
+	assert.Nil(t, err)
+	spew.Dump(out)
+	spew.Dump(out.Value) // total lamports on the account; 1 sol = 1000000000 lamports
 }
 
 func TestSolTransfer1(t *testing.T) {
@@ -174,16 +184,4 @@ func TestSolTransfer1(t *testing.T) {
 	assert.Nil(t, err)
 
 	t.Log("txhash:", txhash)
-}
-
-func TestBalanceOfSol(t *testing.T) {
-	hotAddress := "ATFdx2yY8uAA345ZPyWYcCcr7Avk6ThUoqTG1jSJDebU"
-	c := NewDevSolClient()
-
-	amount, err := c.GetBalanceOfSol(context.Background(), common.PublicKeyFromString(hotAddress))
-	assert.Nil(t, err)
-	t.Log("amount:", amount)
-
-	kk := common.PublicKeyFromString("ESy7hzp2VFD9ew7KWXUHFewWvy3WwoG7LkUpzv2cQXek")
-	t.Logf("kk: %x", kk.Bytes())
 }

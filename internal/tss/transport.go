@@ -29,7 +29,7 @@ type SessionMessage[T, M any] struct {
 	Type                    string          `json:"type"`
 	GroupID                 types.GroupID   `json:"group_id,omitempty"`
 	SessionID               types.SessionID `json:"session_id,omitempty"`
-	Signer                  common.Address  `json:"signer,omitempty"`
+	Signer                  string          `json:"signer,omitempty"`
 	Proposer                common.Address  `json:"proposer,omitempty"`    // current submitter
 	ProposalID              T               `json:"proposal_id,omitempty"` // msg id
 	Proposal                M               `json:"proposal,omitempty"`
@@ -93,7 +93,7 @@ func newSession[T comparable, M, D any](
 	p p2p.P2PService,
 	m *Scheduler,
 	sessionID types.SessionID,
-	signer common.Address, // current signer
+	signer string, // current signer
 	proposer common.Address, // current submitter
 	ProposalId T, // msg id
 	proposal M,
@@ -116,7 +116,7 @@ func newSession[T comparable, M, D any](
 				AllPartners: allPartners,
 			},
 			SessionID:  sessionID,
-			Signer:     signer,
+			Signer:     strings.ToLower(signer),
 			Proposer:   proposer,
 			ProposalID: ProposalId,
 			Proposal:   proposal,
@@ -198,7 +198,7 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 			Type:                    s.Type(),
 			GroupID:                 s.GroupID(),
 			SessionID:               s.SessionID(),
-			Signer:                  s.Signer(),
+			Signer:                  strings.ToLower(s.Signer()),
 			Proposer:                s.Proposer(),
 			ProposalID:              s.ProposalID(),
 			Proposal:                s.session.Proposal,
@@ -244,7 +244,7 @@ func (s *sessionTransport[T, M, D]) Participants() types.Participants {
 	return s.session.AllPartners
 }
 
-func (s *sessionTransport[T, M, D]) Signer() common.Address {
+func (s *sessionTransport[T, M, D]) Signer() string {
 	return s.session.Signer
 }
 

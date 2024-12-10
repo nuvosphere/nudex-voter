@@ -432,7 +432,7 @@ func (s *Wallet) WaitTxSuccess(ctx context.Context, txHash common.Hash) (*types.
 func (s *Wallet) waitTxSuccess(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 	begin := time.Now()
 	defer func() {
-		log.Info("waitTxSuccess", "duration_ms", time.Since(begin).Milliseconds())
+		log.Infof("waitTxSuccess, duration_ms: %v", time.Since(begin).Milliseconds())
 	}()
 
 	count := 60

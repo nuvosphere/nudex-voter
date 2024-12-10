@@ -10,6 +10,7 @@ import (
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,7 +46,8 @@ func (p *PartyData) GetData(ec types.CurveType) *types.LocalPartySaveData {
 	}
 
 	p.rw.Lock()
-	data, _ = p.loadTSSData(ec)
+	data, err := p.loadTSSData(ec)
+	utils.Assert(err)
 	p.datas[ec] = data
 	p.rw.Unlock()
 
