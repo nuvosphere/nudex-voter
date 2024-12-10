@@ -3,12 +3,15 @@ package types
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"encoding/hex"
 
 	tssCrypto "github.com/bnb-chain/tss-lib/v2/crypto"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil/base58"
+	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -33,7 +36,7 @@ type Session[T, M any] struct {
 	Group
 	SessionID  SessionID      `json:"sessionID,omitempty"`
 	Proposer   common.Address `json:"proposer,omitempty"`    // current submitter
-	Signer     common.Address `json:"signer,omitempty"`      // current signer
+	Signer     string         `json:"signer,omitempty"`      // current signer
 	ProposalID T              `json:"proposal_id,omitempty"` // msg id
 	Proposal   M              `json:"proposal,omitempty"`
 	Data       []T            `json:"data,omitempty"`
@@ -171,6 +174,26 @@ func (d *LocalPartySaveData) PublicKeyBase58() string {
 		pubKey := d.EDDSAData().EDDSAPub.ToECDSAPubKey()
 		pubKeyBytes := crypto.FromECDSAPub(pubKey)
 		return base58.Encode(pubKeyBytes)
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) PublicKey() string {
+	p := d.ECPoint()
+	switch d.ty {
+	case ECDSA:
+		var (
+			x = &btcec.FieldVal{}
+			y = &btcec.FieldVal{}
+		)
+		x.SetByteSlice(p.X().Bytes())
+		y.SetByteSlice(p.Y().Bytes())
+		return hex.EncodeToString(btcec.NewPublicKey(x, y).SerializeCompressed())
+	case EDDSA:
+		p.ToECDSAPubKey()
+		pubkey := edwards.NewPublicKey(p.X(), p.Y())
+		return hex.EncodeToString(pubkey.SerializeCompressed())
 	default:
 		panic("implement me")
 	}

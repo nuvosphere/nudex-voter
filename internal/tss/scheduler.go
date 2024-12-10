@@ -172,14 +172,14 @@ func (m *Scheduler) Genesis() {
 		types.ECDSA,
 		types.SenateProposalIDOfECDSA,
 		types.SenateSessionIDOfECDSA,
-		common.Address{},
+		"",
 		types.SenateProposal,
 	)
 	_ = m.NewGenerateKeySession(
 		types.EDDSA,
 		types.SenateProposalIDOfEDDSA,
 		types.SenateSessionIDOfEDDSA,
-		common.Address{},
+		"",
 		types.SenateProposal,
 	)
 }
@@ -519,8 +519,8 @@ func (m *Scheduler) proposalLoopForTest() {
 
 			switch v := data.(type) {
 			case pool.Task[uint64]:
-				m.taskQueue.Add(v)
-
+				// m.taskQueue.Add(v)
+				m.pendingStateTasks.Add(v)
 				if m.isCanProposal() {
 					log.Info("proposal task", v)
 					m.processTaskProposal(v)

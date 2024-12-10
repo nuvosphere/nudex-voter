@@ -158,11 +158,10 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		err = m.JoinSignBatchTaskSession(msg)
 
 	case TxSignatureSessionType: // blockchain wallet tx signature
-		task, errTask := m.GetTask(msg.ProposalID)
-		if errTask != nil {
-			return errTask
+		task := m.pendingStateTasks.Get(msg.ProposalID) // todo
+		if task != nil {
+			m.JoinTxSignatureSession(msg, task)
 		}
-		m.JoinTxSignatureSession(msg, task)
 	default:
 		err = fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}

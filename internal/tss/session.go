@@ -26,7 +26,7 @@ type Session[T any] interface {
 }
 
 type Signer interface {
-	Signer() common.Address
+	Signer() string
 }
 
 type Run interface {

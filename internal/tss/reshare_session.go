@@ -120,6 +120,7 @@ func (m *Scheduler) NewReShareGroupSession(
 ) types.SessionID {
 	m.ecCount.Add(1)
 	localSubmitter := m.LocalSubmitter()
+	signer := "" // todo
 
 	log.Debugf("newPartners:%v, oldPartners: %v", newPartners, oldPartners)
 	oldPartyIDs := createPartyIDsByGroupWithAlias(ec, oldPartners, "old: "+m.partyData.basePath)
@@ -168,7 +169,7 @@ func (m *Scheduler) NewReShareGroupSession(
 			m.p2p,
 			m,
 			sessionID,
-			common.Address{}, // todo
+			signer,
 			localSubmitter,
 			proposalID,
 			msg,
@@ -205,7 +206,7 @@ func (m *Scheduler) NewReShareGroupSession(
 			m.p2p,
 			m,
 			sessionID,
-			common.Address{}, // todo
+			signer,
 			localSubmitter,
 			proposalID,
 			msg,
@@ -240,7 +241,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		m.p2p,
 		m,
 		sessionID,
-		common.Address{}, // todo
+		signer,
 		localSubmitter,
 		proposalID,
 		msg,
@@ -262,7 +263,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		m.p2p,
 		m,
 		sessionID,
-		common.Address{}, // todo
+		signer,
 		localSubmitter,
 		proposalID,
 		msg,
@@ -421,6 +422,6 @@ func (r *ReShareGroupSession[T, M, D]) Participants() types.Participants {
 	return r.newSession.Participants()
 }
 
-func (r *ReShareGroupSession[T, M, D]) Signer() common.Address {
+func (r *ReShareGroupSession[T, M, D]) Signer() string {
 	return r.newSession.Signer()
 }

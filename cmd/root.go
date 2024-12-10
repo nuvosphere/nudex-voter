@@ -30,6 +30,8 @@ func init() {
 		printTssAddressCmd,
 		printPeerIDCmd,
 		printP2pFullAddressCmd,
+		printECDSAPublicKeyCmd,
+		printEDDSAPublicKeyCmd,
 	)
 	rootCmd.AddCommand(
 		versionCmd,
