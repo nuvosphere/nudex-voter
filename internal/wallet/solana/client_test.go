@@ -175,3 +175,15 @@ func TestSolTransfer1(t *testing.T) {
 
 	t.Log("txhash:", txhash)
 }
+
+func TestBalanceOfSol(t *testing.T) {
+	hotAddress := "ATFdx2yY8uAA345ZPyWYcCcr7Avk6ThUoqTG1jSJDebU"
+	c := NewDevSolClient()
+
+	amount, err := c.GetBalanceOfSol(context.Background(), common.PublicKeyFromString(hotAddress))
+	assert.Nil(t, err)
+	t.Log("amount:", amount)
+
+	kk := common.PublicKeyFromString("ESy7hzp2VFD9ew7KWXUHFewWvy3WwoG7LkUpzv2cQXek")
+	t.Logf("kk: %x", kk.Bytes())
+}
