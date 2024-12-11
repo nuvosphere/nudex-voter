@@ -21,6 +21,7 @@ type Config struct {
 	HttpPort            string        `yaml:"httpPort"`
 	P2pPort             int           `yaml:"p2PPort"`
 	P2pBootNodes        string        `yaml:"p2PBootNodes"`
+	NipApi              string        `yaml:"nipApi"`
 	BtcRpc              string        `yaml:"btcRpc"`
 	BtcRpcUser          string        `yaml:"btcRpcUser"`
 	BtcRpcPass          string        `yaml:"btcRpcPass"`
@@ -105,6 +106,7 @@ func InitConfig(configPath string) {
 	viper.SetDefault("RPC_PORT", "50051")
 	viper.SetDefault("LIBP2P_PORT", 4001)
 	viper.SetDefault("LIBP2P_BOOT_NODES", "")
+	viper.SetDefault("NIP_API", "")
 	viper.SetDefault("BTC_RPC", "http://localhost:8332")
 	viper.SetDefault("BTC_RPC_USER", "")
 	viper.SetDefault("BTC_RPC_PASS", "")
@@ -140,6 +142,7 @@ func InitConfig(configPath string) {
 		HttpPort:            viper.GetString("HTTP_PORT"),
 		P2pPort:             viper.GetInt("LIBP2P_PORT"),
 		P2pBootNodes:        viper.GetString("LIBP2P_BOOT_NODES"),
+		NipApi:              viper.GetString("NIP_API"),
 		BtcRpc:              viper.GetString("BTC_RPC"),
 		BtcRpcUser:          viper.GetString("BTC_RPC_USER"),
 		BtcRpcPass:          viper.GetString("BTC_RPC_PASS"),

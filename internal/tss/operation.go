@@ -8,7 +8,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/codec"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -62,7 +61,11 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = db.Completed
 	case *db.WithdrawalTask:
-		checkCode, err := m.checkTask(task)
+		confirmed, checkCode, err := m.checkTask(task)
+		if !confirmed {
+			panic(fmt.Errorf("task %d: hash:%s not confirmed, %w", task.TaskId, task.TxHash, err))
+		}
+
 		if err != nil || checkCode != db.TaskErrorCodeSuccess {
 			taskResult := contracts.TaskPayloadContractWithdrawalResult{
 				Version:   uint8(db.TaskVersionV1),
