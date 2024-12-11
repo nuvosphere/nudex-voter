@@ -67,6 +67,10 @@ func (p *PartyData) GetData(ec crypto.CurveType) *LocalPartySaveData {
 	return data
 }
 
+func (p *PartyData) GetDataByChain(chainType uint8) *LocalPartySaveData {
+	return p.GetData(types.GetCurveTypeByChain(chainType))
+}
+
 func (p *PartyData) GenerateNewLocalPartySaveData(ec crypto.CurveType, parties types.Participants) *LocalPartySaveData {
 	switch ec {
 	case crypto.ECDSA:
