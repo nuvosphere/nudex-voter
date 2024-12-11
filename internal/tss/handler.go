@@ -6,9 +6,10 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/chenzhijie/go-web3/crypto"
+	web3crypto "github.com/chenzhijie/go-web3/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/codec"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -82,15 +83,15 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 }
 
 func (m *Scheduler) GenKeyProposal() Proposal {
-	return *types.SenateProposal
+	return *SenateProposal
 }
 
 func (m *Scheduler) ReShareGroupProposal() Proposal {
-	return *types.SenateProposal
+	return *SenateProposal
 }
 
 func (m *Scheduler) isSenateSession(sessionID types.SessionID) bool {
-	return sessionID == types.SenateSessionIDOfECDSA || sessionID == types.SenateSessionIDOfEDDSA
+	return sessionID == SenateSessionIDOfECDSA || sessionID == SenateSessionIDOfEDDSA
 }
 
 func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
@@ -201,12 +202,12 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 	return nil
 }
 
-func (m *Scheduler) CurveTypeBySenateSession(sessionID types.SessionID) types.CurveType {
+func (m *Scheduler) CurveTypeBySenateSession(sessionID types.SessionID) crypto.CurveType {
 	switch sessionID {
-	case types.SenateSessionIDOfEDDSA:
-		return types.EDDSA
-	case types.SenateSessionIDOfECDSA:
-		return types.ECDSA
+	case SenateSessionIDOfEDDSA:
+		return crypto.EDDSA
+	case SenateSessionIDOfECDSA:
+		return crypto.ECDSA
 	default:
 		panic("unimplemented")
 	}
@@ -285,17 +286,17 @@ func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Propos
 	m.processTxSign(&msg, task)
 }
 
-func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (types.LocalPartySaveData, *big.Int) {
+func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (LocalPartySaveData, *big.Int) {
 	coinType := types.GetCoinTypeByChain(task.Chain)
 
 	ec := types.GetCurveTypeByCoinType(coinType)
 
 	switch ec {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
 		userAddress := wallet.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
 		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
-		msg = crypto.Keccak256Hash(msg)
+		msg = web3crypto.Keccak256Hash(msg)
 
 		return *localPartySaveData, new(big.Int).SetBytes(msg)
 	default:
@@ -309,7 +310,7 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 		localPartySaveData, unSignMsg := m.CreateWalletProposal(taskData)
 
 		m.NewSignSession(
-			types.ZeroSessionID,
+			ZeroSessionID,
 			taskData.TaskId,
 			unSignMsg,
 			localPartySaveData,

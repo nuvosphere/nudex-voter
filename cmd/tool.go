@@ -84,7 +84,7 @@ var printEDDSAPublicKeyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitConfig(configPath)
 		partyData := tss.NewPartyData(config.AppConfig.DbDir)
-		fmt.Println(partyData.EDDSALocalData().PublicKey())
+		fmt.Println(partyData.EDDSALocalData().CompressedPublicKey())
 	},
 }
 
@@ -95,7 +95,7 @@ var printECDSAPublicKeyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitConfig(configPath)
 		partyData := tss.NewPartyData(config.AppConfig.DbDir)
-		fmt.Println(partyData.ECDSALocalData().PublicKey())
+		fmt.Println(partyData.ECDSALocalData().CompressedPublicKey())
 	},
 }
 

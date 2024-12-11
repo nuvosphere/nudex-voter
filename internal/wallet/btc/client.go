@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -15,6 +14,7 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
@@ -28,28 +28,24 @@ type UnSignTx struct{}
 
 type SignedTx struct{}
 
-type Requester interface {
-	Post(hash, signature []byte)
-	ChainType() int
-	SendTransaction(to string, amount int64, allowHighFees bool) ([]byte, error)
-}
-
-type Signer interface {
-	Sign(requester Requester, hash []byte) error
-}
-
 type Client struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
-	publicKey *btcec.PublicKey // SerializeCompressed p2wpkh address
+	publicKey crypto.PublicKey // SerializeCompressed p2wpkh address
 	client    *rpcclient.Client
 	params    *chaincfg.Params
 	tx        *wire.MsgTx
-	signer    Signer
+	signer    types.Signer
 	signChan  chan []byte
 }
 
-func NewBtcClient(ctx context.Context, timeout time.Duration, singer Signer, params *chaincfg.Params, publicKey *btcec.PublicKey) *Client {
+func NewBtcClient(
+	ctx context.Context,
+	timeout time.Duration,
+	singer types.Signer,
+	params *chaincfg.Params,
+	publicKey crypto.PublicKey,
+) types.Requester {
 	connConfig := &rpcclient.ConnConfig{
 		Host:         config.AppConfig.BtcRpc,
 		User:         config.AppConfig.BtcRpcUser,

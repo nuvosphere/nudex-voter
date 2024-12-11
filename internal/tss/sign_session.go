@@ -9,6 +9,7 @@ import (
 	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
@@ -40,7 +41,7 @@ func (m *Scheduler) NewSignSession(
 	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
-	key types.LocalPartySaveData,
+	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) types.SessionID {
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType, nil, key.TssSigner())
@@ -50,7 +51,7 @@ func (m *Scheduler) NewTxSignSession(
 	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
-	key types.LocalPartySaveData,
+	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 	signer string, // current signer
 ) types.SessionID {
@@ -61,7 +62,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
-	key types.LocalPartySaveData,
+	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 	ty string,
 	data []ProposalID,
@@ -106,7 +107,7 @@ func (s *SignSession[T, M, D]) Post(data *helper.ReceivedPartyState) {
 func createSignParty(
 	msg *big.Int,
 	params *tss.Parameters,
-	key types.LocalPartySaveData,
+	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) (tss.Party, chan *tsscommon.SignatureData, chan tss.Message, chan *tss.Error) {
 	// outgoing messages to other peers - not one to not deadlock when a party
@@ -122,13 +123,13 @@ func createSignParty(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		if keyDerivationDelta != nil {
 			party = ecdsaSigning.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {
 			party = ecdsaSigning.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
 		}
-	case types.EDDSA:
+	case crypto.EDDSA:
 		if keyDerivationDelta != nil {
 			party = eddsaSigning.NewLocalPartyWithKDD(msg, params, *key.EDDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {

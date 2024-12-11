@@ -11,6 +11,7 @@ import (
 
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -53,11 +54,11 @@ func (s *SessionMessage[T, M]) State(from *tss.PartyID) *helper.ReceivedPartySta
 	}
 }
 
-// sessionTransport is a transport for a specific session.
+// sessionTransport is a transport for a specific SessionContext.
 type sessionTransport[T, M, D any] struct {
 	broadcaster    p2p.P2PService                  // send data
 	recvChan       chan *helper.ReceivedPartyState // receive data
-	session        types.Session[T, M]
+	session        SessionContext[T, M]
 	sessionRelease SessionReleaser
 	isReleased     atomic.Bool
 	ty             string
@@ -72,7 +73,7 @@ type sessionTransport[T, M, D any] struct {
 }
 
 func NewParam(
-	ec types.CurveType,
+	ec crypto.CurveType,
 	localSubmitter common.Address,
 	allPartners types.Participants,
 ) (*tss.Parameters, map[string]*tss.PartyID) {
@@ -89,7 +90,7 @@ func NewParam(
 }
 
 func newSession[T comparable, M, D any](
-	ec types.CurveType,
+	ec crypto.CurveType,
 	p p2p.P2PService,
 	m *Scheduler,
 	sessionID types.SessionID,
@@ -100,7 +101,7 @@ func newSession[T comparable, M, D any](
 	ty string,
 	allPartners types.Participants,
 ) *sessionTransport[T, M, D] {
-	if sessionID == types.ZeroSessionID {
+	if sessionID == ZeroSessionID {
 		sessionID = RandSessionID()
 	}
 
@@ -110,8 +111,8 @@ func newSession[T comparable, M, D any](
 	return &sessionTransport[T, M, D]{
 		broadcaster: p,
 		recvChan:    recvChan,
-		session: types.Session[T, M]{
-			Group: types.Group{
+		session: SessionContext[T, M]{
+			Group: Group{
 				EC:          ec,
 				AllPartners: allPartners,
 			},
