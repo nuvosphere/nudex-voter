@@ -68,12 +68,34 @@ var printAddressCmd = &cobra.Command{
 
 var printTssAddressCmd = &cobra.Command{
 	Use:     "tssAddress",
-	Short:   "print master tss eth address from data",
+	Short:   "print master tss eth address from config data",
 	Example: `nudex-voter tool tssAddress`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitConfig(configPath)
 		partyData := tss.NewPartyData(config.AppConfig.DbDir)
 		fmt.Println(partyData.ECDSALocalData().TssSigner())
+	},
+}
+
+var printEDDSAPublicKeyCmd = &cobra.Command{
+	Use:     "eddsaPublicKey",
+	Short:   "print EDDSA PublicKey from config data",
+	Example: `nudex-voter tool public key`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		partyData := tss.NewPartyData(config.AppConfig.DbDir)
+		fmt.Println(partyData.EDDSALocalData().PublicKey())
+	},
+}
+
+var printECDSAPublicKeyCmd = &cobra.Command{
+	Use:     "ecdsaPublicKey",
+	Short:   "print ECDSA PublicKey from config data",
+	Example: `nudex-voter tool public key`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		partyData := tss.NewPartyData(config.AppConfig.DbDir)
+		fmt.Println(partyData.ECDSALocalData().PublicKey())
 	},
 }
 

@@ -5,7 +5,13 @@ import (
 	"fmt"
 	"math/big"
 
+	soltypes "github.com/blocto/solana-go-sdk/types"
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
+	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
+	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -15,9 +21,87 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
+
+func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (types.LocalPartySaveData, *big.Int) {
+	// coinType := types.GetCoinTypeByChain(coinType)
+	path := wallet.Bip44DerivationPath(coinType, account, index)
+	param, err := path.ToParams()
+	utils.Assert(err)
+	ec := types.GetCurveTypeByCoinType(int(coinType))
+	localPartySaveData := m.partyData.GetData(ec)
+	l := *localPartySaveData
+
+	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
+	keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECPoint(), chainCode, param.Indexes(), ec.EC())
+	utils.Assert(err)
+	switch ec {
+	case types.ECDSA:
+		data := []ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()}
+		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			data,
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
+		utils.Assert(err)
+		l.SetData(&data[0])
+		return l, keyDerivationDelta
+	case types.EDDSA:
+		data := []eddsaKeygen.LocalPartySaveData{*l.EDDSAData()}
+		err = eddsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			data,
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
+		utils.Assert(err)
+		l.SetData(&data[0])
+		return l, keyDerivationDelta
+
+	default:
+		panic(fmt.Errorf("unknown EC type: %v", ec))
+	}
+}
+
+func (m *Scheduler) loopSigInToOut() {
+	go func() {
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("tss signature read result loop stopped")
+			case result := <-m.sigInToOut:
+				log.Infof("finish consensus success, sessionID:%s", result.SessionID)
+				info := fmt.Sprintf("tss signature sessionID=%v, groupID=%v, ProposalID=%v", result.SessionID, result.GroupID, result.ProposalID)
+
+				if result.Err != nil {
+					log.Errorf("result error:%v, error: %v", result.Err, info)
+				} else {
+					switch result.Type {
+					case SignBatchTaskSessionType:
+						ops := m.operationsQueue.Get(result.ProposalID).(*Operations)
+						ops.Signature = secp256k1Signature(result.Data)
+						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
+						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
+						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
+						m.processOperationSignResult(ops)
+						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
+						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
+
+					case TxSignatureSessionType:
+						m.processTxSignResult(result.ProposalID, result.Data)
+					default:
+						log.Infof("tss signature result: %v", result)
+					}
+				}
+			}
+		}
+	}()
+}
 
 func (m *Scheduler) processOperationSignResult(operations *Operations) {
 	// 1. save db
@@ -79,10 +163,12 @@ func (m *Scheduler) processOperationSignResult(operations *Operations) {
 }
 
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
+	log.Debugf("processTxSign taskId: %v", task.TaskID())
 	switch taskData := task.(type) {
 	case *db.WithdrawalTask:
+		log.Debugf("processTxSign task: %v", taskData)
 		switch taskData.Chain {
-		case types.CoinTypeBTC:
+		case types.CoinTypeBTC: // todo
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
 
@@ -92,7 +178,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			}
 		case types.ChainEthereum:
 			w := wallet.NewWallet()
-			from := w.HotAddressOfCoin(types.CoinTypeEVM)
+			hotAddress := w.HotAddressOfCoin(types.CoinTypeEVM)
 			to := common.HexToAddress(taskData.TargetAddress)
 			var tx *ethtypes.Transaction
 			var err error
@@ -103,17 +189,17 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			case types.AssetTypeMain:
 				tx, err = w.BuildUnsignTx(
 					m.ctx,
-					from,
+					hotAddress,
 					to,
 					big.NewInt(int64(taskData.Amount)), nil, nil, withdraw, nil,
 				)
 			case types.AssetTypeErc20:
 				tx, err = w.BuildUnsignTx(
 					m.ctx,
-					from,
+					hotAddress,
 					common.HexToAddress(taskData.ContractAddress),
 					nil,
-					contracts.EncodeTransferOfERC20(from, to, big.NewInt(int64(taskData.Amount))), nil, withdraw, nil,
+					contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(taskData.Amount))), nil, withdraw, nil,
 				)
 			default:
 				log.Errorf("unknown asset type: %v", taskData.AssetType)
@@ -127,10 +213,16 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			sessionId := types.ZeroSessionID
 			if msg != nil {
 				if msg.Proposal.Cmp(hash.Big()) != 0 {
-					log.Errorf("the proposal is incorrect")
+					log.Errorf("the proposal is incorrect of evm")
 					return
 				}
 				sessionId = msg.SessionID
+			} else {
+				m.txContext.Store(task.TaskID(), &EvmTxContext{
+					w:    w,
+					tx:   tx,
+					task: taskData,
+				})
 			}
 			// coinType := types.GetCoinTypeByChain(coinType)
 			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeEVM, 0, 0)
@@ -140,20 +232,70 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				hash.Big(),
 				localData,
 				keyDerivationDelta,
+				hotAddress.String(),
 			)
-			m.txContext.Store(task.TaskID(), &EvmTxContext{
-				w:    w,
-				tx:   tx,
-				task: taskData,
-			})
 
 		case types.ChainSolana:
+			var c *solana.SolClient
+			if m.isProd {
+				c = solana.NewSolClient()
+			} else {
+				c = solana.NewDevSolClient()
+			}
+			hotAddress := wallet.HotAddressOfSolanaCoin(m.partyData.GetData(types.EDDSA).ECPoint())
+			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
+			var (
+				tx  *solana.UnSignTx
+				err error
+			)
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
+				tx, err = c.BuildSolTransferWithAddress(hotAddress, taskData.TargetAddress, taskData.Amount)
 			case types.AssetTypeErc20:
+				// todo
 			default:
 				log.Errorf("unknown asset type: %v", taskData.AssetType)
+				return
 			}
+			if err != nil {
+				log.Errorf("failed to build unsign tx: %v", err)
+				return
+			}
+			raw, err := tx.RawData()
+			if err != nil {
+				log.Errorf("failed to build unsign tx: %v", err)
+				return
+			}
+			log.Infof("raw: %x", raw)
+			proposal := new(big.Int).SetBytes(raw)
+			sessionId := types.ZeroSessionID
+			if msg != nil {
+				log.Infof("msg.Proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
+				// todo
+				//if msg.Proposal.Cmp(proposal) != 0 {
+				//	log.Errorf("the proposal is incorrect of solana")
+				//	return
+				//}
+				proposal = &msg.Proposal // todo
+				sessionId = msg.SessionID
+			} else {
+				m.txContext.Store(task.TaskID(), &SolTxContext{
+					c:    c,
+					tx:   tx,
+					task: taskData,
+				})
+			}
+			// coinType := types.GetCoinTypeByChain(coinType)
+			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeSOL, 0, 0)
+			m.NewTxSignSession(
+				sessionId,
+				taskData.TaskId,
+				proposal,
+				localData,
+				keyDerivationDelta,
+				hotAddress,
+			)
+
 		case types.ChainSui:
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
@@ -183,7 +325,7 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 				return
 			}
 			// updated status to pending
-			receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash) //todo track error: re-sign、request
+			receipt, err := ctx.w.WaitTxSuccess(m.ctx, hash) // todo track error: re-sign、request
 			if err != nil {
 				log.Errorf("failed to wait transaction success: %v", err)
 				return
@@ -195,6 +337,16 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 				// updated status to completed
 				log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), hash)
 			}
+
+		case *SolTxContext:
+			unSignRawData, _ := ctx.tx.RawData()
+			log.Debugf("SolTxContext: unSignRawData: %x, signature: %x", unSignRawData, data.Signature)
+			sig, err := ctx.c.SyncSendTransaction(m.ctx, (*soltypes.Transaction)(ctx.tx.BuildSolTransaction(data.Signature)))
+			if err != nil {
+				log.Errorf("send transaction err: %v", err)
+				return
+			}
+			log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), sig)
 		}
 	}
 }

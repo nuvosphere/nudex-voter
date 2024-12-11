@@ -223,7 +223,7 @@ func GenerateEthAddressByPath(masterPubKey *crypto.ECPoint, coinType, account ui
 	p, err := bip44Path.ToParams()
 	utils.Assert(err)
 
-	var chainCode []byte // todo
+	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
 	curveType := types.ECDSA
 	_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 	utils.Assert(err)
@@ -236,28 +236,29 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 
 	p, err := bip44Path.ToParams()
 	utils.Assert(err)
+	indexes := p.Indexes()
 
 	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
 	curveType := types.ECDSA
 	switch coinType {
 	case types.CoinTypeBTC:
-		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
 		utils.Assert(err)
 		addr, err := GenerateP2WPKHBTCAddress(extendKey.PublicKey)
 		utils.Assert(err)
 		return addr
 	case types.CoinTypeEVM:
-		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
 		utils.Assert(err)
 		return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey()).String()
 	case types.CoinTypeSOL:
 		curveType = types.EDDSA
-		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
 		utils.Assert(err)
 		return SolanaAddress(extendKey.PublicKey)
 	case types.CoinTypeSUI:
 		curveType = types.EDDSA
-		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
+		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
 		utils.Assert(err)
 		return SuiEd25519Address(extendKey.PublicKey)
 	default:

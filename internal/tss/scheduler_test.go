@@ -423,6 +423,93 @@ func TestSchedulerSignature(t *testing.T) {
 	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
+// withdraw signature
+func TestSchedulerWithdrawSignature(t *testing.T) {
+	utils.SkipCI(t)
+	log.SetLevel(log.DebugLevel)
+
+	schedulerList := make([]*Scheduler, 0, len(accounts))
+
+	bus := eventbus.NewBus()
+	p2pMocker := NewP2PMocker(bus)
+	p2pMocker.SetOnlinePeerCount(testutil.TestPartyCount)
+
+	submitters := types.Participants{}
+
+	var proposer common.Address
+
+	for i := 0; i < testutil.TestPartyCount; i++ {
+		submitter := accounts[i].Address
+		if i == 2 {
+			proposer = submitter
+		}
+
+		submitters = append(submitters, submitter)
+	}
+
+	t.Log("submitters", submitters)
+
+	createNode := func(index int, submitter common.Address) *Scheduler {
+		stateDB := createDB(t, index)
+		voterContractMocker := NewVoterContractMocker()
+		copyParts := types.Participants{}
+		copyParts = append(copyParts, submitters...)
+		voterContractMocker.SetParticipants(copyParts)
+		voterContractMocker.SetProposer(proposer)
+
+		s := NewScheduler(false, p2pMocker, bus, state.NewContractState(stateDB), voterContractMocker, submitter)
+		basePath := filepath.Join("./", strconv.Itoa(index))
+		err := os.MkdirAll(basePath, os.ModePerm)
+		assert.NoError(t, err)
+
+		s.partyData.basePath = basePath
+
+		schedulerList = append(schedulerList, s)
+
+		return s
+	}
+
+	// 1.create node
+	for i, submitter := range submitters {
+		createNode(i, submitter)
+	}
+
+	// 2.run node
+	for _, s := range schedulerList {
+		go s.Start()
+	}
+
+	time.Sleep(5 * time.Second)
+
+	// 3.send tx to contact online by owner
+	// generate pending `WithdrawalTask`
+	task := &db.WithdrawalTask{
+		BaseTask: db.BaseTask{
+			TaskType: db.TaskTypeWithdrawal,
+			TaskId:   1,
+		},
+		TargetAddress:   "2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59",
+		Amount:          3000,
+		Chain:           types.ChainSolana,
+		ChainId:         0,
+		BlockHeight:     0,
+		TxHash:          "",
+		ContractAddress: "",
+		Ticker:          "SOL",
+		AssetType:       types.AssetTypeMain,
+		Decimal:         9,
+		Fee:             0,
+	}
+
+	t.Log("send WithdrawalTask")
+	// 6.leader(proposer) listen contact task(WithdrawalTask)
+	bus.Publish(eventbus.EventTestTask{}, task)
+
+	// 7.wait end
+	time.Sleep(10 * time.Minute)
+	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
+}
+
 func TestValue(t *testing.T) {
 	newGroup := NewGroup{
 		Event:    nil,

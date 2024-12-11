@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -84,4 +86,82 @@ func TestGenerateSolAddress(t *testing.T) {
 
 	// WARNING: this is not a precise conversion.
 	fmt.Println("◎", solBalance.Text('f', 10))
+}
+
+func TestSoMasterAddress(t *testing.T) {
+	data, err := hex.DecodeString(eddsaPublicKey)
+	assert.Nil(t, err)
+	// pubkey := common.PublicKeyFromBytes(data)
+	pubKey, err := edwards.ParsePubKey(data)
+	assert.Nil(t, err)
+	assert.NotNil(t, pubKey)
+	t.Logf("master pubKey: %x", pubKey.SerializeCompressed()) // 44a3e1108c206006fbcc5d3a5e33dfba38b0f3bca00fe0ccdfc2267e712271a1
+	assert.Equal(t, data, pubKey.SerializeCompressed())
+
+	x, is := new(big.Int).SetString("24723480748839663281939995149474662025134806861408495687251712051005140403503", 10)
+	assert.True(t, is)
+	y, is := new(big.Int).SetString("15126215440702806707084235929657214535861454973064246117622798020766234420036", 10)
+	assert.True(t, is)
+
+	// point := crypto.NewECPointNoCurveCheck(tss.Edwards(), pubKey.X, pubKey.Y)
+	point, err := crypto.NewECPoint(tss.Edwards(), x, y)
+	assert.Nil(t, err)
+
+	hotAddress := HotAddressOfSolanaCoin(point)
+	t.Log("hotAddress", hotAddress)
+	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
+
+	t.Logf("master pubkey: %x", base58.Decode("NZpbDcRYh6r3derZ6Hrs83rrXY1CxaBqi8x1tK3XSFgpYix4p9HuG5YxSv6Er6WjaQ1xjKGkBbPpguSUdtPnGHs9"))
+
+	pp, err := ethCrypto.UnmarshalPubkey(base58.Decode("NZpbDcRYh6r3derZ6Hrs83rrXY1CxaBqi8x1tK3XSFgpYix4p9HuG5YxSv6Er6WjaQ1xjKGkBbPpguSUdtPnGHs9"))
+	assert.Nil(t, err)
+	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
+	assert.Nil(t, err)
+	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
+	hotAddress = HotAddressOfSolanaCoin(point)
+	t.Log("hotAddress", hotAddress)
+	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
+
+	assert.Equal(t, strings.ToLower("ATFdx2yY8uAA345ZPyWYcCcr7Avk6ThUoqTG1jSJDebU"), strings.ToLower(hotAddress))
+	t.Logf("hotAddress pubkey: %x", base58.Decode("ESy7hzp2VFD9ew7KWXUHFewWvy3WwoG7LkUpzv2cQXek"))
+
+	t.Logf("master pubkey: %x", base58.Decode("NptdNDejbuc7F6uHyvMGuptZNY16afpP1CoeQUi5gW1gy8xKGu75GmQBf2u3cjUNEs2VcWyJktrVPhuRn6bxZjhc"))
+	pp, err = ethCrypto.UnmarshalPubkey(base58.Decode("NptdNDejbuc7F6uHyvMGuptZNY16afpP1CoeQUi5gW1gy8xKGu75GmQBf2u3cjUNEs2VcWyJktrVPhuRn6bxZjhc"))
+	assert.Nil(t, err)
+	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
+	assert.Nil(t, err)
+	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
+	hotAddress = HotAddressOfSolanaCoin(point)
+	t.Log("hotAddress", hotAddress)
+	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
+}
+
+func TestSolHotAddress(t *testing.T) {
+	testCase := []struct {
+		masterKey    string
+		childAddress string
+	}{
+		{
+			"44a3e1108c206006fbcc5d3a5e33dfba38b0f3bca00fe0ccdfc2267e712271a1",
+			"ATFdx2yY8uAA345ZPyWYcCcr7Avk6ThUoqTG1jSJDebU",
+		},
+		{
+			"8b0bb8bda779a4fa7886c48a72a9b88b4ed346cda8c3ca53e735b6483acdba79",
+			"ESy7hzp2VFD9ew7KWXUHFewWvy3WwoG7LkUpzv2cQXek",
+		},
+	}
+
+	for _, s := range testCase {
+		data, err := hex.DecodeString(s.masterKey)
+		assert.Nil(t, err)
+		pubKey, err := edwards.ParsePubKey(data)
+		assert.Nil(t, err)
+		point, err := crypto.NewECPoint(tss.Edwards(), pubKey.X, pubKey.Y)
+		assert.Nil(t, err)
+
+		hotAddress := HotAddressOfSolanaCoin(point)
+		t.Log("hotAddress", hotAddress)
+		t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
+		assert.Equal(t, strings.ToLower(s.childAddress), strings.ToLower(hotAddress))
+	}
 }

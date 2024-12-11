@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 )
@@ -16,7 +15,7 @@ func (m *Scheduler) NewGenerateKeySession(
 	ec types.CurveType,
 	proposalID ProposalID, // msg id
 	sessionID types.SessionID,
-	signer common.Address,
+	signer string,
 	msg *Proposal,
 ) types.SessionID {
 	allPartners := m.Participants()
