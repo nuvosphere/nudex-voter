@@ -32,6 +32,7 @@ func init() {
 		printP2pFullAddressCmd,
 		printECDSAPublicKeyCmd,
 		printEDDSAPublicKeyCmd,
+		printChainAddressCmd,
 	)
 	rootCmd.AddCommand(
 		versionCmd,

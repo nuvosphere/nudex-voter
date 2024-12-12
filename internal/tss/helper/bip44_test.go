@@ -13,7 +13,8 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
-	"github.com/ethereum/go-ethereum/crypto"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -24,7 +25,7 @@ import (
 
 func TestBip44GenerateAddress(t *testing.T) {
 	localData := testutil.ReadTestKey(1)
-	t.Log("master address: ", crypto.PubkeyToAddress(*localData.ECDSAPub.ToECDSAPubKey()))
+	t.Log("master address: ", ethcrypto.PubkeyToAddress(*localData.ECDSAPub.ToECDSAPubKey()))
 	address := wallet.GenerateEthAddressByPath(localData.ECDSAPub, types.CoinTypeEVM, 0, 0)
 	t.Log("address: ", address)
 	assert.Equal(t, strings.ToLower("0xf1cbea0b78f0083530056b88c4cea93e5ff3b5a7"), strings.ToLower(address.String()))
@@ -44,11 +45,11 @@ func TestHDSign(t *testing.T) {
 	outputAgg := make(chan *common.SignatureData, testutil.TestThreshold)
 	errAgg := make(chan *tss.Error, testutil.TestThreshold)
 
-	msgHash := crypto.Keccak256([]byte("hello world"))
+	msgHash := ethcrypto.Keccak256([]byte("hello world"))
 
 	var chainCode []byte
 
-	curveType := types.ECDSA
+	curveType := crypto.ECDSA
 	keyDerivationDelta, extendedChildPk, errorDerivation := ckd.DerivingPubkeyFromPath(keys[0].ECDSAPub, chainCode, []uint32{44, 60, 0, 0, 0}, curveType.EC())
 	assert.NoErrorf(t, errorDerivation, "there should not be an error deriving the child public key")
 
@@ -110,8 +111,8 @@ func TestHDSign(t *testing.T) {
 				continue
 			}
 
-			crypto.VerifySignature(crypto.CompressPubkey(extendedChildPk.PublicKey.ToECDSAPubKey()), msgHash, sig.SignatureRecovery)
-			t.Log(crypto.VerifySignature(crypto.CompressPubkey(extendedChildPk.PublicKey.ToECDSAPubKey()), msgHash, sig.SignatureRecovery))
+			ethcrypto.VerifySignature(ethcrypto.CompressPubkey(extendedChildPk.PublicKey.ToECDSAPubKey()), msgHash, sig.SignatureRecovery)
+			t.Log(ethcrypto.VerifySignature(ethcrypto.CompressPubkey(extendedChildPk.PublicKey.ToECDSAPubKey()), msgHash, sig.SignatureRecovery))
 			// make sure everyone has the same signature
 			assert.True(t, bytes.Equal(sig.Signature, sig2.Signature))
 		}

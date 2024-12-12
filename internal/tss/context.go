@@ -3,6 +3,7 @@ package tss
 import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
 )
@@ -17,4 +18,9 @@ type SolTxContext struct {
 	c    *solana.SolClient
 	tx   *solana.UnSignTx
 	task pool.Task[uint64]
+}
+
+type BtcTxContext struct {
+	c      types.TxClient
+	sigCtx *SignContext
 }
