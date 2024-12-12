@@ -28,12 +28,16 @@ func PartyID(ec crypto.CurveType, participants Participants, address common.Addr
 	return PartyKey(ec, participants, address).Text(16)
 }
 
-type Requester interface {
+type TxClient interface {
 	Post(hash, signature []byte)
 	ChainType() int
-	SendTransaction(to string, amount int64, allowHighFees bool) ([]byte, error)
+	BuildTx(to string, amount int64) error
+	SendTx() error
+	WaitTxSuccess() error
+	TxHash() []byte
+	NextSignTask() []byte
 }
 
 type Signer interface {
-	Sign(requester Requester, msg []byte) error
+	Sign(c TxClient, msg []byte) error
 }

@@ -2,8 +2,6 @@ package tss
 
 import (
 	"math/big"
-
-	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 type SignContext struct {
@@ -18,8 +16,4 @@ func (c *SignContext) Address() string {
 
 func (c *SignContext) ChainType() uint8 {
 	return c.chainType
-}
-
-func (m *Scheduler) Sign(requester types.Requester, msg []byte) error {
-	panic("todo")
 }

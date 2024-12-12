@@ -3,6 +3,7 @@ package btc
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,24 +29,27 @@ type UnSignTx struct{}
 
 type SignedTx struct{}
 
-type Client struct {
-	ctx       context.Context
-	cancel    context.CancelFunc
-	publicKey crypto.PublicKey // SerializeCompressed p2wpkh address
-	client    *rpcclient.Client
-	params    *chaincfg.Params
-	tx        *wire.MsgTx
-	signer    types.Signer
-	signChan  chan []byte
+type SignatureCtx struct {
+	Hash, Signature []byte
 }
 
-func NewBtcClient(
+type txClient struct {
+	ctx          context.Context
+	cancel       context.CancelFunc
+	publicKey    crypto.PublicKey // SerializeCompressed p2wpkh address
+	client       *rpcclient.Client
+	params       *chaincfg.Params
+	tx           *wire.MsgTx
+	signChan     chan *SignatureCtx
+	nextSignChan chan []byte
+}
+
+func NewTxClient(
 	ctx context.Context,
 	timeout time.Duration,
-	singer types.Signer,
 	params *chaincfg.Params,
 	publicKey crypto.PublicKey,
-) types.Requester {
+) types.TxClient {
 	connConfig := &rpcclient.ConnConfig{
 		Host:         config.AppConfig.BtcRpc,
 		User:         config.AppConfig.BtcRpcUser,
@@ -59,20 +63,20 @@ func NewBtcClient(
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 
-	return &Client{
-		publicKey: publicKey,
-		client:    client,
-		tx:        wire.NewMsgTx(wire.TxVersion),
-		ctx:       ctx,
-		cancel:    cancel,
-		signChan:  make(chan []byte, 1),
-		signer:    singer,
-		params:    params,
+	return &txClient{
+		publicKey:    publicKey,
+		client:       client,
+		tx:           wire.NewMsgTx(wire.TxVersion),
+		ctx:          ctx,
+		cancel:       cancel,
+		signChan:     make(chan *SignatureCtx, 1),
+		nextSignChan: make(chan []byte, 1),
+		params:       params,
 	}
 }
 
 // buildTxOut TxOut https://www.mengbin.top/2024-07-24-btcd_raw_tx/
-func (c *Client) buildTxOut(addr string, amount int64) error {
+func (c *txClient) buildTxOut(addr string, amount int64) error {
 	destinationAddress, err := btcutil.DecodeAddress(addr, c.params)
 	if err != nil {
 		return err
@@ -88,12 +92,12 @@ func (c *Client) buildTxOut(addr string, amount int64) error {
 	return nil
 }
 
-func (c *Client) getUTXOs(from btcutil.Address) ([]btcjson.ListUnspentResult, error) {
+func (c *txClient) getUTXOs(from btcutil.Address) ([]btcjson.ListUnspentResult, error) {
 	// todo
 	return c.client.ListUnspentMinMaxAddresses(0, 9999999, []btcutil.Address{from})
 }
 
-func (c *Client) buildTxIn(amount int64) error {
+func (c *txClient) buildTxIn(amount int64) error {
 	// p2wpkh address
 	fromAddr, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(c.publicKey.SerializeCompressed()), c.params)
 	if err != nil {
@@ -167,7 +171,7 @@ func (c *Client) buildTxIn(amount int64) error {
 // idx of the given transaction, with the hashType appended to it. This
 // function is identical to RawTxInSignature, however the signature generated
 // signs a new sighash digest defined in BIP0143.
-func (c *Client) rawTxInWitnessSignature(sigHashes *txscript.TxSigHashes, idx int, amt int64, subScript []byte) ([]byte, error) {
+func (c *txClient) rawTxInWitnessSignature(sigHashes *txscript.TxSigHashes, idx int, amt int64, subScript []byte) ([]byte, error) {
 	hash, err := txscript.CalcWitnessSigHash(subScript, sigHashes, txscript.SigHashAll, c.tx, idx, amt)
 	if err != nil {
 		return nil, err
@@ -185,7 +189,7 @@ func (c *Client) rawTxInWitnessSignature(sigHashes *txscript.TxSigHashes, idx in
 // template. The passed transaction must contain all the inputs and outputs as
 // dictated by the passed hashType. The signature generated observes the new
 // transaction digest algorithm defined within BIP0143.
-func (c *Client) witnessSignature(sigHashes *txscript.TxSigHashes, idx int, amt int64, subscript []byte) (wire.TxWitness, error) {
+func (c *txClient) witnessSignature(sigHashes *txscript.TxSigHashes, idx int, amt int64, subscript []byte) (wire.TxWitness, error) {
 	sig, err := c.rawTxInWitnessSignature(sigHashes, idx, amt, subscript)
 	if err != nil {
 		return nil, err
@@ -196,20 +200,17 @@ func (c *Client) witnessSignature(sigHashes *txscript.TxSigHashes, idx int, amt 
 	return wire.TxWitness{sig, c.publicKey.SerializeCompressed()}, nil
 }
 
-func (c *Client) sign(hash []byte) ([]byte, error) {
-	err := c.signer.Sign(c, hash)
-	if err != nil {
-		return nil, err
-	}
+func (c *txClient) sign(hash []byte) ([]byte, error) {
+	c.nextSignChan <- hash
 	select {
 	case signature := <-c.signChan:
-		return signature, nil
+		return signature.Signature, nil
 	case <-c.ctx.Done():
 		return nil, c.ctx.Err()
 	}
 }
 
-func (c *Client) sendTx(allowHighFees bool) (*chainhash.Hash, error) {
+func (c *txClient) sendTx(allowHighFees bool) (*chainhash.Hash, error) {
 	hash, err := c.client.SendRawTransaction(c.tx, allowHighFees)
 	if err != nil {
 		return nil, fmt.Errorf("send raw transaction: %w", err)
@@ -217,29 +218,33 @@ func (c *Client) sendTx(allowHighFees bool) (*chainhash.Hash, error) {
 	return hash, nil
 }
 
-func (c *Client) SendTransaction(to string, amount int64, allowHighFees bool) ([]byte, error) {
-	err := c.buildTxOut(to, amount)
-	if err != nil {
-		return nil, err
-	}
-	err = c.buildTxIn(amount)
-	if err != nil {
-		return nil, err
-	}
-
-	hash, err := c.sendTx(allowHighFees)
-	if err != nil {
-		return nil, err
-	}
-	return hash.CloneBytes(), nil
+func (c *txClient) BuildTx(to string, amount int64) error {
+	return errors.Join(c.buildTxOut(to, amount), c.buildTxIn(amount))
 }
 
-func (c *Client) WaitTxSuccess(hash []byte) error {
-	h, err := chainhash.NewHash(hash)
-	if err != nil {
-		return err
-	}
+func (c *txClient) SendTx() error {
+	_, err := c.sendTx(false)
+	return err
+}
 
+func (c *txClient) TxHash() []byte {
+	hash := c.tx.TxHash()
+	return hash.CloneBytes()
+}
+
+func (c *txClient) NextSignTask() []byte {
+	ctx, cancel := context.WithTimeout(c.ctx, time.Second*10)
+	defer cancel()
+	select {
+	case msg := <-c.nextSignChan:
+		return msg
+	case <-ctx.Done():
+		return nil
+	}
+}
+
+func (c *txClient) WaitTxSuccess() error {
+	h := c.tx.TxHash()
 	begin := time.Now()
 	defer func() {
 		log.Infof("waitTxSuccess, duration_ms: %v", time.Since(begin).Milliseconds())
@@ -247,7 +252,7 @@ func (c *Client) WaitTxSuccess(hash []byte) error {
 
 	count := 60
 	for count > 0 {
-		res, err := c.client.GetRawTransactionVerbose(h)
+		res, err := c.client.GetRawTransactionVerbose(&h)
 		if err != nil {
 			return fmt.Errorf("get raw transaction: %w", err)
 		}
@@ -261,15 +266,18 @@ func (c *Client) WaitTxSuccess(hash []byte) error {
 	return fmt.Errorf("get raw transaction fail")
 }
 
-func (c *Client) Close() error {
+func (c *txClient) Close() error {
 	c.cancel()
 	return nil
 }
 
-func (c *Client) Post(hash, signature []byte) {
-	c.signChan <- hash
+func (c *txClient) Post(hash, signature []byte) {
+	c.signChan <- &SignatureCtx{
+		Hash:      hash,
+		Signature: signature,
+	}
 }
 
-func (c *Client) ChainType() int {
+func (c *txClient) ChainType() int {
 	return types.ChainBitcoin
 }

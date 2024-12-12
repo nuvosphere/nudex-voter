@@ -57,6 +57,7 @@ type Scheduler struct {
 	notify             chan struct{}
 	currentVoterNonce  *atomic.Uint64
 	txContext          sync.Map // taskID:TxContext
+	sigContext         sync.Map // address:SigContext
 }
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *state.ContractState, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
@@ -120,6 +121,8 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		voterContract:      voterContract,
 		partyData:          NewPartyData(config.AppConfig.DbDir),
 		currentVoterNonce:  currentNonce,
+		txContext:          sync.Map{},
+		sigContext:         sync.Map{},
 	}
 }
 

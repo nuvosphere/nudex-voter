@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	soltypes "github.com/blocto/solana-go-sdk/types"
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
@@ -12,6 +13,7 @@ import (
 	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -22,6 +24,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/btc"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
@@ -169,23 +172,51 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 	case *db.WithdrawalTask:
 		log.Debugf("processTxSign task: %v", taskData)
 		switch taskData.Chain {
-		case types.CoinTypeBTC: // todo
+		case types.ChainBitcoin: // todo
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
-				// coinType := types.GetCoinTypeByChain(coinType)
-				// localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
+				// coinType := types.GetCoinTypeByChain(taskData.Chain)
+				localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
+				c := btc.NewTxClient(m.ctx, time.Second*60, &chaincfg.MainNetParams, localData.PublicKey())
+				sigCtx := &SignContext{
+					chainType:          taskData.Chain,
+					localData:          localData,
+					keyDerivationDelta: keyDerivationDelta,
+				}
+				from := localData.Address(taskData.Chain)
+				m.sigContext.Store(from, sigCtx)
 
-				// c := btc.NewBtcClient(m.ctx, time.Second*60, m, nil, localData.PublicKey())
-				// c.SendTransaction(taskData.TargetAddress, int64(taskData.Amount), false)
+				sessionId := ZeroSessionID
+				var proposal *big.Int
+				go func() {
+					err := c.BuildTx(taskData.TargetAddress, int64(taskData.Amount))
+					if err != nil {
+						log.Errorf("failed to send transaction: %v", err)
+						return
+					}
+				}()
+				hash := c.NextSignTask()
+				if hash == nil {
+					log.Errorf("failed to next sign ")
+					return
+				}
+				proposal.SetBytes(hash)
 
-				//m.NewTxSignSession(
-				//	sessionId,
-				//	taskData.TaskId,
-				//	hash.Big(),
-				//	localData,
-				//	keyDerivationDelta,
-				//	hotAddress.String(),
-				//)
+				if msg != nil {
+					sessionId = msg.SessionID
+					if proposal.Cmp(&msg.Proposal) != 0 {
+						log.Errorf("the proposal is incorrect of btc")
+					}
+				}
+
+				m.NewTxSignSession(
+					sessionId,
+					taskData.TaskId,
+					proposal,
+					localData,
+					keyDerivationDelta,
+					from,
+				)
 
 			case types.AssetTypeErc20:
 			default:
@@ -285,9 +316,9 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			proposal := new(big.Int).SetBytes(raw)
 			sessionId := ZeroSessionID
 			if msg != nil {
-				log.Infof("msg.Proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
+				log.Infof("msg.proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
 				// todo
-				//if msg.Proposal.Cmp(proposal) != 0 {
+				//if msg.proposal.Cmp(proposal) != 0 {
 				//	log.Errorf("the proposal is incorrect of solana")
 				//	return
 				//}
