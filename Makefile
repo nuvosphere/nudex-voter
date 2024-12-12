@@ -85,6 +85,7 @@ abi: ## generate abi go file
 	abigen --abi internal/layer2/abis/DepositManager.json --pkg contracts --type DepositManagerContract --out internal/layer2/contracts/deposit_manager.go
 	abigen --abi internal/layer2/abis/TaskPayload.json --pkg contracts --type TaskPayloadContract --out internal/layer2/contracts/task_payload.go
 	abigen --abi internal/layer2/abis/codec/Codec.json --pkg codec --type VoterCodec --out internal/layer2/contracts/codec/codec.go
+	abigen --abi internal/layer2/abis/Inscription.json --pkg contracts --type InscriptionContract --out internal/layer2/contracts/inscription.go
 
 contract:
 	solc --pretty-json --optimize --abi  --overwrite  -o internal/layer2/abis/codec/    ./internal/layer2/contracts/Codec.sol
