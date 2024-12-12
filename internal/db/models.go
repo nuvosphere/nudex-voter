@@ -108,3 +108,27 @@ type WithdrawalRecord struct {
 func (WithdrawalRecord) TableName() string {
 	return "withdrawal_record"
 }
+
+type InscriptionMintb struct {
+	gorm.Model
+	Recipient string   `gorm:"not null"             json:"recipient"`
+	Ticker    string   `gorm:"not null"             json:"ticker"`
+	Amount    uint64   `gorm:"not null"             json:"amount"`
+	LogIndex  LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (InscriptionMintb) TableName() string {
+	return "inscription_mintb"
+}
+
+type InscriptionBurnb struct {
+	gorm.Model
+	From     string   `gorm:"not null"             json:"from"`
+	Ticker   string   `gorm:"not null"             json:"ticker"`
+	Amount   uint64   `gorm:"not null"             json:"amount"`
+	LogIndex LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (InscriptionBurnb) TableName() string {
+	return "inscription_burnb"
+}

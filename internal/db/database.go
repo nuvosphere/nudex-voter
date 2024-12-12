@@ -117,6 +117,8 @@ func (dm *DatabaseManager) autoMigrate() {
 		&WithdrawalTask{},
 		&TaskUpdatedEvent{},
 		&Operations{},
+		&InscriptionMintb{},
+		&InscriptionBurnb{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}
