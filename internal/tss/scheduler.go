@@ -338,7 +338,15 @@ func (m *Scheduler) BatchTask() {
 	if m.isCanProposal() && m.isCanNext() {
 		log.Info("batch proposal")
 		tasks := m.taskQueue.GetTopN(TopN)
-		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
+		var operations []contracts.Operation
+		for _, item := range tasks {
+			op, err := m.Operation(item)
+			if err != nil {
+				log.Errorf("failed to process task: %w", err)
+				return
+			}
+			operations = append(operations, *op)
+		}
 		if len(operations) == 0 {
 			log.Warnf("operationsQueue is empty")
 			return

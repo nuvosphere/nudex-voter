@@ -14,7 +14,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
-	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -227,7 +226,15 @@ func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Prop
 	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
 	tasks := m.taskQueue.BatchGet(msg.Data)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
+
+	var operations = make([]contracts.Operation, 0, len(tasks))
+	for _, item := range tasks {
+		op, err := m.Operation(item)
+		if err != nil {
+			return fmt.Errorf("failed to process task: %w", err)
+		}
+		operations = append(operations, *op)
+	}
 
 	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {

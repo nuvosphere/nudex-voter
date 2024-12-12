@@ -5,9 +5,8 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/nuvosphere/nudex-voter/internal/codec"
-
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -35,7 +34,7 @@ func (o *Operations) Type() int {
 	return TypeOperations
 }
 
-func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
+func (m *Scheduler) Operation(detailTask pool.Task[uint64]) (*contracts.Operation, error) {
 	operation := &contracts.Operation{
 		TaskId: detailTask.TaskID(),
 	}
@@ -63,7 +62,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 	case *db.WithdrawalTask:
 		confirmed, checkCode, err := m.checkTask(task)
 		if !confirmed {
-			panic(fmt.Errorf("task %d: hash:%s not confirmed, %w", task.TaskId, task.TxHash, err))
+			return nil, fmt.Errorf("task %d: hash:%s not confirmed, %w", task.TaskId, task.TxHash, err)
 		}
 
 		if err != nil || checkCode != db.TaskErrorCodeSuccess {
@@ -80,7 +79,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 			operation.OptData = data
 			operation.State = db.Failed
-			return operation
+			return operation, err
 		}
 
 		taskResult := contracts.TaskPayloadContractWithdrawalResult{
@@ -90,7 +89,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		}
 		taskBytes, err := codec.EncodeTaskResult(db.TaskTypeWithdrawal, taskResult)
 		if err != nil {
-			panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
+			return nil, fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err)
 		}
 
 		data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
@@ -102,5 +101,5 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 		operation.OptData = nil // todo
 	}
 
-	return operation
+	return operation, nil
 }
