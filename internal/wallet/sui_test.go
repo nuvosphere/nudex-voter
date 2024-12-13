@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,6 +30,8 @@ func TestSuiAddress(t *testing.T) {
 }
 
 func TestGenerateSuiAddress(t *testing.T) {
+	utils.SkipCI(t)
+
 	data := base58.Decode("5ZnCSBuoktAiv1titQWUzHd9iqvy9sD8vQNMrHxZMR8KMzjwkM3GQyX7qfoZJ6cYU1HLEX6bT25B2rtRhKiM8MVc")
 	pk, pubKey := edwards.PrivKeyFromBytes(data)
 	assert.NotNil(t, pk)
@@ -39,13 +42,7 @@ func TestGenerateSuiAddress(t *testing.T) {
 	assert.Equal(t, strings.ToLower("0x5283816ef0fe030955141418c61ac7e362101eb251ca6e9e9d812ca2e803320c"), strings.ToLower(address))
 
 	// faucet:
-	// curl --location --request POST 'https://faucet.devnet.sui.io/v1/gas' \                                                                          suyanlong@suyanlongdeMacBook-Pro-2
-	//--header 'Content-Type: application/json' \
-	//--data-raw '{
-	//    "FixedAmountRequest": {
-	//        "recipient": "0x5283816ef0fe030955141418c61ac7e362101eb251ca6e9e9d812ca2e803320c"
-	//    }
-	//}'
+	// curl --location --request POST 'https://faucet.devnet.sui.io/v1/gas' --header 'Content-Type: application/json' --data-raw '{"FixedAmountRequest": {"recipient": "0x5283816ef0fe030955141418c61ac7e362101eb251ca6e9e9d812ca2e803320c"}}'
 	// devnet rpc: https://sui-devnet-endpoint.blockvision.org
 	// tx info: https://devnet.suivision.xyz/account/0x5283816ef0fe030955141418c61ac7e362101eb251ca6e9e9d812ca2e803320c
 	client := sui.NewSuiClient("https://sui-devnet-endpoint.blockvision.org")
@@ -62,4 +59,12 @@ func TestGenerateSuiAddress(t *testing.T) {
 
 	assert.Nil(t, err)
 	t.Logf("res: %v", rsp)
+
+	rsp1, err := client.SuiXGetCoins(context.Background(), models.SuiXGetCoinsRequest{
+		Owner:    "0x9099b85cce1e63a584f981390bf3457611df3f7778c0d77de3f16cb57951bcf9",
+		CoinType: "0x2::sui::SUI",
+	})
+
+	assert.Nil(t, err)
+	t.Log(utils.FormatJSON(rsp1))
 }

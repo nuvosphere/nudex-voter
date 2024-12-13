@@ -22,5 +22,5 @@ type SolTxContext struct {
 
 type BtcTxContext struct {
 	c      types.TxClient
-	sigCtx *SignContext
+	sigCtx *SignerContext
 }

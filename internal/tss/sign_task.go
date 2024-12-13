@@ -178,7 +178,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				// coinType := types.GetCoinTypeByChain(taskData.Chain)
 				localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
 				c := btc.NewTxClient(m.ctx, time.Second*60, &chaincfg.MainNetParams, localData.PublicKey())
-				sigCtx := &SignContext{
+				sigCtx := &SignerContext{
 					chainType:          taskData.Chain,
 					localData:          localData,
 					keyDerivationDelta: keyDerivationDelta,
