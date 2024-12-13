@@ -7,10 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bnb-chain/tss-lib/v2/crypto"
+	tssCrypto "github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
@@ -217,21 +218,21 @@ func Bip44DerivationPath(coinType, account uint32, index uint8) DerivePath {
 //	return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey())
 //}
 
-func GenerateEthAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint32, index uint8) common.Address {
+func GenerateEthAddressByPath(masterPubKey *tssCrypto.ECPoint, coinType, account uint32, index uint8) common.Address {
 	bip44Path := Bip44DerivationPath(coinType, account, index)
 
 	p, err := bip44Path.ToParams()
 	utils.Assert(err)
 
 	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
-	curveType := types.ECDSA
+	curveType := crypto.ECDSA
 	_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, p.Indexes(), curveType.EC())
 	utils.Assert(err)
 
 	return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey())
 }
 
-func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint32, index uint8) string {
+func GenerateAddressByPath(masterPubKey *tssCrypto.ECPoint, coinType, account uint32, index uint8) string {
 	bip44Path := Bip44DerivationPath(coinType, account, index)
 
 	p, err := bip44Path.ToParams()
@@ -239,7 +240,7 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 	indexes := p.Indexes()
 
 	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
-	curveType := types.ECDSA
+	curveType := crypto.ECDSA
 	switch coinType {
 	case types.CoinTypeBTC:
 		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
@@ -252,12 +253,12 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 		utils.Assert(err)
 		return ethCrypto.PubkeyToAddress(*extendKey.PublicKey.ToECDSAPubKey()).String()
 	case types.CoinTypeSOL:
-		curveType = types.EDDSA
+		curveType = crypto.EDDSA
 		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
 		utils.Assert(err)
 		return SolanaAddress(extendKey.PublicKey)
 	case types.CoinTypeSUI:
-		curveType = types.EDDSA
+		curveType = crypto.EDDSA
 		_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
 		utils.Assert(err)
 		return SuiEd25519Address(extendKey.PublicKey)
@@ -266,6 +267,23 @@ func GenerateAddressByPath(masterPubKey *crypto.ECPoint, coinType, account uint3
 	}
 }
 
-func ECPoint(key *ecdsa.PublicKey) *crypto.ECPoint {
-	return crypto.NewECPointNoCurveCheck(key.Curve, key.X, key.Y)
+func GenerateAddressByECPoint(point *tssCrypto.ECPoint, coinType int) string {
+	switch coinType {
+	case types.CoinTypeBTC:
+		addr, err := GenerateP2WPKHBTCAddress(point)
+		utils.Assert(err)
+		return addr
+	case types.CoinTypeEVM:
+		return ethCrypto.PubkeyToAddress(*point.ToECDSAPubKey()).String()
+	case types.CoinTypeSOL:
+		return SolanaAddress(point)
+	case types.CoinTypeSUI:
+		return SuiEd25519Address(point)
+	default:
+		panic("invalid coin type")
+	}
+}
+
+func ECPoint(key *ecdsa.PublicKey) *tssCrypto.ECPoint {
+	return tssCrypto.NewECPointNoCurveCheck(key.Curve, key.X, key.Y)
 }

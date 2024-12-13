@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p"
@@ -77,6 +78,21 @@ var printTssAddressCmd = &cobra.Command{
 	},
 }
 
+var printChainAddressCmd = &cobra.Command{
+	Use:     "chainAddress",
+	Short:   "print master tss chain address from config data",
+	Example: `nudex-voter tool chainAddress 0 1 2 3`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		partyData := tss.NewPartyData(config.AppConfig.DbDir)
+		for _, arg := range args {
+			chain, err := strconv.Atoi(arg)
+			utils.Assert(err)
+			fmt.Println(partyData.GetDataByChain(uint8(chain)).Address(uint8(chain)))
+		}
+	},
+}
+
 var printEDDSAPublicKeyCmd = &cobra.Command{
 	Use:     "eddsaPublicKey",
 	Short:   "print EDDSA PublicKey from config data",
@@ -84,7 +100,7 @@ var printEDDSAPublicKeyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitConfig(configPath)
 		partyData := tss.NewPartyData(config.AppConfig.DbDir)
-		fmt.Println(partyData.EDDSALocalData().PublicKey())
+		fmt.Println(partyData.EDDSALocalData().CompressedPublicKey())
 	},
 }
 
@@ -95,7 +111,7 @@ var printECDSAPublicKeyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		config.InitConfig(configPath)
 		partyData := tss.NewPartyData(config.AppConfig.DbDir)
-		fmt.Println(partyData.ECDSALocalData().PublicKey())
+		fmt.Println(partyData.ECDSALocalData().CompressedPublicKey())
 	},
 }
 

@@ -20,8 +20,9 @@ import (
 	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -33,16 +34,16 @@ func Partners() types.Participants {
 	// todo online contact get address list
 	return lo.Map(
 		config.TssPublicKeys,
-		func(pubKey *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*pubKey) },
+		func(pubKey *ecdsa.PublicKey, _ int) common.Address { return ethCrypto.PubkeyToAddress(*pubKey) },
 	)
 }
 
-func PartyKey(ec types.CurveType, participants types.Participants, address common.Address) *big.Int {
+func PartyKey(ec crypto.CurveType, participants types.Participants, address common.Address) *big.Int {
 	key := new(big.Int).Add(address.Big(), big.NewInt(int64(ec)))
 	return key.Add(key, participants.GroupID().Big())
 }
 
-func createPartyIDsByGroupWithAlias(ec types.CurveType, addressList types.Participants, aliasName string) tss.SortedPartyIDs {
+func createPartyIDsByGroupWithAlias(ec crypto.CurveType, addressList types.Participants, aliasName string) tss.SortedPartyIDs {
 	tssAllPartyIDs := make(tss.UnSortedPartyIDs, len(addressList))
 
 	groupID := addressList.GroupID()
@@ -59,7 +60,7 @@ func createPartyIDsByGroupWithAlias(ec types.CurveType, addressList types.Partic
 	return tss.SortPartyIDs(tssAllPartyIDs)
 }
 
-func createPartyIDsByGroup(ec types.CurveType, addressList types.Participants) tss.SortedPartyIDs {
+func createPartyIDsByGroup(ec crypto.CurveType, addressList types.Participants) tss.SortedPartyIDs {
 	return createPartyIDsByGroupWithAlias(ec, addressList, "")
 }
 
@@ -139,11 +140,11 @@ func serializeMessageToBeSigned(nonce uint64, data []byte) ([]byte, error) {
 func RunKeyGen(
 	ctx context.Context,
 	isProd bool,
-	ty types.CurveType,
+	ty crypto.CurveType,
 	localSubmitter common.Address, // current submitter
 	allPartners types.Participants,
 	transport helper.Transporter,
-) (tss.Party, map[string]*tss.PartyID, chan *types.LocalPartySaveData, chan *tss.Error) {
+) (tss.Party, map[string]*tss.PartyID, chan *LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 256)
 	// error if keygen fails, contains culprits to blame
@@ -153,7 +154,7 @@ func RunKeyGen(
 
 	log.Debug("creating new local party")
 
-	outEndCh := make(chan *types.LocalPartySaveData)
+	outEndCh := make(chan *LocalPartySaveData)
 	// output data when keygen finished
 	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData)
 	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData)
@@ -161,7 +162,7 @@ func RunKeyGen(
 	params, partyIdMap := NewParam(ty, localSubmitter, allPartners)
 
 	switch ty {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		// prod
 		if isProd {
 			preParams, err := ecdsaKeygen.GeneratePreParams(2 * time.Minute)
@@ -173,7 +174,7 @@ func RunKeyGen(
 			party = ecdsaKeygen.NewLocalParty(params, outCh, ecdsaEndCh)
 		}
 
-	case types.EDDSA:
+	case crypto.EDDSA:
 		party = eddsaKeygen.NewLocalParty(params, outCh, eddsaEndCh)
 	default:
 		panic("implement me")
@@ -186,10 +187,10 @@ func RunKeyGen(
 		case <-ctx.Done():
 			return
 		case data := <-ecdsaEndCh:
-			outEndCh <- types.BuildECDSALocalPartySaveData().SetData(data)
+			outEndCh <- BuildECDSALocalPartySaveData().SetData(data)
 
 		case data := <-eddsaEndCh:
-			outEndCh <- types.BuildEDDSALocalPartySaveData().SetData(data)
+			outEndCh <- BuildEDDSALocalPartySaveData().SetData(data)
 		}
 	}()
 
@@ -205,9 +206,9 @@ func RunKeyGen(
 func RunReshare(
 	ctx context.Context,
 	params *tss.ReSharingParameters,
-	key types.LocalPartySaveData,
+	key LocalPartySaveData,
 	transport helper.Transporter,
-) (tss.Party, chan *types.LocalPartySaveData, chan *tss.Error) {
+) (tss.Party, chan *LocalPartySaveData, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 100000)
 	// error if reshare fails, contains culprits to blame
@@ -215,7 +216,7 @@ func RunReshare(
 
 	log.Debug("creating new local party")
 
-	outEndCh := make(chan *types.LocalPartySaveData, 100000)
+	outEndCh := make(chan *LocalPartySaveData, 100000)
 	// output data when keygen finished
 	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData, 256)
 	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData, 256)
@@ -223,11 +224,11 @@ func RunReshare(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		data := key.ECDSAData()
 		party = ecdsaResharing.NewLocalParty(params, *data, outCh, ecdsaEndCh)
 
-	case types.EDDSA:
+	case crypto.EDDSA:
 		party = eddsaResharing.NewLocalParty(params, *key.EDDSAData(), outCh, eddsaEndCh)
 
 	default:
@@ -241,9 +242,9 @@ func RunReshare(
 		case <-ctx.Done():
 			return
 		case data := <-ecdsaEndCh:
-			outEndCh <- types.BuildECDSALocalPartySaveData().SetData(data)
+			outEndCh <- BuildECDSALocalPartySaveData().SetData(data)
 		case data := <-eddsaEndCh:
-			outEndCh <- types.BuildEDDSALocalPartySaveData().SetData(data)
+			outEndCh <- BuildEDDSALocalPartySaveData().SetData(data)
 		}
 	}()
 
@@ -258,7 +259,7 @@ func RunParty(
 	ctx context.Context,
 	msg *big.Int,
 	params *tss.Parameters,
-	key types.LocalPartySaveData,
+	key LocalPartySaveData,
 	transport helper.Transporter,
 	keyDerivationDelta *big.Int,
 ) (tss.Party, chan *tsscommon.SignatureData, chan *tss.Error) {
@@ -275,13 +276,13 @@ func RunParty(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		if keyDerivationDelta != nil {
 			party = ecdsaSigning.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {
 			party = ecdsaSigning.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
 		}
-	case types.EDDSA:
+	case crypto.EDDSA:
 		if keyDerivationDelta != nil {
 			party = eddsaSigning.NewLocalPartyWithKDD(msg, params, *key.EDDSAData(), keyDerivationDelta, outCh, endCh)
 		} else {

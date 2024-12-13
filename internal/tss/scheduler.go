@@ -11,8 +11,9 @@ import (
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
@@ -34,12 +35,12 @@ type Scheduler struct {
 	ctx                context.Context
 	cancel             context.CancelFunc
 	grw                sync.RWMutex
-	groups             map[types.GroupID]*types.Group
+	groups             map[types.GroupID]*Group
 	srw                sync.RWMutex
 	sessions           map[types.SessionID]Session[ProposalID]
 	proposalSession    map[ProposalID]Session[ProposalID]
 	sigInToOut         chan *SessionResult[ProposalID, *tsscommon.SignatureData]
-	senateInToOut      chan *SessionResult[ProposalID, *types.LocalPartySaveData]
+	senateInToOut      chan *SessionResult[ProposalID, *LocalPartySaveData]
 	partyData          *PartyData
 	localSubmitter     common.Address
 	proposer           *atomic.Value // current submitter
@@ -56,6 +57,7 @@ type Scheduler struct {
 	notify             chan struct{}
 	currentVoterNonce  *atomic.Uint64
 	txContext          sync.Map // taskID:TxContext
+	sigContext         sync.Map // address:SigContext
 }
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *state.ContractState, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
@@ -66,7 +68,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 	if err != nil {
 		log.Warnf("get proposer error, %s", err.Error())
 		log.Infof("TssPublicKeys: %v", len(config.TssPublicKeys))
-		proposer = crypto.PubkeyToAddress(*config.TssPublicKeys[0]) // genesis
+		proposer = ethcrypto.PubkeyToAddress(*config.TssPublicKeys[0]) // genesis
 		pp.Store(proposer)
 	} else {
 		pp.Store(proposer)
@@ -77,7 +79,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
-		partners = lo.Map(config.TssPublicKeys, func(item *ecdsa.PublicKey, _ int) common.Address { return crypto.PubkeyToAddress(*item) })
+		partners = lo.Map(config.TssPublicKeys, func(item *ecdsa.PublicKey, _ int) common.Address { return ethcrypto.PubkeyToAddress(*item) })
 		ps.Store(partners)
 	} else {
 		ps.Store(partners)
@@ -99,11 +101,11 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		bus:                bus,
 		srw:                sync.RWMutex{},
 		grw:                sync.RWMutex{},
-		groups:             make(map[types.GroupID]*types.Group),
+		groups:             make(map[types.GroupID]*Group),
 		sessions:           make(map[types.SessionID]Session[ProposalID]),
 		proposalSession:    make(map[ProposalID]Session[ProposalID]),
 		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
-		senateInToOut:      make(chan *SessionResult[ProposalID, *types.LocalPartySaveData], 1024),
+		senateInToOut:      make(chan *SessionResult[ProposalID, *LocalPartySaveData], 1024),
 		ctx:                ctx,
 		cancel:             cancel,
 		localSubmitter:     localSubmitter,
@@ -119,6 +121,8 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		voterContract:      voterContract,
 		partyData:          NewPartyData(config.AppConfig.DbDir),
 		currentVoterNonce:  currentNonce,
+		txContext:          sync.Map{},
+		sigContext:         sync.Map{},
 	}
 }
 
@@ -143,7 +147,7 @@ func (m *Scheduler) Start() {
 		log.Info("ECDSA PublicKey: ", m.partyData.ECDSALocalData().PublicKeyBase58(), " EDDSA PublicKey: ", m.partyData.EDDSALocalData().PublicKeyBase58())
 	}
 
-	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(types.ECDSA).TssSigner())
+	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(crypto.ECDSA).TssSigner())
 	log.Infof("localSubmitter: %v, proposer: %v", m.LocalSubmitter(), m.Proposer())
 	// loop approveProposal
 	m.loopApproveProposal()
@@ -153,7 +157,7 @@ func (m *Scheduler) Start() {
 	log.Info("Scheduler stared success!")
 }
 
-func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *types.LocalPartySaveData]) {
+func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *LocalPartySaveData]) {
 	if sessionResult.Err != nil {
 		panic(sessionResult.Err)
 	}
@@ -169,18 +173,18 @@ func (m *Scheduler) Stop() {
 
 func (m *Scheduler) Genesis() {
 	_ = m.NewGenerateKeySession(
-		types.ECDSA,
-		types.SenateProposalIDOfECDSA,
-		types.SenateSessionIDOfECDSA,
+		crypto.ECDSA,
+		SenateProposalIDOfECDSA,
+		SenateSessionIDOfECDSA,
 		"",
-		types.SenateProposal,
+		SenateProposal,
 	)
 	_ = m.NewGenerateKeySession(
-		types.EDDSA,
-		types.SenateProposalIDOfEDDSA,
-		types.SenateSessionIDOfEDDSA,
+		crypto.EDDSA,
+		SenateProposalIDOfEDDSA,
+		SenateSessionIDOfEDDSA,
 		"",
-		types.SenateProposal,
+		SenateProposal,
 	)
 }
 
@@ -223,7 +227,7 @@ func (m *Scheduler) Threshold() int {
 	return m.Participants().Threshold()
 }
 
-func (m *Scheduler) AddGroup(group *types.Group) {
+func (m *Scheduler) AddGroup(group *Group) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	m.groups[group.GroupID()] = group
@@ -248,7 +252,7 @@ func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
 	return true
 }
 
-func (m *Scheduler) GetGroup(groupID types.GroupID) *types.Group {
+func (m *Scheduler) GetGroup(groupID types.GroupID) *Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
@@ -270,11 +274,11 @@ func (m *Scheduler) IsMeeting(proposalID ProposalID) bool {
 	return ok
 }
 
-func (m *Scheduler) GetGroups() []*types.Group {
+func (m *Scheduler) GetGroups() []*Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
-	return lo.MapToSlice(m.groups, func(_ types.GroupID, group *types.Group) *types.Group { return group })
+	return lo.MapToSlice(m.groups, func(_ types.GroupID, group *Group) *Group { return group })
 }
 
 func (m *Scheduler) GetSessions() []Session[ProposalID] {
@@ -304,7 +308,7 @@ func (m *Scheduler) SessionRelease(sessionID types.SessionID) {
 
 func (m *Scheduler) Release() {
 	m.grw.Lock()
-	m.groups = make(map[types.GroupID]*types.Group)
+	m.groups = make(map[types.GroupID]*Group)
 	m.grw.Unlock()
 	m.srw.Lock()
 	for _, s := range m.sessions {
@@ -360,7 +364,7 @@ func (m *Scheduler) BatchTask() {
 
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
-			types.ZeroSessionID,
+			ZeroSessionID,
 			nonce.Uint64(), // ProposalID
 			msg.Big(),
 			lo.Map(tasks, func(item pool.Task[uint64], index int) ProposalID { return item.TaskID() }),

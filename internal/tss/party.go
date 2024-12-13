@@ -1,42 +1,55 @@
 package tss
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
+	tssCrypto "github.com/bnb-chain/tss-lib/v2/crypto"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
+	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil/base58"
+	"github.com/decred/dcrd/dcrec/edwards/v2"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/ethereum/go-ethereum/common"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
 )
 
 type PartyData struct {
 	basePath string
 	rw       sync.RWMutex
-	datas    map[types.CurveType]*types.LocalPartySaveData
+	datas    map[crypto.CurveType]*LocalPartySaveData
 }
 
 func NewPartyData(basePath string) *PartyData {
 	return &PartyData{
 		basePath: basePath,
 		rw:       sync.RWMutex{},
-		datas:    make(map[types.CurveType]*types.LocalPartySaveData),
+		datas:    make(map[crypto.CurveType]*LocalPartySaveData),
 	}
 }
 
-func (p *PartyData) ECDSALocalData() *types.LocalPartySaveData {
-	return p.GetData(types.ECDSA)
+func (p *PartyData) ECDSALocalData() *LocalPartySaveData {
+	return p.GetData(crypto.ECDSA)
 }
 
-func (p *PartyData) EDDSALocalData() *types.LocalPartySaveData {
-	return p.GetData(types.EDDSA)
+func (p *PartyData) EDDSALocalData() *LocalPartySaveData {
+	return p.GetData(crypto.EDDSA)
 }
 
-func (p *PartyData) GetData(ec types.CurveType) *types.LocalPartySaveData {
+func (p *PartyData) GetData(ec crypto.CurveType) *LocalPartySaveData {
 	p.rw.RLock()
 	data, ok := p.datas[ec]
 	p.rw.RUnlock()
@@ -54,9 +67,13 @@ func (p *PartyData) GetData(ec types.CurveType) *types.LocalPartySaveData {
 	return data
 }
 
-func (p *PartyData) GenerateNewLocalPartySaveData(ec types.CurveType, parties types.Participants) *types.LocalPartySaveData {
+func (p *PartyData) GetDataByChain(chainType uint8) *LocalPartySaveData {
+	return p.GetData(types.GetCurveTypeByChain(chainType))
+}
+
+func (p *PartyData) GenerateNewLocalPartySaveData(ec crypto.CurveType, parties types.Participants) *LocalPartySaveData {
 	switch ec {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		save := ecdsaKeygen.NewLocalPartySaveData(parties.Len())
 		localData := p.EDDSALocalData()
 
@@ -64,10 +81,10 @@ func (p *PartyData) GenerateNewLocalPartySaveData(ec types.CurveType, parties ty
 			save.LocalPreParams = localData.ECDSAData().LocalPreParams // new node join party
 		}
 
-		return types.BuildECDSALocalPartySaveData().SetData(&save)
-	case types.EDDSA:
+		BuildECDSALocalPartySaveData().SetData(&save)
+	case crypto.EDDSA:
 		save := eddsaKeygen.NewLocalPartySaveData(parties.Len())
-		return types.BuildEDDSALocalPartySaveData().SetData(&save)
+		return BuildEDDSALocalPartySaveData().SetData(&save)
 	}
 
 	return nil
@@ -77,14 +94,14 @@ func (p *PartyData) LoadData() bool {
 	p.rw.Lock()
 	defer p.rw.Unlock()
 
-	data, err := p.loadTSSData(types.ECDSA)
+	data, err := p.loadTSSData(crypto.ECDSA)
 	if err != nil {
 		return false
 	}
 
 	p.datas[data.CurveType()] = data
 
-	data, err = p.loadTSSData(types.EDDSA)
+	data, err = p.loadTSSData(crypto.EDDSA)
 	if err != nil {
 		return false
 	}
@@ -94,7 +111,7 @@ func (p *PartyData) LoadData() bool {
 	return true
 }
 
-func (p *PartyData) SaveLocalData(data *types.LocalPartySaveData) error {
+func (p *PartyData) SaveLocalData(data *LocalPartySaveData) error {
 	p.rw.Lock()
 	defer p.rw.Unlock()
 	p.datas[data.CurveType()] = data
@@ -102,7 +119,7 @@ func (p *PartyData) SaveLocalData(data *types.LocalPartySaveData) error {
 	return p.saveTSSData(data)
 }
 
-func (p *PartyData) saveTSSData(data *types.LocalPartySaveData) error {
+func (p *PartyData) saveTSSData(data *LocalPartySaveData) error {
 	curveType := data.CurveType()
 
 	dataDir := filepath.Join(p.basePath, "tss_data", curveType.CurveName())
@@ -128,7 +145,7 @@ func (p *PartyData) saveTSSData(data *types.LocalPartySaveData) error {
 	return nil
 }
 
-func (p *PartyData) loadTSSData(ec types.CurveType) (*types.LocalPartySaveData, error) {
+func (p *PartyData) loadTSSData(ec crypto.CurveType) (*LocalPartySaveData, error) {
 	filePath := filepath.Join(p.basePath, "tss_data", ec.CurveName(), "tss_key_data.json")
 
 	dataBytes, err := os.ReadFile(filePath)
@@ -137,21 +154,174 @@ func (p *PartyData) loadTSSData(ec types.CurveType) (*types.LocalPartySaveData, 
 	}
 
 	switch ec {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		var data ecdsaKeygen.LocalPartySaveData
 		if err := json.Unmarshal(dataBytes, &data); err != nil {
 			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
 		}
 
-		return types.BuildECDSALocalPartySaveData().SetData(&data), nil
-	case types.EDDSA:
+		return BuildECDSALocalPartySaveData().SetData(&data), nil
+	case crypto.EDDSA:
 		var data eddsaKeygen.LocalPartySaveData
 		if err := json.Unmarshal(dataBytes, &data); err != nil {
 			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
 		}
 
-		return types.BuildEDDSALocalPartySaveData().SetData(&data), nil
+		return BuildEDDSALocalPartySaveData().SetData(&data), nil
 	}
 
 	return nil, fmt.Errorf("unknown elliptic curve")
+}
+
+var (
+	ZeroSessionID           types.SessionID
+	senateSessionID         = ethCrypto.Keccak256Hash([]byte("The voter senate session，one and only one"))
+	SenateProposal          = senateSessionID.Big()
+	senateProposalID        = senateSessionID.Big().Uint64()
+	SenateProposalIDOfECDSA = senateProposalID - 1
+	SenateProposalIDOfEDDSA = senateProposalID - 2
+	SenateSessionIDOfECDSA  = ethCrypto.Keccak256Hash([]byte("ECDSA:The voter senate session，one and only one"))
+	SenateSessionIDOfEDDSA  = ethCrypto.Keccak256Hash([]byte("EDDSA:The voter senate session，one and only one"))
+)
+
+type SessionContext[T, M any] struct {
+	Group
+	SessionID  types.SessionID `json:"sessionID,omitempty"`
+	Proposer   common.Address  `json:"proposer,omitempty"`    // current submitter
+	Signer     string          `json:"signer,omitempty"`      // current signer
+	ProposalID T               `json:"proposal_id,omitempty"` // msg id
+	Proposal   M               `json:"proposal,omitempty"`
+	Data       []T             `json:"data,omitempty"`
+}
+
+type Group struct {
+	EC          crypto.CurveType   `json:"ec,omitempty"`
+	AllPartners types.Participants `json:"all_partners,omitempty"` // all submitter
+}
+
+func (g *Group) GroupID() types.GroupID {
+	return g.AllPartners.GroupID()
+}
+
+type LocalPartySaveData struct {
+	ty   crypto.CurveType // 0:secp256k1; 1:ed25519
+	data any
+}
+
+func BuildECDSALocalPartySaveData() *LocalPartySaveData {
+	return &LocalPartySaveData{ty: crypto.ECDSA}
+}
+
+func BuildEDDSALocalPartySaveData() *LocalPartySaveData {
+	return &LocalPartySaveData{ty: crypto.EDDSA}
+}
+
+func (d *LocalPartySaveData) SetData(data any) *LocalPartySaveData {
+	d.data = data
+	return d
+}
+
+func (d *LocalPartySaveData) GetData() any {
+	return d.data
+}
+
+func (d *LocalPartySaveData) EC() elliptic.Curve {
+	switch d.ty {
+	case crypto.EDDSA:
+		return tss.Edwards()
+	default:
+		return tss.S256()
+	}
+}
+
+func (d *LocalPartySaveData) CurveType() crypto.CurveType {
+	return d.ty
+}
+
+func (d *LocalPartySaveData) ECDSAData() *ecdsaKeygen.LocalPartySaveData {
+	if d.ty == crypto.ECDSA && d.data != nil {
+		return d.data.(*ecdsaKeygen.LocalPartySaveData)
+	}
+
+	return nil
+}
+
+func (d *LocalPartySaveData) EDDSAData() *eddsaKeygen.LocalPartySaveData {
+	if d.ty == crypto.EDDSA && d.data != nil {
+		return d.data.(*eddsaKeygen.LocalPartySaveData)
+	}
+
+	return nil
+}
+
+func (d *LocalPartySaveData) TssSigner() string {
+	switch d.ty {
+	case crypto.ECDSA:
+		return ethCrypto.PubkeyToAddress(*d.ECDSAData().ECDSAPub.ToECDSAPubKey()).String()
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) ToECDSAPubKey() *ecdsa.PublicKey {
+	switch d.ty {
+	case crypto.ECDSA:
+		return d.ECDSAData().ECDSAPub.ToECDSAPubKey()
+	case crypto.EDDSA:
+		return d.EDDSAData().EDDSAPub.ToECDSAPubKey()
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) ECPoint() *tssCrypto.ECPoint {
+	switch d.ty {
+	case crypto.ECDSA:
+		return d.ECDSAData().ECDSAPub
+	case crypto.EDDSA:
+		return d.EDDSAData().EDDSAPub
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) PublicKeyBase58() string {
+	switch d.ty {
+	case crypto.ECDSA:
+		pubKey := d.ECDSAData().ECDSAPub.ToECDSAPubKey()
+		pubKeyBytes := ethCrypto.FromECDSAPub(pubKey)
+		return base58.Encode(pubKeyBytes)
+	case crypto.EDDSA:
+		pubKey := d.EDDSAData().EDDSAPub.ToECDSAPubKey()
+		pubKeyBytes := ethCrypto.FromECDSAPub(pubKey)
+		return base58.Encode(pubKeyBytes)
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) CompressedPublicKey() string {
+	return hex.EncodeToString(d.PublicKey().SerializeCompressed())
+}
+
+func (d *LocalPartySaveData) PublicKey() crypto.PublicKey {
+	p := d.ECPoint()
+	switch d.ty {
+	case crypto.ECDSA:
+		var (
+			x = &btcec.FieldVal{}
+			y = &btcec.FieldVal{}
+		)
+		x.SetByteSlice(p.X().Bytes())
+		y.SetByteSlice(p.Y().Bytes())
+		return secp256k1.NewPublicKey(x, y)
+	case crypto.EDDSA:
+		return edwards.NewPublicKey(p.X(), p.Y())
+	default:
+		panic("implement me")
+	}
+}
+
+func (d *LocalPartySaveData) Address(chainType uint8) string {
+	return wallet.GenerateAddressByECPoint(d.ECPoint(), types.GetCoinTypeByChain(chainType))
 }

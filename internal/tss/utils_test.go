@@ -6,6 +6,7 @@ import (
 
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -20,10 +21,10 @@ func TestPartyID(t *testing.T) {
 		common.HexToAddress("0x41ff9AA7e16B8B1a8a8dc4f0eFacd93D02d071c9"),
 	}
 
-	partKey := PartyKey(types.ECDSA, addressList, common.HexToAddress("0x41ff9AA7e16B8B1a8a8dc4f0eFacd93D02d071c9"))
+	partKey := PartyKey(crypto.ECDSA, addressList, common.HexToAddress("0x41ff9AA7e16B8B1a8a8dc4f0eFacd93D02d071c9"))
 	t.Log(partKey.Text(16))
 
-	ll := createPartyIDsByGroup(types.ECDSA, addressList)
+	ll := createPartyIDsByGroup(crypto.ECDSA, addressList)
 	lo.ForEach(ll, func(item *tss.PartyID, index int) {
 		t.Log(new(big.Int).SetBytes(item.Key).Text(16))
 	})

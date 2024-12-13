@@ -11,6 +11,7 @@ import (
 	eddsaResharing "github.com/bnb-chain/tss-lib/v2/eddsa/resharing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/samber/lo"
@@ -60,8 +61,8 @@ type ReShareGroupSession[T, M, D any] struct {
 func createReShareParam(
 	ctx context.Context,
 	params *tss.ReSharingParameters,
-	key types.LocalPartySaveData,
-) (tss.Party, chan *types.LocalPartySaveData, chan tss.Message, chan *tss.Error) {
+	key LocalPartySaveData,
+) (tss.Party, chan *LocalPartySaveData, chan tss.Message, chan *tss.Error) {
 	// outgoing messages to other peers
 	outCh := make(chan tss.Message, 100000)
 	// error if reshare fails, contains culprits to blame
@@ -69,7 +70,7 @@ func createReShareParam(
 
 	log.Debug("creating new local party")
 
-	outEndCh := make(chan *types.LocalPartySaveData, 100000)
+	outEndCh := make(chan *LocalPartySaveData, 100000)
 	// output data when keygen finished
 	ecdsaEndCh := make(chan *ecdsaKeygen.LocalPartySaveData, 256)
 	eddsaEndCh := make(chan *eddsaKeygen.LocalPartySaveData, 256)
@@ -77,11 +78,11 @@ func createReShareParam(
 	var party tss.Party
 
 	switch key.CurveType() {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		data := key.ECDSAData()
 		party = ecdsaResharing.NewLocalParty(params, *data, outCh, ecdsaEndCh)
 
-	case types.EDDSA:
+	case crypto.EDDSA:
 		party = eddsaResharing.NewLocalParty(params, *key.EDDSAData(), outCh, eddsaEndCh)
 
 	default:
@@ -95,9 +96,9 @@ func createReShareParam(
 		case <-ctx.Done():
 			return
 		case data := <-ecdsaEndCh:
-			outEndCh <- types.BuildECDSALocalPartySaveData().SetData(data)
+			outEndCh <- BuildECDSALocalPartySaveData().SetData(data)
 		case data := <-eddsaEndCh:
-			outEndCh <- types.BuildEDDSALocalPartySaveData().SetData(data)
+			outEndCh <- BuildEDDSALocalPartySaveData().SetData(data)
 		}
 	}()
 
@@ -111,7 +112,7 @@ func runReShareParty(ctx context.Context, transport helper.Transporter, party ts
 }
 
 func (m *Scheduler) NewReShareGroupSession(
-	ec types.CurveType,
+	ec crypto.CurveType,
 	sessionID types.SessionID,
 	proposalID ProposalID, // msg id
 	msg *Proposal,
@@ -164,7 +165,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	if joinedNew && !joinedOld {
 		log.Debugf("new join node: oldPartyIDs: %v,newPartyIDs:%v", oldPartyIDs, newPartyIDs)
 
-		newInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
+		newInnerSession := newSession[ProposalID, *Proposal, *LocalPartySaveData](
 			ec,
 			m.p2p,
 			m,
@@ -184,7 +185,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		newInnerSession.endCh = outEndCh
 		newInnerSession.errCH = errCh
 
-		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *types.LocalPartySaveData]{
+		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *LocalPartySaveData]{
 			sessionTransport: newInnerSession,
 			partyIdMap:       oldPartyIdMap,
 			isNew:            true,
@@ -201,7 +202,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	if !joinedNew && joinedOld {
 		log.Debugf("remove node: oldPartyIDs: %v,newPartyIDs:%v", oldPartyIDs, newPartyIDs)
 
-		oldInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
+		oldInnerSession := newSession[ProposalID, *Proposal, *LocalPartySaveData](
 			ec,
 			m.p2p,
 			m,
@@ -221,7 +222,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		oldInnerSession.party = party
 		oldInnerSession.endCh = outEndCh
 		oldInnerSession.errCH = errCh
-		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *types.LocalPartySaveData]{
+		joinSession := &JoinReShareGroupSession[ProposalID, *Proposal, *LocalPartySaveData]{
 			sessionTransport: oldInnerSession,
 			partyIdMap:       newPartyIdMap,
 			isNew:            false,
@@ -235,8 +236,8 @@ func (m *Scheduler) NewReShareGroupSession(
 	}
 
 	// 3. both joined old and new group
-	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *types.LocalPartySaveData]{}
-	oldInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
+	reShareSession := &ReShareGroupSession[ProposalID, *Proposal, *LocalPartySaveData]{}
+	oldInnerSession := newSession[ProposalID, *Proposal, *LocalPartySaveData](
 		ec,
 		m.p2p,
 		m,
@@ -249,7 +250,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		newPartners, // todo
 	)
 	oldInnerSession.partyIdMap = oldPartyIdMap
-	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *types.LocalPartySaveData], 100) // todo
+	oldInnerSession.inToOut = make(chan<- *SessionResult[ProposalID, *LocalPartySaveData], 100) // todo
 
 	localData := m.partyData.GetData(ec)
 	oldParty, oldOutEndCh, oldOutCh, oldErrCh := createReShareParam(oldInnerSession.ctx, oldParams, *localData)
@@ -258,7 +259,7 @@ func (m *Scheduler) NewReShareGroupSession(
 	oldInnerSession.errCH = oldErrCh
 	reShareSession.oldSession = oldInnerSession
 
-	newInnerSession := newSession[ProposalID, *Proposal, *types.LocalPartySaveData](
+	newInnerSession := newSession[ProposalID, *Proposal, *LocalPartySaveData](
 		ec,
 		m.p2p,
 		m,

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	soltypes "github.com/blocto/solana-go-sdk/types"
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
@@ -12,22 +13,25 @@ import (
 	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
 	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/btc"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
-func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (types.LocalPartySaveData, *big.Int) {
+func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (LocalPartySaveData, *big.Int) {
 	// coinType := types.GetCoinTypeByChain(coinType)
 	path := wallet.Bip44DerivationPath(coinType, account, index)
 	param, err := path.ToParams()
@@ -40,7 +44,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, i
 	keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECPoint(), chainCode, param.Indexes(), ec.EC())
 	utils.Assert(err)
 	switch ec {
-	case types.ECDSA:
+	case crypto.ECDSA:
 		data := []ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()}
 		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
 			keyDerivationDelta,
@@ -51,7 +55,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, i
 		utils.Assert(err)
 		l.SetData(&data[0])
 		return l, keyDerivationDelta
-	case types.EDDSA:
+	case crypto.EDDSA:
 		data := []eddsaKeygen.LocalPartySaveData{*l.EDDSAData()}
 		err = eddsaSigning.UpdatePublicKeyAndAdjustBigXj(
 			keyDerivationDelta,
@@ -168,9 +172,51 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 	case *db.WithdrawalTask:
 		log.Debugf("processTxSign task: %v", taskData)
 		switch taskData.Chain {
-		case types.CoinTypeBTC: // todo
+		case types.ChainBitcoin: // todo
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
+				// coinType := types.GetCoinTypeByChain(taskData.Chain)
+				localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
+				c := btc.NewTxClient(m.ctx, time.Second*60, &chaincfg.MainNetParams, localData.PublicKey())
+				sigCtx := &SignContext{
+					chainType:          taskData.Chain,
+					localData:          localData,
+					keyDerivationDelta: keyDerivationDelta,
+				}
+				from := localData.Address(taskData.Chain)
+				m.sigContext.Store(from, sigCtx)
+
+				sessionId := ZeroSessionID
+				var proposal *big.Int
+				go func() {
+					err := c.BuildTx(taskData.TargetAddress, int64(taskData.Amount))
+					if err != nil {
+						log.Errorf("failed to send transaction: %v", err)
+						return
+					}
+				}()
+				hash := c.NextSignTask()
+				if hash == nil {
+					log.Errorf("failed to next sign ")
+					return
+				}
+				proposal.SetBytes(hash)
+
+				if msg != nil {
+					sessionId = msg.SessionID
+					if proposal.Cmp(&msg.Proposal) != 0 {
+						log.Errorf("the proposal is incorrect of btc")
+					}
+				}
+
+				m.NewTxSignSession(
+					sessionId,
+					taskData.TaskId,
+					proposal,
+					localData,
+					keyDerivationDelta,
+					from,
+				)
 
 			case types.AssetTypeErc20:
 			default:
@@ -210,7 +256,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				return
 			}
 			hash := tx.Hash()
-			sessionId := types.ZeroSessionID
+			sessionId := ZeroSessionID
 			if msg != nil {
 				if msg.Proposal.Cmp(hash.Big()) != 0 {
 					log.Errorf("the proposal is incorrect of evm")
@@ -242,7 +288,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			} else {
 				c = solana.NewDevSolClient()
 			}
-			hotAddress := wallet.HotAddressOfSolanaCoin(m.partyData.GetData(types.EDDSA).ECPoint())
+			hotAddress := wallet.HotAddressOfSolanaCoin(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			var (
 				tx  *solana.UnSignTx
@@ -268,11 +314,11 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			}
 			log.Infof("raw: %x", raw)
 			proposal := new(big.Int).SetBytes(raw)
-			sessionId := types.ZeroSessionID
+			sessionId := ZeroSessionID
 			if msg != nil {
-				log.Infof("msg.Proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
+				log.Infof("msg.proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
 				// todo
-				//if msg.Proposal.Cmp(proposal) != 0 {
+				//if msg.proposal.Cmp(proposal) != 0 {
 				//	log.Errorf("the proposal is incorrect of solana")
 				//	return
 				//}

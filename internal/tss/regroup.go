@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -70,18 +71,18 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 			}
 
 			_ = m.NewReShareGroupSession(
-				types.ECDSA,
-				types.SenateSessionIDOfECDSA,
-				types.SenateProposalIDOfECDSA,
-				types.SenateProposal,
+				crypto.ECDSA,
+				SenateSessionIDOfECDSA,
+				SenateProposalIDOfECDSA,
+				SenateProposal,
 				oldParts,
 				newParts,
 			)
 			_ = m.NewReShareGroupSession(
-				types.EDDSA,
-				types.SenateSessionIDOfEDDSA,
-				types.SenateProposalIDOfEDDSA,
-				types.SenateProposal,
+				crypto.EDDSA,
+				SenateSessionIDOfEDDSA,
+				SenateProposalIDOfEDDSA,
+				SenateProposal,
 				oldParts,
 				newParts,
 			)

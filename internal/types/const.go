@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+
+	"github.com/nuvosphere/nudex-voter/internal/crypto"
 )
 
 const (
@@ -63,17 +65,17 @@ func GetChainByCoinType(coinType int) uint8 {
 	}
 }
 
-func GetCurveTypeByChain(chain uint8) CurveType {
+func GetCurveTypeByChain(chain uint8) crypto.CurveType {
 	switch chain {
 	case ChainBitcoin, ChainEthereum:
-		return ECDSA
+		return crypto.ECDSA
 	case ChainSolana, ChainSui:
-		return EDDSA
+		return crypto.EDDSA
 	default:
 		panic("implement me")
 	}
 }
 
-func GetCurveTypeByCoinType(coinType int) CurveType {
+func GetCurveTypeByCoinType(coinType int) crypto.CurveType {
 	return GetCurveTypeByChain(GetChainByCoinType(coinType))
 }
