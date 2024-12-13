@@ -7,7 +7,6 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 )
 
 func GenerateCompressedBTCAddress(p *crypto.ECPoint) (string, error) {
@@ -47,8 +46,4 @@ func P2WPKHAddress(serializedPubKey []byte) (string, error) {
 		return "", fmt.Errorf("invalid public key: %w", err)
 	}
 	return addr.EncodeAddress(), nil
-}
-
-func HotAddressOfBtc(masterPubKey *crypto.ECPoint) string {
-	return GenerateAddressByPath(masterPubKey, types.CoinTypeSOL, 0, 0)
 }

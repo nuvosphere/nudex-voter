@@ -107,7 +107,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err := crypto.NewECPoint(tss.Edwards(), x, y)
 	assert.Nil(t, err)
 
-	hotAddress := HotAddressOfSolanaCoin(point)
+	hotAddress := HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 
@@ -118,7 +118,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
 	assert.Nil(t, err)
 	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
-	hotAddress = HotAddressOfSolanaCoin(point)
+	hotAddress = HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 
@@ -131,7 +131,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
 	assert.Nil(t, err)
 	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
-	hotAddress = HotAddressOfSolanaCoin(point)
+	hotAddress = HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 }
@@ -159,7 +159,7 @@ func TestSolHotAddress(t *testing.T) {
 		point, err := crypto.NewECPoint(tss.Edwards(), pubKey.X, pubKey.Y)
 		assert.Nil(t, err)
 
-		hotAddress := HotAddressOfSolanaCoin(point)
+		hotAddress := HotAddressOfSolana(point)
 		t.Log("hotAddress", hotAddress)
 		t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 		assert.Equal(t, strings.ToLower(s.childAddress), strings.ToLower(hotAddress))

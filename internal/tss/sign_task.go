@@ -288,7 +288,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			} else {
 				c = solana.NewDevSolClient()
 			}
-			hotAddress := wallet.HotAddressOfSolanaCoin(m.partyData.GetData(crypto.EDDSA).ECPoint())
+			hotAddress := wallet.HotAddressOfSolana(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			var (
 				tx  *solana.UnSignTx
