@@ -177,6 +177,7 @@ func TestSolTransfer1(t *testing.T) {
 }
 
 func TestBalanceOfSol(t *testing.T) {
+	utils.SkipCI(t)
 	hotAddress := "ATFdx2yY8uAA345ZPyWYcCcr7Avk6ThUoqTG1jSJDebU"
 	c := NewDevSolClient()
 
