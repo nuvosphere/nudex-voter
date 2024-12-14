@@ -14,6 +14,7 @@ import (
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +38,7 @@ func TestGenerateSuiAddress(t *testing.T) {
 	assert.NotNil(t, pk)
 	assert.NotNil(t, pubKey)
 	point := crypto.NewECPointNoCurveCheck(tss.Edwards(), pubKey.X, pubKey.Y)
-	address := GenerateAddressByPath(point, types.CoinTypeSUI, 1, 1)
+	address := wallet.GenerateAddressByPath(point, types.CoinTypeSUI, 1, 1)
 	t.Log("address", address)
 	assert.Equal(t, strings.ToLower("0x5283816ef0fe030955141418c61ac7e362101eb251ca6e9e9d812ca2e803320c"), strings.ToLower(address))
 
