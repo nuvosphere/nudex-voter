@@ -6,6 +6,7 @@ import (
 )
 
 type VoterContract interface {
+	IsSyncing() bool
 	ContractVotingManager
 	ParticipantManager
 	TaskManager
