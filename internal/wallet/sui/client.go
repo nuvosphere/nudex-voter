@@ -3,11 +3,9 @@ package sui
 import (
 	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
-	"github.com/block-vision/sui-go-sdk/common/keypair"
 	"github.com/block-vision/sui-go-sdk/constant"
 	"github.com/block-vision/sui-go-sdk/models"
 	"github.com/block-vision/sui-go-sdk/sui"
@@ -128,15 +126,6 @@ func (c *TxClient) TryExecuteTx(tx *UnSignTx) (string, error) {
 
 	fmt.Println(utils.FormatJSON(res))
 	return "", nil
-}
-
-// Ed25519PublicKeyToSuiAddress https://github.com/MystenLabs/sui/blob/main/sdk/typescript/src/cryptography/publickey.ts#L112
-func Ed25519PublicKeyToSuiAddress(pubKey []byte) string {
-	newPubkey := []byte{byte(keypair.Ed25519Flag)}
-	newPubkey = append(newPubkey, pubKey...)
-
-	addrBytes := blake2b.Sum256(newPubkey)
-	return fmt.Sprintf("0x%s", hex.EncodeToString(addrBytes[:])[:64])
 }
 
 func TxHash(data string) []byte {

@@ -24,6 +24,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/btc"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
 	"github.com/samber/lo"
@@ -33,7 +34,7 @@ import (
 
 func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (LocalPartySaveData, *big.Int) {
 	// coinType := types.GetCoinTypeByChain(coinType)
-	path := wallet.Bip44DerivationPath(coinType, account, index)
+	path := bip44.Bip44DerivationPath(coinType, account, index)
 	param, err := path.ToParams()
 	utils.Assert(err)
 	ec := types.GetCurveTypeByCoinType(int(coinType))

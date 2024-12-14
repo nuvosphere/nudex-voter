@@ -21,6 +21,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
@@ -55,7 +56,8 @@ func (s *Wallet) SetTssPublicKey(tssPublicKey ecdsa.PublicKey) {
 }
 
 func (s *Wallet) Address(coinType, account uint32, index uint8) common.Address {
-	return GenerateEthAddressByPath(ECPoint(&s.tssPublicKey), coinType, account, index)
+	address := GenerateAddressByPath(bip44.ECPoint(&s.tssPublicKey), coinType, account, index)
+	return common.HexToAddress(address)
 }
 
 func (s *Wallet) HotAddressOfCoin(coinType uint32) common.Address {
