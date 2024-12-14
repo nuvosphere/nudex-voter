@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -49,11 +48,12 @@ func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
 		return t, nil
 	}
 
-	task, err := m.stateDB.Task(taskID)
+	task, err := m.stateDB.GetUnCompletedTask(taskID)
 
-	if errors.Is(err, gorm.ErrRecordNotFound) { //todo
-		return m.GetOnlineTask(taskID)
-	}
+	//todo
+	//if errors.Is(err, gorm.ErrRecordNotFound) {
+	//	return m.GetOnlineTask(taskID)
+	//}
 
 	if err != nil {
 		return nil, fmt.Errorf("taskID:%v, %w", taskID, err)

@@ -487,7 +487,7 @@ func (m *Scheduler) proposalLoop() {
 					switch v.State {
 					case db.Pending:
 						// todo withdraw
-						task, err := m.stateDB.Task(v.TaskId)
+						task, err := m.stateDB.GetUnCompletedTask(v.TaskId)
 						if err != nil {
 							log.Errorf("get task err:%v", err)
 						} else {

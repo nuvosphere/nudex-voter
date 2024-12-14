@@ -137,11 +137,11 @@ func (s *ContractState) Account(address string) (*db.Account, error) {
 	return account, err
 }
 
-func (s *ContractState) Task(taskID uint64) (*db.Task, error) {
+func (s *ContractState) GetUnCompletedTask(taskID uint64) (*db.Task, error) {
 	task := &db.Task{}
 	err := s.l2InfoDb.
 		Preload(clause.Associations).
-		Where("task_id", taskID).
+		Where("task_id = ? and state in ?", taskID, []int{db.Created, db.Pending}).
 		Last(task).
 		Error
 	return task, err
