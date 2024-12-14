@@ -118,18 +118,18 @@ func (d *WalletEvmState) UpdateBookedTx(txHash common.Hash) error {
 }
 
 type ContractState struct {
-	l2SyncDb *gorm.DB
+	l2InfoDb *gorm.DB
 }
 
-func NewContractState(l2SyncDb *gorm.DB) *ContractState {
+func NewContractState(l2InfoDb *gorm.DB) *ContractState {
 	return &ContractState{
-		l2SyncDb: l2SyncDb,
+		l2InfoDb: l2InfoDb,
 	}
 }
 
 func (s *ContractState) Account(address string) (*db.Account, error) {
 	account := &db.Account{}
-	err := s.l2SyncDb.
+	err := s.l2InfoDb.
 		Preload(clause.Associations).
 		Where("address = ?", address).
 		Last(account).
@@ -139,10 +139,19 @@ func (s *ContractState) Account(address string) (*db.Account, error) {
 
 func (s *ContractState) Task(taskID uint64) (*db.Task, error) {
 	task := &db.Task{}
-	err := s.l2SyncDb.
+	err := s.l2InfoDb.
 		Preload(clause.Associations).
 		Where("task_id", taskID).
 		Last(task).
 		Error
 	return task, err
+}
+
+func (s *ContractState) GetPendingTask() (tasks []db.Task, err error) {
+	err = s.l2InfoDb.
+		Preload(clause.Associations).
+		Where("status = ?", db.Pending).
+		First(tasks).
+		Error
+	return tasks, err
 }
