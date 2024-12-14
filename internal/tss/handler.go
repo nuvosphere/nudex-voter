@@ -51,7 +51,7 @@ func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
 
 	task, err := m.stateDB.Task(taskID)
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if errors.Is(err, gorm.ErrRecordNotFound) { //todo
 		return m.GetOnlineTask(taskID)
 	}
 

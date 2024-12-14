@@ -147,10 +147,18 @@ func (s *ContractState) Task(taskID uint64) (*db.Task, error) {
 	return task, err
 }
 
+func (s *ContractState) GetCreatedTask() (tasks []db.Task, err error) {
+	return s.GetTaskByStatus(db.Created)
+}
+
 func (s *ContractState) GetPendingTask() (tasks []db.Task, err error) {
+	return s.GetTaskByStatus(db.Pending)
+}
+
+func (s *ContractState) GetTaskByStatus(status int) (tasks []db.Task, err error) {
 	err = s.l2InfoDb.
 		Preload(clause.Associations).
-		Where("status = ?", db.Pending).
+		Where("status = ?", status).
 		First(tasks).
 		Error
 	return tasks, err

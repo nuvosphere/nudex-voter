@@ -149,12 +149,18 @@ func (m *Scheduler) Start() {
 
 	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(crypto.ECDSA).TssSigner())
 	log.Infof("localSubmitter: %v, proposer: %v", m.LocalSubmitter(), m.Proposer())
-	// loop approveProposal
-	m.loopApproveProposal()
 	m.reGroupResultLoop()
 	m.loopSigInToOut()
 	m.loopDetectionCondition()
+	// loop approveProposal
+	m.loopApproveProposal()
 	log.Info("Scheduler stared success!")
+}
+
+func (m *Scheduler) BlockDetectionLatestState() {
+	for !m.voterContract.IsSyncing() {
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func (m *Scheduler) SaveSenateSessionResult(sessionResult *SessionResult[ProposalID, *LocalPartySaveData]) {
@@ -339,7 +345,7 @@ func (m *Scheduler) loopApproveProposal() {
 }
 
 func (m *Scheduler) BatchTask() {
-	if m.isCanProposal() && m.isCanNext() {
+	if m.isCanProposal() && m.isCanNextOperation() {
 		log.Info("batch proposal")
 		tasks := m.taskQueue.GetTopN(TopN)
 		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
@@ -365,7 +371,7 @@ func (m *Scheduler) BatchTask() {
 	}
 }
 
-func (m *Scheduler) isCanNext() bool {
+func (m *Scheduler) isCanNextOperation() bool {
 	op := m.operationsQueue.Last()
 	if op == nil {
 		return true
@@ -495,6 +501,7 @@ func (m *Scheduler) proposalLoop() {
 
 					case db.Completed, db.Failed:
 						m.taskQueue.Remove(v.TaskId)
+						m.pendingStateTasks.Remove(v.TaskId)
 						m.AddDiscussedTask(v.TaskId)
 					default:
 						log.Errorf("invalid task state : %v", v.State)
@@ -579,6 +586,7 @@ func (m *Scheduler) GetDiscussedOperation(id uint64) *Operations {
 
 func (m *Scheduler) isCanProposal() bool {
 	m.BlockDetectionThreshold()
+	m.BlockDetectionLatestState()
 	proposer, err := m.voterContract.Proposer()
 	if err != nil || proposer == zeroAddress {
 		proposer = m.Proposer()
