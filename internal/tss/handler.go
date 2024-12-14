@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"strings"
 
-	web3crypto "github.com/chenzhijie/go-web3/crypto"
 	"github.com/ethereum/go-ethereum/common"
+	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -49,12 +49,10 @@ func (m *Scheduler) GetTask(taskID uint64) (pool.Task[uint64], error) {
 	}
 
 	task, err := m.stateDB.GetUnCompletedTask(taskID)
-
 	//todo
 	//if errors.Is(err, gorm.ErrRecordNotFound) {
 	//	return m.GetOnlineTask(taskID)
 	//}
-
 	if err != nil {
 		return nil, fmt.Errorf("taskID:%v, %w", taskID, err)
 	}
@@ -147,14 +145,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	case GenKeySessionType:
 		err = m.JoinGenKeySession(msg)
 	case ReShareGroupSessionType:
-		return m.JoinReShareGroupSession(msg)
-	case SignTaskSessionType:
-		task, errTask := m.GetTask(msg.ProposalID)
-		if errTask != nil {
-			return errTask
-		}
-
-		err = m.JoinSignTaskSession(msg, task)
+		err = m.JoinReShareGroupSession(msg)
 	case SignBatchTaskSessionType:
 		err = m.JoinSignBatchTaskSession(msg)
 
@@ -162,7 +153,16 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		task := m.pendingStateTasks.Get(msg.ProposalID) // todo
 		if task != nil {
 			m.JoinTxSignatureSession(msg, task)
+		} else {
+			err = fmt.Errorf("pending task is not exsit")
 		}
+	case SignTaskSessionType: // only used test
+		task, errTask := m.GetTask(msg.ProposalID)
+		if errTask != nil {
+			return errTask
+		}
+
+		err = m.JoinSignTaskSession(msg, task)
 	default:
 		err = fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}
@@ -260,7 +260,7 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 
 	switch v := task.(type) {
 	case *db.CreateWalletTask:
-		localPartySaveData, unSignMsg := m.CreateWalletProposal(v)
+		localPartySaveData, unSignMsg := m.CreateUserAddressProposal(v)
 		if unSignMsg.String() != msg.Proposal.String() {
 			return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
 		}
@@ -286,7 +286,7 @@ func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Propos
 	m.processTxSign(&msg, task)
 }
 
-func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (LocalPartySaveData, *big.Int) {
+func (m *Scheduler) CreateUserAddressProposal(task *db.CreateWalletTask) (LocalPartySaveData, *big.Int) {
 	coinType := types.GetCoinTypeByChain(task.Chain)
 
 	ec := types.GetCurveTypeByCoinType(coinType)
@@ -296,9 +296,8 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (LocalPartyS
 		localPartySaveData := m.partyData.GetData(ec)
 		userAddress := wallet.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
 		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
-		msg = web3crypto.Keccak256Hash(msg)
-
-		return *localPartySaveData, new(big.Int).SetBytes(msg)
+		hash := ethCrypto.Keccak256Hash(msg)
+		return *localPartySaveData, hash.Big()
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}
@@ -307,7 +306,7 @@ func (m *Scheduler) CreateWalletProposal(task *db.CreateWalletTask) (LocalPartyS
 func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:
-		localPartySaveData, unSignMsg := m.CreateWalletProposal(taskData)
+		localPartySaveData, unSignMsg := m.CreateUserAddressProposal(taskData)
 
 		m.NewSignSession(
 			ZeroSessionID,

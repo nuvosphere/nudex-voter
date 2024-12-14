@@ -84,6 +84,10 @@ func NewVoterContractMocker() *VoterContractMocker {
 	}
 }
 
+func (v *VoterContractMocker) IsSyncing() bool {
+	return false
+}
+
 func (v *VoterContractMocker) TssNonce() (*big.Int, error) {
 	return &v.nonce, nil
 }
