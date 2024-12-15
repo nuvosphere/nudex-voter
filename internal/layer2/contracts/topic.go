@@ -15,8 +15,8 @@ var (
 	ParticipantRemovedTopic         = crypto.Keccak256Hash([]byte(`ParticipantRemoved(address)`))                                                                              // IParticipantManager
 	DepositRecordedTopic            = crypto.Keccak256Hash([]byte(`DepositRecorded(address,uint256,uint256,bytes,bytes)`))                                                     // DepositManagerContract
 	WithdrawalRecordedTopic         = crypto.Keccak256Hash([]byte(`WithdrawalRecorded(address,uint256,uint256,bytes,bytes)`))                                                  // DepositManagerContract
-	NIP20TokenEventBurnbTopic       = crypto.Keccak256Hash([]byte(`NIP20TokenEvent_burnb(address,bytes32,uint256)`))                                                           // InscriptionContract
 	NIP20TokenEventMintbTopic       = crypto.Keccak256Hash([]byte(`NIP20TokenEvent_mintb(address,bytes32,uint256)`))                                                           // InscriptionContract
+	NIP20TokenEventBurnbTopic       = crypto.Keccak256Hash([]byte(`NIP20TokenEvent_burnb(address,bytes32,uint256)`))                                                           // InscriptionContract
 	WalletCreationRequestTopic      = crypto.Keccak256Hash([]byte(`WalletCreationRequest(uint8,uint8,uint32,uint8,uint8)`))                                                    // TopicPayloadContract
 	DepositRequestTopic             = crypto.Keccak256Hash([]byte(`DepositRequest(uint8,uint8,string,uint64,uint8,uint32,uint64,string,string,string,uint8,uint8)`))           // TopicPayloadContract
 	WithdrawalRequestTopic          = crypto.Keccak256Hash([]byte(`WithdrawalRequest(uint8,uint8,string,uint64,uint8,uint32,uint64,string,string,string,uint8,uint8,uint64)`)) // TopicPayloadContract

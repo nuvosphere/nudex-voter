@@ -79,7 +79,7 @@ abi: ## generate abi go file
 	abigen --abi internal/layer2/abis/multicall3.json --pkg contracts --type Multicall3 --out internal/layer2/contracts/multicall3.go
 	abigen --abi internal/layer2/abis/AccountManager.json --pkg contracts --type AccountManagerContract --out internal/layer2/contracts/account_manager.go
 	abigen --abi internal/layer2/abis/TaskManager.json --pkg contracts --type TaskManagerContract --out internal/layer2/contracts/task_manager.go
-	abigen --abi internal/layer2/abis/AssetManager.json --pkg contracts --type AssetManagerContract --out internal/layer2/contracts/asset_manager.go
+	abigen --abi internal/layer2/abis/AssetHandler.json --pkg contracts --type AssetHandlerContract --out internal/layer2/contracts/asset_handler.go
 	abigen --abi internal/layer2/abis/ParticipantManager.json --pkg contracts --type ParticipantManagerContract --out internal/layer2/contracts/participant_manager.go
 	abigen --abi internal/layer2/abis/VotingManager.json --pkg contracts --type VotingManagerContract --out internal/layer2/contracts/voting_manager.go
 	abigen --abi internal/layer2/abis/DepositManager.json --pkg contracts --type DepositManagerContract --out internal/layer2/contracts/deposit_manager.go
