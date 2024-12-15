@@ -1,4 +1,4 @@
-package wallet
+package btc
 
 import (
 	"encoding/hex"

@@ -42,9 +42,9 @@ func (t *Pool[E]) Last() Task[E] {
 }
 
 func (t *Pool[E]) Add(item Task[E]) {
-	if t.IsExist(item.TaskID()) {
-		return
-	}
+	//if t.IsExist(item.TaskID()) {
+	//	return
+	//}
 	t.Lock()
 	defer t.Unlock()
 	t.ids = append(t.ids, item.TaskID())

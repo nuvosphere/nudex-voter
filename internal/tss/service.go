@@ -22,7 +22,7 @@ func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, bus eventbus.Bus, 
 		true,
 		p,
 		bus,
-		state.NewContractState(dbm.GetL2SyncDB()),
+		state.NewContractState(dbm.GetL2InfoDB()),
 		voterContract,
 		crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 	)
