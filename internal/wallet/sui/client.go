@@ -169,11 +169,11 @@ func (c *TxClient) BuildTransferTx(coinType, from, to string, amount uint64) (*U
 	return (*UnSignTx)(&txIn), nil
 }
 
-func (c *TxClient) BuildCollectFoundTx(coinType string, owner string) (*UnSignTx, error) {
+func (c *TxClient) BuildCollectFoundTx(coinType string, from, to string) (*UnSignTx, error) {
 	var suiObjectId []string
 	for {
 		res, err := c.client.SuiXGetCoins(c.ctx, models.SuiXGetCoinsRequest{
-			Owner:    owner,
+			Owner:    from,
 			CoinType: coinType,
 			Limit:    50,
 		})
@@ -190,9 +190,9 @@ func (c *TxClient) BuildCollectFoundTx(coinType string, owner string) (*UnSignTx
 	}
 
 	txIn, err := c.client.PayAllSui(c.ctx, models.PayAllSuiRequest{
-		Signer:      owner,
+		Signer:      from,
 		SuiObjectId: suiObjectId,
-		Recipient:   owner,
+		Recipient:   to,
 		GasBudget:   "1000000", // todo
 	})
 	if err != nil {

@@ -101,7 +101,7 @@ func TestCollectFoundTx(t *testing.T) {
 	assert.Nil(t, err)
 	t.Log("amount", utils.FormatJSON(amount))
 
-	unSignTx, err := c.BuildCollectFoundTx(CoinType("0x02", "sui"), fromAddress)
+	unSignTx, err := c.BuildCollectFoundTx(CoinType("0x02", "sui"), fromAddress, fromAddress)
 	assert.NoError(t, err)
 
 	hashStr := unSignTx.TxDigest()
