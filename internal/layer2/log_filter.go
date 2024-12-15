@@ -116,7 +116,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		if taskUpdatedEvent != nil {
 			l.postTask(taskUpdatedEvent)
 		}
-	case contracts.NIP20TokenEventBurnbTopic:
+	case contracts.NIP20TokenEventMintbTopic:
 		mintb := contracts.InscriptionContractNIP20TokenEventMintb{}
 		contracts.UnpackEventLog(contracts.InscriptionContractMetaData, &mintb, NIP20TokenMintbEvent, vLog)
 
