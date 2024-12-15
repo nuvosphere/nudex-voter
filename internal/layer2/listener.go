@@ -40,6 +40,7 @@ type Layer2Listener struct {
 	participantManager    *contracts.ParticipantManagerContract
 	taskManager           *contracts.TaskManagerContract
 	accountManager        *contracts.AccountManagerContract
+	isSyncing             atomic.Bool
 }
 
 func (l *Layer2Listener) postTask(task any) {
@@ -58,6 +59,7 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		state:     state,
 		ethClient: ethClient,
 		chainID:   atomic.Int64{},
+		isSyncing: atomic.Bool{},
 	}
 
 	var (
@@ -173,7 +175,10 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 					log.Errorf("scan : %v", err)
 				}
 				if !isContinue {
+					l.isSyncing.Store(false)
 					break L
+				} else {
+					l.isSyncing.Store(true)
 				}
 			}
 		}
@@ -258,4 +263,8 @@ func (l *Layer2Listener) ChainID(ctx context.Context) (*big.Int, error) {
 	}
 
 	return big.NewInt(l.chainID.Load()), nil
+}
+
+func (l *Layer2Listener) IsSyncing() bool {
+	return l.isSyncing.Load()
 }

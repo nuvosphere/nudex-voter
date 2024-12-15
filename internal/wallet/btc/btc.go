@@ -1,4 +1,4 @@
-package wallet
+package btc
 
 import (
 	"fmt"
@@ -8,7 +8,13 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 )
+
+func init() {
+	wallet.RegisterAddress(types.CoinTypeBTC, GenerateP2WPKHBTCAddress)
+}
 
 func GenerateCompressedBTCAddress(p *crypto.ECPoint) (string, error) {
 	return btcAddress(NewPublicKeyOfBtc(p).SerializeCompressed())
@@ -37,8 +43,10 @@ func NewPublicKeyOfBtc(p *crypto.ECPoint) *btcec.PublicKey {
 }
 
 // GenerateP2WPKHBTCAddress P2WPKH(pay to witness public key hash) address
-func GenerateP2WPKHBTCAddress(p *crypto.ECPoint) (string, error) {
-	return P2WPKHAddress(NewPublicKeyOfBtc(p).SerializeCompressed())
+func GenerateP2WPKHBTCAddress(p *crypto.ECPoint) string {
+	address, err := P2WPKHAddress(NewPublicKeyOfBtc(p).SerializeCompressed())
+	utils.Assert(err)
+	return address
 }
 
 func P2WPKHAddress(serializedPubKey []byte) (string, error) {
@@ -47,8 +55,4 @@ func P2WPKHAddress(serializedPubKey []byte) (string, error) {
 		return "", fmt.Errorf("invalid public key: %w", err)
 	}
 	return addr.EncodeAddress(), nil
-}
-
-func HotAddressOfBtc(masterPubKey *crypto.ECPoint) string {
-	return GenerateAddressByPath(masterPubKey, types.CoinTypeSOL, 0, 0)
 }
