@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/codec"
@@ -114,6 +115,20 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 		if taskUpdatedEvent != nil {
 			l.postTask(taskUpdatedEvent)
+		}
+	case contracts.NIP20TokenEventBurnbTopic:
+		mintb := contracts.InscriptionContractNIP20TokenEventMintb{}
+		contracts.UnpackEventLog(contracts.InscriptionContractMetaData, &mintb, NIP20TokenMintbEvent, vLog)
+
+		var mintbEvent *db.InscriptionMintb
+		mintbEvent = &db.InscriptionMintb{
+			Recipient: mintb.Recipient.Hex(),
+			Ticker:    strings.Trim(string(mintb.Ticker[:]), "\x00"),
+			Amount:    mintbEvent.Amount,
+		}
+		err := l.db.GetL2InfoDB().Create(mintbEvent)
+		if err != nil {
+			return err.Error
 		}
 	default:
 		return errors.New("invalid topic")
