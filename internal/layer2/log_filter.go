@@ -120,13 +120,25 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		mintb := contracts.InscriptionContractNIP20TokenEventMintb{}
 		contracts.UnpackEventLog(contracts.InscriptionContractMetaData, &mintb, NIP20TokenMintbEvent, vLog)
 
-		var mintbEvent *db.InscriptionMintb
-		mintbEvent = &db.InscriptionMintb{
+		mintbEvent := &db.InscriptionMintb{
 			Recipient: mintb.Recipient.Hex(),
 			Ticker:    strings.Trim(string(mintb.Ticker[:]), "\x00"),
-			Amount:    mintbEvent.Amount,
+			Amount:    mintb.Amount.Uint64(),
 		}
 		err := l.db.GetL2InfoDB().Create(mintbEvent)
+		if err != nil {
+			return err.Error
+		}
+	case contracts.NIP20TokenEventBurnbTopic:
+		burnb := contracts.InscriptionContractNIP20TokenEventBurnb{}
+		contracts.UnpackEventLog(contracts.InscriptionContractMetaData, &burnb, NIP20TokenBurnbEvent, vLog)
+
+		burnbEvent := &db.InscriptionBurnb{
+			From:   burnb.From.Hex(),
+			Ticker: strings.Trim(string(burnb.Ticker[:]), "\x00"),
+			Amount: burnb.Amount.Uint64(),
+		}
+		err := l.db.GetL2InfoDB().Create(burnbEvent)
 		if err != nil {
 			return err.Error
 		}
