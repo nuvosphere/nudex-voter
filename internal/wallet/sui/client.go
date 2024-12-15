@@ -9,6 +9,7 @@ import (
 	"github.com/block-vision/sui-go-sdk/constant"
 	"github.com/block-vision/sui-go-sdk/models"
 	"github.com/block-vision/sui-go-sdk/sui"
+	sutils "github.com/block-vision/sui-go-sdk/utils"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/blake2b"
@@ -20,8 +21,14 @@ type UnSignTx models.TxnMetaData
 
 type SignedTx models.SignedTransactionSerializedSig
 
-func (t *UnSignTx) TxHash() []byte {
-	return TxHash(t.TxBytes)
+func (t *UnSignTx) Blake2bHash() []byte {
+	return Blake2bHash(t.TxBytes)
+}
+
+func (t *UnSignTx) TxDigest() string {
+	digest, err := sutils.GetTxDigest(t.TxBytes)
+	utils.Assert(err)
+	return digest
 }
 
 func (t *UnSignTx) SerializedSigWith(signature, publicKey []byte) *models.SignedTransactionSerializedSig {
@@ -58,31 +65,99 @@ func NewDevClient() *TxClient {
 	return c
 }
 
-func (c *TxClient) GetBalance(address string, coin string, coinName string) (decimal.Decimal, error) {
+func (c *TxClient) GetBalance(address string, coinAddress string, coinName string) (*models.CoinBalanceResponse, error) {
 	res, err := c.client.SuiXGetBalance(c.ctx, models.SuiXGetBalanceRequest{
 		Owner:    address,
-		CoinType: fmt.Sprintf("%s::%s::%s", coin, strings.ToLower(coinName), strings.ToUpper(coinName)), //"0x2::sui::SUI",
+		CoinType: CoinType(coinAddress, coinName), //"0x2::sui::SUI",
 	})
 	if err != nil {
-		return decimal.Zero, err
+		return nil, fmt.Errorf("sui get balance: %w", err)
 	}
-	return decimal.RequireFromString(res.TotalBalance), nil
+	return &res, nil
 }
 
-// pay: src20 token
-// paySui: sui token
+type Recipient struct {
+	Recipient string `json:"recipient"`
+	Amount    string `json:"amount"`
+}
 
-func (c *TxClient) BuildTransferTx(from, to, token string, amount uint64) (*UnSignTx, error) {
-	//txIn, err := c.client.PaySui(c.ctx, models.PaySuiRequest{
-	//	Signer:      from,
-	//	SuiObjectId: []string{token},
-	//	Recipient:   []string{to},
-	//	Amount:      []string{fmt.Sprintf("%d", amount)},
-	//	GasBudget:   "1000000", // todo
-	//})
+func (c *TxClient) BuildPaySuiTx(coinType string, from string, recipients []Recipient) (*UnSignTx, error) {
+	balanceTotal := decimal.Zero
+	amountTotal := decimal.Zero
+	amountList := make([]string, 0, len(recipients))
+	recipientList := make([]string, 0, len(recipients))
+	suiObjectIdList := make([]string, 0, len(recipients))
+
+	for _, v := range recipients {
+		recipientList = append(recipientList, v.Recipient)
+		amountList = append(amountList, v.Amount)
+		amountTotal = amountTotal.Add(decimal.RequireFromString(v.Amount))
+	}
+
+	res, err := c.client.SuiXGetCoins(c.ctx, models.SuiXGetCoinsRequest{
+		Owner:    from,
+		CoinType: coinType,
+		Limit:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("call SuiXGetCoins error: %w", err)
+	}
+
+	is := false
+	for _, coins := range res.Data {
+		balance := decimal.RequireFromString(coins.Balance)
+		balanceTotal = balanceTotal.Add(balance)
+		suiObjectIdList = append(suiObjectIdList, coins.CoinObjectId)
+		if balanceTotal.Cmp(amountTotal) >= 0 {
+			is = true
+			break
+		}
+	}
+
+	if !is {
+		return nil, fmt.Errorf("not sufficient funds")
+	}
+
+	txIn, err := c.client.PaySui(c.ctx, models.PaySuiRequest{
+		Signer:      from,
+		SuiObjectId: suiObjectIdList,
+		Recipient:   recipientList,
+		Amount:      amountList,
+		GasBudget:   "1000000", // todo
+	})
+	if err != nil {
+		return nil, fmt.Errorf("transfer sui: %w", err)
+	}
+
+	return (*UnSignTx)(&txIn), nil
+}
+
+func (c *TxClient) BuildTransferTx(coinType, from, to string, amount uint64) (*UnSignTx, error) {
+	res, err := c.client.SuiXGetCoins(c.ctx, models.SuiXGetCoinsRequest{
+		Owner:    from,
+		CoinType: coinType,
+		Limit:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("call SuiXGetCoins error: %w", err)
+	}
+
+	suiObjectId := ""
+	for _, coins := range res.Data {
+		balance := decimal.RequireFromString(coins.Balance)
+		if balance.Cmp(decimal.NewFromUint64(amount)) >= 0 {
+			suiObjectId = coins.CoinObjectId
+			break
+		}
+	}
+
+	if suiObjectId == "" {
+		return nil, fmt.Errorf("not sufficient funds")
+	}
+
 	txIn, err := c.client.TransferSui(c.ctx, models.TransferSuiRequest{
 		Signer:      from,
-		SuiObjectId: token,
+		SuiObjectId: suiObjectId,
 		Recipient:   to,
 		Amount:      fmt.Sprintf("%d", amount),
 		GasBudget:   "1000000", // todo https://docs.sui.io/concepts/tokenomics/gas-in-sui
@@ -94,7 +169,40 @@ func (c *TxClient) BuildTransferTx(from, to, token string, amount uint64) (*UnSi
 	return (*UnSignTx)(&txIn), nil
 }
 
-func (c *TxClient) SendTx(tx *SignedTx) ([]byte, error) {
+func (c *TxClient) BuildCollectFoundTx(coinType string, owner string) (*UnSignTx, error) {
+	var suiObjectId []string
+	for {
+		res, err := c.client.SuiXGetCoins(c.ctx, models.SuiXGetCoinsRequest{
+			Owner:    owner,
+			CoinType: coinType,
+			Limit:    50,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("call SuiXGetCoins error: %w", err)
+		}
+		for _, coins := range res.Data {
+			suiObjectId = append(suiObjectId, coins.CoinObjectId)
+		}
+
+		if !res.HasNextPage {
+			break
+		}
+	}
+
+	txIn, err := c.client.PayAllSui(c.ctx, models.PayAllSuiRequest{
+		Signer:      owner,
+		SuiObjectId: suiObjectId,
+		Recipient:   owner,
+		GasBudget:   "1000000", // todo
+	})
+	if err != nil {
+		return nil, fmt.Errorf("transfer sui: %w", err)
+	}
+
+	return (*UnSignTx)(&txIn), nil
+}
+
+func (c *TxClient) SendTx(tx *SignedTx) (string, error) {
 	res, err := c.client.SuiExecuteTransactionBlock(c.ctx, models.SuiExecuteTransactionBlockRequest{
 		TxBytes:   tx.TxBytes,
 		Signature: []string{tx.Signature},
@@ -109,17 +217,15 @@ func (c *TxClient) SendTx(tx *SignedTx) ([]byte, error) {
 		RequestType: "WaitForLocalExecution",
 	})
 	if err != nil {
-		return nil, fmt.Errorf("send transaction block: %w", err)
+		return "", fmt.Errorf("send transaction block: %w", err)
 	}
 
-	return []byte(res.Digest), nil
+	return res.Digest, nil
 }
 
 // TryExecuteTx todo: bug
 func (c *TxClient) TryExecuteTx(tx *UnSignTx) (string, error) {
-	res, err := c.client.SuiDryRunTransactionBlock(c.ctx, models.SuiDryRunTransactionBlockRequest{
-		TxBytes: tx.TxBytes,
-	})
+	res, err := c.client.SuiDryRunTransactionBlock(c.ctx, models.SuiDryRunTransactionBlockRequest{TxBytes: tx.TxBytes})
 	if err != nil {
 		return "", fmt.Errorf("try execute transaction block: %w", err)
 	}
@@ -128,9 +234,13 @@ func (c *TxClient) TryExecuteTx(tx *UnSignTx) (string, error) {
 	return "", nil
 }
 
-func TxHash(data string) []byte {
+func Blake2bHash(data string) []byte {
 	txBytes, _ := base64.StdEncoding.DecodeString(data)
 	message := models.MessageWithIntent(txBytes)
 	digest := blake2b.Sum256(message)
 	return digest[:]
+}
+
+func CoinType(coinAddress, coinName string) string {
+	return fmt.Sprintf("%s::%s::%s", coinAddress, strings.ToLower(coinName), strings.ToUpper(coinName))
 }
