@@ -3,6 +3,7 @@ package sui
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	sutils "github.com/block-vision/sui-go-sdk/utils"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/shopspring/decimal"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -221,6 +223,31 @@ func (c *TxClient) SendTx(tx *SignedTx) (string, error) {
 	}
 
 	return res.Digest, nil
+}
+
+func (c *TxClient) WaitSuccess(digest string) error {
+	result, err := c.client.SuiGetTransactionBlock(c.ctx, models.SuiGetTransactionBlockRequest{
+		Digest: digest,
+		Options: models.SuiTransactionBlockOptions{
+			ShowInput:          true,
+			ShowRawInput:       true,
+			ShowEffects:        true,
+			ShowEvents:         true,
+			ShowObjectChanges:  true,
+			ShowBalanceChanges: true,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("get transaction block: %w", err)
+	}
+
+	log.Info("sui SuiGetTransactionBlock: ", utils.FormatJSON(result))
+
+	if result.Effects.Status.Error != "" {
+		return errors.New(result.Effects.Status.Error)
+	}
+
+	return nil
 }
 
 // TryExecuteTx todo: bug

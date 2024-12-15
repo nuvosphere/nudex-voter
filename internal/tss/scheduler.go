@@ -158,8 +158,9 @@ func (m *Scheduler) Start() {
 }
 
 func (m *Scheduler) BlockDetectionLatestState() {
-	for !m.voterContract.IsSyncing() {
+	for m.voterContract.IsSyncing() {
 		time.Sleep(1 * time.Second)
+		log.Warn("l2 info is syncing")
 	}
 }
 

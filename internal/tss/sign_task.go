@@ -27,6 +27,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/btc"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/sui"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
@@ -344,13 +345,54 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			)
 
 		case types.ChainSui:
-			switch taskData.AssetType {
-			case types.AssetTypeMain:
-
-			case types.AssetTypeErc20:
-			default:
-				log.Errorf("unknown asset type: %v", taskData.AssetType)
+			var c *sui.TxClient
+			if m.isProd {
+				c = sui.NewClient(m.ctx)
+			} else {
+				c = sui.NewDevClient()
 			}
+			hotAddress := wallet.HotAddressOfSui(m.partyData.GetData(crypto.EDDSA).ECPoint())
+			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
+
+			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(taskData.ContractAddress, taskData.Ticker), hotAddress, []sui.Recipient{
+				{
+					Recipient: taskData.TargetAddress,
+					Amount:    fmt.Sprintf("%d", taskData.Amount),
+				},
+			})
+			if err != nil {
+				log.Errorf("failed to build unsign tx: %v", err)
+				return
+			}
+			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeSUI, 0, 0)
+			proposal := new(big.Int).SetBytes(unSignTx.Blake2bHash())
+			sessionId := ZeroSessionID
+			if msg != nil {
+				log.Infof("msg.proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
+				//if msg.Proposal.Cmp(proposal) != 0 {//todo
+				//	log.Errorf("the proposal is incorrect of sui")
+				//	return
+				//}
+				proposal = &msg.Proposal
+				sessionId = msg.SessionID
+			} else {
+				m.txContext.Store(task.TaskID(), &SuiTxContext{
+					signerPubKey: localData.PublicKey().SerializeCompressed(),
+					c:            c,
+					tx:           unSignTx,
+					task:         taskData,
+				})
+			}
+
+			m.NewTxSignSession(
+				sessionId,
+				taskData.TaskId,
+				proposal,
+				localData,
+				keyDerivationDelta,
+				hotAddress,
+			)
+
 		default:
 			panic(fmt.Errorf("unknown Chain type: %v", taskData.Chain))
 		}
@@ -394,6 +436,23 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 				return
 			}
 			log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), sig)
+
+		case *SuiTxContext:
+			signTx := ctx.tx.SerializedSigWith(data.Signature, ctx.signerPubKey)
+			log.Debugf("SuiTxContext: signTx: %v, signature: %x", signTx, data.Signature)
+			digest, err := ctx.c.SendTx((*sui.SignedTx)(signTx))
+			if err != nil {
+				log.Errorf("send transaction err: %v", err)
+				return
+			}
+
+			err = ctx.c.WaitSuccess(digest)
+			if err != nil {
+				log.Errorf("check transaction success err: %v", err)
+				return
+			}
+
+			log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), digest)
 		}
 	}
 }

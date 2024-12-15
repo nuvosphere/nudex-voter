@@ -6,7 +6,13 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/sui"
 )
+
+type BtcTxContext struct {
+	c      types.TxClient
+	sigCtx *SignerContext
+}
 
 type EvmTxContext struct {
 	w    *wallet.Wallet
@@ -20,7 +26,9 @@ type SolTxContext struct {
 	task pool.Task[uint64]
 }
 
-type BtcTxContext struct {
-	c      types.TxClient
-	sigCtx *SignerContext
+type SuiTxContext struct {
+	signerPubKey []byte
+	c            *sui.TxClient
+	tx           *sui.UnSignTx
+	task         pool.Task[uint64]
 }
