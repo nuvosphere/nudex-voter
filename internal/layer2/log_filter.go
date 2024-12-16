@@ -280,3 +280,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 
 	return nil
 }
+
+func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
+	return nil
+}
