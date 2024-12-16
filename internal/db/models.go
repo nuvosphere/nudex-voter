@@ -132,3 +132,20 @@ type InscriptionBurnb struct {
 func (InscriptionBurnb) TableName() string {
 	return "inscription_burnb"
 }
+
+type Asset struct {
+	gorm.Model
+	Ticker            string `gorm:"uniqueIndex;not null" json:"ticker"`
+	AssetType         uint8  `gorm:"not null" json:"asset_type"`
+	Decimals          uint8  `gorm:"not null" json:"decimals"`
+	DepositEnabled    bool   `gorm:"not null" json:"deposit_enabled"`
+	WithdrawalEnabled bool   `gorm:"not null" json:"withdrawal_enabled"`
+	MinDepositAmount  uint64 `gorm:"not null" json:"min_deposit_amount"`
+	MinWithdrawAmount uint64 `gorm:"not null" json:"min_withdraw_amount"`
+	AssetAlias        string `gorm:"not null"             json:"asset_alias"`
+	AssetLogo         string `gorm:"not null"             json:"asset_logo"`
+}
+
+func (Asset) TableName() string {
+	return "asset"
+}
