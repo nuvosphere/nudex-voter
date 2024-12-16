@@ -3,6 +3,7 @@ package layer2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -282,5 +283,59 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 }
 
 func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
-	return nil
+	switch vLog.Topics[0] {
+	case contracts.AssetListedTopic:
+		eventAssetListed := contracts.AssetHandlerContractAssetListed{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &eventAssetListed, AssetListed, vLog)
+
+		asset := &db.Asset{
+			Ticker:    strings.Trim(string(eventAssetListed.Ticker[:]), "\x00"),
+			AssetType: eventAssetListed.AssetParam.AssetType,
+		}
+		return l.db.GetL2SyncDB().Save(asset).Error
+	case contracts.AssetUpdatedTopic:
+		eventAssetUpdated := contracts.AssetHandlerContractAssetUpdated{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &eventAssetUpdated, AssetUpdated, vLog)
+
+		ticker := strings.Trim(string(eventAssetUpdated.Ticker[:]), "\x00")
+
+		var existingAsset db.Asset
+		result := l.db.GetL2SyncDB().Where("ticker = ?", ticker).First(&existingAsset)
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				newAsset := &db.Asset{
+					Ticker:    ticker,
+					AssetType: eventAssetUpdated.AssetParam.AssetType,
+				}
+				return l.db.GetL2SyncDB().Save(newAsset).Error
+			}
+			return fmt.Errorf("failed to query asset by ticker:%s, %w", ticker, result.Error)
+		}
+
+		existingAsset.AssetType = eventAssetUpdated.AssetParam.AssetType
+		return l.db.GetL2SyncDB().Save(&existingAsset).Error
+	case contracts.AssetDelistedTopic:
+		eventAssetDelisted := contracts.AssetHandlerContractAssetDelisted{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &eventAssetDelisted, AssetDelisted, vLog)
+
+		ticker := strings.Trim(string(eventAssetDelisted.AssetId[:]), "\x00")
+
+		var existingAsset db.Asset
+		result := l.db.GetL2SyncDB().Where("ticker = ?", ticker).First(&existingAsset)
+
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return fmt.Errorf("failed to query asset by ticker:%s, %w", ticker, result.Error)
+		}
+
+		if err := l.db.GetL2SyncDB().Delete(&existingAsset).Error; err != nil {
+			return fmt.Errorf("failed to delete asset with ticker: %s, %w", ticker, err)
+		}
+
+		return nil
+	default:
+		return errors.New("invalid topic")
+	}
 }

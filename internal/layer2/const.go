@@ -15,4 +15,8 @@ const (
 	NIP20TokenMintbEvent = "NIP20TokenEvent_mintb"
 	// #nosec G101: This is not a credential
 	NIP20TokenBurnbEvent = "NIP20TokenEvent_burnb"
+
+	AssetListed   = "AssetListed"
+	AssetUpdated  = "AssetUpdated"
+	AssetDelisted = "AssetDelisted"
 )
