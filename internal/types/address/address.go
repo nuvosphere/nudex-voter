@@ -29,6 +29,11 @@ func GenerateAddressByECPoint(point *tssCrypto.ECPoint, coinType int) string {
 }
 
 func GenerateAddressByPath(masterPubKey *tssCrypto.ECPoint, coinType, account uint32, index uint8) string {
+	address, _, _ := GenerateSignerByPath(masterPubKey, coinType, account, index)
+	return address
+}
+
+func GenerateSignerByPath(masterPubKey *tssCrypto.ECPoint, coinType, account uint32, index uint8) (string, *tssCrypto.ECPoint, *big.Int) {
 	bip44Path := bip44.Bip44DerivationPath(coinType, account, index)
 
 	p, err := bip44Path.ToParams()
@@ -37,10 +42,10 @@ func GenerateAddressByPath(masterPubKey *tssCrypto.ECPoint, coinType, account ui
 
 	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
 	curveType := types.GetCurveTypeByCoinType(int(coinType))
-	_, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
+	derivingKey, extendKey, err := ckd.DerivingPubkeyFromPath(masterPubKey, chainCode, indexes, curveType.EC())
 	utils.Assert(err)
 
-	return GenerateAddressByECPoint(extendKey.PublicKey, int(coinType))
+	return GenerateAddressByECPoint(extendKey.PublicKey, int(coinType)), extendKey.PublicKey, derivingKey
 }
 
 func HotAddressOfBtc(masterPubKey *tssCrypto.ECPoint) string {

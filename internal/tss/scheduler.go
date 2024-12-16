@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -159,6 +160,7 @@ func (m *Scheduler) Start() {
 
 	log.Infof("********Scheduler master tss ecdsa address********: %v", m.partyData.GetData(crypto.ECDSA).TssSigner())
 	log.Infof("localSubmitter: %v, proposer: %v", m.LocalSubmitter(), m.Proposer())
+	m.initKnownSigner()
 	m.reGroupResultLoop()
 	m.loopSigInToOut()
 	m.loopDetectionCondition()
@@ -217,10 +219,22 @@ func (m *Scheduler) IsGenesis() bool {
 }
 
 func (m *Scheduler) initKnownSigner() {
-	defer m.sigrw.Unlock()
-	m.sigrw.Lock()
-	m.sigContext = map[string]*SignerContext{
-		// wallet.HotAddressOfBtc():
+	// tss signer
+	m.AddSigner(&SignerContext{
+		chainType:          types.ChainEthereum,
+		localData:          *m.partyData.ECDSALocalData(),
+		keyDerivationDelta: nil,
+	})
+
+	// add hot address
+	coins := []int{types.CoinTypeBTC, types.CoinTypeEVM, types.CoinTypeSOL, types.CoinTypeSUI}
+	for _, coin := range coins {
+		localPartySaveData, key := m.GenerateDerivationWalletProposal(uint32(coin), 0, 0)
+		m.AddSigner(&SignerContext{
+			chainType:          types.GetChainByCoinType(coin),
+			localData:          localPartySaveData,
+			keyDerivationDelta: key,
+		})
 	}
 }
 
@@ -253,15 +267,15 @@ func (m *Scheduler) Threshold() int {
 }
 
 func (m *Scheduler) AddSigner(signer *SignerContext) {
-	m.sigrw.Lock()
 	defer m.sigrw.Unlock()
+	m.sigrw.Lock()
 	m.sigContext[signer.Address()] = signer
 }
 
 func (m *Scheduler) GetSigner(address string) *SignerContext {
-	m.sigrw.RLock()
 	defer m.sigrw.RUnlock()
-	return m.sigContext[address]
+	m.sigrw.RLock()
+	return m.sigContext[strings.ToLower(address)]
 }
 
 func (m *Scheduler) AddGroup(group *Group) {
