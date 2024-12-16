@@ -23,6 +23,7 @@ const (
 type DetailTask interface {
 	pool.Task[uint64]
 	SetBaseTask(task Task)
+	ChainType() uint8
 }
 
 type Task struct {
@@ -96,8 +97,12 @@ type CreateWalletTask struct {
 	Address string `json:"address"` // new create bip44 address
 }
 
-func (CreateWalletTask) TableName() string {
+func (*CreateWalletTask) TableName() string {
 	return "create_wallet_task"
+}
+
+func (c *CreateWalletTask) ChainType() uint8 {
+	return c.Chain
 }
 
 func NewCreateWalletTask(taskId uint64, req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
@@ -126,8 +131,12 @@ type DepositTask struct {
 	Decimal         uint8  `json:"decimal"`
 }
 
-func (DepositTask) TableName() string {
+func (*DepositTask) TableName() string {
 	return "deposit_task"
+}
+
+func (c *DepositTask) ChainType() uint8 {
+	return c.Chain
 }
 
 func NewDepositTask(taskId uint64, req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
@@ -164,8 +173,12 @@ type WithdrawalTask struct {
 	Fee             uint64 `json:"fee"`
 }
 
-func (WithdrawalTask) TableName() string {
+func (*WithdrawalTask) TableName() string {
 	return "withdrawal_task"
+}
+
+func (c *WithdrawalTask) ChainType() uint8 {
+	return c.Chain
 }
 
 func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
