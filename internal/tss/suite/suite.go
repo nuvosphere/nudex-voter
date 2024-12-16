@@ -35,6 +35,7 @@ type SignRes interface {
 type TssService interface {
 	// PublicKey() crypto.PublicKey
 	// ECPoint() *tssCrypto.ECPoint
+	GetUserAddress(coinType, account uint32, index uint8) string
 	TssSigner() common.Address
 	IsMeeting(signDigest string) bool
 	Sign(req SignReq) error

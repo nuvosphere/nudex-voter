@@ -2,12 +2,15 @@ package types
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
 )
 
@@ -40,4 +43,29 @@ type TxClient interface {
 
 type Signer interface {
 	Sign(c TxClient, msg []byte) error
+}
+
+func UnmarshalJson[T any](data json.RawMessage) T {
+	var obj T
+
+	err := json.Unmarshal(data, &obj)
+	if err != nil || data == nil {
+		panic(fmt.Errorf("unmarshal data:%v, error: %w", data, err))
+	}
+
+	return obj
+}
+
+type BatchData struct {
+	Ids []uint64 `json:"ids"`
+}
+
+func (b *BatchData) Bytes() []byte {
+	data, err := json.Marshal(b)
+	utils.Assert(err)
+	return data
+}
+
+func (b *BatchData) FromBytes(data []byte) {
+	*b = UnmarshalJson[BatchData](data)
 }

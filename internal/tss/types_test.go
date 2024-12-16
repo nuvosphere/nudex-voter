@@ -62,7 +62,7 @@ func TestConvertMsgData(t *testing.T) {
 	err = json.Unmarshal(data, &rawMsg)
 	assert.Nil(t, err)
 
-	event := convertMsgData(rawMsg)
+	event := ConvertP2PMsgData(rawMsg)
 	orderMag, ok := event.(types.TssMessage)
 	assert.True(t, ok)
 

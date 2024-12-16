@@ -24,6 +24,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
@@ -218,6 +219,10 @@ func (m *Scheduler) IsGenesis() bool {
 	return !m.partyData.LoadData()
 }
 
+func (m *Scheduler) GetUserAddress(coinType, account uint32, index uint8) string {
+	return address.GenerateAddressByPath(m.partyData.GetData(types.GetCurveTypeByCoinType(int(coinType))).ECPoint(), coinType, account, index)
+}
+
 func (m *Scheduler) initKnownSigner() {
 	// tss signer
 	m.AddSigner(&SignerContext{
@@ -410,7 +415,7 @@ func (m *Scheduler) BatchTask() {
 		log.Infof("nonce: %v, dataHash: %v, msg: %v", nonce, dataHash, msg)
 
 		data := lo.Map(tasks, func(item pool.Task[uint64], index int) uint64 { return item.TaskID() })
-		batchData := BatchData{Ids: data}
+		batchData := types.BatchData{Ids: data}
 
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
@@ -487,7 +492,7 @@ func (m *Scheduler) p2pLoop() {
 				log.Debugf("Received m msg event")
 
 				e := event.(p2p.Message[json.RawMessage])
-				proposal := convertMsgData(e).(SessionMessage[ProposalID, Proposal])
+				proposal := ConvertP2PMsgData(e).(SessionMessage[ProposalID, Proposal])
 
 				err := m.processReceivedProposal(proposal)
 				if err != nil {
@@ -502,8 +507,6 @@ func (m *Scheduler) p2pLoop() {
 	}()
 	log.Info("p2p loop started")
 }
-
-const TopN = 20
 
 // from layer2 log event
 func (m *Scheduler) systemProposalLoop() {
@@ -531,6 +534,8 @@ func (m *Scheduler) systemProposalLoop() {
 
 	log.Info("proposal loop started")
 }
+
+const TopN = 20
 
 func (m *Scheduler) proposalLoop() {
 	go func() {
