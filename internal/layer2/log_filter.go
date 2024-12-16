@@ -285,40 +285,62 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
 	switch vLog.Topics[0] {
 	case contracts.AssetListedTopic:
-		eventAssetListed := contracts.AssetHandlerContractAssetListed{}
-		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &eventAssetListed, AssetListed, vLog)
+		event := contracts.AssetHandlerContractAssetListed{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetListed, vLog)
 
 		asset := &db.Asset{
-			Ticker:    strings.Trim(string(eventAssetListed.Ticker[:]), "\x00"),
-			AssetType: eventAssetListed.AssetParam.AssetType,
+			Ticker:            strings.Trim(string(event.Ticker[:]), "\x00"),
+			AssetType:         event.AssetParam.AssetType,
+			Decimals:          event.AssetParam.Decimals,
+			DepositEnabled:    event.AssetParam.DepositEnabled,
+			WithdrawalEnabled: event.AssetParam.WithdrawalEnabled,
+			MinDepositAmount:  event.AssetParam.MinDepositAmount.Uint64(),
+			MinWithdrawAmount: event.AssetParam.MinWithdrawAmount.Uint64(),
+			AssetAlias:        event.AssetParam.AssetAlias,
+			AssetLogo:         event.AssetParam.AssetLogo,
 		}
 		return l.db.GetL2SyncDB().Save(asset).Error
 	case contracts.AssetUpdatedTopic:
-		eventAssetUpdated := contracts.AssetHandlerContractAssetUpdated{}
-		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &eventAssetUpdated, AssetUpdated, vLog)
+		event := contracts.AssetHandlerContractAssetUpdated{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetUpdated, vLog)
 
-		ticker := strings.Trim(string(eventAssetUpdated.Ticker[:]), "\x00")
+		ticker := strings.Trim(string(event.Ticker[:]), "\x00")
 
 		var existingAsset db.Asset
 		result := l.db.GetL2SyncDB().Where("ticker = ?", ticker).First(&existingAsset)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				newAsset := &db.Asset{
-					Ticker:    ticker,
-					AssetType: eventAssetUpdated.AssetParam.AssetType,
+					Ticker:            ticker,
+					AssetType:         event.AssetParam.AssetType,
+					Decimals:          event.AssetParam.Decimals,
+					DepositEnabled:    event.AssetParam.DepositEnabled,
+					WithdrawalEnabled: event.AssetParam.WithdrawalEnabled,
+					MinDepositAmount:  event.AssetParam.MinDepositAmount.Uint64(),
+					MinWithdrawAmount: event.AssetParam.MinWithdrawAmount.Uint64(),
+					AssetAlias:        event.AssetParam.AssetAlias,
+					AssetLogo:         event.AssetParam.AssetLogo,
 				}
 				return l.db.GetL2SyncDB().Save(newAsset).Error
 			}
 			return fmt.Errorf("failed to query asset by ticker:%s, %w", ticker, result.Error)
 		}
 
-		existingAsset.AssetType = eventAssetUpdated.AssetParam.AssetType
+		existingAsset.AssetType = event.AssetParam.AssetType
+		existingAsset.Decimals = event.AssetParam.Decimals
+		existingAsset.DepositEnabled = event.AssetParam.DepositEnabled
+		existingAsset.WithdrawalEnabled = event.AssetParam.WithdrawalEnabled
+		existingAsset.MinDepositAmount = event.AssetParam.MinDepositAmount.Uint64()
+		existingAsset.MinWithdrawAmount = event.AssetParam.MinWithdrawAmount.Uint64()
+		existingAsset.AssetAlias = event.AssetParam.AssetAlias
+		existingAsset.AssetLogo = event.AssetParam.AssetLogo
+
 		return l.db.GetL2SyncDB().Save(&existingAsset).Error
 	case contracts.AssetDelistedTopic:
-		eventAssetDelisted := contracts.AssetHandlerContractAssetDelisted{}
-		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &eventAssetDelisted, AssetDelisted, vLog)
+		event := contracts.AssetHandlerContractAssetDelisted{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetDelisted, vLog)
 
-		ticker := strings.Trim(string(eventAssetDelisted.AssetId[:]), "\x00")
+		ticker := strings.Trim(string(event.AssetId[:]), "\x00")
 
 		var existingAsset db.Asset
 		result := l.db.GetL2SyncDB().Where("ticker = ?", ticker).First(&existingAsset)
