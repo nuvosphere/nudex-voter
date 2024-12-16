@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
-	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,7 +21,7 @@ type SignSession[T, M, D any] struct {
 	*sessionTransport[T, M, D]
 }
 
-func RandSessionID() types.SessionID {
+func RandSessionID() party.SessionID {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 
@@ -29,37 +29,37 @@ func RandSessionID() types.SessionID {
 }
 
 func (m *Scheduler) NewMasterSignBatchSession(
-	sessionID types.SessionID,
+	sessionID party.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
 	data []byte,
-) types.SessionID {
+) party.SessionID {
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType, data, m.partyData.ECDSALocalData().TssSigner())
 }
 
 func (m *Scheduler) NewSignSession(
-	sessionID types.SessionID,
+	sessionID party.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
 	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
-) types.SessionID {
+) party.SessionID {
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType, nil, key.TssSigner())
 }
 
 func (m *Scheduler) NewTxSignSession(
-	sessionID types.SessionID,
+	sessionID party.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
 	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 	signer string, // current signer
-) types.SessionID {
+) party.SessionID {
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, TxSignatureSessionType, nil, signer)
 }
 
 func (m *Scheduler) NewSignSessionWitKey(
-	sessionID types.SessionID,
+	sessionID party.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
 	key LocalPartySaveData,
@@ -67,7 +67,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 	ty string,
 	data []byte,
 	signer string, // current signer
-) types.SessionID {
+) party.SessionID {
 	allPartners := m.Participants()
 	params, partyIdMap := NewParam(key.CurveType(), m.LocalSubmitter(), allPartners)
 	innerSession := newSession[ProposalID, *Proposal, *tsscommon.SignatureData](

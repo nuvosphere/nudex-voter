@@ -14,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -88,7 +89,7 @@ func (m *Scheduler) ReShareGroupProposal() Proposal {
 	return *SenateProposal
 }
 
-func (m *Scheduler) isSenateSession(sessionID types.SessionID) bool {
+func (m *Scheduler) isSenateSession(sessionID party.SessionID) bool {
 	return sessionID == SenateSessionIDOfECDSA || sessionID == SenateSessionIDOfEDDSA
 }
 
@@ -202,7 +203,7 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 	return nil
 }
 
-func (m *Scheduler) CurveTypeBySenateSession(sessionID types.SessionID) crypto.CurveType {
+func (m *Scheduler) CurveTypeBySenateSession(sessionID party.SessionID) crypto.CurveType {
 	switch sessionID {
 	case SenateSessionIDOfEDDSA:
 		return crypto.EDDSA

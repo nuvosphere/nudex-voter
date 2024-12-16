@@ -23,6 +23,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
@@ -36,9 +37,9 @@ type Scheduler struct {
 	ctx             context.Context
 	cancel          context.CancelFunc
 	grw             sync.RWMutex
-	groups          map[types.GroupID]*Group
+	groups          map[party.GroupID]*Group
 	srw             sync.RWMutex
-	sessions        map[types.SessionID]Session[ProposalID]
+	sessions        map[party.SessionID]Session[ProposalID]
 	proposalSession map[ProposalID]Session[ProposalID]
 	crw             sync.RWMutex
 	tssClients      map[uint8]suite.TssClient
@@ -106,8 +107,8 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		bus:                bus,
 		srw:                sync.RWMutex{},
 		grw:                sync.RWMutex{},
-		groups:             make(map[types.GroupID]*Group),
-		sessions:           make(map[types.SessionID]Session[ProposalID]),
+		groups:             make(map[party.GroupID]*Group),
+		sessions:           make(map[party.SessionID]Session[ProposalID]),
 		proposalSession:    make(map[ProposalID]Session[ProposalID]),
 		crw:                sync.RWMutex{},
 		tssClients:         make(map[uint8]suite.TssClient),
@@ -292,14 +293,14 @@ func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
 	return true
 }
 
-func (m *Scheduler) GetGroup(groupID types.GroupID) *Group {
+func (m *Scheduler) GetGroup(groupID party.GroupID) *Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
 	return m.groups[groupID]
 }
 
-func (m *Scheduler) GetSession(sessionID types.SessionID) Session[ProposalID] {
+func (m *Scheduler) GetSession(sessionID party.SessionID) Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
@@ -318,23 +319,23 @@ func (m *Scheduler) GetGroups() []*Group {
 	m.grw.RLock()
 	defer m.grw.RUnlock()
 
-	return lo.MapToSlice(m.groups, func(_ types.GroupID, group *Group) *Group { return group })
+	return lo.MapToSlice(m.groups, func(_ party.GroupID, group *Group) *Group { return group })
 }
 
 func (m *Scheduler) GetSessions() []Session[ProposalID] {
 	m.srw.RLock()
 	defer m.srw.RUnlock()
 
-	return lo.MapToSlice(m.sessions, func(_ types.SessionID, session Session[ProposalID]) Session[ProposalID] { return session })
+	return lo.MapToSlice(m.sessions, func(_ party.SessionID, session Session[ProposalID]) Session[ProposalID] { return session })
 }
 
-func (m *Scheduler) ReleaseGroup(groupID types.GroupID) {
+func (m *Scheduler) ReleaseGroup(groupID party.GroupID) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
 	delete(m.groups, groupID)
 }
 
-func (m *Scheduler) SessionRelease(sessionID types.SessionID) {
+func (m *Scheduler) SessionRelease(sessionID party.SessionID) {
 	m.srw.Lock()
 	defer m.srw.Unlock()
 
@@ -348,14 +349,14 @@ func (m *Scheduler) SessionRelease(sessionID types.SessionID) {
 
 func (m *Scheduler) Release() {
 	m.grw.Lock()
-	m.groups = make(map[types.GroupID]*Group)
+	m.groups = make(map[party.GroupID]*Group)
 	m.grw.Unlock()
 	m.srw.Lock()
 	for _, s := range m.sessions {
 		s.Release()
 	}
 
-	m.sessions = make(map[types.SessionID]Session[ProposalID])
+	m.sessions = make(map[party.SessionID]Session[ProposalID])
 	m.proposalSession = make(map[ProposalID]Session[ProposalID])
 	m.srw.Unlock()
 	close(m.sigInToOut)

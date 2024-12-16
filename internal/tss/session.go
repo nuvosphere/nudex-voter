@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 )
 
 type Session[T any] interface {
@@ -42,11 +43,11 @@ type Type interface {
 }
 
 type SessionID interface {
-	SessionID() types.SessionID
+	SessionID() party.SessionID
 }
 
 type GroupID interface {
-	GroupID() types.GroupID
+	GroupID() party.GroupID
 }
 
 type ChainType interface {

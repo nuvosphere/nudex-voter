@@ -3,7 +3,7 @@ package tss
 import (
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
-	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 )
 
 var _ Session[any] = &GenerateKeySession[any, any, any]{}
@@ -15,10 +15,10 @@ type GenerateKeySession[T, M, D any] struct {
 func (m *Scheduler) NewGenerateKeySession(
 	ec crypto.CurveType,
 	proposalID ProposalID, // msg id
-	sessionID types.SessionID,
+	sessionID party.SessionID,
 	signer string,
 	msg *Proposal,
-) types.SessionID {
+) party.SessionID {
 	allPartners := m.Participants()
 	s := newSession[ProposalID, *Proposal, *LocalPartySaveData](
 		ec,

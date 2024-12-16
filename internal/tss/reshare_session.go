@@ -14,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 )
@@ -113,12 +114,12 @@ func runReShareParty(ctx context.Context, transport helper.Transporter, party ts
 
 func (m *Scheduler) NewReShareGroupSession(
 	ec crypto.CurveType,
-	sessionID types.SessionID,
+	sessionID party.SessionID,
 	proposalID ProposalID, // msg id
 	msg *Proposal,
 	oldPartners types.Participants,
 	newPartners types.Participants,
-) types.SessionID {
+) party.SessionID {
 	m.ecCount.Add(1)
 	localSubmitter := m.LocalSubmitter()
 	signer := "" // todo
@@ -377,11 +378,11 @@ func (r *ReShareGroupSession[T, M, D]) Type() string {
 	return ReShareGroupSessionType
 }
 
-func (r *ReShareGroupSession[T, M, D]) SessionID() types.SessionID {
+func (r *ReShareGroupSession[T, M, D]) SessionID() party.SessionID {
 	return r.newSession.SessionID()
 }
 
-func (r *ReShareGroupSession[T, M, D]) GroupID() types.GroupID {
+func (r *ReShareGroupSession[T, M, D]) GroupID() party.GroupID {
 	return r.newSession.GroupID()
 }
 

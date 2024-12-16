@@ -23,6 +23,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -174,7 +175,7 @@ func (p *PartyData) loadTSSData(ec crypto.CurveType) (*LocalPartySaveData, error
 }
 
 var (
-	ZeroSessionID           types.SessionID
+	ZeroSessionID           party.SessionID
 	senateSessionID         = ethCrypto.Keccak256Hash([]byte("The voter senate session，one and only one"))
 	SenateProposal          = senateSessionID.Big()
 	senateProposalID        = senateSessionID.Big().Uint64()
@@ -186,7 +187,7 @@ var (
 
 type SessionContext[T, M any] struct {
 	Group
-	SessionID  types.SessionID `json:"sessionID,omitempty"`
+	SessionID  party.SessionID `json:"sessionID,omitempty"`
 	Proposer   common.Address  `json:"proposer,omitempty"`    // current submitter
 	Signer     string          `json:"signer,omitempty"`      // current signer
 	ProposalID T               `json:"proposal_id,omitempty"` // msg id
@@ -200,7 +201,7 @@ type Group struct {
 	AllPartners types.Participants `json:"all_partners,omitempty"` // all submitter
 }
 
-func (g *Group) GroupID() types.GroupID {
+func (g *Group) GroupID() party.GroupID {
 	return g.AllPartners.GroupID()
 }
 
