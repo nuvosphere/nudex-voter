@@ -22,8 +22,8 @@ import (
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -324,5 +324,5 @@ func (d *LocalPartySaveData) PublicKey() crypto.PublicKey {
 }
 
 func (d *LocalPartySaveData) Address(chainType uint8) string {
-	return wallet.GenerateAddressByECPoint(d.ECPoint(), types.GetCoinTypeByChain(chainType))
+	return address.GenerateAddressByECPoint(d.ECPoint(), types.GetCoinTypeByChain(chainType))
 }

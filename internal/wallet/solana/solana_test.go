@@ -17,8 +17,8 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,7 +64,7 @@ func TestGenerateSolAddress(t *testing.T) {
 	assert.NotNil(t, pk)
 	assert.NotNil(t, pubKey)
 	point := crypto.NewECPointNoCurveCheck(tss.Edwards(), pubKey.X, pubKey.Y)
-	address := wallet.GenerateAddressByPath(point, types.CoinTypeSOL, 1, 1)
+	address := address.GenerateAddressByPath(point, types.CoinTypeSOL, 1, 1)
 	t.Log("address", address)
 	assert.Equal(t, strings.ToLower("jxK4DrMrDevCn7UXGhiJPjT36e4XP12cJLFDvP9uvxX"), strings.ToLower(address))
 
@@ -113,7 +113,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err := crypto.NewECPoint(tss.Edwards(), x, y)
 	assert.Nil(t, err)
 
-	hotAddress := wallet.HotAddressOfSolana(point)
+	hotAddress := address.HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 
@@ -124,7 +124,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
 	assert.Nil(t, err)
 	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
-	hotAddress = wallet.HotAddressOfSolana(point)
+	hotAddress = address.HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 
@@ -137,7 +137,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
 	assert.Nil(t, err)
 	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
-	hotAddress = wallet.HotAddressOfSolana(point)
+	hotAddress = address.HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 }
@@ -165,7 +165,7 @@ func TestSolHotAddress(t *testing.T) {
 		point, err := crypto.NewECPoint(tss.Edwards(), pubKey.X, pubKey.Y)
 		assert.Nil(t, err)
 
-		hotAddress := wallet.HotAddressOfSolana(point)
+		hotAddress := address.HotAddressOfSolana(point)
 		t.Log("hotAddress", hotAddress)
 		t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
 		assert.Equal(t, strings.ToLower(s.childAddress), strings.ToLower(hotAddress))

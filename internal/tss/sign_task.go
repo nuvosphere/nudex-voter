@@ -21,7 +21,9 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
@@ -32,6 +34,18 @@ import (
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
+
+func (m *Scheduler) Sign(req suite.SignReq) {
+	//
+	//tssSigner := ""
+	//// only ecdsa batch
+	//m.NewMasterSignBatchSession(
+	//	ZeroSessionID,
+	//	nonce.Uint64(), // ProposalID
+	//	msg.Big(),
+	//	batchData.Bytes(),
+	//)
+}
 
 func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (LocalPartySaveData, *big.Int) {
 	// coinType := types.GetCoinTypeByChain(coinType)
@@ -180,13 +194,13 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				// coinType := types.GetCoinTypeByChain(taskData.Chain)
 				localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
 				c := btc.NewTxClient(m.ctx, time.Second*60, &chaincfg.MainNetParams, localData.PublicKey())
-				sigCtx := &SignerContext{
-					chainType:          taskData.Chain,
-					localData:          localData,
-					keyDerivationDelta: keyDerivationDelta,
-				}
+				//sigCtx := &SignerContext{
+				//	chainType:          taskData.Chain,
+				//	localData:          localData,
+				//	keyDerivationDelta: keyDerivationDelta,
+				//}
 				from := localData.Address(taskData.Chain)
-				m.sigContext.Store(from, sigCtx)
+				// m.sigContext.Store(from, sigCtx)
 
 				sessionId := ZeroSessionID
 				var proposal *big.Int
@@ -290,7 +304,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			} else {
 				c = solana.NewDevSolClient()
 			}
-			hotAddress := wallet.HotAddressOfSolana(m.partyData.GetData(crypto.EDDSA).ECPoint())
+			hotAddress := address.HotAddressOfSolana(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			var (
 				tx  *solana.UnSignTx
@@ -351,7 +365,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			} else {
 				c = sui.NewDevClient()
 			}
-			hotAddress := wallet.HotAddressOfSui(m.partyData.GetData(crypto.EDDSA).ECPoint())
+			hotAddress := address.HotAddressOfSui(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 
 			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(taskData.ContractAddress, taskData.Ticker), hotAddress, []sui.Recipient{

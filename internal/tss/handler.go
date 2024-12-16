@@ -13,7 +13,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -296,7 +296,7 @@ func (m *Scheduler) CreateUserAddressProposal(task *db.CreateWalletTask) (LocalP
 	switch ec {
 	case crypto.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
-		userAddress := wallet.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
+		userAddress := address.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
 		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		hash := ethCrypto.Keccak256Hash(msg)
 		return *localPartySaveData, hash.Big()

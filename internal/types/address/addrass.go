@@ -1,4 +1,4 @@
-package wallet
+package address
 
 import (
 	"math/big"

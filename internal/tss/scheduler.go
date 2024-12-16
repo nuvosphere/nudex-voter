@@ -21,6 +21,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/patrickmn/go-cache"
@@ -29,35 +30,39 @@ import (
 )
 
 type Scheduler struct {
-	isProd             bool
-	p2p                p2p.P2PService
-	bus                eventbus.Bus
-	ctx                context.Context
-	cancel             context.CancelFunc
-	grw                sync.RWMutex
-	groups             map[types.GroupID]*Group
-	srw                sync.RWMutex
-	sessions           map[types.SessionID]Session[ProposalID]
-	proposalSession    map[ProposalID]Session[ProposalID]
-	sigInToOut         chan *SessionResult[ProposalID, *tsscommon.SignatureData]
-	senateInToOut      chan *SessionResult[ProposalID, *LocalPartySaveData]
-	partyData          *PartyData
-	localSubmitter     common.Address
-	submitterChosen    *db.SubmitterChosen
-	proposer           *atomic.Value // current submitter
-	partners           *atomic.Value // types.Participants
-	ecCount            *atomic.Int64
-	newGroup           *atomic.Value          // *NewGroup
+	isProd          bool
+	p2p             p2p.P2PService
+	bus             eventbus.Bus
+	ctx             context.Context
+	cancel          context.CancelFunc
+	grw             sync.RWMutex
+	groups          map[types.GroupID]*Group
+	srw             sync.RWMutex
+	sessions        map[types.SessionID]Session[ProposalID]
+	proposalSession map[ProposalID]Session[ProposalID]
+	crw             sync.RWMutex
+	tssClients      map[uint8]suite.TssClient
+	sigrw           sync.RWMutex
+	sigContext      map[string]*SignerContext // address:SigContext
+	sigInToOut      chan *SessionResult[ProposalID, *tsscommon.SignatureData]
+	senateInToOut   chan *SessionResult[ProposalID, *LocalPartySaveData]
+	partyData       *PartyData
+	localSubmitter  common.Address
+	submitterChosen *db.SubmitterChosen
+	proposer        *atomic.Value // current submitter
+	partners        *atomic.Value // types.Participants
+	ecCount         *atomic.Int64
+	newGroup        *atomic.Value // *NewGroup
+	voterContract   layer2.VoterContract
+
+	stateDB            *state.ContractState
 	taskQueue          *pool.Pool[uint64]     // created state task
 	pendingStateTasks  *pool.Pool[uint64]     // pending state task
 	operationsQueue    *pool.Pool[ProposalID] // pending batch task
 	discussedTaskCache *cache.Cache
-	voterContract      layer2.VoterContract
-	stateDB            *state.ContractState
 	notify             chan struct{}
 	currentVoterNonce  *atomic.Uint64
 	txContext          sync.Map // taskID:TxContext
-	sigContext         sync.Map // address:SigContext
 }
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *state.ContractState, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
@@ -104,6 +109,10 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		groups:             make(map[types.GroupID]*Group),
 		sessions:           make(map[types.SessionID]Session[ProposalID]),
 		proposalSession:    make(map[ProposalID]Session[ProposalID]),
+		crw:                sync.RWMutex{},
+		tssClients:         make(map[uint8]suite.TssClient),
+		sigrw:              sync.RWMutex{},
+		sigContext:         make(map[string]*SignerContext),
 		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
 		senateInToOut:      make(chan *SessionResult[ProposalID, *LocalPartySaveData], 1024),
 		ctx:                ctx,
@@ -122,7 +131,6 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		partyData:          NewPartyData(config.AppConfig.DbDir),
 		currentVoterNonce:  currentNonce,
 		txContext:          sync.Map{},
-		sigContext:         sync.Map{},
 	}
 }
 
@@ -207,6 +215,14 @@ func (m *Scheduler) IsGenesis() bool {
 	return !m.partyData.LoadData()
 }
 
+func (m *Scheduler) initKnownSigner() {
+	defer m.sigrw.Unlock()
+	m.sigrw.Lock()
+	m.sigContext = map[string]*SignerContext{
+		// wallet.HotAddressOfBtc():
+	}
+}
+
 func (m *Scheduler) BlockDetectionThreshold() {
 L:
 	for {
@@ -235,6 +251,18 @@ func (m *Scheduler) Threshold() int {
 	return m.Participants().Threshold()
 }
 
+func (m *Scheduler) AddSigner(signer *SignerContext) {
+	m.sigrw.Lock()
+	defer m.sigrw.Unlock()
+	m.sigContext[signer.Address()] = signer
+}
+
+func (m *Scheduler) GetSigner(address string) *SignerContext {
+	m.sigrw.RLock()
+	defer m.sigrw.RUnlock()
+	return m.sigContext[address]
+}
+
 func (m *Scheduler) AddGroup(group *Group) {
 	m.grw.Lock()
 	defer m.grw.Unlock()
@@ -253,9 +281,13 @@ func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
 	//	m.srw.Unlock()
 	//}
 	m.srw.Lock()
+	defer m.srw.Unlock()
+	if _, ok := m.proposalSession[session.ProposalID()]; ok {
+		return false
+	}
+
 	m.sessions[session.SessionID()] = session
 	m.proposalSession[session.ProposalID()] = session
-	m.srw.Unlock()
 
 	return true
 }

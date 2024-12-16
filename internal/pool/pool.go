@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type Task[E cmp.Ordered] interface {
+type Task[E any] interface {
 	Type() int
 	TaskID() E
 }
