@@ -191,11 +191,12 @@ type SessionContext[T, M any] struct {
 	Signer     string          `json:"signer,omitempty"`      // current signer
 	ProposalID T               `json:"proposal_id,omitempty"` // msg id
 	Proposal   M               `json:"proposal,omitempty"`
-	Data       []T             `json:"data,omitempty"`
+	Data       []byte          `json:"data,omitempty"`
 }
 
 type Group struct {
 	EC          crypto.CurveType   `json:"ec,omitempty"`
+	ChainType   uint8              `json:"chain_type,omitempty"`
 	AllPartners types.Participants `json:"all_partners,omitempty"` // all submitter
 }
 

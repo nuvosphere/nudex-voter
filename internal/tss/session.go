@@ -49,6 +49,10 @@ type GroupID interface {
 	GroupID() types.GroupID
 }
 
+type ChainType interface {
+	ChainType() uint8
+}
+
 type ProposalIdent[T any] interface {
 	ProposalID() T
 }

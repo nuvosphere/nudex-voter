@@ -14,8 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const TypeOperations = 100
-
 type Operations struct {
 	Nonce     *big.Int
 	Operation []contracts.Operation
@@ -29,7 +27,7 @@ func (o *Operations) TaskID() uint64 {
 }
 
 func (o *Operations) Type() int {
-	return TypeOperations
+	return db.TypeOperations
 }
 
 func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation {

@@ -43,6 +43,7 @@ type Scheduler struct {
 	senateInToOut      chan *SessionResult[ProposalID, *LocalPartySaveData]
 	partyData          *PartyData
 	localSubmitter     common.Address
+	submitterChosen    *db.SubmitterChosen
 	proposer           *atomic.Value // current submitter
 	partners           *atomic.Value // types.Participants
 	ecCount            *atomic.Int64
@@ -53,7 +54,6 @@ type Scheduler struct {
 	discussedTaskCache *cache.Cache
 	voterContract      layer2.VoterContract
 	stateDB            *state.ContractState
-	submitterChosen    *db.SubmitterChosen
 	notify             chan struct{}
 	currentVoterNonce  *atomic.Uint64
 	txContext          sync.Map // taskID:TxContext
@@ -112,9 +112,9 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		proposer:           &pp,
 		partners:           &ps,
 		newGroup:           newGroup,
-		taskQueue:          pool.NewTxPool[uint64](),
-		pendingStateTasks:  pool.NewTxPool[uint64](),
-		operationsQueue:    pool.NewTxPool[ProposalID](),
+		taskQueue:          pool.NewTaskPool[uint64](),
+		pendingStateTasks:  pool.NewTaskPool[uint64](),
+		operationsQueue:    pool.NewTaskPool[ProposalID](),
 		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
 		notify:             make(chan struct{}, 1024),
 		stateDB:            stateDB,
@@ -128,6 +128,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 
 func (m *Scheduler) Start() {
 	m.p2pLoop()
+	m.systemProposalLoop()
 	m.proposalLoop()
 	m.BlockDetectionThreshold()
 
@@ -361,12 +362,15 @@ func (m *Scheduler) BatchTask() {
 		}
 		log.Infof("nonce: %v, dataHash: %v, msg: %v", nonce, dataHash, msg)
 
+		data := lo.Map(tasks, func(item pool.Task[uint64], index int) uint64 { return item.TaskID() })
+		batchData := BatchData{Ids: data}
+
 		// only ecdsa batch
 		m.NewMasterSignBatchSession(
 			ZeroSessionID,
 			nonce.Uint64(), // ProposalID
 			msg.Big(),
-			lo.Map(tasks, func(item pool.Task[uint64], index int) ProposalID { return item.TaskID() }),
+			batchData.Bytes(),
 		)
 		m.saveOperations(nonce, operations, dataHash, msg)
 	}
@@ -455,6 +459,32 @@ func (m *Scheduler) p2pLoop() {
 const TopN = 20
 
 // from layer2 log event
+func (m *Scheduler) systemProposalLoop() {
+	go func() {
+		pendingTask := m.bus.Subscribe(eventbus.EventTask{})
+		for {
+			select {
+			case <-m.ctx.Done():
+				log.Info("proposal loop stopping...")
+				return
+			case data := <-pendingTask: // from layer2 log scan
+				log.Info("received task from layer2 log scan: ", data)
+
+				switch v := data.(type) {
+				case *db.ParticipantEvent: // regroup
+					m.processReGroupProposal(v)
+
+				case *db.SubmitterChosen: // charge proposer
+					m.submitterChosen = v
+					m.proposer.Store(common.HexToAddress(v.Submitter))
+				}
+			}
+		}
+	}()
+
+	log.Info("proposal loop started")
+}
+
 func (m *Scheduler) proposalLoop() {
 	go func() {
 		pendingTask := m.bus.Subscribe(eventbus.EventTask{})
@@ -477,13 +507,6 @@ func (m *Scheduler) proposalLoop() {
 							m.notify <- struct{}{}
 						}
 					}
-				case *db.ParticipantEvent: // regroup
-					m.processReGroupProposal(v)
-
-				case *db.SubmitterChosen: // charge proposer
-					m.submitterChosen = v
-					m.proposer.Store(common.HexToAddress(v.Submitter))
-
 				case *db.TaskUpdatedEvent: // todo
 					switch v.State {
 					case db.Pending:
@@ -519,6 +542,7 @@ func (m *Scheduler) proposalLoop() {
 	log.Info("proposal loop started")
 }
 
+// only test
 func (m *Scheduler) proposalLoopForTest() {
 	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
 	for {

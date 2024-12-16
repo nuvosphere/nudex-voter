@@ -17,7 +17,7 @@ type Pool[E cmp.Ordered] struct {
 	sync.RWMutex
 }
 
-func NewTxPool[E cmp.Ordered]() *Pool[E] {
+func NewTaskPool[E cmp.Ordered]() *Pool[E] {
 	return &Pool[E]{
 		ids:   make([]E, 0),
 		items: make(map[E]Task[E]),

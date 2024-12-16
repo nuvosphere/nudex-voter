@@ -28,13 +28,14 @@ type (
 
 type SessionMessage[T, M any] struct {
 	Type                    string          `json:"type"`
+	ChainType               uint8           `json:"chain_type"`
 	GroupID                 types.GroupID   `json:"group_id,omitempty"`
 	SessionID               types.SessionID `json:"session_id,omitempty"`
-	Signer                  string          `json:"signer,omitempty"`
+	Signer                  string          `json:"signer,omitempty"`      // msg signer
 	Proposer                common.Address  `json:"proposer,omitempty"`    // current submitter
 	ProposalID              T               `json:"proposal_id,omitempty"` // msg id
 	Proposal                M               `json:"proposal,omitempty"`
-	Data                    []T             `json:"data"`
+	Data                    []byte          `json:"data"`
 	FromPartyId             string          `json:"from_party_id"`
 	ToPartyIds              []string        `json:"to_party_ids"`
 	IsBroadcast             bool            `json:"is_broadcast"`
@@ -197,6 +198,7 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 		DataType:    s.Type(),
 		Data: SessionMessage[T, M]{
 			Type:                    s.Type(),
+			ChainType:               s.session.ChainType,
 			GroupID:                 s.GroupID(),
 			SessionID:               s.SessionID(),
 			Signer:                  strings.ToLower(s.Signer()),

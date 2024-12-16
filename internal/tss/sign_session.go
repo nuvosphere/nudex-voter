@@ -32,7 +32,7 @@ func (m *Scheduler) NewMasterSignBatchSession(
 	sessionID types.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
-	data []ProposalID,
+	data []byte,
 ) types.SessionID {
 	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType, data, m.partyData.ECDSALocalData().TssSigner())
 }
@@ -65,7 +65,7 @@ func (m *Scheduler) NewSignSessionWitKey(
 	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 	ty string,
-	data []ProposalID,
+	data []byte,
 	signer string, // current signer
 ) types.SessionID {
 	allPartners := m.Participants()

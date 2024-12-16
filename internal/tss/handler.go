@@ -227,7 +227,9 @@ func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, da
 func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Proposal]) error {
 	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
-	tasks := m.taskQueue.BatchGet(msg.Data)
+	batchData := &BatchData{}
+	batchData.FromBytes(msg.Data)
+	tasks := m.taskQueue.BatchGet(batchData.Ids)
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
 
 	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
@@ -303,6 +305,7 @@ func (m *Scheduler) CreateUserAddressProposal(task *db.CreateWalletTask) (LocalP
 	}
 }
 
+// only test
 func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:

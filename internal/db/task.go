@@ -11,6 +11,7 @@ const (
 	TaskTypeCreateWallet
 	TaskTypeDeposit
 	TaskTypeWithdrawal
+	TypeOperations
 )
 
 const (

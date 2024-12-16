@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
 const (
@@ -45,4 +46,18 @@ func unmarshal[T any](data json.RawMessage) T {
 	}
 
 	return obj
+}
+
+type BatchData struct {
+	Ids []uint64 `json:"ids"`
+}
+
+func (b *BatchData) Bytes() []byte {
+	data, err := json.Marshal(b)
+	utils.Assert(err)
+	return data
+}
+
+func (b *BatchData) FromBytes(data []byte) {
+	*b = unmarshal[BatchData](data)
 }
