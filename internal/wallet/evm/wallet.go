@@ -44,7 +44,7 @@ type WalletClient struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
-	state               *state.WalletEvmState
+	state               *state.EvmWalletState
 	tss                 suite.TssService
 	notify              chan struct{}
 	voterContract       layer2.VoterContract
@@ -77,7 +77,7 @@ func (c *WalletClient) ChainType() uint8 {
 	return vtypes.ChainEthereum
 }
 
-func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract, state *state.WalletEvmState) *WalletClient {
+func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract, state *state.EvmWalletState) *WalletClient {
 	client, err := ethclient.Dial(config.AppConfig.L2Rpc)
 	utils.Assert(err)
 

@@ -46,7 +46,7 @@ type Wallet struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
-	state               *state.WalletEvmState
+	state               *state.EvmWalletState
 }
 
 func NewWallet() *Wallet {

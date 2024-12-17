@@ -11,11 +11,15 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type WalletEvmState struct {
+type EvmWalletState struct {
 	pool *gorm.DB
 }
 
-func (d *WalletEvmState) tx(tx *gorm.DB) *gorm.DB {
+func NewEvmWalletState(pool *gorm.DB) *EvmWalletState {
+	return &EvmWalletState{pool: pool}
+}
+
+func (d *EvmWalletState) tx(tx *gorm.DB) *gorm.DB {
 	if tx == nil {
 		tx = d.pool
 	}
@@ -23,7 +27,7 @@ func (d *WalletEvmState) tx(tx *gorm.DB) *gorm.DB {
 	return tx
 }
 
-func (d *WalletEvmState) CreateTx(tx *gorm.DB,
+func (d *EvmWalletState) CreateTx(tx *gorm.DB,
 	account common.Address,
 	txNonce decimal.Decimal,
 	txJsonData, calldata []byte,
@@ -51,7 +55,7 @@ func (d *WalletEvmState) CreateTx(tx *gorm.DB,
 	}).Error
 }
 
-func (d *WalletEvmState) PendingBlockchainTransaction(tx *gorm.DB, txHash common.Hash) (*db.EvmTransaction, error) {
+func (d *EvmWalletState) PendingBlockchainTransaction(tx *gorm.DB, txHash common.Hash) (*db.EvmTransaction, error) {
 	tx = d.tx(tx)
 	bt := &db.EvmTransaction{}
 
@@ -67,7 +71,7 @@ func (d *WalletEvmState) PendingBlockchainTransaction(tx *gorm.DB, txHash common
 	return bt, nil
 }
 
-func (d *WalletEvmState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Decimal, error) {
+func (d *EvmWalletState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Decimal, error) {
 	tx = d.tx(tx)
 	bt := &db.EvmTransaction{}
 	result := tx.
@@ -82,7 +86,7 @@ func (d *WalletEvmState) LatestNonce(tx *gorm.DB, account common.Address) (decim
 	return bt.TxNonce, result.Error
 }
 
-func (d *WalletEvmState) UpdateTx(tx *gorm.DB, txHash common.Hash, status int, err error) error {
+func (d *EvmWalletState) UpdateTx(tx *gorm.DB, txHash common.Hash, status int, err error) error {
 	db := d.tx(tx).
 		Model(&db.EvmTransaction{}).
 		Where("tx_hash = ? AND status != ?", txHash, db.Completed)
@@ -100,15 +104,15 @@ func (d *WalletEvmState) UpdateTx(tx *gorm.DB, txHash common.Hash, status int, e
 	return db.Error
 }
 
-func (d *WalletEvmState) UpdateFailTx(txHash common.Hash, err error) error {
+func (d *EvmWalletState) UpdateFailTx(txHash common.Hash, err error) error {
 	return d.UpdateTx(nil, txHash, db.Failed, err)
 }
 
-func (d *WalletEvmState) UpdatePendingTx(txHash common.Hash) error {
+func (d *EvmWalletState) UpdatePendingTx(txHash common.Hash) error {
 	return d.UpdateTx(nil, txHash, db.Pending, nil)
 }
 
-func (d *WalletEvmState) UpdateBookedTx(txHash common.Hash) error {
+func (d *EvmWalletState) UpdateBookedTx(txHash common.Hash) error {
 	return d.UpdateTx(
 		nil,
 		txHash,

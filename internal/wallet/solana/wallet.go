@@ -18,7 +18,7 @@ type WalletClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	event  eventbus.Bus
-	state  *state.WalletEvmState
+	state  *state.EvmWalletState
 	tss    suite.TssService
 	client *SolClient
 }
@@ -27,7 +27,7 @@ func NewWallet(
 	event eventbus.Bus,
 	tss suite.TssService,
 	stateDB *state.ContractState,
-	state *state.WalletEvmState,
+	state *state.EvmWalletState,
 	voterContract layer2.VoterContract,
 ) *WalletClient {
 	client := NewSolClient()
