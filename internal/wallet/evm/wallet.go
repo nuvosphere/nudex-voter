@@ -49,6 +49,7 @@ type WalletClient struct {
 	notify              chan struct{}
 	voterContract       layer2.VoterContract
 	currentVoterNonce   *atomic.Uint64
+	taskQueue           *pool.Pool[uint64] // l2 task
 	submitTaskQueue     *pool.Pool[uint64] // submit task
 	operationsQueue     *pool.Pool[uint64] // pending batch task
 }
@@ -76,7 +77,7 @@ func (s *WalletClient) ChainType() uint8 {
 	return vtypes.ChainEthereum
 }
 
-func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract) *WalletClient {
+func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract, state *state.WalletEvmState) *WalletClient {
 	client, err := ethclient.Dial(config.AppConfig.L2Rpc)
 	utils.Assert(err)
 
@@ -86,18 +87,26 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 		currentNonce.Store(nonce.Uint64())
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &WalletClient{
+		ctx:                 ctx,
+		cancel:              cancel,
 		event:               event,
 		client:              client,
+		tssPublicKey:        ecdsa.PublicKey{},
 		submitterPrivateKey: config.L2PrivateKey,
 		submitter:           crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 		pendingTx:           sync.Map{},
 		chainID:             atomic.Int64{},
-		voterContract:       voterContract,
+		state:               state,
 		tss:                 tss,
-		submitTaskQueue:     pool.NewTaskPool[uint64](),
 		notify:              make(chan struct{}, 1024),
+		voterContract:       voterContract,
 		currentVoterNonce:   currentNonce,
+		taskQueue:           pool.NewTaskPool[uint64](),
+		submitTaskQueue:     pool.NewTaskPool[uint64](),
+		operationsQueue:     pool.NewTaskPool[uint64](),
 	}
 }
 

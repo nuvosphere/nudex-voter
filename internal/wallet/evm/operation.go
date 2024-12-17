@@ -199,7 +199,7 @@ func (m *WalletClient) processOperationSignResult(operations *Operations) {
 	}
 }
 
-func (m *WalletClient) evenLoop() {
+func (m *WalletClient) receiveSubmitTaskLoop() {
 	taskEvent := m.event.Subscribe(eventbus.EventSubmitTask{})
 
 	go func() {
