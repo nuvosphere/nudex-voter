@@ -1,18 +1,23 @@
 package tss
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -119,4 +124,63 @@ func (m *Scheduler) JoinSignOperationSession(msg SessionMessage[ProposalID, Prop
 	m.saveOperations(nonce, operations, dataHash, unSignMsg)
 
 	return nil
+}
+
+func (m *Scheduler) processOperationSignResult(operations *Operations) {
+	// 1. save db
+	// 2. update status
+	if m.IsProposer() {
+		log.Info("proposer submit signature")
+		w := wallet.NewWallet()
+		calldata := m.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
+		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
+		data, err := json.Marshal(operations)
+		utils.Assert(err)
+		tx, err := w.BuildUnsignTx(
+			m.ctx,
+			m.LocalSubmitter(),
+			common.HexToAddress(config.AppConfig.VotingContract),
+			big.NewInt(0),
+			calldata,
+			&db.Operations{
+				Nonce: decimal.NewFromBigInt(operations.Nonce, 0),
+				Data:  string(data),
+			}, nil, nil,
+		)
+		if err != nil {
+			log.Errorf("failed to build unsigned transaction: %v", err)
+			return
+		}
+
+		chainId, err := w.ChainID(m.ctx)
+		if err != nil {
+			log.Errorf("failed to ChainID: %v", err)
+			return
+		}
+		signedTx, err := ethtypes.SignTx(tx, ethtypes.LatestSignerForChainID(chainId), config.L2PrivateKey)
+		if err != nil {
+			log.Errorf("failed to sign transaction: %v", err)
+			return
+		}
+
+		err = w.SendSingedTx(m.ctx, signedTx)
+		if err != nil {
+			log.Errorf("failed to send transaction: %v", err)
+			return
+		}
+		// updated status to pending
+		receipt, err := w.WaitTxSuccess(m.ctx, signedTx.Hash())
+		if err != nil {
+			log.Errorf("failed to wait transaction success: %v", err)
+			return
+		}
+
+		if receipt.Status == 0 {
+			// updated status to fail
+			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), signedTx.Hash().String())
+		} else {
+			// updated status to completed
+			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), signedTx.Hash().String())
+		}
+	}
 }

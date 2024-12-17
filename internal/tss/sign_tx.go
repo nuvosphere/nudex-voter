@@ -1,22 +1,15 @@
 package tss
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
 
 	soltypes "github.com/blocto/solana-go-sdk/types"
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
-	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
-	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
-	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
-	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
-	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -24,69 +17,13 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
-	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/btc"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/sui"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
-
-func (m *Scheduler) Sign(req suite.SignReq) {
-	//
-	//tssSigner := ""
-	//// only ecdsa batch
-	//m.NewMasterSignBatchSession(
-	//	ZeroSessionID,
-	//	nonce.Uint64(), // ProposalID
-	//	msg.Big(),
-	//	batchData.Bytes(),
-	//)
-}
-
-func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (LocalPartySaveData, *big.Int) {
-	// coinType := types.GetCoinTypeByChain(coinType)
-	path := bip44.Bip44DerivationPath(coinType, account, index)
-	param, err := path.ToParams()
-	utils.Assert(err)
-	ec := types.GetCurveTypeByCoinType(int(coinType))
-	localPartySaveData := m.partyData.GetData(ec)
-	l := *localPartySaveData
-
-	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
-	keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECPoint(), chainCode, param.Indexes(), ec.EC())
-	utils.Assert(err)
-	switch ec {
-	case crypto.ECDSA:
-		data := []ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()}
-		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
-			keyDerivationDelta,
-			data,
-			extendedChildPk.PublicKey,
-			ec.EC(),
-		)
-		utils.Assert(err)
-		l.SetData(&data[0])
-		return l, keyDerivationDelta
-	case crypto.EDDSA:
-		data := []eddsaKeygen.LocalPartySaveData{*l.EDDSAData()}
-		err = eddsaSigning.UpdatePublicKeyAndAdjustBigXj(
-			keyDerivationDelta,
-			data,
-			extendedChildPk.PublicKey,
-			ec.EC(),
-		)
-		utils.Assert(err)
-		l.SetData(&data[0])
-		return l, keyDerivationDelta
-
-	default:
-		panic(fmt.Errorf("unknown EC type: %v", ec))
-	}
-}
 
 func (m *Scheduler) loopSigInToOut() {
 	go func() {
@@ -121,65 +58,6 @@ func (m *Scheduler) loopSigInToOut() {
 			}
 		}
 	}()
-}
-
-func (m *Scheduler) processOperationSignResult(operations *Operations) {
-	// 1. save db
-	// 2. update status
-	if m.IsProposer() {
-		log.Info("proposer submit signature")
-		w := wallet.NewWallet()
-		calldata := m.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
-		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
-		data, err := json.Marshal(operations)
-		utils.Assert(err)
-		tx, err := w.BuildUnsignTx(
-			m.ctx,
-			m.LocalSubmitter(),
-			common.HexToAddress(config.AppConfig.VotingContract),
-			big.NewInt(0),
-			calldata,
-			&db.Operations{
-				Nonce: decimal.NewFromBigInt(operations.Nonce, 0),
-				Data:  string(data),
-			}, nil, nil,
-		)
-		if err != nil {
-			log.Errorf("failed to build unsigned transaction: %v", err)
-			return
-		}
-
-		chainId, err := w.ChainID(m.ctx)
-		if err != nil {
-			log.Errorf("failed to ChainID: %v", err)
-			return
-		}
-		signedTx, err := ethtypes.SignTx(tx, ethtypes.LatestSignerForChainID(chainId), config.L2PrivateKey)
-		if err != nil {
-			log.Errorf("failed to sign transaction: %v", err)
-			return
-		}
-
-		err = w.SendSingedTx(m.ctx, signedTx)
-		if err != nil {
-			log.Errorf("failed to send transaction: %v", err)
-			return
-		}
-		// updated status to pending
-		receipt, err := w.WaitTxSuccess(m.ctx, signedTx.Hash())
-		if err != nil {
-			log.Errorf("failed to wait transaction success: %v", err)
-			return
-		}
-
-		if receipt.Status == 0 {
-			// updated status to fail
-			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), signedTx.Hash().String())
-		} else {
-			// updated status to completed
-			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), signedTx.Hash().String())
-		}
-	}
 }
 
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
@@ -469,4 +347,16 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 			log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), digest)
 		}
 	}
+}
+
+func (m *Scheduler) Sign(req suite.SignReq) {
+	//
+	//tssSigner := ""
+	//// only ecdsa batch
+	//m.NewMasterSignBatchSession(
+	//	ZeroSessionID,
+	//	nonce.Uint64(), // ProposalID
+	//	msg.Big(),
+	//	batchData.Bytes(),
+	//)
 }

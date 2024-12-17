@@ -5,12 +5,18 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
+	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
+	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
+	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
+	eddsaKeygen "github.com/bnb-chain/tss-lib/v2/eddsa/keygen"
+	eddsaSigning "github.com/bnb-chain/tss-lib/v2/eddsa/signing"
 	"github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
@@ -27,6 +33,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
@@ -684,6 +691,47 @@ func (m *Scheduler) Participants() types.Participants {
 		return val.(types.Participants)
 	}
 	return types.Participants{}
+}
+
+func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (LocalPartySaveData, *big.Int) {
+	// coinType := types.GetCoinTypeByChain(coinType)
+	path := bip44.Bip44DerivationPath(coinType, account, index)
+	param, err := path.ToParams()
+	utils.Assert(err)
+	ec := types.GetCurveTypeByCoinType(int(coinType))
+	localPartySaveData := m.partyData.GetData(ec)
+	l := *localPartySaveData
+
+	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
+	keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECPoint(), chainCode, param.Indexes(), ec.EC())
+	utils.Assert(err)
+	switch ec {
+	case crypto.ECDSA:
+		data := []ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()}
+		err = ecdsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			data,
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
+		utils.Assert(err)
+		l.SetData(&data[0])
+		return l, keyDerivationDelta
+	case crypto.EDDSA:
+		data := []eddsaKeygen.LocalPartySaveData{*l.EDDSAData()}
+		err = eddsaSigning.UpdatePublicKeyAndAdjustBigXj(
+			keyDerivationDelta,
+			data,
+			extendedChildPk.PublicKey,
+			ec.EC(),
+		)
+		utils.Assert(err)
+		l.SetData(&data[0])
+		return l, keyDerivationDelta
+
+	default:
+		panic(fmt.Errorf("unknown EC type: %v", ec))
+	}
 }
 
 type NewGroup struct {
