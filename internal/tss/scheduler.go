@@ -111,6 +111,8 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 	newGroup.Store(nullNewGroup)
 
 	return &Scheduler{
+		ctx:                ctx,
+		cancel:             cancel,
 		isProd:             isProd,
 		p2p:                p,
 		bus:                bus,
@@ -125,8 +127,6 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		sigContext:         make(map[string]*SignerContext),
 		sigInToOut:         make(chan *SessionResult[ProposalID, *tsscommon.SignatureData], 1024),
 		senateInToOut:      make(chan *SessionResult[ProposalID, *LocalPartySaveData], 1024),
-		ctx:                ctx,
-		cancel:             cancel,
 		localSubmitter:     localSubmitter,
 		proposer:           &pp,
 		partners:           &ps,

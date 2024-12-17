@@ -2,7 +2,6 @@ package solana
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"math/big"
 	"sync"
 
@@ -19,24 +18,26 @@ type WalletClient struct {
 	ctx           context.Context
 	cancel        context.CancelFunc
 	event         eventbus.Bus
-	client        *SolClient
-	tssPublicKey  ecdsa.PublicKey
-	pendingTx     sync.Map // txHash: bool
 	state         *state.WalletEvmState
 	tss           suite.TssService
-	notify        chan struct{}
 	voterContract layer2.VoterContract
-	taskQueue     *pool.Pool[uint64] // submit task
+	client        *SolClient
+	taskQueue     *pool.Pool[uint64]
+	pendingTx     sync.Map // txHash: bool
 }
 
 func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract) *WalletClient {
 	client := NewSolClient()
+	ctx, cancel := context.WithCancel(context.Background())
 	return &WalletClient{
+		ctx:           ctx,
+		cancel:        cancel,
 		event:         event,
 		client:        client,
 		pendingTx:     sync.Map{},
-		voterContract: voterContract,
+		state:         nil,
 		tss:           tss,
+		voterContract: voterContract,
 		taskQueue:     pool.NewTaskPool[uint64](),
 	}
 }
