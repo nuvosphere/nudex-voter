@@ -2,10 +2,10 @@ package solana
 
 import (
 	"context"
-	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"math/big"
 
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
