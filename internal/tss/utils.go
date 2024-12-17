@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
@@ -23,6 +24,7 @@ import (
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
+	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -305,4 +307,16 @@ func secp256k1Signature(data *tsscommon.SignatureData) []byte {
 		first += 27
 	}
 	return append(data.Signature, first)
+}
+
+// ConvertP2PMsgData converts the message data to the corresponding struct.
+func ConvertP2PMsgData(msg p2p.Message[json.RawMessage]) any {
+	switch msg.DataType {
+	case types.DataTypeTssKeygenMsg, types.DataTypeTssReSharingMsg, types.DataTypeTssSignMsg:
+		return types.UnmarshalJson[types.TssMessage](msg.Data)
+	case types.GenKeySessionType, types.SignTaskSessionType, types.SignBatchTaskSessionType, types.ReShareGroupSessionType, types.TxSignatureSessionType:
+		return types.UnmarshalJson[SessionMessage[ProposalID, Proposal]](msg.Data)
+	}
+
+	return types.UnmarshalJson[any](msg.Data)
 }

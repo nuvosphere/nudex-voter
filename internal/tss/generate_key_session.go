@@ -3,6 +3,7 @@ package tss
 import (
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/party"
 )
 
@@ -29,7 +30,7 @@ func (m *Scheduler) NewGenerateKeySession(
 		m.Proposer(),
 		proposalID,
 		msg,
-		GenKeySessionType,
+		types.GenKeySessionType,
 		allPartners,
 	)
 	party, partyIdMap, endCh, errCh := RunKeyGen(s.ctx, m.isProd, ec, m.LocalSubmitter(), allPartners, s) // todo

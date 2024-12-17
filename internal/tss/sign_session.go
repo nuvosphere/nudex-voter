@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	log "github.com/sirupsen/logrus"
 )
@@ -34,7 +35,7 @@ func (m *Scheduler) NewMasterSignBatchSession(
 	msg *Proposal,
 	data []byte,
 ) party.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, SignBatchTaskSessionType, data, m.partyData.ECDSALocalData().TssSigner())
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, types.SignBatchTaskSessionType, data, m.partyData.ECDSALocalData().TssSigner())
 }
 
 func (m *Scheduler) NewSignSession(
@@ -44,7 +45,7 @@ func (m *Scheduler) NewSignSession(
 	key LocalPartySaveData,
 	keyDerivationDelta *big.Int,
 ) party.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, SignTaskSessionType, nil, key.TssSigner())
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, types.SignTaskSessionType, nil, key.TssSigner())
 }
 
 func (m *Scheduler) NewTxSignSession(
@@ -55,7 +56,7 @@ func (m *Scheduler) NewTxSignSession(
 	keyDerivationDelta *big.Int,
 	signer string, // current signer
 ) party.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, TxSignatureSessionType, nil, signer)
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, types.TxSignatureSessionType, nil, signer)
 }
 
 func (m *Scheduler) NewSignSessionWitKey(

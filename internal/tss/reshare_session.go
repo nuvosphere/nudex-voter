@@ -175,7 +175,7 @@ func (m *Scheduler) NewReShareGroupSession(
 			localSubmitter,
 			proposalID,
 			msg,
-			ReShareGroupSessionType,
+			types.ReShareGroupSessionType,
 			newPartners,
 		)
 		newInnerSession.partyIdMap = newPartyIdMap
@@ -212,7 +212,7 @@ func (m *Scheduler) NewReShareGroupSession(
 			localSubmitter,
 			proposalID,
 			msg,
-			ReShareGroupSessionType,
+			types.ReShareGroupSessionType,
 			newPartners, // todo
 		)
 		oldInnerSession.partyIdMap = oldPartyIdMap
@@ -247,7 +247,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		localSubmitter,
 		proposalID,
 		msg,
-		ReShareGroupSessionType,
+		types.ReShareGroupSessionType,
 		newPartners, // todo
 	)
 	oldInnerSession.partyIdMap = oldPartyIdMap
@@ -269,7 +269,7 @@ func (m *Scheduler) NewReShareGroupSession(
 		localSubmitter,
 		proposalID,
 		msg,
-		ReShareGroupSessionType,
+		types.ReShareGroupSessionType,
 		newPartners,
 	)
 	newInnerSession.partyIdMap = newPartyIdMap
@@ -371,11 +371,11 @@ func (r *ReShareGroupSession[T, M, D]) Release() {
 }
 
 func (r *ReShareGroupSession[T, M, D]) Name() string {
-	return ReShareGroupSessionType
+	return types.ReShareGroupSessionType
 }
 
 func (r *ReShareGroupSession[T, M, D]) Type() string {
-	return ReShareGroupSessionType
+	return types.ReShareGroupSessionType
 }
 
 func (r *ReShareGroupSession[T, M, D]) SessionID() party.SessionID {

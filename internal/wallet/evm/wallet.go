@@ -51,12 +51,13 @@ type WalletClient struct {
 	operationsQueue     *pool.Pool[uint64] // pending batch task
 }
 
-func (s *WalletClient) Start(ctx context.Context) {
+func (s *WalletClient) Start(context.Context) {
 	log.Info("evm wallet client is stopping...")
 	s.loopApproveProposal()
 }
 
-func (s *WalletClient) Stop(ctx context.Context) {
+func (s *WalletClient) Stop(context.Context) {
+	s.cancel()
 }
 
 func (s *WalletClient) Verify(reqId *big.Int, signDigest string, ExtraData []byte) error {

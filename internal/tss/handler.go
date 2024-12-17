@@ -143,21 +143,21 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	var err error
 	// build new session
 	switch msg.Type {
-	case GenKeySessionType:
+	case types.GenKeySessionType:
 		err = m.JoinGenKeySession(msg)
-	case ReShareGroupSessionType:
+	case types.ReShareGroupSessionType:
 		err = m.JoinReShareGroupSession(msg)
-	case SignBatchTaskSessionType:
+	case types.SignBatchTaskSessionType:
 		err = m.JoinSignBatchTaskSession(msg)
 
-	case TxSignatureSessionType: // blockchain wallet tx signature
+	case types.TxSignatureSessionType: // blockchain wallet tx signature
 		task := m.pendingStateTasks.Get(msg.ProposalID) // todo
 		if task != nil {
 			m.JoinTxSignatureSession(msg, task)
 		} else {
 			err = fmt.Errorf("pending task is not exsit")
 		}
-	case SignTaskSessionType: // only used test
+	case types.SignTaskSessionType: // only used test
 		task, errTask := m.GetTask(msg.ProposalID)
 		if errTask != nil {
 			return errTask
