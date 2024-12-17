@@ -39,6 +39,9 @@ type TssService interface {
 	TssSigner() common.Address
 	IsMeeting(signDigest string) bool
 	Sign(req SignReq) error
+	IsProposer() bool
+	Proposer() common.Address
+	LocalSubmitter() common.Address
 	RegisterTssClient(client TssClient)
 }
 

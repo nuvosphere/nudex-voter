@@ -1,17 +1,23 @@
 package evm
 
 import (
+	"encoding/json"
 	"math/big"
 	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -96,7 +102,7 @@ const TopN = 20
 
 func (m *WalletClient) BatchTask() {
 	log.Info("batch proposal")
-	tasks := m.taskQueue.GetTopN(TopN)
+	tasks := m.submitTaskQueue.GetTopN(TopN)
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
 	if len(operations) == 0 {
 		log.Warnf("operationsQueue is empty")
@@ -132,4 +138,83 @@ func (m *WalletClient) saveOperations(nonce *big.Int, ops []contracts.Operation,
 	}
 	m.operationsQueue.Add(operations)
 	m.currentVoterNonce.Store(nonce.Uint64())
+}
+
+func (m *WalletClient) processOperationSignResult(operations *Operations) {
+	// 1. save db
+	// 2. update status
+	if m.tss.IsProposer() {
+		log.Info("proposer submit signature")
+		w := wallet.NewWallet()
+		calldata := m.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
+		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
+		data, err := json.Marshal(operations)
+		utils.Assert(err)
+		tx, err := w.BuildUnsignTx(
+			m.ctx,
+			m.tss.LocalSubmitter(),
+			common.HexToAddress(config.AppConfig.VotingContract),
+			big.NewInt(0),
+			calldata,
+			&db.Operations{
+				Nonce: decimal.NewFromBigInt(operations.Nonce, 0),
+				Data:  string(data),
+			}, nil, nil,
+		)
+		if err != nil {
+			log.Errorf("failed to build unsigned transaction: %v", err)
+			return
+		}
+
+		chainId, err := w.ChainID(m.ctx)
+		if err != nil {
+			log.Errorf("failed to ChainID: %v", err)
+			return
+		}
+		signedTx, err := ethtypes.SignTx(tx, ethtypes.LatestSignerForChainID(chainId), config.L2PrivateKey)
+		if err != nil {
+			log.Errorf("failed to sign transaction: %v", err)
+			return
+		}
+
+		err = w.SendSingedTx(m.ctx, signedTx)
+		if err != nil {
+			log.Errorf("failed to send transaction: %v", err)
+			return
+		}
+		// updated status to pending
+		receipt, err := w.WaitTxSuccess(m.ctx, signedTx.Hash())
+		if err != nil {
+			log.Errorf("failed to wait transaction success: %v", err)
+			return
+		}
+
+		if receipt.Status == 0 {
+			// updated status to fail
+			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), signedTx.Hash().String())
+		} else {
+			// updated status to completed
+			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), signedTx.Hash().String())
+		}
+	}
+}
+
+func (m *WalletClient) evenLoop() {
+	taskEvent := m.event.Subscribe(eventbus.EventSubmitTask{})
+
+	go func() {
+		select {
+		case <-m.ctx.Done():
+			log.Info("evm wallet receive task event done")
+
+		case detailTask := <-taskEvent:
+			val, ok := detailTask.(db.DetailTask)
+			if ok {
+				m.submitTaskQueue.Add(val)
+				if m.submitTaskQueue.Len() >= TopN {
+					m.notify <- struct{}{}
+				}
+			}
+		}
+	}()
 }

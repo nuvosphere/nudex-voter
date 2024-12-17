@@ -14,6 +14,7 @@ type (
 	EventBlockScanned      struct{}
 	EventWithdrawRequest   struct{}
 	EventTask              struct{}
+	EventSubmitTask        struct{}
 	EventTaskFailed        struct{}
 	EventTxStatusUpdate    struct{} // notify node by p2p
 	EventTxReSign          struct{} // request re-sign by p2p

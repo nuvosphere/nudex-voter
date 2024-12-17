@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -36,6 +37,7 @@ const defaultGasLimit = 1000000
 type WalletClient struct {
 	ctx                 context.Context
 	cancel              context.CancelFunc
+	event               eventbus.Bus
 	client              *ethclient.Client
 	tssPublicKey        ecdsa.PublicKey
 	submitterPrivateKey *ecdsa.PrivateKey
@@ -46,8 +48,8 @@ type WalletClient struct {
 	tss                 suite.TssService
 	notify              chan struct{}
 	voterContract       layer2.VoterContract
-	taskQueue           *pool.Pool[uint64] // created state task
 	currentVoterNonce   *atomic.Uint64
+	submitTaskQueue     *pool.Pool[uint64] // submit task
 	operationsQueue     *pool.Pool[uint64] // pending batch task
 }
 
@@ -74,7 +76,7 @@ func (s *WalletClient) ChainType() uint8 {
 	return vtypes.ChainEthereum
 }
 
-func NewWallet(tss suite.TssService, voterContract layer2.VoterContract) *WalletClient {
+func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract) *WalletClient {
 	client, err := ethclient.Dial(config.AppConfig.L2Rpc)
 	utils.Assert(err)
 
@@ -85,6 +87,7 @@ func NewWallet(tss suite.TssService, voterContract layer2.VoterContract) *Wallet
 	}
 
 	return &WalletClient{
+		event:               event,
 		client:              client,
 		submitterPrivateKey: config.L2PrivateKey,
 		submitter:           crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
@@ -92,7 +95,7 @@ func NewWallet(tss suite.TssService, voterContract layer2.VoterContract) *Wallet
 		chainID:             atomic.Int64{},
 		voterContract:       voterContract,
 		tss:                 tss,
-		taskQueue:           pool.NewTaskPool[uint64](),
+		submitTaskQueue:     pool.NewTaskPool[uint64](),
 		notify:              make(chan struct{}, 1024),
 		currentVoterNonce:   currentNonce,
 	}
