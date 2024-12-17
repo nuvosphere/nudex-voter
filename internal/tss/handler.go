@@ -155,10 +155,10 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		err = m.JoinGenKeySession(msg)
 	case types.ReShareGroupSessionType:
 		err = m.JoinReShareGroupSession(msg)
-	case types.SignOperationSessionType:
-		err = m.JoinSignOperationSession(msg)
 
-	case types.TxSignatureSessionType: // blockchain wallet tx signature
+	case types.SignTestOperationSessionType:
+		err = m.JoinSignOperationSession(msg)
+	case types.SignTestTxSessionType: // blockchain wallet tx signature
 		task := m.pendingStateTasks.Get(msg.ProposalID) // todo
 		if task != nil {
 			m.joinTxSignatureSession(msg, task)
@@ -170,7 +170,6 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		if errTask != nil {
 			return errTask
 		}
-
 		err = m.joinSignTaskSession(msg, task)
 	default:
 		err = fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
@@ -185,6 +184,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	return nil
 }
 
+// only used test
 func (m *Scheduler) joinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	m.processTxSign(&msg, task)
 }

@@ -90,7 +90,7 @@ func (m *Scheduler) NewSignOperationSession(
 		msg,
 		*m.partyData.ECDSALocalData(),
 		nil,
-		types.SignOperationSessionType,
+		types.SignTestOperationSessionType,
 		data,
 		m.partyData.ECDSALocalData().TssSigner(),
 	)
@@ -114,7 +114,7 @@ func (m *Scheduler) NewTxSignSession(
 	keyDerivationDelta *big.Int,
 	signer string, // current signer
 ) party.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, types.TxSignatureSessionType, nil, signer)
+	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, types.SignTestTxSessionType, nil, signer)
 }
 
 func (m *Scheduler) NewSignSessionWitKey(

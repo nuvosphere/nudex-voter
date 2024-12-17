@@ -39,7 +39,7 @@ func (m *Scheduler) loopSigInToOut() {
 					log.Errorf("result error:%v, error: %v", result.Err, info)
 				} else {
 					switch result.Type {
-					case types.SignOperationSessionType:
+					case types.SignTestOperationSessionType:
 						ops := m.operationsQueue.Get(result.ProposalID).(*Operations)
 						ops.Signature = secp256k1Signature(result.Data)
 						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
@@ -49,7 +49,7 @@ func (m *Scheduler) loopSigInToOut() {
 						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
 						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
 
-					case types.TxSignatureSessionType:
+					case types.SignTestTxSessionType:
 						m.processTxSignResult(result.ProposalID, result.Data)
 					default:
 						log.Infof("tss signature result: %v", result)

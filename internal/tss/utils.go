@@ -314,7 +314,7 @@ func ConvertP2PMsgData(msg p2p.Message[json.RawMessage]) any {
 	switch msg.DataType {
 	case types.DataTypeTssKeygenMsg, types.DataTypeTssReSharingMsg, types.DataTypeTssSignMsg:
 		return types.UnmarshalJson[types.TssMessage](msg.Data)
-	case types.GenKeySessionType, types.SignTaskSessionType, types.SignOperationSessionType, types.ReShareGroupSessionType, types.TxSignatureSessionType:
+	case types.GenKeySessionType, types.SignTaskSessionType, types.SignTestOperationSessionType, types.ReShareGroupSessionType, types.SignTestTxSessionType:
 		return types.UnmarshalJson[SessionMessage[ProposalID, Proposal]](msg.Data)
 	}
 
