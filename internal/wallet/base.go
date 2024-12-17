@@ -2,6 +2,8 @@ package wallet
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -12,22 +14,36 @@ import (
 )
 
 type BaseWallet struct {
-	taskQueue          *pool.Pool[uint64]
+	stateDB            *state.ContractState
 	voterContract      layer2.VoterContract
 	discussedTaskCache *cache.Cache
-	stateDB            *state.ContractState
+	taskQueue          *pool.Pool[uint64] // receive l2 task
+	pendingTx          sync.Map           // txHash: bool
 }
 
-func (m *BaseWallet) GetTask(taskID uint64) (pool.Task[uint64], error) {
-	t := m.taskQueue.Get(taskID)
+func NewBaseWallet(stateDB *state.ContractState, voterContract layer2.VoterContract) *BaseWallet {
+	return &BaseWallet{
+		stateDB:            stateDB,
+		voterContract:      voterContract,
+		discussedTaskCache: cache.New(5*time.Minute, 10*time.Minute),
+		taskQueue:          pool.NewTaskPool[uint64](),
+	}
+}
+
+func (w *BaseWallet) AddTask(task pool.Task[uint64]) {
+	w.taskQueue.Add(task)
+}
+
+func (w *BaseWallet) GetTask(taskID uint64) (pool.Task[uint64], error) {
+	t := w.taskQueue.Get(taskID)
 	if t != nil {
 		return t, nil
 	}
 
-	task, err := m.stateDB.GetUnCompletedTask(taskID)
+	task, err := w.stateDB.GetUnCompletedTask(taskID)
 	//todo
 	//if errors.Is(err, gorm.ErrRecordNotFound) {
-	//	return m.GetOnlineTask(taskID)
+	//	return w.GetOnlineTask(taskID)
 	//}
 	if err != nil {
 		return nil, fmt.Errorf("taskID:%v, %w", taskID, err)
@@ -36,8 +52,8 @@ func (m *BaseWallet) GetTask(taskID uint64) (pool.Task[uint64], error) {
 	return task.DetailTask(), err
 }
 
-func (m *BaseWallet) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
-	t, err := m.voterContract.Tasks(taskId)
+func (w *BaseWallet) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
+	t, err := w.voterContract.Tasks(taskId)
 	if err != nil {
 		return nil, err
 	}
@@ -56,15 +72,15 @@ func (m *BaseWallet) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 	return detailTask, nil
 }
 
-func (m *BaseWallet) IsDiscussed(taskID uint64) bool {
-	_, ok := m.discussedTaskCache.Get(fmt.Sprintf("%d", taskID))
+func (w *BaseWallet) IsDiscussed(taskID uint64) bool {
+	_, ok := w.discussedTaskCache.Get(fmt.Sprintf("%d", taskID))
 	if !ok {
-		ok, _ = m.voterContract.IsTaskCompleted(taskID)
+		ok, _ = w.voterContract.IsTaskCompleted(taskID)
 	}
 
 	return ok
 }
 
-func (m *BaseWallet) AddDiscussedTask(taskID uint64) {
-	m.discussedTaskCache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
+func (w *BaseWallet) AddDiscussedTask(taskID uint64) {
+	w.discussedTaskCache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
 }

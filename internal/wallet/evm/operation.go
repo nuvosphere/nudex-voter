@@ -37,7 +37,7 @@ func (o *Operations) Type() int {
 	return db.TypeOperations
 }
 
-func (m *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
+func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
 	operation := &contracts.Operation{
 		TaskId: detailTask.TaskID(),
 	}
@@ -45,13 +45,13 @@ func (m *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
-		userAddress := m.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		userAddress := c.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
+		data := c.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
 	case *db.DepositTask:
-		data := m.voterContract.EncodeRecordDeposit(
+		data := c.voterContract.EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
 			uint64(task.ChainId),
@@ -62,7 +62,7 @@ func (m *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = db.Completed
 	case *db.WithdrawalTask:
-		data := m.voterContract.EncodeRecordWithdrawal(
+		data := c.voterContract.EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
 			uint64(task.ChainId),
@@ -81,34 +81,34 @@ func (m *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 	return operation
 }
 
-func (m *WalletClient) loopApproveProposal() {
+func (c *WalletClient) loopApproveProposal() {
 	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {
 		select {
-		case <-m.ctx.Done():
+		case <-c.ctx.Done():
 			log.Info("approve proposal done")
 
 		case <-ticker.C:
-			m.ProcessOperation()
+			c.ProcessOperation()
 
-		case <-m.notify:
-			m.ProcessOperation()
+		case <-c.notify:
+			c.ProcessOperation()
 		}
 	}()
 }
 
 const TopN = 20
 
-func (m *WalletClient) ProcessOperation() {
+func (c *WalletClient) ProcessOperation() {
 	log.Info("batch proposal")
-	tasks := m.submitTaskQueue.GetTopN(TopN)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
+	tasks := c.submitTaskQueue.GetTopN(TopN)
+	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *c.Operation(item) })
 	if len(operations) == 0 {
 		log.Warnf("operationsQueue is empty")
 		return
 	}
-	nonce, dataHash, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+	nonce, dataHash, msg, err := c.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
 		log.Errorf("batch task generate verify task unsign msg err:%v", err)
 		return
@@ -120,39 +120,39 @@ func (m *WalletClient) ProcessOperation() {
 	_ = types.BatchData{Ids: data}
 
 	// only ecdsa batch
-	//m.NewMasterSignBatchSession(
+	//c.NewMasterSignBatchSession(
 	//	ZeroSessionID,
 	//	nonce.Uint64(), // ProposalID
 	//	msg.Big(),
 	//	batchData.Bytes(),
 	//)
-	//m.saveOperations(nonce, operations, dataHash, msg)
+	//c.saveOperations(nonce, operations, dataHash, msg)
 }
 
-func (m *WalletClient) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
+func (c *WalletClient) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
 		Operation: ops,
 		Hash:      hash,
 		DataHash:  dataHash,
 	}
-	m.operationsQueue.Add(operations)
-	m.currentVoterNonce.Store(nonce.Uint64())
+	c.operationsQueue.Add(operations)
+	c.currentVoterNonce.Store(nonce.Uint64())
 }
 
-func (m *WalletClient) processOperationSignResult(operations *Operations) {
+func (c *WalletClient) processOperationSignResult(operations *Operations) {
 	// 1. save db
 	// 2. update status
-	if m.tss.IsProposer() {
+	if c.tss.IsProposer() {
 		log.Info("proposer submit signature")
 		w := wallet.NewWallet()
-		calldata := m.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
+		calldata := c.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
 		data, err := json.Marshal(operations)
 		utils.Assert(err)
 		tx, err := w.BuildUnsignTx(
-			m.ctx,
-			m.tss.LocalSubmitter(),
+			c.ctx,
+			c.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),
 			calldata,
@@ -166,7 +166,7 @@ func (m *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		chainId, err := w.ChainID(m.ctx)
+		chainId, err := w.ChainID(c.ctx)
 		if err != nil {
 			log.Errorf("failed to ChainID: %v", err)
 			return
@@ -177,13 +177,13 @@ func (m *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		err = w.SendSingedTx(m.ctx, signedTx)
+		err = w.SendSingedTx(c.ctx, signedTx)
 		if err != nil {
 			log.Errorf("failed to send transaction: %v", err)
 			return
 		}
 		// updated status to pending
-		receipt, err := w.WaitTxSuccess(m.ctx, signedTx.Hash())
+		receipt, err := w.WaitTxSuccess(c.ctx, signedTx.Hash())
 		if err != nil {
 			log.Errorf("failed to wait transaction success: %v", err)
 			return
@@ -199,20 +199,20 @@ func (m *WalletClient) processOperationSignResult(operations *Operations) {
 	}
 }
 
-func (m *WalletClient) receiveSubmitTaskLoop() {
-	taskEvent := m.event.Subscribe(eventbus.EventSubmitTask{})
+func (c *WalletClient) receiveSubmitTaskLoop() {
+	taskEvent := c.event.Subscribe(eventbus.EventSubmitTask{})
 
 	go func() {
 		select {
-		case <-m.ctx.Done():
+		case <-c.ctx.Done():
 			log.Info("evm wallet receive task event done")
 
 		case detailTask := <-taskEvent:
 			val, ok := detailTask.(db.DetailTask)
 			if ok {
-				m.submitTaskQueue.Add(val)
-				if m.submitTaskQueue.Len() >= TopN {
-					m.notify <- struct{}{}
+				c.submitTaskQueue.Add(val)
+				if c.submitTaskQueue.Len() >= TopN {
+					c.notify <- struct{}{}
 				}
 			}
 		}
