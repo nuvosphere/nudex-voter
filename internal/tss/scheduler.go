@@ -390,15 +390,15 @@ func (m *Scheduler) loopApproveProposal() {
 			log.Info("approve proposal done")
 
 		case <-ticker.C:
-			m.BatchTask()
+			m.ProcessOperation()
 
 		case <-m.notify:
-			m.BatchTask()
+			m.ProcessOperation()
 		}
 	}()
 }
 
-func (m *Scheduler) BatchTask() {
+func (m *Scheduler) ProcessOperation() {
 	if m.isCanProposal() && m.isCanNextOperation() {
 		log.Info("batch proposal")
 		tasks := m.taskQueue.GetTopN(TopN)
@@ -418,7 +418,7 @@ func (m *Scheduler) BatchTask() {
 		batchData := types.BatchData{Ids: data}
 
 		// only ecdsa batch
-		m.NewMasterSignBatchSession(
+		m.NewSignOperationSession(
 			ZeroSessionID,
 			nonce.Uint64(), // ProposalID
 			msg.Big(),

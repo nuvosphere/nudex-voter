@@ -22,6 +22,55 @@ type SignSession[T, M, D any] struct {
 	*sessionTransport[T, M, D]
 }
 
+func (s *SignSession[T, M, D]) Post(data *helper.ReceivedPartyState) {
+	if data.IsBroadcast || s.Included(data.ToPartyIds) {
+		s.sessionTransport.Post(data)
+	}
+}
+
+func createSignParty(
+	msg *big.Int,
+	params *tss.Parameters,
+	key LocalPartySaveData,
+	keyDerivationDelta *big.Int,
+) (tss.Party, chan *tsscommon.SignatureData, chan tss.Message, chan *tss.Error) {
+	// outgoing messages to other peers - not one to not deadlock when a party
+	// round is waiting for outgoing messages channel to clear
+	outCh := make(chan tss.Message, 100000)
+	// output signature when finished
+	endCh := make(chan *tsscommon.SignatureData, 256)
+	// error if signing fails, contains culprits to blame
+	errCh := make(chan *tss.Error, 256)
+
+	log.Debug("creating new local party")
+
+	var party tss.Party
+
+	switch key.CurveType() {
+	case crypto.ECDSA:
+		if keyDerivationDelta != nil {
+			party = ecdsaSigning.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
+		} else {
+			party = ecdsaSigning.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
+		}
+	case crypto.EDDSA:
+		if keyDerivationDelta != nil {
+			party = eddsaSigning.NewLocalPartyWithKDD(msg, params, *key.EDDSAData(), keyDerivationDelta, outCh, endCh)
+		} else {
+			party = eddsaSigning.NewLocalParty(msg, params, *key.EDDSAData(), outCh, endCh)
+		}
+
+	default:
+		panic("implement me")
+	}
+
+	log.Debug("local signing party created", "partyID", party.PartyID())
+
+	// types.RunParty(ctx, party, errCh, outCh, transport, false)
+
+	return party, endCh, outCh, errCh
+}
+
 func RandSessionID() party.SessionID {
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
@@ -29,13 +78,22 @@ func RandSessionID() party.SessionID {
 	return common.BytesToHash(b[:])
 }
 
-func (m *Scheduler) NewMasterSignBatchSession(
+func (m *Scheduler) NewSignOperationSession(
 	sessionID party.SessionID,
 	proposalID ProposalID,
 	msg *Proposal,
 	data []byte,
 ) party.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, *m.partyData.ECDSALocalData(), nil, types.SignBatchTaskSessionType, data, m.partyData.ECDSALocalData().TssSigner())
+	return m.NewSignSessionWitKey(
+		sessionID,
+		proposalID,
+		msg,
+		*m.partyData.ECDSALocalData(),
+		nil,
+		types.SignOperationSessionType,
+		data,
+		m.partyData.ECDSALocalData().TssSigner(),
+	)
 }
 
 func (m *Scheduler) NewSignSession(
@@ -97,53 +155,4 @@ func (m *Scheduler) NewSignSessionWitKey(
 	helper.RunParty(session.ctx, party, errCh, outCh, session, false)
 
 	return session.SessionID()
-}
-
-func (s *SignSession[T, M, D]) Post(data *helper.ReceivedPartyState) {
-	if data.IsBroadcast || s.Included(data.ToPartyIds) {
-		s.sessionTransport.Post(data)
-	}
-}
-
-func createSignParty(
-	msg *big.Int,
-	params *tss.Parameters,
-	key LocalPartySaveData,
-	keyDerivationDelta *big.Int,
-) (tss.Party, chan *tsscommon.SignatureData, chan tss.Message, chan *tss.Error) {
-	// outgoing messages to other peers - not one to not deadlock when a party
-	// round is waiting for outgoing messages channel to clear
-	outCh := make(chan tss.Message, 100000)
-	// output signature when finished
-	endCh := make(chan *tsscommon.SignatureData, 256)
-	// error if signing fails, contains culprits to blame
-	errCh := make(chan *tss.Error, 256)
-
-	log.Debug("creating new local party")
-
-	var party tss.Party
-
-	switch key.CurveType() {
-	case crypto.ECDSA:
-		if keyDerivationDelta != nil {
-			party = ecdsaSigning.NewLocalPartyWithKDD(msg, params, *key.ECDSAData(), keyDerivationDelta, outCh, endCh)
-		} else {
-			party = ecdsaSigning.NewLocalParty(msg, params, *key.ECDSAData(), outCh, endCh)
-		}
-	case crypto.EDDSA:
-		if keyDerivationDelta != nil {
-			party = eddsaSigning.NewLocalPartyWithKDD(msg, params, *key.EDDSAData(), keyDerivationDelta, outCh, endCh)
-		} else {
-			party = eddsaSigning.NewLocalParty(msg, params, *key.EDDSAData(), outCh, endCh)
-		}
-
-	default:
-		panic("implement me")
-	}
-
-	log.Debug("local signing party created", "partyID", party.PartyID())
-
-	// types.RunParty(ctx, party, errCh, outCh, transport, false)
-
-	return party, endCh, outCh, errCh
 }

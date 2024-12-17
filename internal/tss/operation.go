@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
+	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -73,4 +75,48 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 	}
 
 	return operation
+}
+
+func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
+	operations := &Operations{
+		Nonce:     nonce,
+		Operation: ops,
+		Hash:      hash,
+		DataHash:  dataHash,
+	}
+	m.operationsQueue.Add(operations)
+	m.currentVoterNonce.Store(nonce.Uint64())
+}
+
+func (m *Scheduler) JoinSignOperationSession(msg SessionMessage[ProposalID, Proposal]) error {
+	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
+
+	batchData := &types.BatchData{}
+	batchData.FromBytes(msg.Data)
+	tasks := m.taskQueue.BatchGet(batchData.Ids)
+	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
+
+	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+	if err != nil {
+		return fmt.Errorf("batch task generate verify task unsign msg err:%v", err)
+	}
+
+	if nonce.Uint64() != msg.ProposalID {
+		return fmt.Errorf("nonce error: %v", nonce.Uint64())
+	}
+
+	if msg.Proposal.Cmp(unSignMsg.Big()) != 0 {
+		return fmt.Errorf("proposal error: %v", msg.Proposal.Text(16))
+	}
+
+	// only ecdsa batch
+	m.NewSignOperationSession(
+		msg.SessionID,
+		msg.ProposalID,
+		&msg.Proposal,
+		msg.Data,
+	)
+	m.saveOperations(nonce, operations, dataHash, unSignMsg)
+
+	return nil
 }

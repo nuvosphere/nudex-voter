@@ -92,6 +92,6 @@ const (
 	GenKeySessionType        = "GenerateKeySession"
 	ReShareGroupSessionType  = "ReShareGroupSession"
 	SignTaskSessionType      = "SignTaskSession"
-	SignBatchTaskSessionType = "SignBatchTaskSessionType"
+	SignOperationSessionType = "SignOperationSessionType"
 	TxSignatureSessionType   = "TxSignatureSession"
 )

@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -11,6 +13,12 @@ var _ Session[any] = &GenerateKeySession[any, any, any]{}
 
 type GenerateKeySession[T, M, D any] struct {
 	*sessionTransport[T, M, D]
+}
+
+func (g *GenerateKeySession[T, M, D]) Post(data *helper.ReceivedPartyState) {
+	if data.IsBroadcast || g.Included(data.ToPartyIds) {
+		g.sessionTransport.Post(data)
+	}
 }
 
 func (m *Scheduler) NewGenerateKeySession(
@@ -46,8 +54,28 @@ func (m *Scheduler) NewGenerateKeySession(
 	return session.SessionID()
 }
 
-func (g *GenerateKeySession[T, M, D]) Post(data *helper.ReceivedPartyState) {
-	if data.IsBroadcast || g.Included(data.ToPartyIds) {
-		g.sessionTransport.Post(data)
+func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) error {
+	// check groupID
+	if msg.GroupID != m.Participants().GroupID() {
+		return fmt.Errorf("GenKeySessionType: %w", ErrGroupIdWrong)
 	}
+	// check msg
+	unSignMsg := m.GenKeyProposal()
+	if unSignMsg.String() != msg.Proposal.String() {
+		return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
+	}
+
+	ec := m.curveTypeBySenateSession(msg.SessionID)
+
+	_ = m.NewGenerateKeySession(
+		ec,
+		msg.ProposalID,
+		msg.SessionID,
+		msg.Signer,
+		&msg.Proposal,
+	)
+
+	m.OpenSession(msg)
+
+	return nil
 }

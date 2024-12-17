@@ -90,17 +90,17 @@ func (m *WalletClient) loopApproveProposal() {
 			log.Info("approve proposal done")
 
 		case <-ticker.C:
-			m.BatchTask()
+			m.ProcessOperation()
 
 		case <-m.notify:
-			m.BatchTask()
+			m.ProcessOperation()
 		}
 	}()
 }
 
 const TopN = 20
 
-func (m *WalletClient) BatchTask() {
+func (m *WalletClient) ProcessOperation() {
 	log.Info("batch proposal")
 	tasks := m.submitTaskQueue.GetTopN(TopN)
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })

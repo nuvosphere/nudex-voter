@@ -102,7 +102,7 @@ func (m *Scheduler) loopSigInToOut() {
 					log.Errorf("result error:%v, error: %v", result.Err, info)
 				} else {
 					switch result.Type {
-					case types.SignBatchTaskSessionType:
+					case types.SignOperationSessionType:
 						ops := m.operationsQueue.Get(result.ProposalID).(*Operations)
 						ops.Signature = secp256k1Signature(result.Data)
 						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
