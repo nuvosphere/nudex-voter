@@ -2,6 +2,7 @@ package state
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -162,4 +163,40 @@ func (s *ContractState) GetTaskByStatus(status int) (tasks []db.Task, err error)
 		First(tasks).
 		Error
 	return tasks, err
+}
+
+func (s *ContractState) GetInscriptionMintb(txHash string) (*db.InscriptionMintb, error) {
+	var inscriptionMintB db.InscriptionMintb
+
+	txHashBytes := common.HexToHash(txHash)
+	result := s.l2InfoDb.
+		Preload("LogIndex", "tx_hash = ?", txHashBytes).
+		First(&inscriptionMintB)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("inscriptionMintB not found for TxHash: %s", txHash)
+		}
+		return nil, fmt.Errorf("failed to query inscriptionMintB: %w", result.Error)
+	}
+
+	return &inscriptionMintB, nil
+}
+
+func (s *ContractState) GetInscriptionBurnb(txHash string) (*db.InscriptionBurnb, error) {
+	var inscriptionBurnb db.InscriptionBurnb
+
+	txHashBytes := common.HexToHash(txHash)
+	result := s.l2InfoDb.
+		Preload("LogIndex", "tx_hash = ?", txHashBytes).
+		First(&inscriptionBurnb)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("inscriptionBurnb not found for TxHash: %s", txHash)
+		}
+		return nil, fmt.Errorf("failed to query inscriptionBurnb: %w", result.Error)
+	}
+
+	return &inscriptionBurnb, nil
 }

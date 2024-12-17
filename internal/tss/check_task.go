@@ -23,10 +23,13 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 			return false, -1, err
 		}
 		if hashCheckStatus != "success" {
-			return false, -1, err
+			return true, db.TaskErrorCodeCheckWithdrawalTxFailed, err
 		}
-
-		// @todo check inscription info
+		inscriptionBurnb, err := m.stateDB.GetInscriptionBurnb(taskData.TxHash)
+		if err != nil || inscriptionBurnb == nil {
+			return true, db.TaskErrorCodeCheckWithdrawalInscriptionFailed, err
+		}
+		// inscriptionBurnb.Ticker==taskData.Ticker
 
 		switch taskData.Chain {
 		case types.CoinTypeBTC:

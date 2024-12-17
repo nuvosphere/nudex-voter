@@ -60,9 +60,9 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) (*contracts.Operatio
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = db.Completed
 	case *db.WithdrawalTask:
-		confirmed, checkCode, err := m.checkTask(task)
-		if !confirmed {
-			return nil, fmt.Errorf("task %d: hash:%s not confirmed, %w", task.TaskId, task.TxHash, err)
+		needConfirm, checkCode, err := m.checkTask(task)
+		if !needConfirm {
+			return nil, fmt.Errorf("task %d: hash:%s check failed, %w", task.TaskId, task.TxHash, err)
 		}
 
 		if err != nil || checkCode != db.TaskErrorCodeSuccess {

@@ -199,6 +199,7 @@ const (
 	TaskErrorCodeChainNotSupported
 	TaskErrorCodeAssetNotSupported
 	TaskErrorCodeCheckWithdrawalTxFailed
+	TaskErrorCodeCheckWithdrawalInscriptionFailed
 	TaskErrorCodeCheckWithdrawalBalanceFailed
 )
 
