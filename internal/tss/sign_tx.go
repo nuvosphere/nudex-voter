@@ -60,6 +60,7 @@ func (m *Scheduler) loopSigInToOut() {
 	}()
 }
 
+// only used test
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
 	switch taskData := task.(type) {
@@ -293,6 +294,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 	}
 }
 
+// only used test
 func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.SignatureData) {
 	txCtx, ok := m.txContext.Load(taskID)
 	defer m.txContext.Delete(taskID)

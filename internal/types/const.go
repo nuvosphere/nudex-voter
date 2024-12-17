@@ -91,9 +91,9 @@ const (
 const (
 	GenKeySessionType            = "GenerateKeySession"
 	ReShareGroupSessionType      = "ReShareGroupSession"
-	SignTaskSessionType          = "SignTaskSession"
-	SignTestOperationSessionType = "SignTestOperationSession"
-	SignTestTxSessionType        = "SignTestTxSession"
+	SignTaskSessionType          = "SignTaskSession"          // only used test
+	SignTestOperationSessionType = "SignTestOperationSession" // only used test
+	SignTestTxSessionType        = "SignTestTxSession"        // only used test
 	SignOperationSessionType     = "SignOperationSession"
 	SignTxSessionType            = "SignTxSession"
 )

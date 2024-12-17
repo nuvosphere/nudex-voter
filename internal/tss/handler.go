@@ -157,7 +157,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		err = m.JoinReShareGroupSession(msg)
 
 	case types.SignTestOperationSessionType:
-		err = m.JoinSignOperationSession(msg)
+		err = m.joinSignOperationSession(msg)
 	case types.SignTestTxSessionType: // blockchain wallet tx signature
 		task := m.pendingStateTasks.Get(msg.ProposalID) // todo
 		if task != nil {

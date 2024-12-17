@@ -37,7 +37,8 @@ func (o *Operations) Type() int {
 	return db.TypeOperations
 }
 
-func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
+// only used test
+func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.Operation {
 	operation := &contracts.Operation{
 		TaskId: detailTask.TaskID(),
 	}
@@ -82,6 +83,7 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) *contracts.Operation
 	return operation
 }
 
+// only used test
 func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
@@ -93,13 +95,14 @@ func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, da
 	m.currentVoterNonce.Store(nonce.Uint64())
 }
 
-func (m *Scheduler) JoinSignOperationSession(msg SessionMessage[ProposalID, Proposal]) error {
+// only used test
+func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Proposal]) error {
 	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
 	batchData := &types.BatchData{}
 	batchData.FromBytes(msg.Data)
 	tasks := m.taskQueue.BatchGet(batchData.Ids)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
+	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.operation(item) })
 
 	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
@@ -126,6 +129,7 @@ func (m *Scheduler) JoinSignOperationSession(msg SessionMessage[ProposalID, Prop
 	return nil
 }
 
+// only used test
 func (m *Scheduler) processOperationSignResult(operations *Operations) {
 	// 1. save db
 	// 2. update status
