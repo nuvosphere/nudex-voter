@@ -1,4 +1,4 @@
-package btc
+package sui
 
 import (
 	"context"
@@ -18,7 +18,7 @@ type WalletClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	event  eventbus.Bus
-	state  *state.BtcWalletState
+	state  *state.SuiWalletState
 	tss    suite.TssService
 	// client *txClient todo
 }
@@ -27,7 +27,7 @@ func NewWallet(
 	event eventbus.Bus,
 	tss suite.TssService,
 	stateDB *state.ContractState,
-	state *state.BtcWalletState,
+	state *state.SuiWalletState,
 	voterContract layer2.VoterContract,
 ) *WalletClient {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -43,7 +43,7 @@ func NewWallet(
 }
 
 func (w *WalletClient) Start(context.Context) {
-	log.Info("btc wallet client is stopping...")
+	log.Info("sui wallet client is stopping...")
 	// w.loopApproveProposal()
 }
 
@@ -62,5 +62,5 @@ func (w *WalletClient) PostSignature(res suite.SignRes) error {
 }
 
 func (w *WalletClient) ChainType() uint8 {
-	return types.ChainBitcoin
+	return types.ChainSui
 }
