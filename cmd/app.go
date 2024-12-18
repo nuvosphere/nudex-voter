@@ -15,7 +15,10 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	btcWallet "github.com/nuvosphere/nudex-voter/internal/wallet/btc"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/evm"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/sui"
 	"github.com/samber/lo"
 	"github.com/samber/lo/parallel"
 	log "github.com/sirupsen/logrus"
@@ -35,11 +38,35 @@ func NewApplication() *Application {
 	btcListener := btc.NewBTCListener(libP2PService, stateDB, dbm)
 	tssService := tss.NewTssService(libP2PService, dbm, stateDB.Bus(), layer2Listener)
 	httpServer := http.NewHTTPServer(libP2PService, stateDB, dbm)
+	bw := btcWallet.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewBtcWalletState(dbm.GetWalletDB()),
+		layer2Listener,
+	)
+
+	evmWallet := evm.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		layer2Listener,
+		// state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewEvmWalletState(dbm.GetWalletDB()),
+	)
+
 	solWallet := solana.NewWallet(
 		stateDB.Bus(),
 		tssService.TssService(),
 		state.NewContractState(dbm.GetL2InfoDB()),
 		state.NewSolWalletState(dbm.GetWalletDB()),
+		layer2Listener,
+	)
+
+	suiWallet := sui.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewSuiWalletState(dbm.GetWalletDB()),
 		layer2Listener,
 	)
 
@@ -49,7 +76,10 @@ func NewApplication() *Application {
 		btcListener,
 		tssService,
 		httpServer,
+		bw,
+		evmWallet,
 		solWallet,
+		suiWallet,
 	}
 
 	return &Application{

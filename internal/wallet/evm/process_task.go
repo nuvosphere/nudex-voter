@@ -23,10 +23,12 @@ func (c *WalletClient) receiveL2TaskLoop() {
 					switch v.Status() {
 					case db.Created:
 						c.taskQueue.Add(v)
+						c.processCreatedTask(v)
 						// todo
 					case db.Pending:
 						// todo withdraw
 						c.taskQueue.Add(v)
+						c.processPendingTask(v)
 
 					case db.Completed, db.Failed:
 						c.taskQueue.Remove(v.TaskID())
@@ -40,7 +42,7 @@ func (c *WalletClient) receiveL2TaskLoop() {
 	}()
 }
 
-func (c *WalletClient) processTask(detailTask pool.Task[uint64]) {
+func (c *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
@@ -57,7 +59,22 @@ func (c *WalletClient) processTask(detailTask pool.Task[uint64]) {
 	case *db.WithdrawalTask:
 		// todo
 		// c.submitTask()
+	case *db.ConsolidationTask:
+		// todo
+		// c.submitTask()
+	default:
+		log.Errorf("unhandled default case")
+	}
+}
 
+func (c *WalletClient) processPendingTask(detailTask pool.Task[uint64]) {
+	switch task := detailTask.(type) {
+	case *db.WithdrawalTask:
+		// todo
+		c.submitTask(task)
+	case *db.ConsolidationTask:
+		// todo
+		c.submitTask(task)
 	default:
 		log.Errorf("unhandled default case")
 	}

@@ -221,6 +221,29 @@ func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdraw
 	}
 }
 
+type ConsolidationTask struct {
+	BaseTask
+	TargetAddress   string `json:"target_address"`
+	Amount          uint64 `json:"amount"`
+	Chain           uint8  `json:"chain"`
+	ChainId         uint32 `json:"chain_id"`
+	BlockHeight     uint64 `json:"block_height"`
+	TxHash          string `json:"tx_hash"`
+	ContractAddress string `json:"contract_address"`
+	Ticker          string `json:"ticker"`
+	AssetType       uint8  `json:"asset_type"`
+	Decimal         uint8  `json:"decimal"`
+	Fee             uint64 `json:"fee"`
+}
+
+func (*ConsolidationTask) TableName() string {
+	return "consolidation_task"
+}
+
+func (c *ConsolidationTask) ChainType() uint8 {
+	return c.Chain
+}
+
 const (
 	TaskVersionInitial = iota
 	TaskVersionV1
