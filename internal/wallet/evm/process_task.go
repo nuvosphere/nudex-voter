@@ -8,32 +8,29 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (c *WalletClient) receiveL2TaskLoop() {
-	taskEvent := c.event.Subscribe(eventbus.EventTask{})
+func (w *WalletClient) receiveL2TaskLoop() {
+	taskEvent := w.event.Subscribe(eventbus.EventTask{})
 
 	go func() {
 		select {
-		case <-c.ctx.Done():
+		case <-w.ctx.Done():
 			log.Info("evm wallet receive task event done")
 		case data := <-taskEvent: // from layer2 log scan
 			log.Info("received task from layer2 log scan: ", data)
 			switch v := data.(type) {
 			case db.DetailTask:
-				if v.ChainType() == c.ChainType() {
+				if v.ChainType() == w.ChainType() {
 					switch v.Status() {
 					case db.Created:
-						c.AddTask(v)
-						c.processCreatedTask(v)
-						// todo
+						w.AddTask(v)
+						w.processCreatedTask(v)
 					case db.Pending:
-						// todo withdraw
-						c.AddTask(v)
-						c.processPendingTask(v)
+						w.AddTask(v)
+						w.processPendingTask(v)
 
 					case db.Completed, db.Failed:
-						c.RemoveTask(v.TaskID())
-						c.submitTaskQueue.Remove(v.TaskID())
-						// todo
+						w.RemoveTask(v.TaskID())
+						w.submitTaskQueue.Remove(v.TaskID())
 					default:
 						log.Errorf("taskID: %d, invalid task walletState : %v", v.TaskID(), v.Status())
 					}
@@ -43,44 +40,44 @@ func (c *WalletClient) receiveL2TaskLoop() {
 	}()
 }
 
-func (c *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
+func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
-		// userAddress := c.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		_ = c.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
+		// userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
+		_ = w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
 
 		// send to evm operation
-		// c.submitTask()
+		// w.submitTask()
 
 	case *db.DepositTask:
 		// todo
-		// c.submitTask()
+		// w.submitTask()
 
 	case *db.WithdrawalTask:
 		// todo
-		// c.submitTask()
+		// w.submitTask()
 	case *db.ConsolidationTask:
 		// todo
-		// c.submitTask()
+		// w.submitTask()
 	default:
 		log.Errorf("unhandled default case")
 	}
 }
 
-func (c *WalletClient) processPendingTask(detailTask pool.Task[uint64]) {
+func (w *WalletClient) processPendingTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
 	case *db.WithdrawalTask:
 		// todo
-		c.submitTask(task)
+		w.submitTask(task)
 	case *db.ConsolidationTask:
 		// todo
-		c.submitTask(task)
+		w.submitTask(task)
 	default:
 		log.Errorf("unhandled default case")
 	}
 }
 
-func (c *WalletClient) submitTask(detailTask pool.Task[uint64]) {
-	c.event.Publish(eventbus.EventSubmitTask{}, detailTask)
+func (w *WalletClient) submitTask(detailTask pool.Task[uint64]) {
+	w.event.Publish(eventbus.EventSubmitTask{}, detailTask)
 }

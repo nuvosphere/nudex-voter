@@ -1,4 +1,4 @@
-package solana
+package btc
 
 import (
 	"github.com/nuvosphere/nudex-voter/internal/db"

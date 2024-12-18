@@ -50,13 +50,13 @@ type WalletClient struct {
 	operationsQueue     *pool.Pool[uint64] // pending batch task
 }
 
-func (c *WalletClient) Start(context.Context) {
+func (w *WalletClient) Start(context.Context) {
 	log.Info("evm wallet client is stopping...")
-	c.loopApproveProposal()
+	w.loopApproveProposal()
 }
 
-func (c *WalletClient) Stop(context.Context) {
-	c.cancel()
+func (w *WalletClient) Stop(context.Context) {
+	w.cancel()
 }
 
 func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract, stateDB *state.ContractState, walletState *state.EvmWalletState) *WalletClient {
@@ -90,8 +90,8 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 	}
 }
 
-func (c *WalletClient) BalanceOf(erc20Token, owner common.Address) (*big.Int, error) {
-	erc20, err := contracts.NewERC20(erc20Token, c.client)
+func (w *WalletClient) BalanceOf(erc20Token, owner common.Address) (*big.Int, error) {
+	erc20, err := contracts.NewERC20(erc20Token, w.client)
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +99,12 @@ func (c *WalletClient) BalanceOf(erc20Token, owner common.Address) (*big.Int, er
 	return erc20.BalanceOf(nil, owner)
 }
 
-func (c *WalletClient) BalanceAt(owner common.Address) (*big.Int, error) {
-	return c.client.BalanceAt(context.Background(), owner, nil)
+func (w *WalletClient) BalanceAt(owner common.Address) (*big.Int, error) {
+	return w.client.BalanceAt(context.Background(), owner, nil)
 }
 
-func (c *WalletClient) ChainID(ctx context.Context) (*big.Int, error) {
-	if c.chainID.Load() == 0 {
+func (w *WalletClient) ChainID(ctx context.Context) (*big.Int, error) {
+	if w.chainID.Load() == 0 {
 		var (
 			chainID *big.Int
 			err     error
@@ -112,27 +112,27 @@ func (c *WalletClient) ChainID(ctx context.Context) (*big.Int, error) {
 
 		err = backoff.Retry(
 			func() error {
-				chainID, err = c.client.ChainID(ctx)
+				chainID, err = w.client.ChainID(ctx)
 				return err
 			},
 			backoff.WithMaxRetries(&backoff.ZeroBackOff{}, 3),
 		)
 		if err != nil {
-			return nil, fmt.Errorf("chainID error: %c", err)
+			return nil, fmt.Errorf("chainID error: %w", err)
 		}
 
-		c.chainID.Store(chainID.Int64())
+		w.chainID.Store(chainID.Int64())
 	}
 
-	return big.NewInt(c.chainID.Load()), nil
+	return big.NewInt(w.chainID.Load()), nil
 }
 
-func (c *WalletClient) SendSingedTx(ctx context.Context, tx *types.Transaction) error {
-	return c.sendTransaction(ctx, tx)
+func (w *WalletClient) SendSingedTx(ctx context.Context, tx *types.Transaction) error {
+	return w.sendTransaction(ctx, tx)
 }
 
-func (c *WalletClient) EstimateGasAPI(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-	gasLimit, err := c.client.EstimateGas(ctx, msg)
+func (w *WalletClient) EstimateGasAPI(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
+	gasLimit, err := w.client.EstimateGas(ctx, msg)
 	if err != nil {
 		err = errors.Join(ErrEstimateGas, wrapError(err))
 		gasLimit = defaultGasLimit
@@ -145,12 +145,12 @@ func (c *WalletClient) EstimateGasAPI(ctx context.Context, msg ethereum.CallMsg)
 	return gasLimit, err
 }
 
-func (c *WalletClient) EstimateGas(ctx context.Context, account, contractAddress common.Address, data []byte) (uint64, error) {
+func (w *WalletClient) EstimateGas(ctx context.Context, account, contractAddress common.Address, data []byte) (uint64, error) {
 	// Estimate GasPrice
 	// gasPrice := opt.GasPrice
-	price, err := c.client.SuggestGasPrice(ctx)
+	price, err := w.client.SuggestGasPrice(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("SuggestGasPrice error: %c, account address: %v", err, account)
+		return 0, fmt.Errorf("SuggestGasPrice error: %w, account address: %v", err, account)
 	}
 
 	msg := ethereum.CallMsg{
@@ -160,10 +160,10 @@ func (c *WalletClient) EstimateGas(ctx context.Context, account, contractAddress
 		GasPrice: price,
 	}
 
-	return c.EstimateGasAPI(ctx, msg)
+	return w.EstimateGasAPI(ctx, msg)
 }
 
-func (c *WalletClient) BuildUnsignTx(
+func (w *WalletClient) BuildUnsignTx(
 	ctx context.Context,
 	account, contractAddress common.Address,
 	value *big.Int, calldata []byte,
@@ -171,7 +171,7 @@ func (c *WalletClient) BuildUnsignTx(
 	EvmWithdraw *db.EvmWithdraw,
 	EvmConsolidation *db.EvmConsolidation,
 ) (*types.Transaction, error) {
-	head, err := c.client.HeaderByNumber(ctx, nil)
+	head, err := w.client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -187,7 +187,7 @@ func (c *WalletClient) BuildUnsignTx(
 	// 4、TxSavingsFees=MaxFee*GasUsed−(BaseFee+MaxPriorityFee)*GasUsed = (MaxFee-(BaseFee+MaxPriorityFee))*GasUsed
 	// 5、Tip(minter get fee) = Min(Max fee - Base fee, Max priority fee)
 	// 6、usedGasPrice = min(MaxPriorityFeePerGas + basefee, MaxFeePerGas)
-	gasTipCap, err := c.client.SuggestGasTipCap(ctx)
+	gasTipCap, err := w.client.SuggestGasTipCap(ctx)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -210,7 +210,7 @@ func (c *WalletClient) BuildUnsignTx(
 		Value:     value,
 	}
 
-	gas, err := c.EstimateGasAPI(ctx, msg)
+	gas, err := w.EstimateGasAPI(ctx, msg)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -218,15 +218,15 @@ func (c *WalletClient) BuildUnsignTx(
 	// extend gas limit 20%
 	gasLimit := decimal.NewFromUint64(gas).Mul(decimal.NewFromFloat(1.2))
 
-	nextNonce, err := c.client.PendingNonceAt(ctx, account)
+	nextNonce, err := w.client.PendingNonceAt(ctx, account)
 	if err != nil {
 		return nil, wrapError(err)
 	}
 
-	//latestNonce := c.nonce.Load()
+	//latestNonce := w.nonce.Load()
 	//if latestNonce >= nextNonce {
 	//	nextNonce = latestNonce + 1
-	//	c.nonce.Store(nextNonce)
+	//	w.nonce.Store(nextNonce)
 	//}
 
 	baseTx := &types.DynamicFeeTx{
@@ -246,7 +246,7 @@ func (c *WalletClient) BuildUnsignTx(
 		return nil, wrapError(err)
 	}
 
-	err = c.walletState.CreateTx(
+	err = w.walletState.CreateTx(
 		nil,
 		account,
 		decimal.NewFromUint64(nextNonce),
@@ -262,7 +262,7 @@ func (c *WalletClient) BuildUnsignTx(
 	return tx, err
 }
 
-func (c *WalletClient) newTx(tx *db.EvmTransaction) (*types.Transaction, error) {
+func (w *WalletClient) newTx(tx *db.EvmTransaction) (*types.Transaction, error) {
 	oldTx := types.Transaction{}
 
 	err := oldTx.UnmarshalJSON(tx.TxJsonData)
@@ -289,7 +289,7 @@ func (c *WalletClient) newTx(tx *db.EvmTransaction) (*types.Transaction, error) 
 	unSignedTx := types.NewTx(baseTx)
 	signer := types.LatestSignerForChainID(oldTx.ChainId())
 
-	signature, err := crypto.Sign(signer.Hash(unSignedTx).Bytes(), c.submitterPrivateKey)
+	signature, err := crypto.Sign(signer.Hash(unSignedTx).Bytes(), w.submitterPrivateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -300,28 +300,28 @@ func (c *WalletClient) newTx(tx *db.EvmTransaction) (*types.Transaction, error) 
 // SpeedSendOrderTx
 // 1. resend order tx
 // 2. speed resend.
-func (c *WalletClient) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransaction) (*types.Transaction, error) {
-	signedTx, err := c.newTx(oldOrderTx)
+func (w *WalletClient) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransaction) (*types.Transaction, error) {
+	signedTx, err := w.newTx(oldOrderTx)
 	if err != nil {
 		return nil, wrapError(err)
 	}
 
 	newTxHash := signedTx.Hash()
 
-	c.pendingTx.Store(newTxHash, true)
-	defer c.pendingTx.Delete(newTxHash)
+	w.pendingTx.Store(newTxHash, true)
+	defer w.pendingTx.Delete(newTxHash)
 
 	jsonData, err := signedTx.MarshalJSON()
 	if err != nil {
 		return signedTx, wrapError(err)
 	}
 
-	head, err := c.client.HeaderByNumber(ctx, nil)
+	head, err := w.client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return signedTx, wrapError(err)
 	}
 
-	err = c.walletState.CreateTx(nil,
+	err = w.walletState.CreateTx(nil,
 		oldOrderTx.Sender,
 		oldOrderTx.TxNonce,
 		jsonData,
@@ -336,18 +336,18 @@ func (c *WalletClient) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmT
 		return signedTx, wrapError(err)
 	}
 
-	err = c.sendTransaction(ctx, signedTx)
+	err = w.sendTransaction(ctx, signedTx)
 
 	return signedTx, err
 }
 
-func (c *WalletClient) sendTransaction(ctx context.Context, tx *types.Transaction) error {
-	err := c.client.SendTransaction(ctx, tx)
+func (w *WalletClient) sendTransaction(ctx context.Context, tx *types.Transaction) error {
+	err := w.client.SendTransaction(ctx, tx)
 	if err != nil {
 		err = errors.Join(ErrSendTransaction, wrapError(err))
 	}
 
-	dbErr := c.walletState.UpdatePendingTx(tx.Hash())
+	dbErr := w.walletState.UpdatePendingTx(tx.Hash())
 
 	time.Sleep(2 * time.Second)
 
@@ -357,14 +357,14 @@ func (c *WalletClient) sendTransaction(ctx context.Context, tx *types.Transactio
 // SpeedSendOrderTx
 // 1. resend order tx
 // 2. speed resend.
-func (c *WalletClient) SpeedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransaction) (common.Hash, *types.Receipt, error) {
+func (w *WalletClient) SpeedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransaction) (common.Hash, *types.Receipt, error) {
 	if oldOrderTx.Status == db.Pending {
-		signedTx, err := c.speedSendOrderTx(ctx, oldOrderTx)
+		signedTx, err := w.speedSendOrderTx(ctx, oldOrderTx)
 		if err != nil {
 			return common.Hash{}, nil, err
 		}
 
-		r, err := c.waitTxSuccess(ctx, signedTx.Hash())
+		r, err := w.waitTxSuccess(ctx, signedTx.Hash())
 
 		return signedTx.Hash(), r, err
 	}
@@ -375,7 +375,7 @@ func (c *WalletClient) SpeedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmT
 // AgainSendOrderTx
 // 1. resend order tx
 // 2. speed resend.
-func (c *WalletClient) AgainSendOrderTx(ctx context.Context, tx *db.EvmTransaction) (common.Hash, *types.Receipt, error) {
+func (w *WalletClient) AgainSendOrderTx(ctx context.Context, tx *db.EvmTransaction) (common.Hash, *types.Receipt, error) {
 	orderTx := &types.Transaction{}
 
 	err := orderTx.UnmarshalJSON(tx.TxJsonData)
@@ -384,49 +384,49 @@ func (c *WalletClient) AgainSendOrderTx(ctx context.Context, tx *db.EvmTransacti
 	}
 
 	txHash := orderTx.Hash()
-	_, ok := c.pendingTx.Load(txHash)
+	_, ok := w.pendingTx.Load(txHash)
 
 	if ok {
 		return txHash, nil, ErrTxPending
 	}
 
-	is := c.IsOnline(ctx, txHash)
+	is := w.IsOnline(ctx, txHash)
 
 	if is {
-		return txHash, nil, fmt.Errorf("tx already online: %c or %c", ErrTxPending, ErrTxCompleted)
+		return txHash, nil, fmt.Errorf("tx already online: %w or %w", ErrTxPending, ErrTxCompleted)
 	}
 
-	c.pendingTx.Store(txHash, true)
-	defer c.pendingTx.Delete(txHash)
+	w.pendingTx.Store(txHash, true)
+	defer w.pendingTx.Delete(txHash)
 
-	err = c.sendTransaction(ctx, orderTx)
+	err = w.sendTransaction(ctx, orderTx)
 	if err != nil {
 		if errors.Is(err, ErrIntrinsicGasTooLow) || errors.Is(err, ErrReplacement) || errors.Is(err, ErrAlreadyKnown) {
-			_ = c.walletState.UpdateFailTx(txHash, err)
-			return c.SpeedSendOrderTx(ctx, tx)
+			_ = w.walletState.UpdateFailTx(txHash, err)
+			return w.SpeedSendOrderTx(ctx, tx)
 		}
 
 		if errors.Is(err, ErrNonceTooLow) {
-			_ = c.walletState.UpdateFailTx(txHash, err) // todo
+			_ = w.walletState.UpdateFailTx(txHash, err) // todo
 		}
 
 		return txHash, nil, err
 	}
 
-	r, err := c.waitTxSuccess(ctx, txHash)
+	r, err := w.waitTxSuccess(ctx, txHash)
 
 	return txHash, r, err
 }
 
-func (c *WalletClient) RawTxBytes(ctx context.Context, tx *types.Transaction) []byte {
-	chainID, _ := c.ChainID(ctx)
+func (w *WalletClient) RawTxBytes(ctx context.Context, tx *types.Transaction) []byte {
+	chainID, _ := w.ChainID(ctx)
 	signer := types.LatestSignerForChainID(chainID)
 
 	return signer.Hash(tx).Bytes()
 }
 
-func (c *WalletClient) TransactionWithSignature(ctx context.Context, tx *types.Transaction, signature []byte) (*types.Transaction, error) {
-	chainID, err := c.ChainID(ctx)
+func (w *WalletClient) TransactionWithSignature(ctx context.Context, tx *types.Transaction, signature []byte) (*types.Transaction, error) {
+	chainID, err := w.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -435,8 +435,8 @@ func (c *WalletClient) TransactionWithSignature(ctx context.Context, tx *types.T
 	return tx.WithSignature(signer, signature)
 }
 
-func (c *WalletClient) SendTransactionWithSignature(ctx context.Context, tx *types.Transaction, signature []byte) error {
-	chainID, err := c.ChainID(ctx)
+func (w *WalletClient) SendTransactionWithSignature(ctx context.Context, tx *types.Transaction, signature []byte) error {
+	chainID, err := w.ChainID(ctx)
 	if err != nil {
 		return err
 	}
@@ -444,20 +444,20 @@ func (c *WalletClient) SendTransactionWithSignature(ctx context.Context, tx *typ
 
 	tx, err = tx.WithSignature(signer, signature)
 	if err != nil {
-		return fmt.Errorf("tx with signature: %c", err)
+		return fmt.Errorf("tx with signature: %w", err)
 	}
 
-	return c.sendTransaction(ctx, tx)
+	return w.sendTransaction(ctx, tx)
 }
 
-func (c *WalletClient) WaitTxSuccess(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
-	c.pendingTx.Store(txHash, true)
-	defer c.pendingTx.Delete(txHash)
+func (w *WalletClient) WaitTxSuccess(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	w.pendingTx.Store(txHash, true)
+	defer w.pendingTx.Delete(txHash)
 
-	return c.waitTxSuccess(ctx, txHash)
+	return w.waitTxSuccess(ctx, txHash)
 }
 
-func (c *WalletClient) waitTxSuccess(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+func (w *WalletClient) waitTxSuccess(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
 	begin := time.Now()
 	defer func() {
 		log.Infof("waitTxSuccess, duration_ms: %v", time.Since(begin).Milliseconds())
@@ -465,7 +465,7 @@ func (c *WalletClient) waitTxSuccess(ctx context.Context, txHash common.Hash) (*
 
 	count := 60
 	for count > 0 {
-		r, err := c.client.TransactionReceipt(ctx, txHash)
+		r, err := w.client.TransactionReceipt(ctx, txHash)
 		// TransactionReceipt can is nil
 		if err != nil {
 			if errors.Is(err, ethereum.NotFound) {
@@ -476,7 +476,7 @@ func (c *WalletClient) waitTxSuccess(ctx context.Context, txHash common.Hash) (*
 				return nil, errors.Join(fmt.Errorf("call TransactionReceipt method error, txHash: %s", txHash), err, ErrWallet)
 			}
 		} else {
-			dbErr := c.walletState.UpdateBookedTx(txHash)
+			dbErr := w.walletState.UpdateBookedTx(txHash)
 			return r, dbErr
 		}
 	}
@@ -484,8 +484,8 @@ func (c *WalletClient) waitTxSuccess(ctx context.Context, txHash common.Hash) (*
 	return nil, ErrTxFoundTimeOut
 }
 
-func (c *WalletClient) IsOnChain(ctx context.Context, txHash common.Hash) bool {
-	receipt, err := c.client.TransactionReceipt(ctx, txHash)
+func (w *WalletClient) IsOnChain(ctx context.Context, txHash common.Hash) bool {
+	receipt, err := w.client.TransactionReceipt(ctx, txHash)
 	if receipt != nil && err == nil {
 		return true
 	}
@@ -493,20 +493,20 @@ func (c *WalletClient) IsOnChain(ctx context.Context, txHash common.Hash) bool {
 	return false
 }
 
-func (c *WalletClient) IsPending(ctx context.Context, txHash common.Hash) bool {
-	_, ok := c.pendingTx.Load(txHash)
+func (w *WalletClient) IsPending(ctx context.Context, txHash common.Hash) bool {
+	_, ok := w.pendingTx.Load(txHash)
 	if ok {
 		return ok
 	}
 
-	_, isPending, _ := c.client.TransactionByHash(ctx, txHash)
+	_, isPending, _ := w.client.TransactionByHash(ctx, txHash)
 
 	return isPending
 }
 
 // IsOnline = IsPending + IsOnChain.
-func (c *WalletClient) IsOnline(ctx context.Context, txHash common.Hash) bool {
-	tx, isPending, _ := c.client.TransactionByHash(ctx, txHash)
+func (w *WalletClient) IsOnline(ctx context.Context, txHash common.Hash) bool {
+	tx, isPending, _ := w.client.TransactionByHash(ctx, txHash)
 	return isPending || tx != nil
 }
 

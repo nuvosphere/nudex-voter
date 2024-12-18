@@ -37,7 +37,7 @@ func (o *Operations) Type() int {
 	return db.TypeOperations
 }
 
-func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
+func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
 	operation := &contracts.Operation{
 		TaskId: detailTask.TaskID(),
 	}
@@ -45,13 +45,13 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
-		userAddress := c.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		data := c.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
+		data := w.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = uint8(task.Task.State)
 	case *db.DepositTask:
-		data := c.VoterContract().EncodeRecordDeposit(
+		data := w.VoterContract().EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
 			uint64(task.ChainId),
@@ -62,7 +62,7 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = uint8(task.Task.State)
 	case *db.WithdrawalTask:
-		data := c.VoterContract().EncodeRecordWithdrawal(
+		data := w.VoterContract().EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
 			uint64(task.ChainId),
@@ -81,34 +81,34 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 	return operation
 }
 
-func (c *WalletClient) loopApproveProposal() {
+func (w *WalletClient) loopApproveProposal() {
 	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {
 		select {
-		case <-c.ctx.Done():
+		case <-w.ctx.Done():
 			log.Info("approve proposal done")
 
 		case <-ticker.C:
-			c.processOperation()
+			w.processOperation()
 
-		case <-c.notify:
-			c.processOperation()
+		case <-w.notify:
+			w.processOperation()
 		}
 	}()
 }
 
 const TopN = 20
 
-func (c *WalletClient) processOperation() {
+func (w *WalletClient) processOperation() {
 	log.Info("batch proposal")
-	tasks := c.submitTaskQueue.GetTopN(TopN)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *c.Operation(item) })
+	tasks := w.submitTaskQueue.GetTopN(TopN)
+	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *w.Operation(item) })
 	if len(operations) == 0 {
 		log.Warnf("operationsQueue is empty")
 		return
 	}
-	nonce, dataHash, msg, err := c.VoterContract().GenerateVerifyTaskUnSignMsg(operations)
+	nonce, dataHash, msg, err := w.VoterContract().GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
 		log.Errorf("batch task generate verify task unsign msg err:%v", err)
 		return
@@ -121,44 +121,44 @@ func (c *WalletClient) processOperation() {
 	signReq := &suite.SignReq{
 		SeqId:      nonce.Uint64(),
 		Type:       types.SignOperationSessionType,
-		ChainType:  c.ChainType(),
-		Signer:     c.tss.TssSigner().String(),
+		ChainType:  w.ChainType(),
+		Signer:     w.tss.TssSigner().String(),
 		DataDigest: msg.String(),
 		SignData:   msg.Bytes(),
 		ExtraData:  batchData.Bytes(),
 	}
 
-	err = c.tss.Sign(signReq)
+	err = w.tss.Sign(signReq)
 	if err != nil {
 		log.Errorf("batch task sign err:%v", err)
 		return
 	}
-	c.saveOperations(nonce, operations, dataHash, msg)
+	w.saveOperations(nonce, operations, dataHash, msg)
 }
 
-func (c *WalletClient) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
+func (w *WalletClient) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
 		Operation: ops,
 		Hash:      hash,
 		DataHash:  dataHash,
 	}
-	c.operationsQueue.Add(operations)
-	c.currentVoterNonce.Store(nonce.Uint64())
+	w.operationsQueue.Add(operations)
+	w.currentVoterNonce.Store(nonce.Uint64())
 }
 
-func (c *WalletClient) processOperationSignResult(operations *Operations) {
+func (w *WalletClient) processOperationSignResult(operations *Operations) {
 	// 1. save db
 	// 2. update status
-	if c.tss.IsProposer() {
+	if w.tss.IsProposer() {
 		log.Info("proposer submit signature")
-		calldata := c.VoterContract().EncodeVerifyAndCall(operations.Operation, operations.Signature)
+		calldata := w.VoterContract().EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
 		data, err := json.Marshal(operations)
 		utils.Assert(err)
-		tx, err := c.BuildUnsignTx(
-			c.ctx,
-			c.tss.LocalSubmitter(),
+		tx, err := w.BuildUnsignTx(
+			w.ctx,
+			w.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),
 			calldata,
@@ -172,7 +172,7 @@ func (c *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		chainId, err := c.ChainID(c.ctx)
+		chainId, err := w.ChainID(w.ctx)
 		if err != nil {
 			log.Errorf("failed to ChainID: %v", err)
 			return
@@ -183,13 +183,13 @@ func (c *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		err = c.SendSingedTx(c.ctx, signedTx)
+		err = w.SendSingedTx(w.ctx, signedTx)
 		if err != nil {
 			log.Errorf("failed to send transaction: %v", err)
 			return
 		}
 		// updated status to pending
-		receipt, err := c.WaitTxSuccess(c.ctx, signedTx.Hash())
+		receipt, err := w.WaitTxSuccess(w.ctx, signedTx.Hash())
 		if err != nil {
 			log.Errorf("failed to wait transaction success: %v", err)
 			return
@@ -205,20 +205,20 @@ func (c *WalletClient) processOperationSignResult(operations *Operations) {
 	}
 }
 
-func (c *WalletClient) receiveSubmitTaskLoop() {
-	taskEvent := c.event.Subscribe(eventbus.EventSubmitTask{})
+func (w *WalletClient) receiveSubmitTaskLoop() {
+	taskEvent := w.event.Subscribe(eventbus.EventSubmitTask{})
 
 	go func() {
 		select {
-		case <-c.ctx.Done():
+		case <-w.ctx.Done():
 			log.Info("evm wallet receive task event done")
 
 		case detailTask := <-taskEvent:
 			val, ok := detailTask.(db.DetailTask)
 			if ok {
-				c.submitTaskQueue.Add(val)
-				if c.submitTaskQueue.Len() >= TopN {
-					c.notify <- struct{}{}
+				w.submitTaskQueue.Add(val)
+				if w.submitTaskQueue.Len() >= TopN {
+					w.notify <- struct{}{}
 				}
 			}
 		}
