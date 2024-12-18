@@ -3,7 +3,6 @@ package layer2
 import (
 	"context"
 	"errors"
-	"gorm.io/gorm/clause"
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -13,6 +12,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (l *Layer2Listener) processLogs(vLog types.Log) {

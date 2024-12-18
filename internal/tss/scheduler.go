@@ -556,21 +556,15 @@ func (m *Scheduler) proposalLoop() {
 				log.Info("received task from layer2 log scan: ", data)
 
 				switch v := data.(type) {
-				case pool.Task[uint64]: // task create
-					if m.IsDiscussed(v.TaskID()) {
-						log.Errorf("received task from layer2 is discussed : %v", v.TaskID())
-					} else {
-						m.taskQueue.Add(v)
-
-						if m.taskQueue.Len() >= TopN {
-							m.notify <- struct{}{}
-						}
-					}
-				case *db.TaskUpdatedEvent: // todo
-					switch v.State {
+				case db.DetailTask: // task create
+					switch v.Status() {
+					case db.Completed, db.Failed:
+						m.taskQueue.Remove(v.TaskID())
+						m.pendingStateTasks.Remove(v.TaskID())
+						m.AddDiscussedTask(v.TaskID())
 					case db.Pending:
 						// todo withdraw
-						task, err := m.stateDB.GetUnCompletedTask(v.TaskId)
+						task, err := m.stateDB.GetUnCompletedTask(v.TaskID())
 						if err != nil {
 							log.Errorf("get task err:%v", err)
 						} else {
@@ -581,16 +575,17 @@ func (m *Scheduler) proposalLoop() {
 								m.processTxSign(nil, task)
 							}
 						}
-
-					case db.Completed, db.Failed:
-						m.taskQueue.Remove(v.TaskId)
-						m.pendingStateTasks.Remove(v.TaskId)
-						m.AddDiscussedTask(v.TaskId)
-					default:
-						log.Errorf("invalid task state : %v", v.State)
+					case db.Created:
+						if m.IsDiscussed(v.TaskID()) {
+							log.Errorf("received task from layer2 is discussed : %v", v.TaskID())
+						} else {
+							m.taskQueue.Add(v)
+							if m.taskQueue.Len() >= TopN {
+								m.notify <- struct{}{}
+							}
+						}
 					}
-
-					log.Infof("taskID: %d completed on blockchain", v.TaskId)
+					log.Infof("taskID: %d completed on blockchain", v.TaskID())
 				}
 			}
 		}
@@ -613,13 +608,6 @@ func (m *Scheduler) proposalLoopForTest() {
 			log.Info("received task from layer2 log scan: ", data)
 
 			switch v := data.(type) {
-			case pool.Task[uint64]:
-				// m.taskQueue.Add(v)
-				m.pendingStateTasks.Add(v)
-				if m.isCanProposal() {
-					log.Info("proposal task", v)
-					m.processTaskProposal(v)
-				}
 			case *db.ParticipantEvent: // regroup
 				m.processReGroupProposal(v)
 
@@ -627,11 +615,18 @@ func (m *Scheduler) proposalLoopForTest() {
 				m.submitterChosen = v
 				m.proposer.Store(common.HexToAddress(v.Submitter))
 
-			case *db.TaskUpdatedEvent: // todo
-				log.Infof("taskID: %d completed on blockchain", v.TaskId)
-				if v.State == db.Completed {
-					m.taskQueue.Remove(v.TaskId)
-					m.AddDiscussedTask(v.TaskId)
+			case db.DetailTask:
+				if v.Status() == db.Completed || v.Status() == db.Failed {
+					log.Infof("taskID: %d completed on blockchain", v.TaskID())
+					m.taskQueue.Remove(v.TaskID())
+					m.AddDiscussedTask(v.TaskID())
+				} else {
+					// m.taskQueue.Add(v)
+					m.pendingStateTasks.Add(v)
+					if m.isCanProposal() {
+						log.Info("proposal task", v)
+						m.processTaskProposal(v)
+					}
 				}
 			}
 		}

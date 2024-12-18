@@ -147,7 +147,7 @@ type DepositTask struct {
 }
 
 func (c *DepositTask) Status() int {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -242,10 +242,22 @@ type TaskUpdatedEvent struct {
 	LogIndex   LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
+func (t *TaskUpdatedEvent) TaskID() uint64 {
+	return t.TaskId
+}
+
+func (t *TaskUpdatedEvent) Type() int {
+	panic("implement me")
+}
+
 func (t *TaskUpdatedEvent) ChainType() uint8 {
 	return t.Task.ChainType()
 }
 
 func (t *TaskUpdatedEvent) Status() int {
 	return int(t.State)
+}
+
+func (t *TaskUpdatedEvent) SetBaseTask(task Task) {
+	t.Task = task
 }

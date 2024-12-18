@@ -352,9 +352,6 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 }
 
 func (m *Scheduler) Sign(req suite.SignReq) {
-	
-	
-	
 	//tssSigner := ""
 	//// only ecdsa batch
 	//m.NewMasterSignBatchSession(

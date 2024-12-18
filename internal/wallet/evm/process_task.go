@@ -20,18 +20,21 @@ func (c *WalletClient) receiveL2TaskLoop() {
 			switch v := data.(type) {
 			case db.DetailTask:
 				if v.ChainType() == c.ChainType() {
-					c.taskQueue.Add(v)
+					switch v.Status() {
+					case db.Created:
+						c.taskQueue.Add(v)
+						// todo
+					case db.Pending:
+						// todo withdraw
+						c.taskQueue.Add(v)
+
+					case db.Completed, db.Failed:
+						c.taskQueue.Remove(v.TaskID())
+						// todo
+					default:
+						log.Errorf("taskID: %d, invalid task state : %v", v.TaskID(), v.Status())
+					}
 				}
-			case *db.TaskUpdatedEvent: // todo
-				switch v.State {
-				case db.Pending:
-					// todo withdraw
-				case db.Completed, db.Failed:
-					// todo
-				default:
-					log.Errorf("invalid task state : %v", v.State)
-				}
-				log.Infof("taskID: %d completed on blockchain", v.TaskId)
 			}
 		}
 	}()
@@ -44,16 +47,16 @@ func (c *WalletClient) processTask(detailTask pool.Task[uint64]) {
 		// userAddress := c.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
 		_ = c.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
 
-		//send to evm operation
-		//c.submitTask()
+		// send to evm operation
+		// c.submitTask()
 
 	case *db.DepositTask:
 		// todo
-		//c.submitTask()
+		// c.submitTask()
 
 	case *db.WithdrawalTask:
 		// todo
-		//c.submitTask()
+		// c.submitTask()
 
 	default:
 		log.Errorf("unhandled default case")

@@ -34,6 +34,10 @@ func (w *BaseWallet) AddTask(task pool.Task[uint64]) {
 	w.taskQueue.Add(task)
 }
 
+func (w *BaseWallet) RemoveTask(taskId uint64) {
+	w.taskQueue.Remove(taskId)
+}
+
 func (w *BaseWallet) GetTask(taskID uint64) (pool.Task[uint64], error) {
 	t := w.taskQueue.Get(taskID)
 	if t != nil {

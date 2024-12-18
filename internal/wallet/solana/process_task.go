@@ -8,34 +8,38 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (w *WalletClient) receiveL2TaskLoop() {
-	taskEvent := w.event.Subscribe(eventbus.EventTask{})
+func (c *WalletClient) receiveL2TaskLoop() {
+	taskEvent := c.event.Subscribe(eventbus.EventTask{})
 
 	go func() {
 		select {
-		case <-w.ctx.Done():
+		case <-c.ctx.Done():
 			log.Info("evm wallet receive task event done")
 		case data := <-taskEvent: // from layer2 log scan
 			log.Info("received task from layer2 log scan: ", data)
 			switch v := data.(type) {
 			case db.DetailTask:
-				if v.ChainType() == w.ChainType() {
-					w.AddTask(v)
+				if v.ChainType() == c.ChainType() {
+					switch v.Status() {
+					case db.Created:
+						c.AddTask(v)
+						// todo
+					case db.Pending:
+						// todo withdraw
+						c.AddTask(v)
+
+					case db.Completed, db.Failed:
+						c.RemoveTask(v.TaskID())
+						// todo
+					default:
+						log.Errorf("taskID: %d, invalid task state : %v", v.TaskID(), v.Status())
+					}
 				}
-			case *db.TaskUpdatedEvent: // todo
-				switch v.State {
-				case db.Pending:
-					// todo withdraw
-				case db.Completed, db.Failed:
-					// todo
-				default:
-					log.Errorf("invalid task state : %v", v.State)
-				}
-				log.Infof("taskID: %d completed on blockchain", v.TaskId)
 			}
 		}
 	}()
 }
+
 func (w *WalletClient) processTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
