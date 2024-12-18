@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/codec"
@@ -18,7 +17,6 @@ type BaseWallet struct {
 	voterContract      layer2.VoterContract
 	discussedTaskCache *cache.Cache
 	taskQueue          *pool.Pool[uint64] // receive l2 task
-	pendingTx          sync.Map           // txHash: bool
 }
 
 func NewBaseWallet(stateDB *state.ContractState, voterContract layer2.VoterContract) *BaseWallet {
@@ -28,6 +26,10 @@ func NewBaseWallet(stateDB *state.ContractState, voterContract layer2.VoterContr
 		discussedTaskCache: cache.New(5*time.Minute, 10*time.Minute),
 		taskQueue:          pool.NewTaskPool[uint64](),
 	}
+}
+
+func (w *BaseWallet) VoterContract() layer2.VoterContract {
+	return w.voterContract
 }
 
 func (w *BaseWallet) AddTask(task pool.Task[uint64]) {

@@ -25,6 +25,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
@@ -32,6 +33,7 @@ import (
 const defaultGasLimit = 1000000
 
 type WalletClient struct {
+	*wallet.BaseWallet
 	ctx                 context.Context
 	cancel              context.CancelFunc
 	event               eventbus.Bus
@@ -40,12 +42,10 @@ type WalletClient struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
-	state               *state.EvmWalletState
+	walletState         *state.EvmWalletState
 	tss                 suite.TssService
 	notify              chan struct{}
-	voterContract       layer2.VoterContract
 	currentVoterNonce   *atomic.Uint64
-	taskQueue           *pool.Pool[uint64] // l2 task
 	submitTaskQueue     *pool.Pool[uint64] // submit task
 	operationsQueue     *pool.Pool[uint64] // pending batch task
 }
@@ -59,7 +59,7 @@ func (c *WalletClient) Stop(context.Context) {
 	c.cancel()
 }
 
-func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract, state *state.EvmWalletState) *WalletClient {
+func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract, stateDB *state.ContractState, walletState *state.EvmWalletState) *WalletClient {
 	client, err := ethclient.Dial(config.AppConfig.L2Rpc)
 	utils.Assert(err)
 
@@ -72,6 +72,7 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &WalletClient{
+		BaseWallet:          wallet.NewBaseWallet(stateDB, voterContract),
 		ctx:                 ctx,
 		cancel:              cancel,
 		event:               event,
@@ -80,12 +81,10 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 		submitter:           crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 		pendingTx:           sync.Map{},
 		chainID:             atomic.Int64{},
-		state:               state,
+		walletState:         walletState,
 		tss:                 tss,
 		notify:              make(chan struct{}, 1024),
-		voterContract:       voterContract,
 		currentVoterNonce:   currentNonce,
-		taskQueue:           pool.NewTaskPool[uint64](),
 		submitTaskQueue:     pool.NewTaskPool[uint64](),
 		operationsQueue:     pool.NewTaskPool[uint64](),
 	}
@@ -247,7 +246,7 @@ func (c *WalletClient) BuildUnsignTx(
 		return nil, wrapError(err)
 	}
 
-	err = c.state.CreateTx(
+	err = c.walletState.CreateTx(
 		nil,
 		account,
 		decimal.NewFromUint64(nextNonce),
@@ -322,7 +321,7 @@ func (c *WalletClient) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmT
 		return signedTx, wrapError(err)
 	}
 
-	err = c.state.CreateTx(nil,
+	err = c.walletState.CreateTx(nil,
 		oldOrderTx.Sender,
 		oldOrderTx.TxNonce,
 		jsonData,
@@ -348,7 +347,7 @@ func (c *WalletClient) sendTransaction(ctx context.Context, tx *types.Transactio
 		err = errors.Join(ErrSendTransaction, wrapError(err))
 	}
 
-	dbErr := c.state.UpdatePendingTx(tx.Hash())
+	dbErr := c.walletState.UpdatePendingTx(tx.Hash())
 
 	time.Sleep(2 * time.Second)
 
@@ -403,12 +402,12 @@ func (c *WalletClient) AgainSendOrderTx(ctx context.Context, tx *db.EvmTransacti
 	err = c.sendTransaction(ctx, orderTx)
 	if err != nil {
 		if errors.Is(err, ErrIntrinsicGasTooLow) || errors.Is(err, ErrReplacement) || errors.Is(err, ErrAlreadyKnown) {
-			_ = c.state.UpdateFailTx(txHash, err)
+			_ = c.walletState.UpdateFailTx(txHash, err)
 			return c.SpeedSendOrderTx(ctx, tx)
 		}
 
 		if errors.Is(err, ErrNonceTooLow) {
-			_ = c.state.UpdateFailTx(txHash, err) // todo
+			_ = c.walletState.UpdateFailTx(txHash, err) // todo
 		}
 
 		return txHash, nil, err
@@ -477,7 +476,7 @@ func (c *WalletClient) waitTxSuccess(ctx context.Context, txHash common.Hash) (*
 				return nil, errors.Join(fmt.Errorf("call TransactionReceipt method error, txHash: %s", txHash), err, ErrWallet)
 			}
 		} else {
-			dbErr := c.state.UpdateBookedTx(txHash)
+			dbErr := c.walletState.UpdateBookedTx(txHash)
 			return r, dbErr
 		}
 	}

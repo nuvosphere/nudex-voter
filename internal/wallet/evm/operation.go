@@ -16,7 +16,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
@@ -47,12 +46,12 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
 		userAddress := c.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		data := c.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		data := c.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = uint8(task.Task.State)
 	case *db.DepositTask:
-		data := c.voterContract.EncodeRecordDeposit(
+		data := c.VoterContract().EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
 			uint64(task.ChainId),
@@ -63,7 +62,7 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = uint8(task.Task.State)
 	case *db.WithdrawalTask:
-		data := c.voterContract.EncodeRecordWithdrawal(
+		data := c.VoterContract().EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
 			uint64(task.ChainId),
@@ -109,7 +108,7 @@ func (c *WalletClient) processOperation() {
 		log.Warnf("operationsQueue is empty")
 		return
 	}
-	nonce, dataHash, msg, err := c.voterContract.GenerateVerifyTaskUnSignMsg(operations)
+	nonce, dataHash, msg, err := c.VoterContract().GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
 		log.Errorf("batch task generate verify task unsign msg err:%v", err)
 		return
@@ -153,12 +152,11 @@ func (c *WalletClient) processOperationSignResult(operations *Operations) {
 	// 2. update status
 	if c.tss.IsProposer() {
 		log.Info("proposer submit signature")
-		w := wallet.NewWallet()
-		calldata := c.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
+		calldata := c.VoterContract().EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
 		data, err := json.Marshal(operations)
 		utils.Assert(err)
-		tx, err := w.BuildUnsignTx(
+		tx, err := c.BuildUnsignTx(
 			c.ctx,
 			c.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
@@ -174,7 +172,7 @@ func (c *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		chainId, err := w.ChainID(c.ctx)
+		chainId, err := c.ChainID(c.ctx)
 		if err != nil {
 			log.Errorf("failed to ChainID: %v", err)
 			return
@@ -185,13 +183,13 @@ func (c *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		err = w.SendSingedTx(c.ctx, signedTx)
+		err = c.SendSingedTx(c.ctx, signedTx)
 		if err != nil {
 			log.Errorf("failed to send transaction: %v", err)
 			return
 		}
 		// updated status to pending
-		receipt, err := w.WaitTxSuccess(c.ctx, signedTx.Hash())
+		receipt, err := c.WaitTxSuccess(c.ctx, signedTx.Hash())
 		if err != nil {
 			log.Errorf("failed to wait transaction success: %v", err)
 			return

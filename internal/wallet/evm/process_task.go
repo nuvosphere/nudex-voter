@@ -22,19 +22,20 @@ func (c *WalletClient) receiveL2TaskLoop() {
 				if v.ChainType() == c.ChainType() {
 					switch v.Status() {
 					case db.Created:
-						c.taskQueue.Add(v)
+						c.AddTask(v)
 						c.processCreatedTask(v)
 						// todo
 					case db.Pending:
 						// todo withdraw
-						c.taskQueue.Add(v)
+						c.AddTask(v)
 						c.processPendingTask(v)
 
 					case db.Completed, db.Failed:
-						c.taskQueue.Remove(v.TaskID())
+						c.RemoveTask(v.TaskID())
+						c.submitTaskQueue.Remove(v.TaskID())
 						// todo
 					default:
-						log.Errorf("taskID: %d, invalid task state : %v", v.TaskID(), v.Status())
+						log.Errorf("taskID: %d, invalid task walletState : %v", v.TaskID(), v.Status())
 					}
 				}
 			}

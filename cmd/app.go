@@ -50,7 +50,7 @@ func NewApplication() *Application {
 		stateDB.Bus(),
 		tssService.TssService(),
 		layer2Listener,
-		// state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewContractState(dbm.GetL2InfoDB()),
 		state.NewEvmWalletState(dbm.GetWalletDB()),
 	)
 
