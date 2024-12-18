@@ -48,6 +48,7 @@ type WalletClient struct {
 	currentVoterNonce   *atomic.Uint64
 	submitTaskQueue     *pool.Pool[uint64] // submit task
 	operationsQueue     *pool.Pool[uint64] // pending batch task
+	txContext           sync.Map           // taskID:TxContext
 }
 
 func (w *WalletClient) Start(context.Context) {
@@ -87,6 +88,7 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 		currentVoterNonce:   currentNonce,
 		submitTaskQueue:     pool.NewTaskPool[uint64](),
 		operationsQueue:     pool.NewTaskPool[uint64](),
+		txContext:           sync.Map{},
 	}
 }
 

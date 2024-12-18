@@ -3,6 +3,7 @@ package suite
 import (
 	"math/big"
 
+	tssCrypto "github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 )
@@ -25,6 +26,7 @@ type SignRes struct {
 }
 
 type TssService interface {
+	ECPoint(chainType uint8) *tssCrypto.ECPoint
 	GetUserAddress(coinType, account uint32, index uint8) string
 	GetPublicKey(address string) crypto.PublicKey
 	TssSigner() common.Address

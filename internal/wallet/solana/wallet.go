@@ -3,6 +3,7 @@ package solana
 import (
 	"context"
 	"math/big"
+	"sync"
 
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
@@ -15,12 +16,13 @@ import (
 
 type WalletClient struct {
 	*wallet.BaseWallet
-	ctx    context.Context
-	cancel context.CancelFunc
-	event  eventbus.Bus
-	state  *state.SolWalletState
-	tss    suite.TssService
-	client *SolClient
+	ctx       context.Context
+	cancel    context.CancelFunc
+	event     eventbus.Bus
+	state     *state.SolWalletState
+	tss       suite.TssService
+	client    *SolClient
+	txContext sync.Map // taskID:TxContext
 }
 
 func NewWallet(
@@ -58,8 +60,9 @@ func (w *WalletClient) Verify(reqId *big.Int, signDigest string, ExtraData []byt
 }
 
 func (w *WalletClient) ReceiveSignature(res *suite.SignRes) {
-	// TODO implement me
-	panic("implement me")
+	if res.Type == types.SignTxSessionType {
+		w.processTxSignResult(res)
+	}
 }
 
 func (w *WalletClient) ChainType() uint8 {

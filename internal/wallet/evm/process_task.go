@@ -31,6 +31,7 @@ func (w *WalletClient) receiveL2TaskLoop() {
 					case db.Completed, db.Failed:
 						w.RemoveTask(v.TaskID())
 						w.submitTaskQueue.Remove(v.TaskID())
+						w.txContext.Delete(v.TaskID())
 					default:
 						log.Errorf("taskID: %d, invalid task walletState : %v", v.TaskID(), v.Status())
 					}
@@ -55,8 +56,8 @@ func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 		// w.submitTask()
 
 	case *db.WithdrawalTask:
-		// todo
-		// w.submitTask()
+		w.processWithdrawTxSign(task)
+
 	case *db.ConsolidationTask:
 		// todo
 		// w.submitTask()

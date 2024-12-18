@@ -28,6 +28,10 @@ func NewBaseWallet(stateDB *state.ContractState, voterContract layer2.VoterContr
 	}
 }
 
+func (w *BaseWallet) IsProd() bool {
+	return false
+}
+
 func (w *BaseWallet) VoterContract() layer2.VoterContract {
 	return w.voterContract
 }

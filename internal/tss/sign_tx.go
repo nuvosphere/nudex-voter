@@ -80,6 +80,7 @@ func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest string,
 }
 
 // only used test
+
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
 	sessionId := ZeroSessionID

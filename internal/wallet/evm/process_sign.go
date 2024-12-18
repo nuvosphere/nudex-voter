@@ -31,6 +31,6 @@ func (w *WalletClient) ReceiveSignature(res *suite.SignRes) {
 		}
 
 	case types.SignTxSessionType:
-		// todo
+		w.processTxSignResult(res)
 	}
 }

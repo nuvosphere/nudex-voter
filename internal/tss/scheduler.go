@@ -12,6 +12,7 @@ import (
 	"time"
 
 	tsscommon "github.com/bnb-chain/tss-lib/v2/common"
+	. "github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/bnb-chain/tss-lib/v2/crypto/ckd"
 	ecdsaKeygen "github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	ecdsaSigning "github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
@@ -305,6 +306,10 @@ L:
 
 func (m *Scheduler) Threshold() int {
 	return m.Participants().Threshold()
+}
+
+func (m *Scheduler) ECPoint(chainType uint8) *ECPoint {
+	return m.partyData.GetDataByChain(chainType).ECPoint()
 }
 
 func (m *Scheduler) AddSigner(signer *SignerContext) {
