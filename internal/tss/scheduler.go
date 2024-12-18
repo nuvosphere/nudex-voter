@@ -66,13 +66,32 @@ type Scheduler struct {
 	voterContract   layer2.VoterContract
 	// only used test
 	stateDB            *state.ContractState
-	taskQueue          *pool.Pool[uint64]     // created state task
-	pendingStateTasks  *pool.Pool[uint64]     // pending state task
-	operationsQueue    *pool.Pool[ProposalID] // pending batch task
+	taskQueue          *pool.Pool[uint64] // created state task
+	pendingStateTasks  *pool.Pool[uint64] // pending state task
+	operationsQueue    *pool.Pool[uint64] // pending batch task
 	discussedTaskCache *cache.Cache
 	notify             chan struct{}
 	currentVoterNonce  *atomic.Uint64
 	txContext          sync.Map // taskID:TxContext
+}
+
+func (m *Scheduler) TssSigner() common.Address {
+	return common.HexToAddress(m.partyData.ECDSALocalData().TssSigner())
+}
+
+func (m *Scheduler) tssSigner() *SignerContext {
+	return m.GetSigner(m.partyData.ECDSALocalData().TssSigner())
+}
+
+func (m *Scheduler) IsMeeting(signDigest string) bool {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (m *Scheduler) RegisterTssClient(client suite.TssClient) {
+	defer m.crw.Unlock()
+	m.crw.Lock()
+	m.tssClients[client.ChainType()] = client
 }
 
 func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *state.ContractState, voterContract layer2.VoterContract, localSubmitter common.Address) *Scheduler {
@@ -133,7 +152,7 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 		newGroup:           newGroup,
 		taskQueue:          pool.NewTaskPool[uint64](),
 		pendingStateTasks:  pool.NewTaskPool[uint64](),
-		operationsQueue:    pool.NewTaskPool[ProposalID](),
+		operationsQueue:    pool.NewTaskPool[uint64](),
 		discussedTaskCache: cache.New(time.Minute*10, time.Minute),
 		notify:             make(chan struct{}, 1024),
 		stateDB:            stateDB,
@@ -203,14 +222,12 @@ func (m *Scheduler) Genesis() {
 		crypto.ECDSA,
 		SenateProposalIDOfECDSA,
 		SenateSessionIDOfECDSA,
-		"",
 		SenateProposal,
 	)
 	_ = m.NewGenerateKeySession(
 		crypto.EDDSA,
 		SenateProposalIDOfEDDSA,
 		SenateSessionIDOfEDDSA,
-		"",
 		SenateProposal,
 	)
 }
@@ -333,13 +350,13 @@ func (m *Scheduler) GetSession(sessionID party.SessionID) Session[ProposalID] {
 	return m.sessions[sessionID]
 }
 
-func (m *Scheduler) IsMeeting(proposalID ProposalID) bool {
-	m.srw.RLock()
-	defer m.srw.RUnlock()
-	_, ok := m.proposalSession[proposalID]
-
-	return ok
-}
+//func (m *Scheduler) IsMeeting(proposalID ProposalID) bool {
+//	m.srw.RLock()
+//	defer m.srw.RUnlock()
+//	_, ok := m.proposalSession[proposalID]
+//
+//	return ok
+//}
 
 func (m *Scheduler) GetGroups() []*Group {
 	m.grw.RLock()
@@ -427,7 +444,8 @@ func (m *Scheduler) ProcessOperation() {
 		// only ecdsa batch
 		m.NewSignOperationSession(
 			ZeroSessionID,
-			nonce.Uint64(), // ProposalID
+			nonce.Uint64(),
+			msg.String(), // ProposalID
 			msg.Big(),
 			batchData.Bytes(),
 		)

@@ -29,7 +29,7 @@ var (
 )
 
 func (m *Scheduler) Validate(msg SessionMessage[ProposalID, Proposal]) error {
-	if m.IsDiscussed(msg.ProposalID) {
+	if m.IsDiscussed(msg.SeqId) {
 		return fmt.Errorf("taskID:%v, %w", msg.ProposalID, ErrTaskCompleted)
 	}
 
@@ -132,7 +132,7 @@ func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
 
 // processReceivedProposal handler received msg from other node.
 func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
-	log.Debugf("process received proposal id: %v, basePath: %v", msg.ProposalID, m.partyData.basePath)
+	log.Debugf("process received proposal id: %v, basePath: %v", msg.SeqId, m.partyData.basePath)
 
 	// todo
 	//err := m.Validate(msg)
@@ -159,14 +159,14 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	case types.SignTestOperationSessionType:
 		err = m.joinSignOperationSession(msg)
 	case types.SignTestTxSessionType: // blockchain wallet tx signature
-		task := m.pendingStateTasks.Get(msg.ProposalID) // todo
+		task := m.pendingStateTasks.Get(msg.SeqId) // todo
 		if task != nil {
 			m.joinTxSignatureSession(msg, task)
 		} else {
 			err = fmt.Errorf("pending task is not exsit")
 		}
 	case types.SignTaskSessionType: // only used test
-		task, errTask := m.GetTask(msg.ProposalID)
+		task, errTask := m.GetTask(msg.SeqId)
 		if errTask != nil {
 			return errTask
 		}
@@ -213,7 +213,7 @@ func (m *Scheduler) joinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 
 	switch v := task.(type) {
 	case *db.CreateWalletTask:
-		localPartySaveData, unSignMsg := m.createUserAddressProposal(v)
+		_, unSignMsg := m.createUserAddressProposal(v)
 		if unSignMsg.String() != msg.Proposal.String() {
 			return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
 		}
@@ -221,9 +221,9 @@ func (m *Scheduler) joinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 		m.NewSignSession(
 			msg.SessionID,
 			task.TaskID(),
+			unSignMsg.String(),
 			unSignMsg,
-			localPartySaveData,
-			nil,
+			m.tssSigner(),
 		)
 	case *db.DepositTask:
 	case *db.WithdrawalTask:
@@ -239,14 +239,14 @@ func (m *Scheduler) joinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:
-		localPartySaveData, unSignMsg := m.createUserAddressProposal(taskData)
+		_, unSignMsg := m.createUserAddressProposal(taskData)
 
 		m.NewSignSession(
 			ZeroSessionID,
 			taskData.TaskId,
+			unSignMsg.String(),
 			unSignMsg,
-			localPartySaveData,
-			nil,
+			m.tssSigner(),
 		)
 	case *db.DepositTask:
 		_, err := m.stateDB.Account(taskData.TargetAddress)

@@ -15,6 +15,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
 	"github.com/samber/lo"
 	"github.com/samber/lo/parallel"
 	log "github.com/sirupsen/logrus"
@@ -34,7 +35,13 @@ func NewApplication() *Application {
 	btcListener := btc.NewBTCListener(libP2PService, stateDB, dbm)
 	tssService := tss.NewTssService(libP2PService, dbm, stateDB.Bus(), layer2Listener)
 	httpServer := http.NewHTTPServer(libP2PService, stateDB, dbm)
-	// solWallet := solana.NewWallet(stateDB.Bus(), tssService)
+	solWallet := solana.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewSolWalletState(dbm.GetWalletDB()),
+		layer2Listener,
+	)
 
 	moules := []Module{
 		layer2Listener,
@@ -42,7 +49,7 @@ func NewApplication() *Application {
 		btcListener,
 		tssService,
 		httpServer,
-		// solWallet,
+		solWallet,
 	}
 
 	return &Application{

@@ -80,71 +80,74 @@ func RandSessionID() party.SessionID {
 
 func (m *Scheduler) NewSignOperationSession(
 	sessionID party.SessionID,
+	seqId uint64,
 	proposalID ProposalID,
 	msg *Proposal,
 	data []byte,
 ) party.SessionID {
 	return m.NewSignSessionWitKey(
 		sessionID,
+		seqId,
 		proposalID,
 		msg,
-		*m.partyData.ECDSALocalData(),
-		nil,
 		types.SignTestOperationSessionType,
 		data,
-		m.partyData.ECDSALocalData().TssSigner(),
+		&SignerContext{
+			chainType:          types.ChainEthereum,
+			localData:          *m.partyData.ECDSALocalData(),
+			keyDerivationDelta: nil,
+		},
 	)
 }
 
 func (m *Scheduler) NewSignSession(
 	sessionID party.SessionID,
+	seqId uint64,
 	proposalID ProposalID,
 	msg *Proposal,
-	key LocalPartySaveData,
-	keyDerivationDelta *big.Int,
+	signer *SignerContext,
 ) party.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, types.SignTaskSessionType, nil, key.TssSigner())
+	return m.NewSignSessionWitKey(sessionID, seqId, proposalID, msg, types.SignTaskSessionType, nil, signer)
 }
 
 func (m *Scheduler) NewTxSignSession(
 	sessionID party.SessionID,
+	seqId uint64,
 	proposalID ProposalID,
 	msg *Proposal,
-	key LocalPartySaveData,
-	keyDerivationDelta *big.Int,
-	signer string, // current signer
+	signer *SignerContext,
 ) party.SessionID {
-	return m.NewSignSessionWitKey(sessionID, proposalID, msg, key, keyDerivationDelta, types.SignTestTxSessionType, nil, signer)
+	return m.NewSignSessionWitKey(sessionID, seqId, proposalID, msg, types.SignTestTxSessionType, nil, signer)
 }
 
 func (m *Scheduler) NewSignSessionWitKey(
 	sessionID party.SessionID,
+	seqId uint64,
 	proposalID ProposalID,
 	msg *Proposal,
-	key LocalPartySaveData,
-	keyDerivationDelta *big.Int,
-	ty string,
+	sessionType string,
 	data []byte,
-	signer string, // current signer
+	signer *SignerContext,
 ) party.SessionID {
 	allPartners := m.Participants()
-	params, partyIdMap := NewParam(key.CurveType(), m.LocalSubmitter(), allPartners)
+	params, partyIdMap := NewParam(signer.CurveType(), m.LocalSubmitter(), allPartners)
 	innerSession := newSession[ProposalID, *Proposal, *tsscommon.SignatureData](
-		key.CurveType(),
+		signer.CurveType(),
 		m.p2p,
 		m,
 		sessionID,
-		signer,
+		signer.Address(),
 		m.Proposer(),
 		proposalID,
 		msg,
-		ty,
+		sessionType,
 		allPartners,
 	)
 	innerSession.session.Data = data
+	innerSession.session.SeqId = seqId
 	innerSession.inToOut = m.sigInToOut
 	innerSession.partyIdMap = partyIdMap
-	party, endCh, outCh, errCh := createSignParty(msg, params, key, keyDerivationDelta)
+	party, endCh, outCh, errCh := createSignParty(msg, params, signer.LocalData(), signer.KeyDerivationDelta())
 	innerSession.party = party
 	innerSession.endCh = endCh
 	innerSession.errCH = errCh

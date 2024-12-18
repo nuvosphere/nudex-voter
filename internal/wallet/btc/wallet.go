@@ -56,7 +56,7 @@ func (w *WalletClient) Verify(reqId *big.Int, signDigest string, ExtraData []byt
 	panic("implement me")
 }
 
-func (w *WalletClient) PostSignature(res suite.SignRes) error {
+func (w *WalletClient) ReceiveSignature(res *suite.SignRes) {
 	// TODO implement me
 	panic("implement me")
 }

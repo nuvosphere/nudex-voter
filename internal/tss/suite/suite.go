@@ -6,30 +6,19 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-//type SignReq struct {
-//	ReqId     string
-//	chainType uint8
-//	Signer    string
-//	Data      any
-//}
-//
-//type SignRes struct {
-//	ReqId string
-//	Data  any
-//}
-
-type SignReq interface {
-	ReqId() *big.Int
-	ChainType() uint8
-	Signer() string
-	SignDigest() string
-	SignData() []byte
-	ExtraData() []byte
+type SignReq struct {
+	SeqId      uint64
+	ChainType  uint8
+	Signer     string
+	DataDigest string
+	SignData   []byte
+	ExtraData  []byte
 }
 
-type SignRes interface {
-	ReqId() *big.Int
-	Signature() []byte
+type SignRes struct {
+	SeqId      uint64
+	DataDigest []byte
+	Signature  []byte
 }
 
 type TssService interface {
@@ -38,7 +27,7 @@ type TssService interface {
 	GetUserAddress(coinType, account uint32, index uint8) string
 	TssSigner() common.Address
 	IsMeeting(signDigest string) bool
-	Sign(req SignReq) error
+	Sign(req *SignReq) error
 	IsProposer() bool
 	Proposer() common.Address
 	LocalSubmitter() common.Address
@@ -47,6 +36,6 @@ type TssService interface {
 
 type TssClient interface {
 	Verify(reqId *big.Int, signDigest string, ExtraData []byte) error
-	PostSignature(res SignRes) error
+	ReceiveSignature(res *SignRes)
 	ChainType() uint8
 }

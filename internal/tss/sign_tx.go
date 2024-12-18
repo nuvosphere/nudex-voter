@@ -40,7 +40,7 @@ func (m *Scheduler) loopSigInToOut() {
 				} else {
 					switch result.Type {
 					case types.SignTestOperationSessionType:
-						ops := m.operationsQueue.Get(result.ProposalID).(*Operations)
+						ops := m.operationsQueue.Get(result.SeqId).(*Operations)
 						ops.Signature = secp256k1Signature(result.Data)
 						log.Infof("result.Data.Signature: len: %d, result.Data.Signature: %x", len(result.Data.Signature), result.Data.Signature)
 						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
@@ -50,7 +50,7 @@ func (m *Scheduler) loopSigInToOut() {
 						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
 
 					case types.SignTestTxSessionType:
-						m.processTxSignResult(result.ProposalID, result.Data)
+						m.processTxSignResult(result.SeqId, result.Data)
 					default:
 						log.Infof("tss signature result: %v", result)
 					}
@@ -58,6 +58,19 @@ func (m *Scheduler) loopSigInToOut() {
 			}
 		}
 	}()
+}
+
+func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest []byte, signature []byte) {
+	defer m.crw.RUnlock()
+	m.crw.RLock()
+	c, ok := m.tssClients[chainType]
+	if ok {
+		c.ReceiveSignature(&suite.SignRes{
+			SeqId:      SeqId,
+			DataDigest: signDigest,
+			Signature:  signature,
+		})
+	}
 }
 
 // only used test
@@ -71,15 +84,15 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
 				// coinType := types.GetCoinTypeByChain(taskData.Chain)
-				localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
+				localData, _ := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
 				c := btc.NewTxClient(m.ctx, time.Second*60, &chaincfg.MainNetParams, localData.PublicKey())
 				//sigCtx := &SignerContext{
 				//	chainType:          taskData.Chain,
 				//	localData:          localData,
 				//	keyDerivationDelta: keyDerivationDelta,
 				//}
-				from := localData.Address(taskData.Chain)
-				// m.sigContext.Store(from, sigCtx)
+				hotAddress := localData.Address(taskData.Chain)
+				// m.sigContext.Store(hotAddress, sigCtx)
 
 				sessionId := ZeroSessionID
 				var proposal *big.Int
@@ -104,13 +117,13 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 					}
 				}
 
+				hotSigner := m.GetSigner(hotAddress)
 				m.NewTxSignSession(
 					sessionId,
 					taskData.TaskId,
+					proposal.String(),
 					proposal,
-					localData,
-					keyDerivationDelta,
-					from,
+					hotSigner,
 				)
 
 			case types.AssetTypeErc20:
@@ -165,15 +178,14 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 					task: taskData,
 				})
 			}
-			// coinType := types.GetCoinTypeByChain(coinType)
-			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeEVM, 0, 0)
+
+			hotSigner := m.GetSigner(hotAddress.String())
 			m.NewTxSignSession(
 				sessionId,
 				taskData.TaskId,
+				hash.String(),
 				hash.Big(),
-				localData,
-				keyDerivationDelta,
-				hotAddress.String(),
+				hotSigner,
 			)
 
 		case types.ChainSolana:
@@ -226,15 +238,13 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 					task: taskData,
 				})
 			}
-			// coinType := types.GetCoinTypeByChain(coinType)
-			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeSOL, 0, 0)
+			hotSigner := m.GetSigner(hotAddress)
 			m.NewTxSignSession(
 				sessionId,
 				taskData.TaskId,
+				proposal.String(),
 				proposal,
-				localData,
-				keyDerivationDelta,
-				hotAddress,
+				hotSigner,
 			)
 
 		case types.ChainSui:
@@ -257,7 +267,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				log.Errorf("failed to build unsign tx: %v", err)
 				return
 			}
-			localData, keyDerivationDelta := m.GenerateDerivationWalletProposal(types.CoinTypeSUI, 0, 0)
+			localData, _ := m.GenerateDerivationWalletProposal(types.CoinTypeSUI, 0, 0)
 			proposal := new(big.Int).SetBytes(unSignTx.Blake2bHash())
 			sessionId := ZeroSessionID
 			if msg != nil {
@@ -277,13 +287,13 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				})
 			}
 
+			hotSigner := m.GetSigner(hotAddress)
 			m.NewTxSignSession(
 				sessionId,
 				taskData.TaskId,
+				proposal.String(),
 				proposal,
-				localData,
-				keyDerivationDelta,
-				hotAddress,
+				hotSigner,
 			)
 
 		default:
@@ -351,13 +361,24 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 	}
 }
 
-func (m *Scheduler) Sign(req suite.SignReq) {
-	//tssSigner := ""
-	//// only ecdsa batch
-	//m.NewMasterSignBatchSession(
-	//	ZeroSessionID,
-	//	nonce.Uint64(), // ProposalID
-	//	msg.Big(),
-	//	batchData.Bytes(),
-	//)
+func (m *Scheduler) Sign(req *suite.SignReq) error {
+	signerCtx := m.GetSigner(req.Signer)
+	if signerCtx == nil {
+		return fmt.Errorf("signer not found in context")
+	}
+	if m.isCanProposal() {
+		if signerCtx.IsTssSinger() {
+			// only ecdsa batch
+			m.NewSignOperationSession(
+				ZeroSessionID,
+				req.SeqId,
+				req.DataDigest,
+				new(big.Int).SetBytes(req.SignData),
+				req.ExtraData,
+			)
+		} else {
+		}
+	} else {
+	}
+	return nil
 }

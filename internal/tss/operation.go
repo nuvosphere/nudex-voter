@@ -109,7 +109,7 @@ func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Prop
 		return fmt.Errorf("batch task generate verify task unsign msg err:%v", err)
 	}
 
-	if nonce.Uint64() != msg.ProposalID {
+	if nonce.Uint64() != msg.SeqId {
 		return fmt.Errorf("nonce error: %v", nonce.Uint64())
 	}
 
@@ -120,6 +120,7 @@ func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Prop
 	// only ecdsa batch
 	m.NewSignOperationSession(
 		msg.SessionID,
+		msg.SeqId,
 		msg.ProposalID,
 		&msg.Proposal,
 		msg.Data,

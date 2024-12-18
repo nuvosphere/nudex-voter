@@ -178,15 +178,15 @@ var (
 	ZeroSessionID           party.SessionID
 	senateSessionID         = ethCrypto.Keccak256Hash([]byte("The voter senate session，one and only one"))
 	SenateProposal          = senateSessionID.Big()
-	senateProposalID        = senateSessionID.Big().Uint64()
-	SenateProposalIDOfECDSA = senateProposalID - 1
-	SenateProposalIDOfEDDSA = senateProposalID - 2
 	SenateSessionIDOfECDSA  = ethCrypto.Keccak256Hash([]byte("ECDSA:The voter senate session，one and only one"))
+	SenateProposalIDOfECDSA = SenateSessionIDOfECDSA.String()
 	SenateSessionIDOfEDDSA  = ethCrypto.Keccak256Hash([]byte("EDDSA:The voter senate session，one and only one"))
+	SenateProposalIDOfEDDSA = SenateSessionIDOfEDDSA.String()
 )
 
 type SessionContext[T, M any] struct {
 	Group
+	SeqId      uint64          `json:"seq_id"`
 	SessionID  party.SessionID `json:"sessionID,omitempty"`
 	Proposer   common.Address  `json:"proposer,omitempty"`    // current submitter
 	Signer     string          `json:"signer,omitempty"`      // current signer

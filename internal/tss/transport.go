@@ -23,7 +23,7 @@ import (
 var _ Session[any] = &sessionTransport[any, any, any]{}
 
 type (
-	ProposalID = uint64
+	ProposalID = string
 	Proposal   = big.Int
 )
 
@@ -32,6 +32,7 @@ type SessionMessage[T, M any] struct {
 	ChainType               uint8           `json:"chain_type"`
 	GroupID                 party.GroupID   `json:"group_id,omitempty"`
 	SessionID               party.SessionID `json:"session_id,omitempty"`
+	SeqId                   uint64          `json:"seq_id,omitempty"`
 	Signer                  string          `json:"signer,omitempty"`      // msg signer
 	Proposer                common.Address  `json:"proposer,omitempty"`    // current submitter
 	ProposalID              T               `json:"proposal_id,omitempty"` // msg id
@@ -63,7 +64,7 @@ type sessionTransport[T, M, D any] struct {
 	session        SessionContext[T, M]
 	sessionRelease SessionReleaser
 	isReleased     atomic.Bool
-	ty             string
+	sessionType    string
 	party          tss.Party
 	partyIdMap     map[string]*tss.PartyID
 	rw             sync.RWMutex
@@ -100,7 +101,7 @@ func newSession[T comparable, M, D any](
 	proposer common.Address, // current submitter
 	ProposalId T, // msg id
 	proposal M,
-	ty string,
+	sessionType string,
 	allPartners types.Participants,
 ) *sessionTransport[T, M, D] {
 	if sessionID == ZeroSessionID {
@@ -125,7 +126,7 @@ func newSession[T comparable, M, D any](
 			Proposal:   proposal,
 		},
 		sessionRelease: m,
-		ty:             ty,
+		sessionType:    sessionType,
 		partyIdMap:     make(map[string]*tss.PartyID),
 		rw:             sync.RWMutex{},
 		ctx:            ctx,
@@ -134,7 +135,7 @@ func newSession[T comparable, M, D any](
 }
 
 func (s *sessionTransport[T, M, D]) Type() string {
-	return s.ty
+	return s.sessionType
 }
 
 func (s *sessionTransport[T, M, D]) Name() string {
@@ -208,6 +209,7 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 			SessionID:               s.SessionID(),
 			Signer:                  strings.ToLower(s.Signer()),
 			Proposer:                s.Proposer(),
+			SeqId:                   s.session.SeqId,
 			ProposalID:              s.ProposalID(),
 			Proposal:                s.session.Proposal,
 			Data:                    s.session.Data,
@@ -258,7 +260,8 @@ func (s *sessionTransport[T, M, D]) Signer() string {
 
 func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
-		Type:       s.ty,
+		Type:       s.sessionType,
+		SeqId:      s.session.SeqId,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -269,7 +272,8 @@ func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 
 func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
-		Type:       s.ty,
+		Type:       s.sessionType,
+		SeqId:      s.session.SeqId,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -279,6 +283,7 @@ func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D]
 
 type SessionResult[T, D any] struct {
 	Type       string
+	SeqId      uint64
 	ProposalID T
 	SessionID  party.SessionID
 	GroupID    party.GroupID

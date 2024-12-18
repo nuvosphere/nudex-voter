@@ -25,7 +25,6 @@ func (m *Scheduler) NewGenerateKeySession(
 	ec crypto.CurveType,
 	proposalID ProposalID, // msg id
 	sessionID party.SessionID,
-	signer string,
 	msg *Proposal,
 ) party.SessionID {
 	allPartners := m.Participants()
@@ -34,7 +33,7 @@ func (m *Scheduler) NewGenerateKeySession(
 		m.p2p,
 		m,
 		sessionID,
-		signer,
+		"",
 		m.Proposer(),
 		proposalID,
 		msg,
@@ -71,7 +70,6 @@ func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) 
 		ec,
 		msg.ProposalID,
 		msg.SessionID,
-		msg.Signer,
 		&msg.Proposal,
 	)
 

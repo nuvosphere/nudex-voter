@@ -18,7 +18,7 @@ type WalletClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	event  eventbus.Bus
-	state  *state.EvmWalletState
+	state  *state.SolWalletState
 	tss    suite.TssService
 	client *SolClient
 }
@@ -27,7 +27,7 @@ func NewWallet(
 	event eventbus.Bus,
 	tss suite.TssService,
 	stateDB *state.ContractState,
-	state *state.EvmWalletState,
+	state *state.SolWalletState,
 	voterContract layer2.VoterContract,
 ) *WalletClient {
 	client := NewSolClient()
@@ -57,7 +57,7 @@ func (w *WalletClient) Verify(reqId *big.Int, signDigest string, ExtraData []byt
 	panic("implement me")
 }
 
-func (w *WalletClient) PostSignature(res suite.SignRes) error {
+func (w *WalletClient) ReceiveSignature(res *suite.SignRes) {
 	// TODO implement me
 	panic("implement me")
 }
