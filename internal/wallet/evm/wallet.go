@@ -24,10 +24,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
-	vtypes "github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
-	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,7 +36,6 @@ type WalletClient struct {
 	cancel              context.CancelFunc
 	event               eventbus.Bus
 	client              *ethclient.Client
-	tssPublicKey        ecdsa.PublicKey
 	submitterPrivateKey *ecdsa.PrivateKey
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
@@ -63,20 +59,6 @@ func (c *WalletClient) Stop(context.Context) {
 	c.cancel()
 }
 
-func (c *WalletClient) Verify(reqId *big.Int, signDigest string, ExtraData []byte) error {
-	// TODO implement me
-	panic("implement me")
-}
-
-func (c *WalletClient) ReceiveSignature(res *suite.SignRes) {
-	// TODO implement me
-	panic("implement me")
-}
-
-func (c *WalletClient) ChainType() uint8 {
-	return vtypes.ChainEthereum
-}
-
 func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.VoterContract, state *state.EvmWalletState) *WalletClient {
 	client, err := ethclient.Dial(config.AppConfig.L2Rpc)
 	utils.Assert(err)
@@ -94,7 +76,6 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 		cancel:              cancel,
 		event:               event,
 		client:              client,
-		tssPublicKey:        ecdsa.PublicKey{},
 		submitterPrivateKey: config.L2PrivateKey,
 		submitter:           crypto.PubkeyToAddress(config.L2PrivateKey.PublicKey),
 		pendingTx:           sync.Map{},
@@ -108,19 +89,6 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 		submitTaskQueue:     pool.NewTaskPool[uint64](),
 		operationsQueue:     pool.NewTaskPool[uint64](),
 	}
-}
-
-func (c *WalletClient) SetTssPublicKey(tssPublicKey ecdsa.PublicKey) {
-	c.tssPublicKey = tssPublicKey
-}
-
-func (c *WalletClient) Address(coinType, account uint32, index uint8) common.Address {
-	addr := address.GenerateAddressByPath(bip44.ECPoint(&c.tssPublicKey), coinType, account, index)
-	return common.HexToAddress(addr)
-}
-
-func (c *WalletClient) HotAddressOfCoin(coinType uint32) common.Address {
-	return c.Address(coinType, 0, 0)
 }
 
 func (c *WalletClient) BalanceOf(erc20Token, owner common.Address) (*big.Int, error) {

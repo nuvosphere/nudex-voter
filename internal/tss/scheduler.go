@@ -91,6 +91,15 @@ func (m *Scheduler) IsMeeting(signDigest string) bool {
 	return ok
 }
 
+func (m *Scheduler) GetPublicKey(address string) crypto.PublicKey {
+	signer := m.GetSigner(address)
+	if signer == nil {
+		return nil
+	}
+	localData := signer.LocalData()
+	return localData.PublicKey()
+}
+
 func (m *Scheduler) RegisterTssClient(client suite.TssClient) {
 	defer m.crw.Unlock()
 	m.crw.Lock()

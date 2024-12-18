@@ -13,6 +13,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
@@ -49,7 +50,7 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		data := c.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
-		operation.State = db.Completed
+		operation.State = uint8(task.Task.State)
 	case *db.DepositTask:
 		data := c.voterContract.EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
@@ -60,7 +61,7 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		)
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
-		operation.State = db.Completed
+		operation.State = uint8(task.Task.State)
 	case *db.WithdrawalTask:
 		data := c.voterContract.EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
@@ -71,7 +72,7 @@ func (c *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		)
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
-		operation.State = db.Pending
+		operation.State = uint8(task.Task.State)
 	default:
 		log.Errorf("unhandled default case")
 		operation.State = db.Completed
@@ -90,17 +91,17 @@ func (c *WalletClient) loopApproveProposal() {
 			log.Info("approve proposal done")
 
 		case <-ticker.C:
-			c.ProcessOperation()
+			c.processOperation()
 
 		case <-c.notify:
-			c.ProcessOperation()
+			c.processOperation()
 		}
 	}()
 }
 
 const TopN = 20
 
-func (c *WalletClient) ProcessOperation() {
+func (c *WalletClient) processOperation() {
 	log.Info("batch proposal")
 	tasks := c.submitTaskQueue.GetTopN(TopN)
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *c.Operation(item) })
@@ -116,17 +117,24 @@ func (c *WalletClient) ProcessOperation() {
 	log.Infof("nonce: %v, dataHash: %v, msg: %v", nonce, dataHash, msg)
 
 	data := lo.Map(tasks, func(item pool.Task[uint64], index int) uint64 { return item.TaskID() })
-	// batchData := types.BatchData{Ids: data}
-	_ = types.BatchData{Ids: data}
+	batchData := types.BatchData{Ids: data}
 
-	// only ecdsa batch
-	//c.NewMasterSignBatchSession(
-	//	ZeroSessionID,
-	//	nonce.Uint64(), // ProposalID
-	//	msg.Big(),
-	//	batchData.Bytes(),
-	//)
-	//c.saveOperations(nonce, operations, dataHash, msg)
+	signReq := &suite.SignReq{
+		SeqId:      nonce.Uint64(),
+		Type:       types.SignOperationSessionType,
+		ChainType:  c.ChainType(),
+		Signer:     c.tss.TssSigner().String(),
+		DataDigest: msg.String(),
+		SignData:   msg.Bytes(),
+		ExtraData:  batchData.Bytes(),
+	}
+
+	err = c.tss.Sign(signReq)
+	if err != nil {
+		log.Errorf("batch task sign err:%v", err)
+		return
+	}
+	c.saveOperations(nonce, operations, dataHash, msg)
 }
 
 func (c *WalletClient) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {

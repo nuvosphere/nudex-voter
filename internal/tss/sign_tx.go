@@ -353,24 +353,15 @@ func (m *Scheduler) Sign(req *suite.SignReq) error {
 		return fmt.Errorf("signer not found in context")
 	}
 	if m.isCanProposal() {
-		if signerCtx.IsTssSinger() {
-			// only ecdsa batch
-			m.NewSignOperationSession(
-				ZeroSessionID,
-				req.SeqId,
-				req.DataDigest,
-				new(big.Int).SetBytes(req.SignData),
-				req.ExtraData,
-			)
-		} else {
-			m.NewTxSignSession(
-				ZeroSessionID,
-				req.SeqId,
-				req.DataDigest,
-				new(big.Int).SetBytes(req.SignData),
-				signerCtx,
-			)
-		}
+		m.NewSignSessionWitKey(
+			ZeroSessionID,
+			req.SeqId,
+			req.Type,
+			new(big.Int).SetBytes(req.SignData),
+			req.DataDigest,
+			req.ExtraData,
+			signerCtx,
+		)
 	}
 	return nil
 }
