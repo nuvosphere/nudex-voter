@@ -35,12 +35,19 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 			return true, db.TaskErrorCodeCheckWithdrawalAssetFailed, err
 		}
 		if !asset.WithdrawalEnabled {
-			return true, db.TaskErrorCodeCheckWithdrawalNotEnabled, err
+			return true, db.TaskErrorCodeWithdrawalAssetNotEnabled, err
 		}
 		if taskData.Amount < asset.MinWithdrawAmount {
-			return true, db.TaskErrorCodeCheckWithdrawalAmountTooLow, err
+			return true, db.TaskErrorCodeWithdrawalAmountTooLow, err
 		}
-		// inscriptionBurnb.Ticker==taskData.Ticker
+
+		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionBurnb.Ticker, uint64(taskData.ChainId))
+		if err != nil || tokenInfo == nil {
+			return true, db.TaskErrorCodeWithdrawalTokenNotSupported, err
+		}
+		if !tokenInfo.IsActive {
+			return true, db.TaskErrorCodeWithdrawalTokenNotActive, err
+		}
 
 		switch taskData.Chain {
 		case types.CoinTypeBTC:

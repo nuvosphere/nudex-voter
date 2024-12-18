@@ -218,3 +218,21 @@ func (s *ContractState) GetAsset(ticker string) (*db.Asset, error) {
 
 	return &asset, nil
 }
+
+func (s *ContractState) GetTokenInfo(ticker string, chainId uint64) (*db.TokenInfo, error) {
+	var tokenInfo db.TokenInfo
+
+	result := s.l2InfoDb.
+		Preload(clause.Associations).
+		Where("ticker = ? and chain_id = ?", ticker, chainId).
+		First(tokenInfo)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("token info not found for ticker: %s, chainId: %d", ticker, chainId)
+		}
+		return nil, fmt.Errorf("failed to query asset for ticker: %s, chainId: %d, %w", ticker, chainId, result.Error)
+	}
+
+	return &tokenInfo, nil
+}

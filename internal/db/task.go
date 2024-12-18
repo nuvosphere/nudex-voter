@@ -201,8 +201,10 @@ const (
 	TaskErrorCodeCheckWithdrawalTxFailed
 	TaskErrorCodeCheckWithdrawalInscriptionFailed
 	TaskErrorCodeCheckWithdrawalAssetFailed
-	TaskErrorCodeCheckWithdrawalNotEnabled
-	TaskErrorCodeCheckWithdrawalAmountTooLow
+	TaskErrorCodeWithdrawalAssetNotEnabled
+	TaskErrorCodeWithdrawalAmountTooLow
+	TaskErrorCodeWithdrawalTokenNotSupported
+	TaskErrorCodeWithdrawalTokenNotActive
 	TaskErrorCodeCheckWithdrawalBalanceFailed
 )
 
