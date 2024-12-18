@@ -84,8 +84,11 @@ func (m *Scheduler) tssSigner() *SignerContext {
 }
 
 func (m *Scheduler) IsMeeting(signDigest string) bool {
-	// TODO implement me
-	panic("implement me")
+	m.srw.RLock()
+	defer m.srw.RUnlock()
+	_, ok := m.proposalSession[signDigest]
+
+	return ok
 }
 
 func (m *Scheduler) RegisterTssClient(client suite.TssClient) {
@@ -370,14 +373,6 @@ func (m *Scheduler) GetSession(sessionID party.SessionID) Session[ProposalID] {
 
 	return m.sessions[sessionID]
 }
-
-//func (m *Scheduler) IsMeeting(proposalID ProposalID) bool {
-//	m.srw.RLock()
-//	defer m.srw.RUnlock()
-//	_, ok := m.proposalSession[proposalID]
-//
-//	return ok
-//}
 
 func (m *Scheduler) GetGroups() []*Group {
 	m.grw.RLock()

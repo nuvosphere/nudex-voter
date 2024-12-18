@@ -262,6 +262,7 @@ func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
 		Type:       s.sessionType,
 		SeqId:      s.session.SeqId,
+		ChainType:  s.session.ChainType,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -274,6 +275,7 @@ func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D]
 	return &SessionResult[T, D]{
 		Type:       s.sessionType,
 		SeqId:      s.session.SeqId,
+		ChainType:  s.session.ChainType,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -284,6 +286,7 @@ func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D]
 type SessionResult[T, D any] struct {
 	Type       string
 	SeqId      uint64
+	ChainType  uint8
 	ProposalID T
 	SessionID  party.SessionID
 	GroupID    party.GroupID

@@ -17,7 +17,7 @@ type SignReq struct {
 
 type SignRes struct {
 	SeqId      uint64
-	DataDigest []byte
+	DataDigest string
 	Signature  []byte
 }
 

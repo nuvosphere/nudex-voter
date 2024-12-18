@@ -51,6 +51,12 @@ func (m *Scheduler) loopSigInToOut() {
 
 					case types.SignTestTxSessionType:
 						m.processTxSignResult(result.SeqId, result.Data)
+					case types.SignTxSessionType, types.SignOperationSessionType:
+						signature := result.Data.Signature
+						if result.ChainType == types.ChainEthereum {
+							signature = secp256k1Signature(result.Data)
+						}
+						m.PostClient(result.ChainType, result.SeqId, result.ProposalID, signature)
 					default:
 						log.Infof("tss signature result: %v", result)
 					}
@@ -60,7 +66,7 @@ func (m *Scheduler) loopSigInToOut() {
 	}()
 }
 
-func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest []byte, signature []byte) {
+func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest string, signature []byte) {
 	defer m.crw.RUnlock()
 	m.crw.RLock()
 	c, ok := m.tssClients[chainType]
@@ -76,6 +82,12 @@ func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest []byte,
 // only used test
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
+	sessionId := ZeroSessionID
+	seqId := task.TaskID()
+	var signer *SignerContext
+	proposalID := ""
+	var proposal *Proposal
+
 	switch taskData := task.(type) {
 	case *db.WithdrawalTask:
 		log.Debugf("processTxSign task: %v", taskData)
@@ -93,9 +105,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				//}
 				hotAddress := localData.Address(taskData.Chain)
 				// m.sigContext.Store(hotAddress, sigCtx)
-
-				sessionId := ZeroSessionID
-				var proposal *big.Int
+				signer = m.GetSigner(hotAddress)
 				go func() {
 					err := c.BuildTx(taskData.TargetAddress, int64(taskData.Amount))
 					if err != nil {
@@ -117,15 +127,6 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 					}
 				}
 
-				hotSigner := m.GetSigner(hotAddress)
-				m.NewTxSignSession(
-					sessionId,
-					taskData.TaskId,
-					proposal.String(),
-					proposal,
-					hotSigner,
-				)
-
 			case types.AssetTypeErc20:
 			default:
 				log.Errorf("unknown asset type: %v", taskData.AssetType)
@@ -133,6 +134,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 		case types.ChainEthereum:
 			w := wallet.NewWallet()
 			hotAddress := w.HotAddressOfCoin(types.CoinTypeEVM)
+			signer = m.GetSigner(hotAddress.String())
 			to := common.HexToAddress(taskData.TargetAddress)
 			var tx *ethtypes.Transaction
 			var err error
@@ -164,7 +166,6 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				return
 			}
 			hash := tx.Hash()
-			sessionId := ZeroSessionID
 			if msg != nil {
 				if msg.Proposal.Cmp(hash.Big()) != 0 {
 					log.Errorf("the proposal is incorrect of evm")
@@ -179,15 +180,6 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				})
 			}
 
-			hotSigner := m.GetSigner(hotAddress.String())
-			m.NewTxSignSession(
-				sessionId,
-				taskData.TaskId,
-				hash.String(),
-				hash.Big(),
-				hotSigner,
-			)
-
 		case types.ChainSolana:
 			var c *solana.SolClient
 			if m.isProd {
@@ -197,6 +189,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			}
 			hotAddress := address.HotAddressOfSolana(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
+			signer = m.GetSigner(hotAddress)
 			var (
 				tx  *solana.UnSignTx
 				err error
@@ -220,8 +213,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				return
 			}
 			log.Infof("raw: %x", raw)
-			proposal := new(big.Int).SetBytes(raw)
-			sessionId := ZeroSessionID
+			proposal = new(big.Int).SetBytes(raw)
 			if msg != nil {
 				log.Infof("msg.proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
 				// todo
@@ -229,6 +221,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				//	log.Errorf("the proposal is incorrect of solana")
 				//	return
 				//}
+				proposalID = msg.ProposalID
 				proposal = &msg.Proposal // todo
 				sessionId = msg.SessionID
 			} else {
@@ -238,14 +231,6 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 					task: taskData,
 				})
 			}
-			hotSigner := m.GetSigner(hotAddress)
-			m.NewTxSignSession(
-				sessionId,
-				taskData.TaskId,
-				proposal.String(),
-				proposal,
-				hotSigner,
-			)
 
 		case types.ChainSui:
 			var c *sui.TxClient
@@ -256,7 +241,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			}
 			hotAddress := address.HotAddressOfSui(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
-
+			signer = m.GetSigner(hotAddress)
 			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(taskData.ContractAddress, taskData.Ticker), hotAddress, []sui.Recipient{
 				{
 					Recipient: taskData.TargetAddress,
@@ -268,14 +253,14 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				return
 			}
 			localData, _ := m.GenerateDerivationWalletProposal(types.CoinTypeSUI, 0, 0)
-			proposal := new(big.Int).SetBytes(unSignTx.Blake2bHash())
-			sessionId := ZeroSessionID
+			proposal = new(big.Int).SetBytes(unSignTx.Blake2bHash())
 			if msg != nil {
 				log.Infof("msg.proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
 				//if msg.Proposal.Cmp(proposal) != 0 {//todo
 				//	log.Errorf("the proposal is incorrect of sui")
 				//	return
 				//}
+				proposalID = msg.ProposalID
 				proposal = &msg.Proposal
 				sessionId = msg.SessionID
 			} else {
@@ -286,22 +271,23 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 					task:         taskData,
 				})
 			}
-
-			hotSigner := m.GetSigner(hotAddress)
-			m.NewTxSignSession(
-				sessionId,
-				taskData.TaskId,
-				proposal.String(),
-				proposal,
-				hotSigner,
-			)
-
 		default:
 			panic(fmt.Errorf("unknown Chain type: %v", taskData.Chain))
 		}
 	default:
 		log.Errorf("error pending task id: %v", task.TaskID())
+		return
 	}
+	if proposalID == "" {
+		proposalID = proposal.String()
+	}
+	m.NewTxSignSession(
+		sessionId,
+		seqId,
+		proposalID,
+		proposal,
+		signer,
+	)
 }
 
 // only used test
@@ -385,8 +371,6 @@ func (m *Scheduler) Sign(req *suite.SignReq) error {
 				signerCtx,
 			)
 		}
-	} else {
-		// todo
 	}
 	return nil
 }
