@@ -8,12 +8,12 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"golang.org/x/crypto/blake2b"
 )
 
 func init() {
-	wallet.RegisterAddress(types.CoinTypeSUI, SuiEd25519Address)
+	address.RegisterAddress(types.CoinTypeSUI, SuiEd25519Address)
 }
 
 // https://github.com/MystenLabs/sui/blob/f3b5fdd73da64a0df65fb4323471512b0f57ec4d/sdk/typescript/test/unit/cryptography/ed25519-keypair.test.ts

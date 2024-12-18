@@ -15,6 +15,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,19 +23,21 @@ import (
 var _ Session[any] = &sessionTransport[any, any, any]{}
 
 type (
-	ProposalID = uint64
+	ProposalID = string
 	Proposal   = big.Int
 )
 
 type SessionMessage[T, M any] struct {
 	Type                    string          `json:"type"`
-	GroupID                 types.GroupID   `json:"group_id,omitempty"`
-	SessionID               types.SessionID `json:"session_id,omitempty"`
-	Signer                  string          `json:"signer,omitempty"`
+	ChainType               uint8           `json:"chain_type"`
+	GroupID                 party.GroupID   `json:"group_id,omitempty"`
+	SessionID               party.SessionID `json:"session_id,omitempty"`
+	SeqId                   uint64          `json:"seq_id,omitempty"`
+	Signer                  string          `json:"signer,omitempty"`      // msg signer
 	Proposer                common.Address  `json:"proposer,omitempty"`    // current submitter
 	ProposalID              T               `json:"proposal_id,omitempty"` // msg id
 	Proposal                M               `json:"proposal,omitempty"`
-	Data                    []T             `json:"data"`
+	Data                    []byte          `json:"data"`
 	FromPartyId             string          `json:"from_party_id"`
 	ToPartyIds              []string        `json:"to_party_ids"`
 	IsBroadcast             bool            `json:"is_broadcast"`
@@ -61,7 +64,7 @@ type sessionTransport[T, M, D any] struct {
 	session        SessionContext[T, M]
 	sessionRelease SessionReleaser
 	isReleased     atomic.Bool
-	ty             string
+	sessionType    string
 	party          tss.Party
 	partyIdMap     map[string]*tss.PartyID
 	rw             sync.RWMutex
@@ -93,12 +96,12 @@ func newSession[T comparable, M, D any](
 	ec crypto.CurveType,
 	p p2p.P2PService,
 	m *Scheduler,
-	sessionID types.SessionID,
+	sessionID party.SessionID,
 	signer string, // current signer
 	proposer common.Address, // current submitter
 	ProposalId T, // msg id
 	proposal M,
-	ty string,
+	sessionType string,
 	allPartners types.Participants,
 ) *sessionTransport[T, M, D] {
 	if sessionID == ZeroSessionID {
@@ -123,7 +126,7 @@ func newSession[T comparable, M, D any](
 			Proposal:   proposal,
 		},
 		sessionRelease: m,
-		ty:             ty,
+		sessionType:    sessionType,
 		partyIdMap:     make(map[string]*tss.PartyID),
 		rw:             sync.RWMutex{},
 		ctx:            ctx,
@@ -132,7 +135,7 @@ func newSession[T comparable, M, D any](
 }
 
 func (s *sessionTransport[T, M, D]) Type() string {
-	return s.ty
+	return s.sessionType
 }
 
 func (s *sessionTransport[T, M, D]) Name() string {
@@ -159,11 +162,15 @@ func (s *sessionTransport[T, M, D]) Included(ids []string) bool {
 	return slices.Contains(ids, strings.ToLower(s.party.PartyID().Id))
 }
 
-func (s *sessionTransport[T, M, D]) SessionID() types.SessionID {
+func (s *sessionTransport[T, M, D]) ChainType() uint8 {
+	return s.session.ChainType
+}
+
+func (s *sessionTransport[T, M, D]) SessionID() party.SessionID {
 	return s.session.SessionID
 }
 
-func (s *sessionTransport[T, M, D]) GroupID() types.GroupID {
+func (s *sessionTransport[T, M, D]) GroupID() party.GroupID {
 	return s.session.AllPartners.GroupID()
 }
 
@@ -197,10 +204,12 @@ func (s *sessionTransport[T, M, D]) Send(ctx context.Context, bytes []byte, rout
 		DataType:    s.Type(),
 		Data: SessionMessage[T, M]{
 			Type:                    s.Type(),
+			ChainType:               s.session.ChainType,
 			GroupID:                 s.GroupID(),
 			SessionID:               s.SessionID(),
 			Signer:                  strings.ToLower(s.Signer()),
 			Proposer:                s.Proposer(),
+			SeqId:                   s.session.SeqId,
 			ProposalID:              s.ProposalID(),
 			Proposal:                s.session.Proposal,
 			Data:                    s.session.Data,
@@ -251,7 +260,9 @@ func (s *sessionTransport[T, M, D]) Signer() string {
 
 func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
-		Type:       s.ty,
+		Type:       s.sessionType,
+		SeqId:      s.session.SeqId,
+		ChainType:  s.session.ChainType,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -262,7 +273,9 @@ func (s *sessionTransport[T, M, D]) newDataResult(data D) *SessionResult[T, D] {
 
 func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D] {
 	return &SessionResult[T, D]{
-		Type:       s.ty,
+		Type:       s.sessionType,
+		SeqId:      s.session.SeqId,
+		ChainType:  s.session.ChainType,
 		ProposalID: s.ProposalID(),
 		SessionID:  s.SessionID(),
 		GroupID:    s.GroupID(),
@@ -272,9 +285,11 @@ func (s *sessionTransport[T, M, D]) newErrResult(err error) *SessionResult[T, D]
 
 type SessionResult[T, D any] struct {
 	Type       string
+	SeqId      uint64
+	ChainType  uint8
 	ProposalID T
-	SessionID  types.SessionID
-	GroupID    types.GroupID
+	SessionID  party.SessionID
+	GroupID    party.GroupID
 	Data       D
 	Err        error
 }

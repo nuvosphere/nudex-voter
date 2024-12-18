@@ -66,5 +66,8 @@ func TestBTCAddress(t *testing.T) {
 		assert.NoError(t, err)
 		t.Log("address:", address)
 		assert.Equal(t, strings.ToLower(arg.expectedAddress), strings.ToLower(address))
+
+		address = GenerateP2WPKHBTCAddress(point)
+		t.Log("GenerateP2WPKHBTCAddress address:", address, "len", len([]byte(address)))
 	}
 }

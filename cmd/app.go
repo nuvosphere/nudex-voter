@@ -15,6 +15,10 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	btcWallet "github.com/nuvosphere/nudex-voter/internal/wallet/btc"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/evm"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
+	"github.com/nuvosphere/nudex-voter/internal/wallet/sui"
 	"github.com/samber/lo"
 	"github.com/samber/lo/parallel"
 	log "github.com/sirupsen/logrus"
@@ -23,11 +27,7 @@ import (
 type Application struct {
 	DatabaseManager *db.DatabaseManager
 	State           *state.State
-	LibP2PService   *p2p.Service
-	Layer2Listener  *layer2.Layer2Listener
-	BTCListener     *btc.BTCListener
-	TssService      *tss.Service
-	HTTPServer      *http.HTTPServer
+	modules         []Module
 }
 
 func NewApplication() *Application {
@@ -38,15 +38,54 @@ func NewApplication() *Application {
 	btcListener := btc.NewBTCListener(libP2PService, stateDB, dbm)
 	tssService := tss.NewTssService(libP2PService, dbm, stateDB.Bus(), layer2Listener)
 	httpServer := http.NewHTTPServer(libP2PService, stateDB, dbm)
+	bw := btcWallet.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewBtcWalletState(dbm.GetWalletDB()),
+		layer2Listener,
+	)
+
+	evmWallet := evm.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		layer2Listener,
+		state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewEvmWalletState(dbm.GetWalletDB()),
+	)
+
+	solWallet := solana.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewSolWalletState(dbm.GetWalletDB()),
+		layer2Listener,
+	)
+
+	suiWallet := sui.NewWallet(
+		stateDB.Bus(),
+		tssService.TssService(),
+		state.NewContractState(dbm.GetL2InfoDB()),
+		state.NewSuiWalletState(dbm.GetWalletDB()),
+		layer2Listener,
+	)
+
+	moules := []Module{
+		layer2Listener,
+		libP2PService,
+		btcListener,
+		tssService,
+		httpServer,
+		bw,
+		evmWallet,
+		solWallet,
+		suiWallet,
+	}
 
 	return &Application{
 		DatabaseManager: dbm,
 		State:           stateDB,
-		LibP2PService:   libP2PService,
-		Layer2Listener:  layer2Listener,
-		BTCListener:     btcListener,
-		TssService:      tssService,
-		HTTPServer:      httpServer,
+		modules:         moules,
 	}
 }
 
@@ -57,25 +96,13 @@ func (app *Application) Run() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	var moules []Module
-	if config.AppConfig.EnableRelayer {
-		moules = append(moules, app.Layer2Listener)
-	}
-
-	otherModules := []Module{
-		app.LibP2PService,
-		app.BTCListener,
-		app.TssService,
-		app.HTTPServer,
-	}
-	moules = append(moules, otherModules...)
-	go parallel.ForEach(moules, func(module Module, _ int) { module.Start(ctx) })
+	go parallel.ForEach(app.modules, func(module Module, _ int) { module.Start(ctx) })
 
 	<-stop
 	log.Info("Receiving exit signal...")
 
 	cancel()
-	lo.ForEach(moules, func(module Module, _ int) { module.Stop(ctx) })
+	lo.ForEach(app.modules, func(module Module, _ int) { module.Stop(ctx) })
 
 	app.State.Bus().Close()
 	log.Info("Server stopped")

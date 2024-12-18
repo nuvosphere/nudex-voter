@@ -1,4 +1,4 @@
-package types
+package party
 
 import "github.com/ethereum/go-ethereum/common"
 

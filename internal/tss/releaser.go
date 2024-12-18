@@ -1,6 +1,6 @@
 package tss
 
-import "github.com/nuvosphere/nudex-voter/internal/types"
+import "github.com/nuvosphere/nudex-voter/internal/types/party"
 
 // Releaser is the interface that wraps the basic Release method.
 type Releaser interface {
@@ -10,11 +10,11 @@ type Releaser interface {
 }
 
 type SessionReleaser interface {
-	SessionRelease(session types.SessionID)
+	SessionRelease(session party.SessionID)
 }
 
 type TODO struct{}
 
-func (t TODO) SessionRelease(session types.SessionID) {}
+func (t TODO) SessionRelease(session party.SessionID) {}
 
 func (t TODO) Release() {}

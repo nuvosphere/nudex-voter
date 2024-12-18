@@ -27,7 +27,7 @@ func TestTask(t *testing.T) {
 				TaskType:  0,
 				Context:   []byte("0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
 				Submitter: "1111",
-				Status:    0,
+				State:     0,
 				LogIndex: LogIndex{
 					ContractAddress: common.HexToAddress("0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
 					EventName:       "121221",
@@ -85,7 +85,7 @@ func TestUniqueTask(t *testing.T) {
 				TaskType:  0,
 				Context:   []byte("0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
 				Submitter: "1111",
-				Status:    0,
+				State:     0,
 				LogIndex: LogIndex{
 					ContractAddress: common.HexToAddress("0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
 					EventName:       "121221",

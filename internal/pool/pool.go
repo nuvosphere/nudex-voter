@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type Task[E cmp.Ordered] interface {
+type Task[E any] interface {
 	Type() int
 	TaskID() E
 }
@@ -17,7 +17,7 @@ type Pool[E cmp.Ordered] struct {
 	sync.RWMutex
 }
 
-func NewTxPool[E cmp.Ordered]() *Pool[E] {
+func NewTaskPool[E cmp.Ordered]() *Pool[E] {
 	return &Pool[E]{
 		ids:   make([]E, 0),
 		items: make(map[E]Task[E]),

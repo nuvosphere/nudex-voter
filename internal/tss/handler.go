@@ -5,16 +5,14 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
-	"github.com/samber/lo"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
+	"github.com/nuvosphere/nudex-voter/internal/types/party"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -31,7 +29,7 @@ var (
 )
 
 func (m *Scheduler) Validate(msg SessionMessage[ProposalID, Proposal]) error {
-	if m.IsDiscussed(msg.ProposalID) {
+	if m.IsDiscussed(msg.SeqId) {
 		return fmt.Errorf("taskID:%v, %w", msg.ProposalID, ErrTaskCompleted)
 	}
 
@@ -73,7 +71,7 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		TaskType:  detailTask.Type(),
 		Context:   t.Context,
 		Submitter: t.Submitter.Hex(),
-		Status:    int(t.State),
+		State:     int(t.State),
 	}
 	detailTask.SetBaseTask(baseTask)
 
@@ -88,8 +86,19 @@ func (m *Scheduler) ReShareGroupProposal() Proposal {
 	return *SenateProposal
 }
 
-func (m *Scheduler) isSenateSession(sessionID types.SessionID) bool {
+func (m *Scheduler) isSenateSession(sessionID party.SessionID) bool {
 	return sessionID == SenateSessionIDOfECDSA || sessionID == SenateSessionIDOfEDDSA
+}
+
+func (m *Scheduler) curveTypeBySenateSession(sessionID party.SessionID) crypto.CurveType {
+	switch sessionID {
+	case SenateSessionIDOfEDDSA:
+		return crypto.EDDSA
+	case SenateSessionIDOfECDSA:
+		return crypto.ECDSA
+	default:
+		panic("unimplemented")
+	}
 }
 
 func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
@@ -123,7 +132,7 @@ func (m *Scheduler) OpenSession(msg SessionMessage[ProposalID, Proposal]) bool {
 
 // processReceivedProposal handler received msg from other node.
 func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Proposal]) error {
-	log.Debugf("process received proposal id: %v, basePath: %v", msg.ProposalID, m.partyData.basePath)
+	log.Debugf("process received proposal id: %v, basePath: %v", msg.SeqId, m.partyData.basePath)
 
 	// todo
 	//err := m.Validate(msg)
@@ -142,27 +151,26 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	var err error
 	// build new session
 	switch msg.Type {
-	case GenKeySessionType:
+	case types.GenKeySessionType:
 		err = m.JoinGenKeySession(msg)
-	case ReShareGroupSessionType:
+	case types.ReShareGroupSessionType:
 		err = m.JoinReShareGroupSession(msg)
-	case SignBatchTaskSessionType:
-		err = m.JoinSignBatchTaskSession(msg)
 
-	case TxSignatureSessionType: // blockchain wallet tx signature
-		task := m.pendingStateTasks.Get(msg.ProposalID) // todo
+	case types.SignTestOperationSessionType:
+		err = m.joinSignOperationSession(msg)
+	case types.SignTestTxSessionType: // blockchain wallet tx signature
+		task := m.pendingStateTasks.Get(msg.SeqId) // todo
 		if task != nil {
-			m.JoinTxSignatureSession(msg, task)
+			m.joinTxSignatureSession(msg, task)
 		} else {
 			err = fmt.Errorf("pending task is not exsit")
 		}
-	case SignTaskSessionType: // only used test
-		task, errTask := m.GetTask(msg.ProposalID)
+	case types.SignTaskSessionType: // only used test
+		task, errTask := m.GetTask(msg.SeqId)
 		if errTask != nil {
 			return errTask
 		}
-
-		err = m.JoinSignTaskSession(msg, task)
+		err = m.joinSignTaskSession(msg, task)
 	default:
 		err = fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
 	}
@@ -176,91 +184,36 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	return nil
 }
 
-func (m *Scheduler) JoinGenKeySession(msg SessionMessage[ProposalID, Proposal]) error {
-	// check groupID
-	if msg.GroupID != m.Participants().GroupID() {
-		return fmt.Errorf("GenKeySessionType: %w", ErrGroupIdWrong)
-	}
-	// check msg
-	unSignMsg := m.GenKeyProposal()
-	if unSignMsg.String() != msg.Proposal.String() {
-		return fmt.Errorf("GenKeyUnSignMsg: %w", ErrTaskSignatureMsgWrong)
-	}
-
-	ec := m.CurveTypeBySenateSession(msg.SessionID)
-
-	_ = m.NewGenerateKeySession(
-		ec,
-		msg.ProposalID,
-		msg.SessionID,
-		msg.Signer,
-		&msg.Proposal,
-	)
-
-	m.OpenSession(msg)
-
-	return nil
+// only used test
+func (m *Scheduler) joinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
+	m.processTxSign(&msg, task)
 }
 
-func (m *Scheduler) CurveTypeBySenateSession(sessionID types.SessionID) crypto.CurveType {
-	switch sessionID {
-	case SenateSessionIDOfEDDSA:
-		return crypto.EDDSA
-	case SenateSessionIDOfECDSA:
-		return crypto.ECDSA
+// only used test
+func (m *Scheduler) createUserAddressProposal(task *db.CreateWalletTask) (LocalPartySaveData, *big.Int) {
+	coinType := types.GetCoinTypeByChain(task.Chain)
+
+	ec := types.GetCurveTypeByCoinType(coinType)
+
+	switch ec {
+	case crypto.ECDSA:
+		localPartySaveData := m.partyData.GetData(ec)
+		userAddress := address.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
+		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		hash := ethCrypto.Keccak256Hash(msg)
+		return *localPartySaveData, hash.Big()
 	default:
-		panic("unimplemented")
+		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}
 }
 
-func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
-	operations := &Operations{
-		Nonce:     nonce,
-		Operation: ops,
-		Hash:      hash,
-		DataHash:  dataHash,
-	}
-	m.operationsQueue.Add(operations)
-	m.currentVoterNonce.Store(nonce.Uint64())
-}
-
-func (m *Scheduler) JoinSignBatchTaskSession(msg SessionMessage[ProposalID, Proposal]) error {
-	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
-
-	tasks := m.taskQueue.BatchGet(msg.Data)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.Operation(item) })
-
-	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
-	if err != nil {
-		return fmt.Errorf("batch task generate verify task unsign msg err:%v", err)
-	}
-
-	if nonce.Uint64() != msg.ProposalID {
-		return fmt.Errorf("nonce error: %v", nonce.Uint64())
-	}
-
-	if msg.Proposal.Cmp(unSignMsg.Big()) != 0 {
-		return fmt.Errorf("proposal error: %v", msg.Proposal.Text(16))
-	}
-
-	// only ecdsa batch
-	m.NewMasterSignBatchSession(
-		msg.SessionID,
-		msg.ProposalID,
-		&msg.Proposal,
-		msg.Data,
-	)
-	m.saveOperations(nonce, operations, dataHash, unSignMsg)
-
-	return nil
-}
-
-func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) error {
+// only used test
+func (m *Scheduler) joinSignTaskSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) error {
 	log.Debugf("JoinSignTaskSession: session id: %v, task id:%v, task type: %v", msg.SessionID, task.TaskID(), task.Type())
 
 	switch v := task.(type) {
 	case *db.CreateWalletTask:
-		localPartySaveData, unSignMsg := m.CreateUserAddressProposal(v)
+		_, unSignMsg := m.createUserAddressProposal(v)
 		if unSignMsg.String() != msg.Proposal.String() {
 			return fmt.Errorf("SignTaskSessionType: %w", ErrTaskSignatureMsgWrong)
 		}
@@ -268,9 +221,9 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 		m.NewSignSession(
 			msg.SessionID,
 			task.TaskID(),
+			unSignMsg.String(),
 			unSignMsg,
-			localPartySaveData,
-			nil,
+			m.tssSigner(),
 		)
 	case *db.DepositTask:
 	case *db.WithdrawalTask:
@@ -282,38 +235,18 @@ func (m *Scheduler) JoinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 	return nil
 }
 
-func (m *Scheduler) JoinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
-	m.processTxSign(&msg, task)
-}
-
-func (m *Scheduler) CreateUserAddressProposal(task *db.CreateWalletTask) (LocalPartySaveData, *big.Int) {
-	coinType := types.GetCoinTypeByChain(task.Chain)
-
-	ec := types.GetCurveTypeByCoinType(coinType)
-
-	switch ec {
-	case crypto.ECDSA:
-		localPartySaveData := m.partyData.GetData(ec)
-		userAddress := wallet.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
-		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
-		hash := ethCrypto.Keccak256Hash(msg)
-		return *localPartySaveData, hash.Big()
-	default:
-		panic(fmt.Errorf("unknown EC type: %v", ec))
-	}
-}
-
+// only used test
 func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:
-		localPartySaveData, unSignMsg := m.CreateUserAddressProposal(taskData)
+		_, unSignMsg := m.createUserAddressProposal(taskData)
 
 		m.NewSignSession(
 			ZeroSessionID,
 			taskData.TaskId,
+			unSignMsg.String(),
 			unSignMsg,
-			localPartySaveData,
-			nil,
+			m.tssSigner(),
 		)
 	case *db.DepositTask:
 		_, err := m.stateDB.Account(taskData.TargetAddress)

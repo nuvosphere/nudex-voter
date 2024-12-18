@@ -22,6 +22,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	ty "github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/bip44"
 	"github.com/shopspring/decimal"
@@ -29,7 +30,7 @@ import (
 )
 
 func init() {
-	RegisterAddress(ty.CoinTypeEVM, EthAddress)
+	address.RegisterAddress(ty.CoinTypeEVM, EthAddress)
 }
 
 func EthAddress(p *tssCrypto.ECPoint) string {
@@ -45,7 +46,7 @@ type Wallet struct {
 	submitter           common.Address
 	pendingTx           sync.Map // txHash: bool
 	chainID             atomic.Int64
-	state               *state.WalletEvmState
+	state               *state.EvmWalletState
 }
 
 func NewWallet() *Wallet {
@@ -66,7 +67,7 @@ func (s *Wallet) SetTssPublicKey(tssPublicKey ecdsa.PublicKey) {
 }
 
 func (s *Wallet) Address(coinType, account uint32, index uint8) common.Address {
-	address := GenerateAddressByPath(bip44.ECPoint(&s.tssPublicKey), coinType, account, index)
+	address := address.GenerateAddressByPath(bip44.ECPoint(&s.tssPublicKey), coinType, account, index)
 	return common.HexToAddress(address)
 }
 

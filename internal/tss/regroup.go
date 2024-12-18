@@ -136,7 +136,7 @@ func (m *Scheduler) JoinReShareGroupSession(msg SessionMessage[ProposalID, Propo
 		return fmt.Errorf("JoinReShareGroupSession: proposal error, session id: %v", msg.SessionID)
 	}
 
-	ec := m.CurveTypeBySenateSession(msg.SessionID)
+	ec := m.curveTypeBySenateSession(msg.SessionID)
 
 	_ = m.NewReShareGroupSession(
 		ec,
