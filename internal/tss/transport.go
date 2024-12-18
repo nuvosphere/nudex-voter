@@ -161,6 +161,10 @@ func (s *sessionTransport[T, M, D]) Included(ids []string) bool {
 	return slices.Contains(ids, strings.ToLower(s.party.PartyID().Id))
 }
 
+func (s *sessionTransport[T, M, D]) ChainType() uint8 {
+	return s.session.ChainType
+}
+
 func (s *sessionTransport[T, M, D]) SessionID() party.SessionID {
 	return s.session.SessionID
 }

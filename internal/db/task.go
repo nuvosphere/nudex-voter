@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"gorm.io/gorm"
 )
 
@@ -22,9 +23,10 @@ const (
 )
 
 type DetailTask interface {
+	types.ChainType
 	pool.Task[uint64]
 	SetBaseTask(task Task)
-	ChainType() uint8
+	Status() int
 }
 
 type Task struct {
@@ -33,7 +35,7 @@ type Task struct {
 	TaskType         int               `gorm:"not null;default:0"                  json:"task_type"`
 	Context          []byte            `gorm:"not null"                            json:"context"`
 	Submitter        string            `gorm:"not null"                            json:"submitter"`
-	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:Created; 1:pending; 2:Completed; 3:Failed
+	State            int               `gorm:"not null;default:0"                  json:"status"` // 0:Created; 1:pending; 2:Completed; 3:Failed
 	LogIndex         LogIndex          `gorm:"foreignKey:ForeignID"`                              // has one https://gorm.io/zh_CN/docs/has_one.html
 	CreateWalletTask *CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
 	DepositTask      *DepositTask      `gorm:"foreignKey:TaskId;references:TaskId"`
@@ -71,6 +73,14 @@ func (t *Task) DetailTask() DetailTask {
 	return c
 }
 
+func (t *Task) ChainType() uint8 {
+	return t.DetailTask().ChainType()
+}
+
+func (c *Task) Status() int {
+	return c.State
+}
+
 type BaseTask struct {
 	gorm.Model
 	TaskType int    `gorm:"not null;default:0"                  json:"task_type"`
@@ -88,6 +98,10 @@ func (t *BaseTask) TaskID() uint64 {
 
 func (t *BaseTask) SetBaseTask(task Task) {
 	t.Task = task
+}
+
+func (t *BaseTask) Status() int {
+	return t.Task.Status()
 }
 
 type CreateWalletTask struct {
@@ -130,6 +144,11 @@ type DepositTask struct {
 	Ticker          string `json:"ticker"`
 	AssetType       uint8  `json:"asset_type"`
 	Decimal         uint8  `json:"decimal"`
+}
+
+func (c *DepositTask) Status() int {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (*DepositTask) TableName() string {
@@ -221,4 +240,12 @@ type TaskUpdatedEvent struct {
 	Result     []byte   `json:"result"`
 	Task       Task     `gorm:"foreignKey:TaskId;references:TaskId"`
 	LogIndex   LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (t *TaskUpdatedEvent) ChainType() uint8 {
+	return t.Task.ChainType()
+}
+
+func (t *TaskUpdatedEvent) Status() int {
+	return int(t.State)
 }

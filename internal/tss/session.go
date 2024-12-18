@@ -10,6 +10,7 @@ import (
 
 type Session[T any] interface {
 	helper.Transporter
+	types.ChainType
 	Releaser
 	Name
 	Type
@@ -48,10 +49,6 @@ type SessionID interface {
 
 type GroupID interface {
 	GroupID() party.GroupID
-}
-
-type ChainType interface {
-	ChainType() uint8
 }
 
 type ProposalIdent[T any] interface {

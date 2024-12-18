@@ -427,3 +427,7 @@ func (r *ReShareGroupSession[T, M, D]) Participants() types.Participants {
 func (r *ReShareGroupSession[T, M, D]) Signer() string {
 	return r.newSession.Signer()
 }
+
+func (r *ReShareGroupSession[T, M, D]) ChainType() uint8 {
+	return r.newSession.ChainType()
+}

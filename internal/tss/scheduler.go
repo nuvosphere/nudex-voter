@@ -64,7 +64,7 @@ type Scheduler struct {
 	ecCount         *atomic.Int64
 	newGroup        *atomic.Value // *NewGroup
 	voterContract   layer2.VoterContract
-
+	// only used test
 	stateDB            *state.ContractState
 	taskQueue          *pool.Pool[uint64]     // created state task
 	pendingStateTasks  *pool.Pool[uint64]     // pending state task

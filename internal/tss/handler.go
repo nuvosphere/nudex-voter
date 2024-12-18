@@ -71,7 +71,7 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		TaskType:  detailTask.Type(),
 		Context:   t.Context,
 		Submitter: t.Submitter.Hex(),
-		Status:    int(t.State),
+		State:     int(t.State),
 	}
 	detailTask.SetBaseTask(baseTask)
 
