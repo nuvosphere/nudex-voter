@@ -304,7 +304,28 @@ func (m *Scheduler) AddSigner(signer *SignerContext) {
 func (m *Scheduler) GetSigner(address string) *SignerContext {
 	defer m.sigrw.RUnlock()
 	m.sigrw.RLock()
-	return m.sigContext[strings.ToLower(address)]
+
+	signer := m.sigContext[strings.ToLower(address)]
+	if signer != nil {
+		return signer
+	}
+
+	account, err := m.stateDB.Account(address)
+	if err != nil {
+		return nil
+	}
+
+	local, keyDerivationDelta := m.GenerateDerivationWalletProposal(uint32(types.GetCoinTypeByChain(account.Chain)), uint32(account.Account), uint8(account.Index))
+
+	signer = &SignerContext{
+		chainType:          account.Chain,
+		localData:          local,
+		keyDerivationDelta: keyDerivationDelta,
+	}
+
+	m.sigContext[signer.Address()] = signer
+
+	return signer
 }
 
 func (m *Scheduler) AddGroup(group *Group) {

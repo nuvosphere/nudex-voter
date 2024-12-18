@@ -92,11 +92,7 @@ func (m *Scheduler) NewSignOperationSession(
 		msg,
 		types.SignTestOperationSessionType,
 		data,
-		&SignerContext{
-			chainType:          types.ChainEthereum,
-			localData:          *m.partyData.ECDSALocalData(),
-			keyDerivationDelta: nil,
-		},
+		m.tssSigner(),
 	)
 }
 

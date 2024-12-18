@@ -377,8 +377,16 @@ func (m *Scheduler) Sign(req *suite.SignReq) error {
 				req.ExtraData,
 			)
 		} else {
+			m.NewTxSignSession(
+				ZeroSessionID,
+				req.SeqId,
+				req.DataDigest,
+				new(big.Int).SetBytes(req.SignData),
+				signerCtx,
+			)
 		}
 	} else {
+		// todo
 	}
 	return nil
 }
