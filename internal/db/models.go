@@ -149,3 +149,17 @@ type Asset struct {
 func (Asset) TableName() string {
 	return "asset"
 }
+
+type TokenInfo struct {
+	gorm.Model
+	Ticker          string `gorm:"not null" json:"ticker"`
+	IsActive        bool   `gorm:"not null" json:"is_active"`
+	AssetType       uint8  `gorm:"not null" json:"asset_type"`
+	Decimals        uint8  `gorm:"not null" json:"decimals"`
+	ContractAddress string `gorm:"not null"             json:"contract_address"`
+	Symbol          string `gorm:"not null"             json:"symbol"`
+}
+
+func (TokenInfo) TableName() string {
+	return "token_info"
+}

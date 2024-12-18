@@ -120,6 +120,7 @@ func (dm *DatabaseManager) autoMigrate() {
 		&InscriptionMintb{},
 		&InscriptionBurnb{},
 		&Asset{},
+		&TokenInfo{},
 	); err != nil {
 		log.Fatalf("Failed to migrate database 1: %v", err)
 	}
