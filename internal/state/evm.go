@@ -200,3 +200,21 @@ func (s *ContractState) GetInscriptionBurnb(txHash string) (*db.InscriptionBurnb
 
 	return &inscriptionBurnb, nil
 }
+
+func (s *ContractState) GetAsset(ticker string) (*db.Asset, error) {
+	var asset db.Asset
+
+	result := s.l2InfoDb.
+		Preload(clause.Associations).
+		Where("ticker = ?", ticker).
+		First(asset)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("asset not found for ticker: %s", ticker)
+		}
+		return nil, fmt.Errorf("failed to query asset for ticker: %s,  %w", ticker, result.Error)
+	}
+
+	return &asset, nil
+}
