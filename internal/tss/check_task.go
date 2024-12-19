@@ -30,6 +30,10 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 			return true, db.TaskErrorCodeCheckWithdrawalInscriptionFailed, err
 		}
 
+		if inscriptionBurnb.Amount != taskData.Amount {
+			return true, db.TaskErrorCodeCheckWithdrawalAmountFailed, err
+		}
+
 		asset, err := m.stateDB.GetAsset(inscriptionBurnb.Ticker)
 		if err != nil || asset == nil {
 			return true, db.TaskErrorCodeCheckWithdrawalAssetFailed, err

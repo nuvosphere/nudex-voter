@@ -200,6 +200,7 @@ const (
 	TaskErrorCodeAssetNotSupported
 	TaskErrorCodeCheckWithdrawalTxFailed
 	TaskErrorCodeCheckWithdrawalInscriptionFailed
+	TaskErrorCodeCheckWithdrawalAmountFailed
 	TaskErrorCodeCheckWithdrawalAssetFailed
 	TaskErrorCodeWithdrawalAssetNotEnabled
 	TaskErrorCodeWithdrawalAmountTooLow
