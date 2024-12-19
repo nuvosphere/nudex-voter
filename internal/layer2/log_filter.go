@@ -10,6 +10,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -231,29 +232,58 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	case contracts.DepositRecordedTopic:
 		depositRecorded := contracts.DepositManagerContractDepositRecorded{}
 		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, DepositRecorded, vLog)
-		depositRecord := db.DepositRecord{
-			TargetAddress: depositRecorded.TargetAddress.Hex(),
-			Amount:        depositRecorded.Amount.Uint64(),
-			ChainId:       depositRecorded.ChainId.Uint64(),
-			TxInfo:        depositRecorded.TxInfo,
-			ExtraInfo:     depositRecorded.ExtraInfo,
-			LogIndex:      l.LogIndex(DepositRecorded, vLog),
-		}
+		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
+			depositRecord := db.DepositRecord{
+				TargetAddress: depositRecorded.TargetAddress.Hex(),
+				Amount:        depositRecorded.Amount.Uint64(),
+				ChainId:       depositRecorded.ChainId.Uint64(),
+				TxInfo:        depositRecorded.TxInfo,
+				ExtraInfo:     depositRecorded.ExtraInfo,
+				LogIndex:      l.LogIndex(DepositRecorded, vLog),
+			}
+			err1 := tx.Save(&depositRecord).Error
 
-		return l.db.GetL2InfoDB().Save(&depositRecord).Error
+			addressBalance := db.AddressBalance{
+				Address: depositRecorded.TargetAddress.Hex(),
+				Amount:  decimal.Decimal{},
+				ChainId: depositRecorded.ChainId.Uint64(),
+			}
+
+			err2 := tx.Clauses(clause.OnConflict{
+				Columns: []clause.Column{{Name: "address"}},
+				DoUpdates: clause.Assignments(map[string]interface{}{
+					"amount": gorm.Expr("amount + ?", decimal.NewFromBigInt(depositRecorded.Amount, 0)),
+				}),
+			}).Create(&addressBalance).Error
+
+			return errors.Join(err1, err2)
+		})
+
+		return err
 	case contracts.WithdrawalRecordedTopic:
 		withdrawalRecorded := contracts.DepositManagerContractWithdrawalRecorded{}
 		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &withdrawalRecorded, WithdrawalRecorded, vLog)
-		withdrawalRecord := db.WithdrawalRecord{
-			TargetAddress: withdrawalRecorded.TargetAddress.Hex(),
-			Amount:        withdrawalRecorded.Amount.Uint64(),
-			ChainId:       withdrawalRecorded.ChainId.Uint64(),
-			TxInfo:        withdrawalRecorded.TxInfo,
-			ExtraInfo:     withdrawalRecorded.ExtraInfo,
-			LogIndex:      l.LogIndex(WithdrawalRecorded, vLog),
-		}
 
-		return l.db.GetL2InfoDB().Save(&withdrawalRecord).Error
+		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
+			withdrawalRecord := db.WithdrawalRecord{
+				TargetAddress: withdrawalRecorded.TargetAddress.Hex(),
+				Amount:        withdrawalRecorded.Amount.Uint64(),
+				ChainId:       withdrawalRecorded.ChainId.Uint64(),
+				TxInfo:        withdrawalRecorded.TxInfo,
+				ExtraInfo:     withdrawalRecorded.ExtraInfo,
+				LogIndex:      l.LogIndex(WithdrawalRecorded, vLog),
+			}
+			err1 := tx.Save(&withdrawalRecord).Error
+
+			err2 := tx.Model(&db.AddressBalance{}).
+				Where("address = ?", withdrawalRecorded.TargetAddress.Hex()).
+				Update("amount", gorm.Expr("amount - ?", decimal.NewFromBigInt(withdrawalRecorded.Amount, 0))).
+				Error
+
+			return errors.Join(err1, err2)
+		})
+
+		return err
 	}
 
 	return nil

@@ -115,6 +115,7 @@ func (dm *DatabaseManager) autoMigrate() {
 		&CreateWalletTask{},
 		&DepositTask{},
 		&WithdrawalTask{},
+		&AddressBalance{},
 		&TaskUpdatedEvent{},
 		&Operations{},
 	); err != nil {

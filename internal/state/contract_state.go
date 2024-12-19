@@ -2,6 +2,7 @@ package state
 
 import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -36,8 +37,8 @@ func (s *ContractState) AccountByChain(chain uint8) ([]db.Account, error) {
 	return accounts, err
 }
 
-func (s *ContractState) GetAddressBalance(address string) (uint64, error) {
-	var balance uint64
+func (s *ContractState) GetAddressBalance(address string) (decimal.Decimal, error) {
+	var balance decimal.Decimal
 	err := s.l2InfoDb.
 		Model(&db.AddressBalance{}).
 		Where("address = ?", address).
@@ -51,7 +52,7 @@ func (s *ContractState) GetAddressBalanceByCondition(minAmount uint64) ([]db.Add
 	var balances []db.AddressBalance
 	err := s.l2InfoDb.
 		Model(&db.AddressBalance{}).
-		Where("address >= ?", minAmount).
+		Where("amount >= ?", decimal.NewFromUint64(minAmount)).
 		Find(&balances).
 		Error
 	return balances, err

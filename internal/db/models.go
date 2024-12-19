@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -111,9 +112,9 @@ func (WithdrawalRecord) TableName() string {
 
 type AddressBalance struct {
 	gorm.Model
-	Address string `gorm:"uniqueIndex; not null"             json:"address"`
-	Amount  uint64 `gorm:"not null"                          json:"amount"`
-	ChainId uint64 `gorm:"not null"                          json:"chain_id"`
+	Address string          `gorm:"uniqueIndex; not null"             json:"address"`
+	Amount  decimal.Decimal `gorm:"not null"                          json:"amount"`
+	ChainId uint64          `gorm:"not null"                          json:"chain_id"`
 }
 
 func (AddressBalance) TableName() string {
