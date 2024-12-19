@@ -47,7 +47,7 @@ func NewWallet(
 
 func (w *WalletClient) Start(context.Context) {
 	log.Info("solana wallet client is stopping...")
-	// w.loopApproveProposal()
+	w.receiveL2TaskLoop()
 }
 
 func (w *WalletClient) Stop(context.Context) {

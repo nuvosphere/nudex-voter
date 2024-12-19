@@ -44,7 +44,7 @@ func NewWallet(
 
 func (w *WalletClient) Start(context.Context) {
 	log.Info("btc wallet client is stopping...")
-	// w.loopApproveProposal()
+	w.receiveL2TaskLoop()
 }
 
 func (w *WalletClient) Stop(context.Context) {
@@ -57,8 +57,9 @@ func (w *WalletClient) Verify(reqId *big.Int, signDigest string, ExtraData []byt
 }
 
 func (w *WalletClient) ReceiveSignature(res *suite.SignRes) {
-	// TODO implement me
-	panic("implement me")
+	if res.Type == types.SignTxSessionType {
+		w.processTxSignResult(res)
+	}
 }
 
 func (w *WalletClient) ChainType() uint8 {
