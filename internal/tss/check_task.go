@@ -17,26 +17,61 @@ type TxStatusResponse struct {
 
 func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 	switch taskData := task.(type) {
+	case *db.DepositTask:
+		hashCheckStatus, err := checkTxStatus(taskData.TxHash)
+		if err != nil {
+			return false, -1, err
+		}
+		if hashCheckStatus != "success" {
+			return true, db.TaskErrorCodeCheckTxFailed, err
+		}
+		inscriptionMintb, err := m.stateDB.GetInscriptionMintb(taskData.TxHash)
+		if err != nil || inscriptionMintb == nil {
+			return true, db.TaskErrorCodeCheckInscriptionFailed, err
+		}
+		if inscriptionMintb.Amount != taskData.Amount {
+			return true, db.TaskErrorCodeCheckAmountFailed, err
+		}
+
+		asset, err := m.stateDB.GetAsset(inscriptionMintb.Ticker)
+		if err != nil || asset == nil {
+			return true, db.TaskErrorCodeCheckAssetFailed, err
+		}
+		if !asset.DepositEnabled {
+			return true, db.TaskErrorCodeDepositAssetNotEnabled, err
+		}
+		if taskData.Amount < asset.MinDepositAmount {
+			return true, db.TaskErrorCodeDepositAmountTooLow, err
+		}
+
+		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionMintb.Ticker, uint64(taskData.ChainId))
+		if err != nil || tokenInfo == nil {
+			return true, db.TaskErrorCodeDepositTokenNotSupported, err
+		}
+		if !tokenInfo.IsActive {
+			return true, db.TaskErrorCodeDepositTokenNotActive, err
+		}
+		return true, db.TaskErrorCodeSuccess, nil
 	case *db.WithdrawalTask:
 		hashCheckStatus, err := checkTxStatus(taskData.TxHash)
 		if err != nil {
 			return false, -1, err
 		}
 		if hashCheckStatus != "success" {
-			return true, db.TaskErrorCodeCheckWithdrawalTxFailed, err
+			return true, db.TaskErrorCodeCheckTxFailed, err
 		}
 		inscriptionBurnb, err := m.stateDB.GetInscriptionBurnb(taskData.TxHash)
 		if err != nil || inscriptionBurnb == nil {
-			return true, db.TaskErrorCodeCheckWithdrawalInscriptionFailed, err
+			return true, db.TaskErrorCodeCheckInscriptionFailed, err
 		}
 
 		if inscriptionBurnb.Amount != taskData.Amount {
-			return true, db.TaskErrorCodeCheckWithdrawalAmountFailed, err
+			return true, db.TaskErrorCodeCheckAmountFailed, err
 		}
 
 		asset, err := m.stateDB.GetAsset(inscriptionBurnb.Ticker)
 		if err != nil || asset == nil {
-			return true, db.TaskErrorCodeCheckWithdrawalAssetFailed, err
+			return true, db.TaskErrorCodeCheckAssetFailed, err
 		}
 		if !asset.WithdrawalEnabled {
 			return true, db.TaskErrorCodeWithdrawalAssetNotEnabled, err
