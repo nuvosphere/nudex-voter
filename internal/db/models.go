@@ -108,3 +108,14 @@ type WithdrawalRecord struct {
 func (WithdrawalRecord) TableName() string {
 	return "withdrawal_record"
 }
+
+type AddressBalance struct {
+	gorm.Model
+	Address string `gorm:"uniqueIndex; not null"             json:"address"`
+	Amount  uint64 `gorm:"not null"                          json:"amount"`
+	ChainId uint64 `gorm:"not null"                          json:"chain_id"`
+}
+
+func (AddressBalance) TableName() string {
+	return "address_balance"
+}
