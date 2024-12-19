@@ -49,6 +49,27 @@ func (m *Scheduler) Operation(detailTask pool.Task[uint64]) (*contracts.Operatio
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
 	case *db.DepositTask:
+		needConfirm, checkCode, err := m.checkTask(task)
+		if !needConfirm {
+			return nil, fmt.Errorf("task %d: hash:%s check failed, %w", task.TaskId, task.TxHash, err)
+		}
+		if err != nil || checkCode != db.TaskErrorCodeSuccess {
+			taskResult := contracts.TaskPayloadContractWithdrawalResult{
+				Version:   uint8(db.TaskVersionV1),
+				Success:   false,
+				ErrorCode: uint8(checkCode),
+			}
+			taskBytes, err := codec.EncodeTaskResult(db.TaskTypeDeposit, taskResult)
+			if err != nil {
+				panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
+			}
+
+			data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
+			operation.OptData = data
+			operation.State = db.Failed
+			return operation, err
+		}
+
 		data := m.voterContract.EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
