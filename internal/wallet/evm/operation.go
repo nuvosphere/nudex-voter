@@ -81,7 +81,7 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 	return operation
 }
 
-func (w *WalletClient) loopApproveProposal() {
+func (w *WalletClient) loopProcessOperation() {
 	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {

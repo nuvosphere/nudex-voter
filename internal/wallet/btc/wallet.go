@@ -2,6 +2,7 @@ package btc
 
 import (
 	"context"
+	"sync"
 
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
@@ -13,11 +14,12 @@ import (
 
 type WalletClient struct {
 	*wallet.BaseWallet
-	ctx    context.Context
-	cancel context.CancelFunc
-	event  eventbus.Bus
-	state  *state.BtcWalletState
-	tss    suite.TssService
+	ctx       context.Context
+	cancel    context.CancelFunc
+	event     eventbus.Bus
+	state     *state.BtcWalletState
+	tss       suite.TssService
+	txContext sync.Map // taskID:TxContext
 	// client *txClient todo
 }
 
@@ -36,6 +38,7 @@ func NewWallet(
 		event:      event,
 		state:      state,
 		tss:        tss,
+		txContext:  sync.Map{},
 		// client:     client,
 	}
 }
