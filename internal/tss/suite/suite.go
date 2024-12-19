@@ -1,8 +1,6 @@
 package suite
 
 import (
-	"math/big"
-
 	tssCrypto "github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
@@ -39,7 +37,7 @@ type TssService interface {
 }
 
 type TssClient interface {
-	Verify(reqId *big.Int, signDigest string, ExtraData []byte) error
+	Verify(reqId uint64, signDigest string, ExtraData []byte) error
 	ReceiveSignature(res *SignRes)
 	ChainType() uint8
 }

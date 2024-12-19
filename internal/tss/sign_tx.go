@@ -79,8 +79,18 @@ func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest string,
 	}
 }
 
+func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal]) error {
+	defer m.crw.RUnlock()
+	m.crw.RLock()
+	c, ok := m.tssClients[msg.ChainType]
+	if ok {
+		return c.Verify(msg.SeqId, msg.ProposalID, msg.Data)
+	}
+	return nil
+}
+
 // only used test
-func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
+func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
 	sessionId := ZeroSessionID
 	seqId := task.TaskID()

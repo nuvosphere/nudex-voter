@@ -61,7 +61,7 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		Type:       types.SignTxSessionType,
 		ChainType:  w.ChainType(),
 		Signer:     hotAddress,
-		DataDigest: proposal.String(),
+		DataDigest: proposal.String(), // todo
 		SignData:   proposal.Bytes(),
 		ExtraData:  nil,
 	}

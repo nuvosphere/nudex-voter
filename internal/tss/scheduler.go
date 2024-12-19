@@ -620,7 +620,7 @@ func (m *Scheduler) proposalLoop() {
 							m.pendingStateTasks.Add(task)
 							// pending task
 							if m.isCanProposal() {
-								m.processTxSign(nil, task)
+								m.processTxSignForTest(nil, task)
 							}
 						}
 					case db.Created:
