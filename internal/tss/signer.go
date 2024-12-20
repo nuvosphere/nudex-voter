@@ -2,6 +2,7 @@ package tss
 
 import (
 	"math/big"
+	"strings"
 
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -14,7 +15,7 @@ type SignerContext struct {
 }
 
 func (c *SignerContext) Address() string {
-	return c.localData.Address(c.ChainType())
+	return strings.ToLower(c.localData.Address(c.ChainType()))
 }
 
 func (c *SignerContext) ChainType() uint8 {

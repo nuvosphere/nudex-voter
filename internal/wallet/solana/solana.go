@@ -5,11 +5,11 @@ import (
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/decred/dcrd/dcrec/edwards/v2"
 	"github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 )
 
 func init() {
-	wallet.RegisterAddress(types.CoinTypeSOL, SolanaAddress)
+	address.RegisterAddress(types.CoinTypeSOL, SolanaAddress)
 }
 
 // https://github.com/gagliardetto/solana-go

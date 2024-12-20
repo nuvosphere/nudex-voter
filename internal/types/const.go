@@ -79,3 +79,21 @@ func GetCurveTypeByChain(chain uint8) crypto.CurveType {
 func GetCurveTypeByCoinType(coinType int) crypto.CurveType {
 	return GetCurveTypeByChain(GetChainByCoinType(coinType))
 }
+
+const (
+	DataTypeTssKeygenMsg    = "TssKeygenMsg"
+	DataTypeTssSignMsg      = "TssSignMsg"
+	DataTypeTssReSharingMsg = "TssReSharingMsg"
+	DataTypeSignDeposit     = "SignDeposit"
+	DataTypeSignWithdrawal  = "SignWithdrawal"
+)
+
+const (
+	GenKeySessionType            = "GenerateKeySession"
+	ReShareGroupSessionType      = "ReShareGroupSession"
+	SignTaskSessionType          = "SignTaskSession"          // only used test
+	SignTestOperationSessionType = "SignTestOperationSession" // only used test
+	SignTestTxSessionType        = "SignTestTxSession"        // only used test
+	SignOperationSessionType     = "SignOperationSession"
+	SignTxSessionType            = "SignTxSession"
+)

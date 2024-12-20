@@ -10,11 +10,16 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	log "github.com/sirupsen/logrus"
 )
 
 type Service struct {
 	scheduler *Scheduler
+}
+
+func (s Service) TssService() suite.TssService {
+	return s.scheduler
 }
 
 func NewTssService(p p2p.P2PService, dbm *db.DatabaseManager, bus eventbus.Bus, voterContract layer2.VoterContract) *Service {

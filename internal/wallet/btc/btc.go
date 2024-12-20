@@ -8,12 +8,12 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
 )
 
 func init() {
-	wallet.RegisterAddress(types.CoinTypeBTC, GenerateP2WPKHBTCAddress)
+	address.RegisterAddress(types.CoinTypeBTC, GenerateP2WPKHBTCAddress)
 }
 
 func GenerateCompressedBTCAddress(p *crypto.ECPoint) (string, error) {

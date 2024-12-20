@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"gorm.io/gorm"
 )
 
@@ -11,6 +12,7 @@ const (
 	TaskTypeCreateWallet
 	TaskTypeDeposit
 	TaskTypeWithdrawal
+	TypeOperations
 )
 
 const (
@@ -21,8 +23,10 @@ const (
 )
 
 type DetailTask interface {
+	types.ChainType
 	pool.Task[uint64]
 	SetBaseTask(task Task)
+	Status() int
 }
 
 type Task struct {
@@ -31,7 +35,7 @@ type Task struct {
 	TaskType         int               `gorm:"not null;default:0"                  json:"task_type"`
 	Context          []byte            `gorm:"not null"                            json:"context"`
 	Submitter        string            `gorm:"not null"                            json:"submitter"`
-	Status           int               `gorm:"not null;default:0"                  json:"status"` // 0:Created; 1:pending; 2:Completed; 3:Failed
+	State            int               `gorm:"not null;default:0"                  json:"status"` // 0:Created; 1:pending; 2:Completed; 3:Failed
 	LogIndex         LogIndex          `gorm:"foreignKey:ForeignID"`                              // has one https://gorm.io/zh_CN/docs/has_one.html
 	CreateWalletTask *CreateWalletTask `gorm:"foreignKey:TaskId;references:TaskId"`
 	DepositTask      *DepositTask      `gorm:"foreignKey:TaskId;references:TaskId"`
@@ -69,6 +73,14 @@ func (t *Task) DetailTask() DetailTask {
 	return c
 }
 
+func (t *Task) ChainType() uint8 {
+	return t.DetailTask().ChainType()
+}
+
+func (c *Task) Status() int {
+	return c.State
+}
+
 type BaseTask struct {
 	gorm.Model
 	TaskType int    `gorm:"not null;default:0"                  json:"task_type"`
@@ -88,6 +100,10 @@ func (t *BaseTask) SetBaseTask(task Task) {
 	t.Task = task
 }
 
+func (t *BaseTask) Status() int {
+	return t.Task.Status()
+}
+
 type CreateWalletTask struct {
 	BaseTask
 	Account uint32 `json:"account"`
@@ -96,8 +112,12 @@ type CreateWalletTask struct {
 	Address string `json:"address"` // new create bip44 address
 }
 
-func (CreateWalletTask) TableName() string {
+func (*CreateWalletTask) TableName() string {
 	return "create_wallet_task"
+}
+
+func (c *CreateWalletTask) ChainType() uint8 {
+	return c.Chain
 }
 
 func NewCreateWalletTask(taskId uint64, req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
@@ -126,8 +146,17 @@ type DepositTask struct {
 	Decimal         uint8  `json:"decimal"`
 }
 
-func (DepositTask) TableName() string {
+func (c *DepositTask) Status() int {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (*DepositTask) TableName() string {
 	return "deposit_task"
+}
+
+func (c *DepositTask) ChainType() uint8 {
+	return c.Chain
 }
 
 func NewDepositTask(taskId uint64, req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
@@ -164,8 +193,12 @@ type WithdrawalTask struct {
 	Fee             uint64 `json:"fee"`
 }
 
-func (WithdrawalTask) TableName() string {
+func (*WithdrawalTask) TableName() string {
 	return "withdrawal_task"
+}
+
+func (c *WithdrawalTask) ChainType() uint8 {
+	return c.Chain
 }
 
 func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
@@ -186,6 +219,29 @@ func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdraw
 		Decimal:         req.Decimal,
 		Fee:             req.Fee,
 	}
+}
+
+type ConsolidationTask struct {
+	BaseTask
+	TargetAddress   string `json:"target_address"`
+	Amount          uint64 `json:"amount"`
+	Chain           uint8  `json:"chain"`
+	ChainId         uint32 `json:"chain_id"`
+	BlockHeight     uint64 `json:"block_height"`
+	TxHash          string `json:"tx_hash"`
+	ContractAddress string `json:"contract_address"`
+	Ticker          string `json:"ticker"`
+	AssetType       uint8  `json:"asset_type"`
+	Decimal         uint8  `json:"decimal"`
+	Fee             uint64 `json:"fee"`
+}
+
+func (*ConsolidationTask) TableName() string {
+	return "consolidation_task"
+}
+
+func (c *ConsolidationTask) ChainType() uint8 {
+	return c.Chain
 }
 
 const (
@@ -222,4 +278,24 @@ type TaskUpdatedEvent struct {
 	Result     []byte   `json:"result"`
 	Task       Task     `gorm:"foreignKey:TaskId;references:TaskId"`
 	LogIndex   LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (t *TaskUpdatedEvent) TaskID() uint64 {
+	return t.TaskId
+}
+
+func (t *TaskUpdatedEvent) Type() int {
+	panic("implement me")
+}
+
+func (t *TaskUpdatedEvent) ChainType() uint8 {
+	return t.Task.ChainType()
+}
+
+func (t *TaskUpdatedEvent) Status() int {
+	return int(t.State)
+}
+
+func (t *TaskUpdatedEvent) SetBaseTask(task Task) {
+	t.Task = task
 }

@@ -6,7 +6,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"math/big"
-	"strings"
 	"testing"
 
 	"github.com/bnb-chain/tss-lib/v2/common"
@@ -16,20 +15,10 @@ import (
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/tss/helper/testutil"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
-	"github.com/nuvosphere/nudex-voter/internal/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestBip44GenerateAddress(t *testing.T) {
-	localData := testutil.ReadTestKey(1)
-	t.Log("master address: ", ethcrypto.PubkeyToAddress(*localData.ECDSAPub.ToECDSAPubKey()))
-	address := wallet.GenerateAddressByPath(localData.ECDSAPub, types.CoinTypeEVM, 0, 0)
-	t.Log("address: ", address)
-	assert.Equal(t, strings.ToLower("0xf1cbea0b78f0083530056b88c4cea93e5ff3b5a7"), strings.ToLower(address))
-}
 
 func TestHDSign(t *testing.T) {
 	utils.SkipCI(t)

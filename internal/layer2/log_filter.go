@@ -14,6 +14,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (l *Layer2Listener) processLogs(vLog types.Log) {
@@ -68,14 +69,14 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, TaskSubmitted, vLog)
 		actualTask := codec.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Context)
-		task := db.Task{
+		baseTask := db.Task{
 			TaskId:    actualTask.TaskID(),
 			TaskType:  actualTask.Type(),
 			Context:   taskSubmitted.Context,
 			Submitter: taskSubmitted.Submitter.Hex(),
 			LogIndex:  l.LogIndex(TaskSubmitted, vLog),
 		}
-		actualTask.SetBaseTask(task)
+		actualTask.SetBaseTask(baseTask)
 
 		result := l.db.GetL2InfoDB().Create(actualTask)
 		if result.Error != nil {
@@ -93,10 +94,13 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 		var taskUpdatedEvent *db.TaskUpdatedEvent
 
 		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
+			task := db.Task{}
 			taskErr := tx.
-				Model(&db.Task{}).
+				Model(&task).
+				Clauses(clause.Returning{}).
 				Where("task_id = ?", taskUpdated.TaskId).
-				Update("status", taskUpdated.State).Error
+				Update("status", taskUpdated.State).
+				Error
 
 			taskUpdatedEvent = &db.TaskUpdatedEvent{
 				TaskId:     taskUpdated.TaskId,
@@ -107,6 +111,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 				LogIndex:   l.LogIndex(TaskUpdated, vLog),
 			}
 			err := tx.Save(taskUpdatedEvent).Error
+			taskUpdatedEvent.Task = task
 
 			return errors.Join(taskErr, err)
 		})
