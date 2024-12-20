@@ -37,7 +37,6 @@ contract TaskPayload {
         uint8 decimal
     );
 
-    // 事件：提现请求
     event WithdrawalRequest(
         uint8 version,
         uint8 taskType,

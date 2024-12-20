@@ -251,7 +251,22 @@ const (
 
 const (
 	TaskErrorCodeSuccess = iota
+	TaskErrorCodePending
 	TaskErrorCodeChainNotSupported
+	TaskErrorCodeAssetNotSupported
+	TaskErrorCodeCheckTxFailed
+	TaskErrorCodeCheckInscriptionFailed
+	TaskErrorCodeCheckAmountFailed
+	TaskErrorCodeCheckAssetFailed
+	TaskErrorCodeDepositAssetNotEnabled
+	TaskErrorCodeDepositAmountTooLow
+	TaskErrorCodeDepositTokenNotSupported
+	TaskErrorCodeDepositTokenNotActive
+	TaskErrorCodeWithdrawalAssetNotEnabled
+	TaskErrorCodeWithdrawalAmountTooLow
+	TaskErrorCodeWithdrawalTokenNotSupported
+	TaskErrorCodeWithdrawalTokenNotActive
+	TaskErrorCodeCheckWithdrawalBalanceFailed
 )
 
 type TaskUpdatedEvent struct {
