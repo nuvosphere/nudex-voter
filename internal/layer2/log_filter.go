@@ -245,14 +245,15 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 
 			addressBalance := db.AddressBalance{
 				Address: depositRecorded.TargetAddress.Hex(),
-				Amount:  decimal.Decimal{},
+				// Token:   ,
+				Amount:  decimal.NewFromBigInt(depositRecorded.Amount, 0),
 				ChainId: depositRecorded.ChainId.Uint64(),
 			}
 
 			err2 := tx.Clauses(clause.OnConflict{
 				Columns: []clause.Column{{Name: "address"}},
 				DoUpdates: clause.Assignments(map[string]interface{}{
-					"amount": gorm.Expr("amount + ?", decimal.NewFromBigInt(depositRecorded.Amount, 0)),
+					"amount": gorm.Expr("amount + ?", addressBalance.Amount),
 				}),
 			}).Create(&addressBalance).Error
 

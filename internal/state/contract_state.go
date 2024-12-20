@@ -48,11 +48,11 @@ func (s *ContractState) GetAddressBalance(address string) (decimal.Decimal, erro
 	return balance, err
 }
 
-func (s *ContractState) GetAddressBalanceByCondition(minAmount uint64) ([]db.AddressBalance, error) {
+func (s *ContractState) GetAddressBalanceByCondition(chainId uint64, minAmount uint64) ([]db.AddressBalance, error) {
 	var balances []db.AddressBalance
 	err := s.l2InfoDb.
 		Model(&db.AddressBalance{}).
-		Where("amount >= ?", decimal.NewFromUint64(minAmount)).
+		Where("chain_id = ? AND amount >= ?", chainId, decimal.NewFromUint64(minAmount)).
 		Find(&balances).
 		Error
 	return balances, err

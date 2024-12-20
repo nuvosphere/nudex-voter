@@ -113,6 +113,7 @@ func (WithdrawalRecord) TableName() string {
 type AddressBalance struct {
 	gorm.Model
 	Address string          `gorm:"uniqueIndex; not null"             json:"address"`
+	Token   string          `gorm:"uniqueIndex; not null"             json:"token"`
 	Amount  decimal.Decimal `gorm:"not null"                          json:"amount"`
 	ChainId uint64          `gorm:"not null"                          json:"chain_id"`
 }
