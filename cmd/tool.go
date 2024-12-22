@@ -13,6 +13,8 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -89,6 +91,37 @@ var printChainAddressCmd = &cobra.Command{
 			chain, err := strconv.Atoi(arg)
 			utils.Assert(err)
 			fmt.Println(partyData.GetDataByChain(uint8(chain)).Address(uint8(chain)))
+		}
+	},
+}
+
+var printChainHotAddressCmd = &cobra.Command{
+	Use:     "chainHotAddress",
+	Short:   "print chain hot address from config data",
+	Example: `nudex-voter tool chainHotAddress 0 1 2 3`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		partyData := tss.NewPartyData(config.AppConfig.DbDir)
+		for _, arg := range args {
+			chain, err := strconv.Atoi(arg)
+			utils.Assert(err)
+			switch chain {
+			case types.ChainBitcoin:
+				hotAddress := address.HotAddressOfBtc(partyData.ECDSALocalData().ECPoint())
+				fmt.Println("ChainBitcoin: ", hotAddress)
+			case types.ChainEthereum:
+				hotAddress := address.HotAddressOfEth(partyData.ECDSALocalData().ECPoint())
+				fmt.Println("ChainEthereum: ", hotAddress)
+			case types.ChainSolana:
+				hotAddress := address.HotAddressOfSolana(partyData.EDDSALocalData().ECPoint())
+				fmt.Println("ChainSolana: ", hotAddress)
+			case types.ChainSui:
+				hotAddress := address.HotAddressOfSui(partyData.EDDSALocalData().ECPoint())
+				fmt.Println("ChainSui: ", hotAddress)
+			case types.ChainDOG:
+				hotAddress := address.HotAddressOfDog(partyData.GetDataByChain(uint8(chain)).ECPoint())
+				fmt.Println("ChainDOG: ", hotAddress)
+			}
 		}
 	},
 }

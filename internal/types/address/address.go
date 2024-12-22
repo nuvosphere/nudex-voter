@@ -63,3 +63,7 @@ func HotAddressOfSolana(masterPubKey *tssCrypto.ECPoint) string {
 func HotAddressOfSui(masterPubKey *tssCrypto.ECPoint) string {
 	return GenerateAddressByPath(masterPubKey, types.CoinTypeSUI, 0, 0)
 }
+
+func HotAddressOfDog(masterPubKey *tssCrypto.ECPoint) string {
+	return GenerateAddressByPath(masterPubKey, types.CoinTypeDOG, 0, 0)
+}

@@ -16,6 +16,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/state"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
 	btcWallet "github.com/nuvosphere/nudex-voter/internal/wallet/btc"
+	_ "github.com/nuvosphere/nudex-voter/internal/wallet/dog"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/evm"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/solana"
 	"github.com/nuvosphere/nudex-voter/internal/wallet/sui"
