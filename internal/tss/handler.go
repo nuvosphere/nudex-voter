@@ -194,7 +194,7 @@ func (m *Scheduler) joinTxSignatureSession(msg SessionMessage[ProposalID, Propos
 
 // only used test
 func (m *Scheduler) createUserAddressProposal(task *db.CreateWalletTask) (LocalPartySaveData, *big.Int) {
-	coinType := types.GetCoinTypeByChain(task.Chain)
+	coinType := types.GetCoinTypeByChain(task.AddressType)
 
 	ec := types.GetCurveTypeByCoinType(coinType)
 
@@ -202,7 +202,7 @@ func (m *Scheduler) createUserAddressProposal(task *db.CreateWalletTask) (LocalP
 	case crypto.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
 		userAddress := address.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
-		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		hash := ethCrypto.Keccak256Hash(msg)
 		return *localPartySaveData, hash.Big()
 	default:

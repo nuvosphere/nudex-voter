@@ -44,9 +44,9 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
-		coinType := types.GetCoinTypeByChain(task.Chain)
+		coinType := types.GetCoinTypeByChain(task.AddressType)
 		userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		data := w.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		data := w.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = uint8(task.Task.State)
@@ -54,7 +54,7 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		data := w.VoterContract().EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
-			uint64(task.ChainId),
+			task.ChainId.Big(),
 			common.HexToHash(task.TxHash).Bytes(), // todo
 			nil,
 		)
@@ -65,7 +65,7 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		data := w.VoterContract().EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
-			uint64(task.ChainId),
+			task.ChainId.Big(),
 			common.HexToHash(task.TxHash).Bytes(), // todo
 			nil,
 		)

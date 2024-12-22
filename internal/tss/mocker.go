@@ -216,10 +216,10 @@ func (v *VoterContractMocker) GetAddressRecord(_account *big.Int, _chain uint8, 
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) EncodeRecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) []byte {
+func (v *VoterContractMocker) EncodeRecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) []byte {
 	return contracts.EncodeFun(contracts.DepositManagerContractMetaData.ABI, "recordWithdrawal", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }
 
-func (v *VoterContractMocker) EncodeRecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId uint64, _txInfo []byte, _extraInfo []byte) []byte {
+func (v *VoterContractMocker) EncodeRecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) []byte {
 	return contracts.EncodeFun(contracts.DepositManagerContractMetaData.ABI, "recordWithdrawal", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
 }

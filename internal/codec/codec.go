@@ -55,7 +55,7 @@ func EncodeTask(taskType uint8, task any) (bytes []byte, err error) {
 			uint8(db.TaskVersionV1),
 			taskType,
 			t.Account,
-			t.Chain,
+			t.AddressType,
 			t.Index,
 		)
 

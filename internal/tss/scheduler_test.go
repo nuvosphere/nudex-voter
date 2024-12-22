@@ -2,6 +2,7 @@ package tss
 
 import (
 	"encoding/hex"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -409,9 +410,9 @@ func TestSchedulerSignature(t *testing.T) {
 			TaskType: db.TaskTypeCreateWallet,
 			TaskId:   1,
 		},
-		Account: 1,
-		Chain:   0, // eth
-		Index:   1,
+		Account:     1,
+		AddressType: 0, // eth
+		Index:       1,
 	}
 
 	t.Log("send create wallet task")
@@ -488,17 +489,17 @@ func TestSchedulerSolanaWithdrawSignature(t *testing.T) {
 			TaskType: db.TaskTypeWithdrawal,
 			TaskId:   1,
 		},
-		TargetAddress:   "2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59",
-		Amount:          3000,
-		Chain:           types.ChainSolana,
-		ChainId:         0,
+		TargetAddress: "2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59",
+		Amount:        3000,
+		Chain:         types.ChainSolana,
+		// ChainId:         0,
 		BlockHeight:     0,
 		TxHash:          "",
 		ContractAddress: "",
-		Ticker:          "SOL",
-		AssetType:       types.AssetTypeMain,
-		Decimal:         9,
-		Fee:             0,
+		// Ticker:          "SOL",
+		AssetType: types.AssetTypeMain,
+		Decimal:   9,
+		Fee:       0,
 	}
 
 	t.Log("send WithdrawalTask")
@@ -579,14 +580,14 @@ func TestSchedulerSuiWithdrawSignature(t *testing.T) {
 		TargetAddress:   "0x9099b85cce1e63a584f981390bf3457611df3f7778c0d77de3f16cb57951bcf9",
 		Amount:          3000,
 		Chain:           types.ChainSui,
-		ChainId:         0,
+		ChainId:         types.BigToByte32(big.NewInt(0)),
 		BlockHeight:     0,
 		TxHash:          "",
 		ContractAddress: "0x02", // token address
-		Ticker:          "sui",
-		AssetType:       types.AssetTypeMain,
-		Decimal:         9,
-		Fee:             0,
+		// Ticker:          "sui",
+		AssetType: types.AssetTypeMain,
+		Decimal:   9,
+		Fee:       0,
 	}
 
 	t.Log("send WithdrawalTask")

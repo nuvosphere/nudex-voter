@@ -45,10 +45,10 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.Operation
 
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
-		coinType := types.GetCoinTypeByChain(task.Chain)
+		coinType := types.GetCoinTypeByChain(task.AddressType)
 		ec := types.GetCurveTypeByCoinType(coinType)
 		userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
-		data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
@@ -56,7 +56,7 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.Operation
 		data := m.voterContract.EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
-			uint64(task.ChainId),
+			task.ChainId.Big(),
 			common.HexToHash(task.TxHash).Bytes(), // todo
 			nil,
 		)
@@ -67,7 +67,7 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.Operation
 		data := m.voterContract.EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
-			uint64(task.ChainId),
+			task.ChainId.Big(),
 			common.HexToHash(task.TxHash).Bytes(), // todo
 			nil,
 		)

@@ -28,7 +28,7 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	}
 	hotAddress := address.HotAddressOfSui(w.tss.ECPoint(w.ChainType()))
 	log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, task.TargetAddress, task.Amount)
-	unSignTx, err := c.BuildPaySuiTx(CoinType(task.ContractAddress, task.Ticker), hotAddress, []Recipient{
+	unSignTx, err := c.BuildPaySuiTx(CoinType(task.ContractAddress, task.Ticker.String()), hotAddress, []Recipient{
 		{
 			Recipient: task.TargetAddress,
 			Amount:    fmt.Sprintf("%d", task.Amount),

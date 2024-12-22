@@ -43,7 +43,7 @@ func (w *WalletClient) receiveL2TaskLoop() {
 func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
-		coinType := types.GetCoinTypeByChain(task.Chain)
+		coinType := types.GetCoinTypeByChain(task.AddressType)
 		// userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
 		_ = w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
 
