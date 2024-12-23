@@ -136,7 +136,7 @@ var printChainGasAddressCmd = &cobra.Command{
 			utils.Assert(err)
 			point := partyData.GetDataByChain(uint8(chain)).ECPoint()
 			coinType := types.GetCoinTypeByChain(uint8(chain))
-			address := address.GenerateAddressByPath(point, uint32(coinType), 0, 1)
+			address := address.GenerateAddressByPath(point, uint32(coinType), 1, 0)
 			switch chain {
 			case types.ChainBitcoin:
 				fmt.Println("ChainBitcoin: ", address)
