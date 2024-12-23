@@ -2,7 +2,6 @@ package contracts
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // FilterAddressRegistered is a free log retrieval operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
@@ -29,23 +28,24 @@ import (
 //
 // Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint8 indexed state, uint256 updateTime, bytes32 txHash, bytes result)
 var (
-	SubmitterRotationRequestedTopic = crypto.Keccak256Hash([]byte(`SubmitterRotationRequested(address,address)`))             // VotingManagerUpgradeable
-	SubmitterChosenTopic            = crypto.Keccak256Hash([]byte(`SubmitterChosen(address)`))                                // VotingManagerUpgradeable
-	TaskSubmittedTopic              = crypto.Keccak256Hash([]byte(`TaskSubmitted(uint64,address,bytes)`))                     // TaskManager
-	TaskUpdatedTopic                = crypto.Keccak256Hash([]byte(`TaskUpdated(uint64,address,uint8,uint256,bytes32,bytes)`)) // TaskManager
-	AddressRegisteredTopic          = crypto.Keccak256Hash([]byte(`AddressRegistered(address,uint256,uint8,uint256,string)`)) // AccountManagerContract
-	ParticipantAddedTopic           = crypto.Keccak256Hash([]byte(`ParticipantAdded(address)`))                               // IParticipantManager
-	ParticipantRemovedTopic         = crypto.Keccak256Hash([]byte(`ParticipantRemoved(address)`))                             // IParticipantManager
-	ParticipantsResetTopic          = crypto.Keccak256Hash([]byte(`ParticipantsReset(address[])`))                            // IParticipantManager
-	DepositRecordedTopic            = crypto.Keccak256Hash([]byte(`DepositRecorded(string,bytes32,bytes32,uint256)`))         // DepositManagerContract
-	WithdrawalRecordedTopic         = crypto.Keccak256Hash([]byte(`WithdrawalRecorded(string,bytes32,bytes32,uint256)`))      // DepositManagerContract
+	// SubmitterRotationRequestedTopic = crypto.Keccak256Hash([]byte(`SubmitterRotationRequested(address,address)`))             // VotingManagerUpgradeable
+	SubmitterRotationRequestedTopic = EventTopic(VotingManagerContractMetaData, "SubmitterRotationRequested") // VotingManagerUpgradeable
+	SubmitterChosenTopic            = EventTopic(VotingManagerContractMetaData, "SubmitterChosen")            // VotingManagerUpgradeable
+	TaskSubmittedTopic              = EventTopic(TaskManagerContractMetaData, "TaskSubmitted")                // TaskManager
+	TaskUpdatedTopic                = EventTopic(TaskManagerContractMetaData, "TaskUpdated")                  // TaskManager
+	AddressRegisteredTopic          = EventTopic(AccountManagerContractMetaData, "AddressRegistered")         // AccountManagerContract
+	ParticipantAddedTopic           = EventTopic(ParticipantManagerContractMetaData, "ParticipantAdded")      // IParticipantManager
+	ParticipantRemovedTopic         = EventTopic(ParticipantManagerContractMetaData, "ParticipantRemoved")    // IParticipantManager
+	ParticipantsResetTopic          = EventTopic(ParticipantManagerContractMetaData, "ParticipantsReset")     // IParticipantManager
+	DepositRecordedTopic            = EventTopic(DepositManagerContractMetaData, "DepositRecorded")           // IParticipantManager
+	WithdrawalRecordedTopic         = EventTopic(DepositManagerContractMetaData, "WithdrawalRecorded")        // IParticipantManager
 
-	WalletCreationRequestTopic = crypto.Keccak256Hash([]byte(`WalletCreationRequest(uint8,uint8,uint32,uint8,uint8)`))                                                    // TopicPayloadContract
-	DepositRequestTopic        = crypto.Keccak256Hash([]byte(`DepositRequest(uint8,uint8,string,uint64,uint8,uint32,uint64,string,string,string,uint8,uint8)`))           // TopicPayloadContract
-	WithdrawalRequestTopic     = crypto.Keccak256Hash([]byte(`WithdrawalRequest(uint8,uint8,string,uint64,uint8,uint32,uint64,string,string,string,uint8,uint8,uint64)`)) // TopicPayloadContract
-	WalletCreationResultTopic  = crypto.Keccak256Hash([]byte(`WalletCreationResult(uint8,bool,uint8,string)`))                                                            // TopicPayloadContract
-	DepositResultTopic         = crypto.Keccak256Hash([]byte(`DepositResult(uint8,bool,uint8)`))                                                                          // TopicPayloadContract
-	WithdrawalResultTopic      = crypto.Keccak256Hash([]byte(`WithdrawalResult(uint8,bool,uint8)`))                                                                       // TopicPayloadContract
+	WalletCreationRequestTopic = EventTopic(TaskPayloadContractMetaData, "WalletCreationRequest") // IParticipantManager
+	DepositRequestTopic        = EventTopic(TaskPayloadContractMetaData, "DepositRequest")        // IParticipantManager
+	WithdrawalRequestTopic     = EventTopic(TaskPayloadContractMetaData, "WithdrawalRequest")     // IParticipantManager
+	WalletCreationResultTopic  = EventTopic(TaskPayloadContractMetaData, "WalletCreationResult")  // IParticipantManager
+	DepositResultTopic         = EventTopic(TaskPayloadContractMetaData, "DepositResult")         // IParticipantManager
+	WithdrawalResultTopic      = EventTopic(TaskPayloadContractMetaData, "WithdrawalResult")      // IParticipantManager
 )
 
 var Topics = [][]common.Hash{
