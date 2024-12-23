@@ -2,6 +2,8 @@ package evm
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"math/big"
 	"strings"
 	"time"
@@ -37,7 +39,7 @@ func (o *Operations) Type() int {
 	return db.TypeOperations
 }
 
-func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
+func (w *WalletClient) Operation(detailTask pool.Task[uint64]) (*contracts.Operation, error) {
 	operation := &contracts.Operation{
 		TaskId: detailTask.TaskID(),
 	}
@@ -51,6 +53,28 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = uint8(task.Task.State)
 	case *db.DepositTask:
+		needConfirm, checkCode, err := w.tss.checkTask(task)
+		if !needConfirm {
+			return nil, fmt.Errorf("task %d: hash:%s check failed, %w", task.TaskId, task.TxHash, err)
+		}
+		if err != nil || checkCode != db.TaskErrorCodeSuccess {
+			taskResult := contracts.TaskPayloadContractWithdrawalResult{
+				Version:   uint8(db.TaskVersionV1),
+				Success:   false,
+				ErrorCode: uint8(checkCode),
+			}
+			taskBytes, err := codec.EncodeTaskResult(db.TaskTypeDeposit, taskResult)
+			if err != nil {
+				panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
+			}
+
+			data := w.VoterContract().EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
+			operation.OptData = data
+			operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+			operation.State = db.Failed
+			return operation, err
+		}
+
 		data := w.VoterContract().EncodeRecordDeposit(
 			common.HexToAddress(task.TargetAddress),
 			big.NewInt(int64(task.Amount)),
@@ -60,7 +84,7 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		)
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
-		operation.State = uint8(task.Task.State)
+		operation.State = db.Completed
 	case *db.WithdrawalTask:
 		data := w.VoterContract().EncodeRecordWithdrawal(
 			common.HexToAddress(task.TargetAddress),
@@ -71,14 +95,14 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operat
 		)
 		operation.OptData = data
 		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
-		operation.State = uint8(task.Task.State)
+		operation.State = db.Pending
 	default:
 		log.Errorf("unhandled default case")
 		operation.State = db.Completed
 		operation.OptData = nil // todo
 	}
 
-	return operation
+	return operation, nil
 }
 
 func (w *WalletClient) loopApproveProposal() {
@@ -103,7 +127,14 @@ const TopN = 20
 func (w *WalletClient) processOperation() {
 	log.Info("batch proposal")
 	tasks := w.submitTaskQueue.GetTopN(TopN)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *w.Operation(item) })
+	var operations = make([]contracts.Operation, 0, len(tasks))
+	for _, item := range tasks {
+		op, err := w.Operation(item)
+		if err != nil {
+			log.Errorf("failed to process task: %d, %w", item.TaskID(), err)
+		}
+		operations = append(operations, *op)
+	}
 	if len(operations) == 0 {
 		log.Warnf("operationsQueue is empty")
 		return

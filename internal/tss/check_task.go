@@ -15,7 +15,7 @@ type TxStatusResponse struct {
 	Status string `json:"status"`
 }
 
-func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
+func (m *Scheduler) CheckTask(task pool.Task[uint64]) (bool, int, error) {
 	switch taskData := task.(type) {
 	case *db.DepositTask:
 		hashCheckStatus, err := checkTxStatus(taskData.TxHash)
@@ -129,6 +129,7 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 	}
 	return false, db.TaskErrorCodePending, nil
 }
+
 func checkTxStatus(txHash string) (string, error) {
 	url := fmt.Sprintf("https://nip-api.testnet.nudex.io/%s/status", txHash)
 
