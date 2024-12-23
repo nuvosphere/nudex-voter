@@ -17,9 +17,9 @@ func TestEncodeCreateWalletTask(t *testing.T) {
 		BaseTask: db.BaseTask{
 			TaskId: 100,
 		},
-		Account:     uint32(10001),
-		AddressType: uint8(types.ChainEthereum),
-		Index:       uint8(0),
+		Account: uint32(10001),
+		Chain:   uint8(types.ChainEthereum),
+		Index:   uint8(0),
 	}
 	taskBytes, err := EncodeTask(db.TaskTypeCreateWallet, task)
 	assert.NoError(t, err)

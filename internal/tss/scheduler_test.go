@@ -410,9 +410,9 @@ func TestSchedulerSignature(t *testing.T) {
 			TaskType: db.TaskTypeCreateWallet,
 			TaskId:   1,
 		},
-		Account:     1,
-		AddressType: 0, // eth
-		Index:       1,
+		Account: 1,
+		Chain:   0, // eth
+		Index:   1,
 	}
 
 	t.Log("send create wallet task")

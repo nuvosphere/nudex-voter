@@ -40,9 +40,9 @@ func TestTask(t *testing.T) {
 				},
 			},
 		},
-		Account:     0,
-		AddressType: 0,
-		Index:       0,
+		Account: 0,
+		Chain:   0,
+		Index:   0,
 	}
 	db := dbm.GetL2InfoDB().Debug()
 	db.DryRun = true
@@ -98,9 +98,9 @@ func TestUniqueTask(t *testing.T) {
 				},
 			},
 		},
-		Account:     0,
-		AddressType: 0,
-		Index:       0,
+		Account: 0,
+		Chain:   0,
+		Index:   0,
 	}
 	db := dbm.GetL2InfoDB().Debug()
 	db.DryRun = true

@@ -44,7 +44,7 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.TaskOpera
 
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
-		coinType := types.GetCoinTypeByChain(task.AddressType)
+		coinType := types.GetCoinTypeByChain(task.Chain)
 		ec := types.GetCurveTypeByCoinType(coinType)
 		// userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
 		_ = address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
