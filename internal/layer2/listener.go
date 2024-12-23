@@ -68,6 +68,7 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		TaskAddress        = common.HexToAddress(config.AppConfig.TaskManagerContract)
 		ParticipantAddress = common.HexToAddress(config.AppConfig.ParticipantContract)
 		DepositAddress     = common.HexToAddress(config.AppConfig.DepositContract)
+		AssetAddress       = common.HexToAddress(config.AppConfig.AssetHandlerContract)
 	)
 
 	self.addressBind = map[common.Address]func(types.Log) error{
@@ -76,6 +77,7 @@ func NewLayer2Listener(p *p2p.Service, state *state.State, db *db.DatabaseManage
 		ParticipantAddress: self.processParticipantLog,
 		TaskAddress:        self.processTaskLog,
 		DepositAddress:     self.processDepositLog,
+		AssetAddress:       self.processAssetLog,
 	}
 	self.contractAddress = lo.MapToSlice(
 		self.addressBind,

@@ -15,7 +15,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
@@ -37,7 +36,7 @@ func (o *Operations) Type() int {
 }
 
 // only used test
-func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.TaskOperation {
+func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOperation, error) {
 	operation := &contracts.TaskOperation{
 		TaskId: detailTask.TaskID(),
 	}
@@ -53,6 +52,28 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.TaskOpera
 		// operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
 	case *db.DepositTask:
+		needConfirm, checkCode, err := m.checkTask(task)
+		if !needConfirm {
+			return nil, fmt.Errorf("task %d: hash:%s check failed, %w", task.TaskId, task.TxHash, err)
+		}
+		if err != nil || checkCode != db.TaskErrorCodeSuccess {
+			//taskResult := contracts.TaskPayloadContractWithdrawalResult{
+			//	Version:   uint8(db.TaskVersionV1),
+			//	Success:   false,
+			//	ErrorCode: uint8(checkCode),
+			//}
+			//taskBytes, err := codec.EncodeTaskResult(db.TaskTypeDeposit, taskResult)
+			//if err != nil {
+			//	panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
+			//}
+
+			// data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
+			// operation.OptData = data
+			// operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+			operation.State = db.Failed
+			return operation, err
+		}
+
 		//data := m.voterContract.EncodeRecordDeposit(
 		//	common.HexToAddress(task.TargetAddress),
 		//	big.NewInt(int64(task.Amount)),
@@ -80,7 +101,7 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.TaskOpera
 		// operation.OptData = nil // todo
 	}
 
-	return operation
+	return operation, nil
 }
 
 // only used test
@@ -97,12 +118,23 @@ func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.TaskOperation
 
 // only used test
 func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Proposal]) error {
-	log.Debugf("JoinSignBatchTaskSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
+	log.Debugf("joinSignOperationSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
 	batchData := &types.BatchData{}
 	batchData.FromBytes(msg.Data)
 	tasks := m.taskQueue.BatchGet(batchData.Ids)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.TaskOperation { return *m.operation(item) })
+	operations := make([]contracts.TaskOperation, 0, len(tasks))
+	for _, item := range tasks {
+		op, err := m.operation(item)
+		if err != nil {
+			return fmt.Errorf("failed to process task: %d, %w", item.TaskID(), err)
+		}
+		operations = append(operations, *op)
+	}
+
+	if len(operations) == 0 {
+		return fmt.Errorf("operations queue is empty")
+	}
 
 	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {

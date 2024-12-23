@@ -3,6 +3,7 @@ package layer2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -122,6 +123,34 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 		if taskUpdatedEvent != nil {
 			l.postTask(taskUpdatedEvent)
+		}
+	case contracts.NIP20TokenEventMintbTopic:
+		mintb := contracts.InscriptionContractNIP20TokenEventMintb{}
+		contracts.UnpackEventLog(contracts.InscriptionContractMetaData, &mintb, NIP20TokenMintbEvent, vLog)
+
+		mintbEvent := &db.InscriptionMintb{
+			Recipient: mintb.Recipient.Hex(),
+			Ticker:    strings.Trim(string(mintb.Ticker[:]), "\x00"),
+			Amount:    mintb.Amount.Uint64(),
+			LogIndex:  l.LogIndex(NIP20TokenMintbEvent, vLog),
+		}
+		err := l.db.GetL2InfoDB().Create(mintbEvent)
+		if err != nil {
+			return err.Error
+		}
+	case contracts.NIP20TokenEventBurnbTopic:
+		burnb := contracts.InscriptionContractNIP20TokenEventBurnb{}
+		contracts.UnpackEventLog(contracts.InscriptionContractMetaData, &burnb, NIP20TokenBurnbEvent, vLog)
+
+		burnbEvent := &db.InscriptionBurnb{
+			From:     burnb.From.Hex(),
+			Ticker:   strings.Trim(string(burnb.Ticker[:]), "\x00"),
+			Amount:   burnb.Amount.Uint64(),
+			LogIndex: l.LogIndex(NIP20TokenBurnbEvent, vLog),
+		}
+		err := l.db.GetL2InfoDB().Create(burnbEvent)
+		if err != nil {
+			return err.Error
 		}
 	default:
 		return errors.New("invalid topic")
@@ -286,4 +315,84 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	}
 
 	return nil
+}
+
+func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
+	switch vLog.Topics[0] {
+	case contracts.AssetListedTopic:
+		event := contracts.AssetHandlerContractAssetListed{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetListed, vLog)
+
+		asset := &db.Asset{
+			Ticker:            strings.Trim(string(event.Ticker[:]), "\x00"),
+			AssetType:         event.AssetParam.AssetType,
+			Decimals:          event.AssetParam.Decimals,
+			DepositEnabled:    event.AssetParam.DepositEnabled,
+			WithdrawalEnabled: event.AssetParam.WithdrawalEnabled,
+			MinDepositAmount:  event.AssetParam.MinDepositAmount.Uint64(),
+			MinWithdrawAmount: event.AssetParam.MinWithdrawAmount.Uint64(),
+			AssetAlias:        event.AssetParam.AssetAlias,
+			AssetLogo:         event.AssetParam.AssetLogo,
+		}
+		return l.db.GetL2SyncDB().Save(asset).Error
+	case contracts.AssetUpdatedTopic:
+		event := contracts.AssetHandlerContractAssetUpdated{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetUpdated, vLog)
+
+		ticker := strings.Trim(string(event.Ticker[:]), "\x00")
+
+		var existingAsset db.Asset
+		result := l.db.GetL2SyncDB().Where("ticker = ?", ticker).First(&existingAsset)
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				newAsset := &db.Asset{
+					Ticker:            ticker,
+					AssetType:         event.AssetParam.AssetType,
+					Decimals:          event.AssetParam.Decimals,
+					DepositEnabled:    event.AssetParam.DepositEnabled,
+					WithdrawalEnabled: event.AssetParam.WithdrawalEnabled,
+					MinDepositAmount:  event.AssetParam.MinDepositAmount.Uint64(),
+					MinWithdrawAmount: event.AssetParam.MinWithdrawAmount.Uint64(),
+					AssetAlias:        event.AssetParam.AssetAlias,
+					AssetLogo:         event.AssetParam.AssetLogo,
+				}
+				return l.db.GetL2SyncDB().Save(newAsset).Error
+			}
+			return fmt.Errorf("failed to query asset by ticker:%s, %w", ticker, result.Error)
+		}
+
+		existingAsset.AssetType = event.AssetParam.AssetType
+		existingAsset.Decimals = event.AssetParam.Decimals
+		existingAsset.DepositEnabled = event.AssetParam.DepositEnabled
+		existingAsset.WithdrawalEnabled = event.AssetParam.WithdrawalEnabled
+		existingAsset.MinDepositAmount = event.AssetParam.MinDepositAmount.Uint64()
+		existingAsset.MinWithdrawAmount = event.AssetParam.MinWithdrawAmount.Uint64()
+		existingAsset.AssetAlias = event.AssetParam.AssetAlias
+		existingAsset.AssetLogo = event.AssetParam.AssetLogo
+
+		return l.db.GetL2SyncDB().Save(&existingAsset).Error
+	case contracts.AssetDelistedTopic:
+		event := contracts.AssetHandlerContractAssetDelisted{}
+		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetDelisted, vLog)
+
+		ticker := strings.Trim(string(event.AssetId[:]), "\x00")
+
+		var existingAsset db.Asset
+		result := l.db.GetL2SyncDB().Where("ticker = ?", ticker).First(&existingAsset)
+
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			return fmt.Errorf("failed to query asset by ticker:%s, %w", ticker, result.Error)
+		}
+
+		if err := l.db.GetL2SyncDB().Delete(&existingAsset).Error; err != nil {
+			return fmt.Errorf("failed to delete asset with ticker: %s, %w", ticker, err)
+		}
+
+		return nil
+	default:
+		return errors.New("invalid topic")
+	}
 }

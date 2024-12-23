@@ -120,3 +120,58 @@ type AddressBalance struct {
 func (AddressBalance) TableName() string {
 	return "address_balance"
 }
+
+type InscriptionMintb struct {
+	gorm.Model
+	Recipient string   `gorm:"not null"             json:"recipient"`
+	Ticker    string   `gorm:"not null"             json:"ticker"`
+	Amount    uint64   `gorm:"not null"             json:"amount"`
+	LogIndex  LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (InscriptionMintb) TableName() string {
+	return "inscription_mintb"
+}
+
+type InscriptionBurnb struct {
+	gorm.Model
+	From     string   `gorm:"not null"             json:"from"`
+	Ticker   string   `gorm:"not null"             json:"ticker"`
+	Amount   uint64   `gorm:"not null"             json:"amount"`
+	LogIndex LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+}
+
+func (InscriptionBurnb) TableName() string {
+	return "inscription_burnb"
+}
+
+type Asset struct {
+	gorm.Model
+	Ticker            string `gorm:"uniqueIndex;not null" json:"ticker"`
+	AssetType         uint8  `gorm:"not null" json:"asset_type"`
+	Decimals          uint8  `gorm:"not null" json:"decimals"`
+	DepositEnabled    bool   `gorm:"not null" json:"deposit_enabled"`
+	WithdrawalEnabled bool   `gorm:"not null" json:"withdrawal_enabled"`
+	MinDepositAmount  uint64 `gorm:"not null" json:"min_deposit_amount"`
+	MinWithdrawAmount uint64 `gorm:"not null" json:"min_withdraw_amount"`
+	AssetAlias        string `gorm:"not null"             json:"asset_alias"`
+	AssetLogo         string `gorm:"not null"             json:"asset_logo"`
+}
+
+func (Asset) TableName() string {
+	return "asset"
+}
+
+type TokenInfo struct {
+	gorm.Model
+	Ticker          string `gorm:"not null" json:"ticker"`
+	IsActive        bool   `gorm:"not null" json:"is_active"`
+	AssetType       uint8  `gorm:"not null" json:"asset_type"`
+	Decimals        uint8  `gorm:"not null" json:"decimals"`
+	ContractAddress string `gorm:"not null"             json:"contract_address"`
+	Symbol          string `gorm:"not null"             json:"symbol"`
+}
+
+func (TokenInfo) TableName() string {
+	return "token_info"
+}

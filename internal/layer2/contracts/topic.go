@@ -2,6 +2,7 @@ package contracts
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // FilterAddressRegistered is a free log retrieval operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
@@ -29,23 +30,27 @@ import (
 // Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint8 indexed state, uint256 updateTime, bytes32 txHash, bytes result)
 var (
 	// SubmitterRotationRequestedTopic = crypto.Keccak256Hash([]byte(`SubmitterRotationRequested(address,address)`))             // VotingManagerUpgradeable
-	SubmitterRotationRequestedTopic = EventTopic(VotingManagerContractMetaData, "SubmitterRotationRequested") // VotingManagerUpgradeable
-	SubmitterChosenTopic            = EventTopic(VotingManagerContractMetaData, "SubmitterChosen")            // VotingManagerUpgradeable
-	TaskSubmittedTopic              = EventTopic(TaskManagerContractMetaData, "TaskSubmitted")                // TaskManager
-	TaskUpdatedTopic                = EventTopic(TaskManagerContractMetaData, "TaskUpdated")                  // TaskManager
-	AddressRegisteredTopic          = EventTopic(AccountManagerContractMetaData, "AddressRegistered")         // AccountManagerContract
-	ParticipantAddedTopic           = EventTopic(ParticipantManagerContractMetaData, "ParticipantAdded")      // IParticipantManager
-	ParticipantRemovedTopic         = EventTopic(ParticipantManagerContractMetaData, "ParticipantRemoved")    // IParticipantManager
-	ParticipantsResetTopic          = EventTopic(ParticipantManagerContractMetaData, "ParticipantsReset")     // IParticipantManager
-	DepositRecordedTopic            = EventTopic(DepositManagerContractMetaData, "DepositRecorded")           // IParticipantManager
-	WithdrawalRecordedTopic         = EventTopic(DepositManagerContractMetaData, "WithdrawalRecorded")        // IParticipantManager
-
-	WalletCreationRequestTopic = EventTopic(TaskPayloadContractMetaData, "WalletCreationRequest") // IParticipantManager
-	DepositRequestTopic        = EventTopic(TaskPayloadContractMetaData, "DepositRequest")        // IParticipantManager
-	WithdrawalRequestTopic     = EventTopic(TaskPayloadContractMetaData, "WithdrawalRequest")     // IParticipantManager
-	WalletCreationResultTopic  = EventTopic(TaskPayloadContractMetaData, "WalletCreationResult")  // IParticipantManager
-	DepositResultTopic         = EventTopic(TaskPayloadContractMetaData, "DepositResult")         // IParticipantManager
-	WithdrawalResultTopic      = EventTopic(TaskPayloadContractMetaData, "WithdrawalResult")      // IParticipantManager
+	SubmitterRotationRequestedTopic = EventTopic(VotingManagerContractMetaData, "SubmitterRotationRequested")                                             // VotingManagerUpgradeable
+	SubmitterChosenTopic            = EventTopic(VotingManagerContractMetaData, "SubmitterChosen")                                                        // VotingManagerUpgradeable
+	TaskSubmittedTopic              = EventTopic(TaskManagerContractMetaData, "TaskSubmitted")                                                            // TaskManager
+	TaskUpdatedTopic                = EventTopic(TaskManagerContractMetaData, "TaskUpdated")                                                              // TaskManager
+	AddressRegisteredTopic          = EventTopic(AccountManagerContractMetaData, "AddressRegistered")                                                     // AccountManagerContract
+	ParticipantAddedTopic           = EventTopic(ParticipantManagerContractMetaData, "ParticipantAdded")                                                  // IParticipantManager
+	ParticipantRemovedTopic         = EventTopic(ParticipantManagerContractMetaData, "ParticipantRemoved")                                                // IParticipantManager
+	ParticipantsResetTopic          = EventTopic(ParticipantManagerContractMetaData, "ParticipantsReset")                                                 // IParticipantManager
+	DepositRecordedTopic            = EventTopic(DepositManagerContractMetaData, "DepositRecorded")                                                       // IParticipantManager
+	WithdrawalRecordedTopic         = EventTopic(DepositManagerContractMetaData, "WithdrawalRecorded")                                                    // IParticipantManager
+	NIP20TokenEventMintbTopic       = crypto.Keccak256Hash([]byte(`NIP20TokenEvent_mintb(address,bytes32,uint256)`))                                      // InscriptionContract
+	NIP20TokenEventBurnbTopic       = crypto.Keccak256Hash([]byte(`NIP20TokenEvent_burnb(address,bytes32,uint256)`))                                      // InscriptionContract
+	AssetListedTopic                = crypto.Keccak256Hash([]byte(`AssetListed(bytes32,(uint8,uint8,bool,bool,uint256,uint256,uint256,string,string))`))  // InscriptionContract
+	AssetUpdatedTopic               = crypto.Keccak256Hash([]byte(`AssetUpdated(bytes32,(uint8,uint8,bool,bool,uint256,uint256,uint256,string,string))`)) // InscriptionContract
+	AssetDelistedTopic              = crypto.Keccak256Hash([]byte(`AssetDelisted(bytes32)`))                                                              // InscriptionContract
+	WalletCreationRequestTopic      = EventTopic(TaskPayloadContractMetaData, "WalletCreationRequest")                                                    // IParticipantManager
+	DepositRequestTopic             = EventTopic(TaskPayloadContractMetaData, "DepositRequest")                                                           // IParticipantManager
+	WithdrawalRequestTopic          = EventTopic(TaskPayloadContractMetaData, "WithdrawalRequest")                                                        // IParticipantManager
+	WalletCreationResultTopic       = EventTopic(TaskPayloadContractMetaData, "WalletCreationResult")                                                     // IParticipantManager
+	DepositResultTopic              = EventTopic(TaskPayloadContractMetaData, "DepositResult")                                                            // IParticipantManager
+	WithdrawalResultTopic           = EventTopic(TaskPayloadContractMetaData, "WithdrawalResult")                                                         // IParticipantManager
 )
 
 var Topics = [][]common.Hash{

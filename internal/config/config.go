@@ -17,39 +17,41 @@ import (
 )
 
 type Config struct {
-	Env                 string        `yaml:"env"` // dev、test、prod
-	HttpPort            string        `yaml:"httpPort"`
-	P2pPort             int           `yaml:"p2PPort"`
-	P2pBootNodes        string        `yaml:"p2PBootNodes"`
-	BtcRpc              string        `yaml:"btcRpc"`
-	BtcRpcUser          string        `yaml:"btcRpcUser"`
-	BtcRpcPass          string        `yaml:"btcRpcPass"`
-	BtcStartHeight      int           `yaml:"btcStartHeight"`
-	SolRPC              string        `yaml:"solRPC"`
-	SuiRPC              string        `yaml:"suiRPC"`
-	L2Rpc               string        `yaml:"l2Rpc"`
-	L2JwtSecret         string        `yaml:"l2JwtSecret"`
-	L2StartHeight       int           `yaml:"l2StartHeight"`
-	L2Confirmations     int           `yaml:"l2Confirmations"`
-	L2MaxBlockRange     int           `yaml:"l2MaxBlockRange"`
-	L2RequestInterval   time.Duration `yaml:"l2RequestInterval"`
-	FireblocksPubKey    string        `yaml:"fireblocksPubKey"`
-	FireblocksPrivKey   string        `yaml:"fireblocksPrivKey"`
-	TssThreshold        int           `yaml:"tssThreshold"`
-	TssSigTimeout       time.Duration `yaml:"tssSigTimeout"`
-	EnableWebhook       bool          `yaml:"enableWebhook"`
-	EnableRelayer       bool          `yaml:"enableRelayer"`
-	DbDir               string        `yaml:"dbDir"`
-	VotingContract      string        `yaml:"votingContract"`
-	AccountContract     string        `yaml:"accountContract"`
-	WithdrawContract    string        `yaml:"withdrawContract"`
-	TaskManagerContract string        `yaml:"taskManagerContract"`
-	ParticipantContract string        `yaml:"participantContract"`
-	DepositContract     string        `yaml:"depositContract"`
-	L2ChainID           string        `yaml:"l2ChainID"`
-	LogLevel            string        `yaml:"logLevel"`
-	L2PrivateKey        string        `yaml:"l2PrivateKey"`
-	TssPublicKeys       []string      `yaml:"tssPublicKeys"`
+	Env                  string        `yaml:"env"` // dev、test、prod
+	HttpPort             string        `yaml:"httpPort"`
+	P2pPort              int           `yaml:"p2PPort"`
+	P2pBootNodes         string        `yaml:"p2PBootNodes"`
+	NipApi               string        `yaml:"nipApi"`
+	BtcRpc               string        `yaml:"btcRpc"`
+	BtcRpcUser           string        `yaml:"btcRpcUser"`
+	BtcRpcPass           string        `yaml:"btcRpcPass"`
+	BtcStartHeight       int           `yaml:"btcStartHeight"`
+	SolRPC               string        `yaml:"solRPC"`
+	SuiRPC               string        `yaml:"suiRPC"`
+	L2Rpc                string        `yaml:"l2Rpc"`
+	L2JwtSecret          string        `yaml:"l2JwtSecret"`
+	L2StartHeight        int           `yaml:"l2StartHeight"`
+	L2Confirmations      int           `yaml:"l2Confirmations"`
+	L2MaxBlockRange      int           `yaml:"l2MaxBlockRange"`
+	L2RequestInterval    time.Duration `yaml:"l2RequestInterval"`
+	FireblocksPubKey     string        `yaml:"fireblocksPubKey"`
+	FireblocksPrivKey    string        `yaml:"fireblocksPrivKey"`
+	TssThreshold         int           `yaml:"tssThreshold"`
+	TssSigTimeout        time.Duration `yaml:"tssSigTimeout"`
+	EnableWebhook        bool          `yaml:"enableWebhook"`
+	EnableRelayer        bool          `yaml:"enableRelayer"`
+	DbDir                string        `yaml:"dbDir"`
+	VotingContract       string        `yaml:"votingContract"`
+	AccountContract      string        `yaml:"accountContract"`
+	WithdrawContract     string        `yaml:"withdrawContract"`
+	TaskManagerContract  string        `yaml:"taskManagerContract"`
+	ParticipantContract  string        `yaml:"participantContract"`
+	DepositContract      string        `yaml:"depositContract"`
+	AssetHandlerContract string        `yaml:"assetHandlerContract"`
+	L2ChainID            string        `yaml:"l2ChainID"`
+	LogLevel             string        `yaml:"logLevel"`
+	L2PrivateKey         string        `yaml:"l2PrivateKey"`
+	TssPublicKeys        []string      `yaml:"tssPublicKeys"`
 
 	// TssPublicKeys []*ecdsa.PublicKey
 	// L2PrivateKey  *ecdsa.PrivateKey
@@ -102,6 +104,7 @@ func InitConfig(configPath string) {
 	viper.SetDefault("RPC_PORT", "50051")
 	viper.SetDefault("LIBP2P_PORT", 4001)
 	viper.SetDefault("LIBP2P_BOOT_NODES", "")
+	viper.SetDefault("NIP_API", "")
 	viper.SetDefault("BTC_RPC", "http://localhost:8332")
 	viper.SetDefault("BTC_RPC_USER", "")
 	viper.SetDefault("BTC_RPC_PASS", "")
@@ -123,6 +126,7 @@ func InitConfig(configPath string) {
 	viper.SetDefault("OPERATIONS_CONTRACT", "")
 	viper.SetDefault("PARTICIPANT_CONTRACT", "")
 	viper.SetDefault("DEPOSIT_CONTRACT", "")
+	viper.SetDefault("ASSET_CONTRACT", "")
 	viper.SetDefault("FIREBLOCKS_PUBKEY", "")
 	viper.SetDefault("FIREBLOCKS_PRIVKEY", "")
 	viper.SetDefault("TSS_PUBLIC_KEYS", "")
@@ -134,32 +138,34 @@ func InitConfig(configPath string) {
 	setTssPublicKeys(viper.GetString("TSS_PUBLIC_KEYS"))
 
 	AppConfig = Config{
-		HttpPort:            viper.GetString("HTTP_PORT"),
-		P2pPort:             viper.GetInt("LIBP2P_PORT"),
-		P2pBootNodes:        viper.GetString("LIBP2P_BOOT_NODES"),
-		BtcRpc:              viper.GetString("BTC_RPC"),
-		BtcRpcUser:          viper.GetString("BTC_RPC_USER"),
-		BtcRpcPass:          viper.GetString("BTC_RPC_PASS"),
-		BtcStartHeight:      viper.GetInt("BTC_START_HEIGHT"),
-		L2Rpc:               viper.GetString("L2_RPC"),
-		L2JwtSecret:         viper.GetString("L2_JWT_SECRET"),
-		L2StartHeight:       viper.GetInt("L2_START_HEIGHT"),
-		L2Confirmations:     viper.GetInt("L2_CONFIRMATIONS"),
-		L2MaxBlockRange:     viper.GetInt("L2_MAX_BLOCK_RANGE"),
-		L2RequestInterval:   viper.GetDuration("L2_REQUEST_INTERVAL"),
-		FireblocksPubKey:    viper.GetString("FIREBLOCKS_PUBKEY"),
-		FireblocksPrivKey:   viper.GetString("FIREBLOCKS_PRIVKEY"),
-		TssThreshold:        viper.GetInt("TSS_THRESHOLD"),
-		TssSigTimeout:       viper.GetDuration("TSS_SIG_TIMEOUT"),
-		EnableWebhook:       viper.GetBool("ENABLE_WEBHOOK"),
-		EnableRelayer:       viper.GetBool("ENABLE_RELAYER"),
-		DbDir:               viper.GetString("DB_DIR"),
-		LogLevel:            viper.GetString("LOG_LEVEL"),
-		VotingContract:      viper.GetString("VOTING_CONTRACT"),
-		AccountContract:     viper.GetString("ACCOUNT_CONTRACT"),
-		ParticipantContract: viper.GetString("PARTICIPANT_CONTRACT"),
-		TaskManagerContract: viper.GetString("TASK_CONTRACT"),
-		DepositContract:     viper.GetString("DEPOSIT_CONTRACT"),
+		HttpPort:             viper.GetString("HTTP_PORT"),
+		P2pPort:              viper.GetInt("LIBP2P_PORT"),
+		P2pBootNodes:         viper.GetString("LIBP2P_BOOT_NODES"),
+		NipApi:               viper.GetString("NIP_API"),
+		BtcRpc:               viper.GetString("BTC_RPC"),
+		BtcRpcUser:           viper.GetString("BTC_RPC_USER"),
+		BtcRpcPass:           viper.GetString("BTC_RPC_PASS"),
+		BtcStartHeight:       viper.GetInt("BTC_START_HEIGHT"),
+		L2Rpc:                viper.GetString("L2_RPC"),
+		L2JwtSecret:          viper.GetString("L2_JWT_SECRET"),
+		L2StartHeight:        viper.GetInt("L2_START_HEIGHT"),
+		L2Confirmations:      viper.GetInt("L2_CONFIRMATIONS"),
+		L2MaxBlockRange:      viper.GetInt("L2_MAX_BLOCK_RANGE"),
+		L2RequestInterval:    viper.GetDuration("L2_REQUEST_INTERVAL"),
+		FireblocksPubKey:     viper.GetString("FIREBLOCKS_PUBKEY"),
+		FireblocksPrivKey:    viper.GetString("FIREBLOCKS_PRIVKEY"),
+		TssThreshold:         viper.GetInt("TSS_THRESHOLD"),
+		TssSigTimeout:        viper.GetDuration("TSS_SIG_TIMEOUT"),
+		EnableWebhook:        viper.GetBool("ENABLE_WEBHOOK"),
+		EnableRelayer:        viper.GetBool("ENABLE_RELAYER"),
+		DbDir:                viper.GetString("DB_DIR"),
+		LogLevel:             viper.GetString("LOG_LEVEL"),
+		VotingContract:       viper.GetString("VOTING_CONTRACT"),
+		AccountContract:      viper.GetString("ACCOUNT_CONTRACT"),
+		ParticipantContract:  viper.GetString("PARTICIPANT_CONTRACT"),
+		TaskManagerContract:  viper.GetString("TASK_CONTRACT"),
+		DepositContract:      viper.GetString("DEPOSIT_CONTRACT"),
+		AssetHandlerContract: viper.GetString("ASSET_CONTRACT"),
 	}
 	setLogLevel()
 }
