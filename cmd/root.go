@@ -33,6 +33,8 @@ func init() {
 		printECDSAPublicKeyCmd,
 		printEDDSAPublicKeyCmd,
 		printChainAddressCmd,
+		printChainHotAddressCmd,
+		printChainGasAddressCmd,
 	)
 	rootCmd.AddCommand(
 		versionCmd,

@@ -44,7 +44,7 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 			return true, db.TaskErrorCodeDepositAmountTooLow, err
 		}
 
-		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionMintb.Ticker, uint64(taskData.ChainId))
+		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionMintb.Ticker, taskData.ChainId)
 		if err != nil || tokenInfo == nil {
 			return true, db.TaskErrorCodeDepositTokenNotSupported, err
 		}
@@ -80,7 +80,7 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 			return true, db.TaskErrorCodeWithdrawalAmountTooLow, err
 		}
 
-		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionBurnb.Ticker, uint64(taskData.ChainId))
+		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionBurnb.Ticker, taskData.ChainId)
 		if err != nil || tokenInfo == nil {
 			return true, db.TaskErrorCodeWithdrawalTokenNotSupported, err
 		}
@@ -129,6 +129,7 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 	}
 	return false, db.TaskErrorCodePending, nil
 }
+
 func checkTxStatus(txHash string) (string, error) {
 	url := fmt.Sprintf("https://nip-api.testnet.nudex.io/%s/status", txHash)
 

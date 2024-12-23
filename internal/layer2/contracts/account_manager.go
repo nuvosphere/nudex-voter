@@ -31,7 +31,7 @@ var (
 
 // AccountManagerContractMetaData contains all meta data concerning the AccountManagerContract contract.
 var AccountManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"addressRecord\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAddressRecord\",\"inputs\":[{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"registerNewAddress\",\"inputs\":[{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"userMapping\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumIAccountManager.Chain\"}],\"outputs\":[{\"name\":\"account\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AddressRegistered\",\"inputs\":[{\"name\":\"account\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":true,\"internalType\":\"enumIAccountManager.Chain\"},{\"name\":\"index\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"newAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAccountNumber\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"RegisteredAccount\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_taskManager\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ENTRYPOINT_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"SUBMITTER_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"addressRecord\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAddressRecord\",\"inputs\":[{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountHandler.AddressCategory\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_entryPoint\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_submitter\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"registerNewAddress\",\"inputs\":[{\"name\":\"_userAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountHandler.AddressCategory\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitRegisterTask\",\"inputs\":[{\"name\":\"_userAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_account\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chain\",\"type\":\"uint8\",\"internalType\":\"enumIAccountHandler.AddressCategory\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_address\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"taskManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractITaskManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"userMapping\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumIAccountHandler.AddressCategory\"}],\"outputs\":[{\"name\":\"account\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AddressRegistered\",\"inputs\":[{\"name\":\"userAddr\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"account\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chain\",\"type\":\"uint8\",\"indexed\":true,\"internalType\":\"enumIAccountHandler.AddressCategory\"},{\"name\":\"index\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"newAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"InvalidAccountNumber\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidUserAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RegisteredAccount\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}]}]",
 }
 
 // AccountManagerContractABI is the input ABI used to generate the binding from.
@@ -180,6 +180,99 @@ func (_AccountManagerContract *AccountManagerContractTransactorRaw) Transact(opt
 	return _AccountManagerContract.Contract.contract.Transact(opts, method, params...)
 }
 
+// DEFAULTADMINROLE is a free data retrieval call binding the contract method 0xa217fddf.
+//
+// Solidity: function DEFAULT_ADMIN_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCaller) DEFAULTADMINROLE(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _AccountManagerContract.contract.Call(opts, &out, "DEFAULT_ADMIN_ROLE")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// DEFAULTADMINROLE is a free data retrieval call binding the contract method 0xa217fddf.
+//
+// Solidity: function DEFAULT_ADMIN_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractSession) DEFAULTADMINROLE() ([32]byte, error) {
+	return _AccountManagerContract.Contract.DEFAULTADMINROLE(&_AccountManagerContract.CallOpts)
+}
+
+// DEFAULTADMINROLE is a free data retrieval call binding the contract method 0xa217fddf.
+//
+// Solidity: function DEFAULT_ADMIN_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCallerSession) DEFAULTADMINROLE() ([32]byte, error) {
+	return _AccountManagerContract.Contract.DEFAULTADMINROLE(&_AccountManagerContract.CallOpts)
+}
+
+// ENTRYPOINTROLE is a free data retrieval call binding the contract method 0x5445bd5d.
+//
+// Solidity: function ENTRYPOINT_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCaller) ENTRYPOINTROLE(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _AccountManagerContract.contract.Call(opts, &out, "ENTRYPOINT_ROLE")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// ENTRYPOINTROLE is a free data retrieval call binding the contract method 0x5445bd5d.
+//
+// Solidity: function ENTRYPOINT_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractSession) ENTRYPOINTROLE() ([32]byte, error) {
+	return _AccountManagerContract.Contract.ENTRYPOINTROLE(&_AccountManagerContract.CallOpts)
+}
+
+// ENTRYPOINTROLE is a free data retrieval call binding the contract method 0x5445bd5d.
+//
+// Solidity: function ENTRYPOINT_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCallerSession) ENTRYPOINTROLE() ([32]byte, error) {
+	return _AccountManagerContract.Contract.ENTRYPOINTROLE(&_AccountManagerContract.CallOpts)
+}
+
+// SUBMITTERROLE is a free data retrieval call binding the contract method 0x91712a0b.
+//
+// Solidity: function SUBMITTER_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCaller) SUBMITTERROLE(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _AccountManagerContract.contract.Call(opts, &out, "SUBMITTER_ROLE")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// SUBMITTERROLE is a free data retrieval call binding the contract method 0x91712a0b.
+//
+// Solidity: function SUBMITTER_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractSession) SUBMITTERROLE() ([32]byte, error) {
+	return _AccountManagerContract.Contract.SUBMITTERROLE(&_AccountManagerContract.CallOpts)
+}
+
+// SUBMITTERROLE is a free data retrieval call binding the contract method 0x91712a0b.
+//
+// Solidity: function SUBMITTER_ROLE() view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCallerSession) SUBMITTERROLE() ([32]byte, error) {
+	return _AccountManagerContract.Contract.SUBMITTERROLE(&_AccountManagerContract.CallOpts)
+}
+
 // AddressRecord is a free data retrieval call binding the contract method 0x5192a407.
 //
 // Solidity: function addressRecord(bytes ) view returns(string)
@@ -242,12 +335,105 @@ func (_AccountManagerContract *AccountManagerContractCallerSession) GetAddressRe
 	return _AccountManagerContract.Contract.GetAddressRecord(&_AccountManagerContract.CallOpts, _account, _chain, _index)
 }
 
-// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+// GetRoleAdmin is a free data retrieval call binding the contract method 0x248a9ca3.
 //
-// Solidity: function owner() view returns(address)
-func (_AccountManagerContract *AccountManagerContractCaller) Owner(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function getRoleAdmin(bytes32 role) view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCaller) GetRoleAdmin(opts *bind.CallOpts, role [32]byte) ([32]byte, error) {
 	var out []interface{}
-	err := _AccountManagerContract.contract.Call(opts, &out, "owner")
+	err := _AccountManagerContract.contract.Call(opts, &out, "getRoleAdmin", role)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// GetRoleAdmin is a free data retrieval call binding the contract method 0x248a9ca3.
+//
+// Solidity: function getRoleAdmin(bytes32 role) view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractSession) GetRoleAdmin(role [32]byte) ([32]byte, error) {
+	return _AccountManagerContract.Contract.GetRoleAdmin(&_AccountManagerContract.CallOpts, role)
+}
+
+// GetRoleAdmin is a free data retrieval call binding the contract method 0x248a9ca3.
+//
+// Solidity: function getRoleAdmin(bytes32 role) view returns(bytes32)
+func (_AccountManagerContract *AccountManagerContractCallerSession) GetRoleAdmin(role [32]byte) ([32]byte, error) {
+	return _AccountManagerContract.Contract.GetRoleAdmin(&_AccountManagerContract.CallOpts, role)
+}
+
+// HasRole is a free data retrieval call binding the contract method 0x91d14854.
+//
+// Solidity: function hasRole(bytes32 role, address account) view returns(bool)
+func (_AccountManagerContract *AccountManagerContractCaller) HasRole(opts *bind.CallOpts, role [32]byte, account common.Address) (bool, error) {
+	var out []interface{}
+	err := _AccountManagerContract.contract.Call(opts, &out, "hasRole", role, account)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// HasRole is a free data retrieval call binding the contract method 0x91d14854.
+//
+// Solidity: function hasRole(bytes32 role, address account) view returns(bool)
+func (_AccountManagerContract *AccountManagerContractSession) HasRole(role [32]byte, account common.Address) (bool, error) {
+	return _AccountManagerContract.Contract.HasRole(&_AccountManagerContract.CallOpts, role, account)
+}
+
+// HasRole is a free data retrieval call binding the contract method 0x91d14854.
+//
+// Solidity: function hasRole(bytes32 role, address account) view returns(bool)
+func (_AccountManagerContract *AccountManagerContractCallerSession) HasRole(role [32]byte, account common.Address) (bool, error) {
+	return _AccountManagerContract.Contract.HasRole(&_AccountManagerContract.CallOpts, role, account)
+}
+
+// SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
+//
+// Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
+func (_AccountManagerContract *AccountManagerContractCaller) SupportsInterface(opts *bind.CallOpts, interfaceId [4]byte) (bool, error) {
+	var out []interface{}
+	err := _AccountManagerContract.contract.Call(opts, &out, "supportsInterface", interfaceId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
+//
+// Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
+func (_AccountManagerContract *AccountManagerContractSession) SupportsInterface(interfaceId [4]byte) (bool, error) {
+	return _AccountManagerContract.Contract.SupportsInterface(&_AccountManagerContract.CallOpts, interfaceId)
+}
+
+// SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
+//
+// Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
+func (_AccountManagerContract *AccountManagerContractCallerSession) SupportsInterface(interfaceId [4]byte) (bool, error) {
+	return _AccountManagerContract.Contract.SupportsInterface(&_AccountManagerContract.CallOpts, interfaceId)
+}
+
+// TaskManager is a free data retrieval call binding the contract method 0xa50a640e.
+//
+// Solidity: function taskManager() view returns(address)
+func (_AccountManagerContract *AccountManagerContractCaller) TaskManager(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _AccountManagerContract.contract.Call(opts, &out, "taskManager")
 
 	if err != nil {
 		return *new(common.Address), err
@@ -259,18 +445,18 @@ func (_AccountManagerContract *AccountManagerContractCaller) Owner(opts *bind.Ca
 
 }
 
-// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+// TaskManager is a free data retrieval call binding the contract method 0xa50a640e.
 //
-// Solidity: function owner() view returns(address)
-func (_AccountManagerContract *AccountManagerContractSession) Owner() (common.Address, error) {
-	return _AccountManagerContract.Contract.Owner(&_AccountManagerContract.CallOpts)
+// Solidity: function taskManager() view returns(address)
+func (_AccountManagerContract *AccountManagerContractSession) TaskManager() (common.Address, error) {
+	return _AccountManagerContract.Contract.TaskManager(&_AccountManagerContract.CallOpts)
 }
 
-// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+// TaskManager is a free data retrieval call binding the contract method 0xa50a640e.
 //
-// Solidity: function owner() view returns(address)
-func (_AccountManagerContract *AccountManagerContractCallerSession) Owner() (common.Address, error) {
-	return _AccountManagerContract.Contract.Owner(&_AccountManagerContract.CallOpts)
+// Solidity: function taskManager() view returns(address)
+func (_AccountManagerContract *AccountManagerContractCallerSession) TaskManager() (common.Address, error) {
+	return _AccountManagerContract.Contract.TaskManager(&_AccountManagerContract.CallOpts)
 }
 
 // UserMapping is a free data retrieval call binding the contract method 0xa0873ccb.
@@ -304,88 +490,130 @@ func (_AccountManagerContract *AccountManagerContractCallerSession) UserMapping(
 	return _AccountManagerContract.Contract.UserMapping(&_AccountManagerContract.CallOpts, depositAddress, arg1)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// GrantRole is a paid mutator transaction binding the contract method 0x2f2ff15d.
 //
-// Solidity: function initialize(address _owner) returns()
-func (_AccountManagerContract *AccountManagerContractTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address) (*types.Transaction, error) {
-	return _AccountManagerContract.contract.Transact(opts, "initialize", _owner)
+// Solidity: function grantRole(bytes32 role, address account) returns()
+func (_AccountManagerContract *AccountManagerContractTransactor) GrantRole(opts *bind.TransactOpts, role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.contract.Transact(opts, "grantRole", role, account)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// GrantRole is a paid mutator transaction binding the contract method 0x2f2ff15d.
 //
-// Solidity: function initialize(address _owner) returns()
-func (_AccountManagerContract *AccountManagerContractSession) Initialize(_owner common.Address) (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.Initialize(&_AccountManagerContract.TransactOpts, _owner)
+// Solidity: function grantRole(bytes32 role, address account) returns()
+func (_AccountManagerContract *AccountManagerContractSession) GrantRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.GrantRole(&_AccountManagerContract.TransactOpts, role, account)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// GrantRole is a paid mutator transaction binding the contract method 0x2f2ff15d.
 //
-// Solidity: function initialize(address _owner) returns()
-func (_AccountManagerContract *AccountManagerContractTransactorSession) Initialize(_owner common.Address) (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.Initialize(&_AccountManagerContract.TransactOpts, _owner)
+// Solidity: function grantRole(bytes32 role, address account) returns()
+func (_AccountManagerContract *AccountManagerContractTransactorSession) GrantRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.GrantRole(&_AccountManagerContract.TransactOpts, role, account)
 }
 
-// RegisterNewAddress is a paid mutator transaction binding the contract method 0xe0c4b3d1.
+// Initialize is a paid mutator transaction binding the contract method 0xc0c53b8b.
 //
-// Solidity: function registerNewAddress(uint256 _account, uint8 _chain, uint256 _index, string _address) returns(bytes)
-func (_AccountManagerContract *AccountManagerContractTransactor) RegisterNewAddress(opts *bind.TransactOpts, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
-	return _AccountManagerContract.contract.Transact(opts, "registerNewAddress", _account, _chain, _index, _address)
+// Solidity: function initialize(address _owner, address _entryPoint, address _submitter) returns()
+func (_AccountManagerContract *AccountManagerContractTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address, _entryPoint common.Address, _submitter common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.contract.Transact(opts, "initialize", _owner, _entryPoint, _submitter)
 }
 
-// RegisterNewAddress is a paid mutator transaction binding the contract method 0xe0c4b3d1.
+// Initialize is a paid mutator transaction binding the contract method 0xc0c53b8b.
 //
-// Solidity: function registerNewAddress(uint256 _account, uint8 _chain, uint256 _index, string _address) returns(bytes)
-func (_AccountManagerContract *AccountManagerContractSession) RegisterNewAddress(_account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.RegisterNewAddress(&_AccountManagerContract.TransactOpts, _account, _chain, _index, _address)
+// Solidity: function initialize(address _owner, address _entryPoint, address _submitter) returns()
+func (_AccountManagerContract *AccountManagerContractSession) Initialize(_owner common.Address, _entryPoint common.Address, _submitter common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.Initialize(&_AccountManagerContract.TransactOpts, _owner, _entryPoint, _submitter)
 }
 
-// RegisterNewAddress is a paid mutator transaction binding the contract method 0xe0c4b3d1.
+// Initialize is a paid mutator transaction binding the contract method 0xc0c53b8b.
 //
-// Solidity: function registerNewAddress(uint256 _account, uint8 _chain, uint256 _index, string _address) returns(bytes)
-func (_AccountManagerContract *AccountManagerContractTransactorSession) RegisterNewAddress(_account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.RegisterNewAddress(&_AccountManagerContract.TransactOpts, _account, _chain, _index, _address)
+// Solidity: function initialize(address _owner, address _entryPoint, address _submitter) returns()
+func (_AccountManagerContract *AccountManagerContractTransactorSession) Initialize(_owner common.Address, _entryPoint common.Address, _submitter common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.Initialize(&_AccountManagerContract.TransactOpts, _owner, _entryPoint, _submitter)
 }
 
-// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
+// RegisterNewAddress is a paid mutator transaction binding the contract method 0xba76e9e6.
 //
-// Solidity: function renounceOwnership() returns()
-func (_AccountManagerContract *AccountManagerContractTransactor) RenounceOwnership(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _AccountManagerContract.contract.Transact(opts, "renounceOwnership")
+// Solidity: function registerNewAddress(address _userAddr, uint256 _account, uint8 _chain, uint256 _index, string _address) returns(bytes)
+func (_AccountManagerContract *AccountManagerContractTransactor) RegisterNewAddress(opts *bind.TransactOpts, _userAddr common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
+	return _AccountManagerContract.contract.Transact(opts, "registerNewAddress", _userAddr, _account, _chain, _index, _address)
 }
 
-// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
+// RegisterNewAddress is a paid mutator transaction binding the contract method 0xba76e9e6.
 //
-// Solidity: function renounceOwnership() returns()
-func (_AccountManagerContract *AccountManagerContractSession) RenounceOwnership() (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.RenounceOwnership(&_AccountManagerContract.TransactOpts)
+// Solidity: function registerNewAddress(address _userAddr, uint256 _account, uint8 _chain, uint256 _index, string _address) returns(bytes)
+func (_AccountManagerContract *AccountManagerContractSession) RegisterNewAddress(_userAddr common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.RegisterNewAddress(&_AccountManagerContract.TransactOpts, _userAddr, _account, _chain, _index, _address)
 }
 
-// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
+// RegisterNewAddress is a paid mutator transaction binding the contract method 0xba76e9e6.
 //
-// Solidity: function renounceOwnership() returns()
-func (_AccountManagerContract *AccountManagerContractTransactorSession) RenounceOwnership() (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.RenounceOwnership(&_AccountManagerContract.TransactOpts)
+// Solidity: function registerNewAddress(address _userAddr, uint256 _account, uint8 _chain, uint256 _index, string _address) returns(bytes)
+func (_AccountManagerContract *AccountManagerContractTransactorSession) RegisterNewAddress(_userAddr common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.RegisterNewAddress(&_AccountManagerContract.TransactOpts, _userAddr, _account, _chain, _index, _address)
 }
 
-// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+// RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
 //
-// Solidity: function transferOwnership(address newOwner) returns()
-func (_AccountManagerContract *AccountManagerContractTransactor) TransferOwnership(opts *bind.TransactOpts, newOwner common.Address) (*types.Transaction, error) {
-	return _AccountManagerContract.contract.Transact(opts, "transferOwnership", newOwner)
+// Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
+func (_AccountManagerContract *AccountManagerContractTransactor) RenounceRole(opts *bind.TransactOpts, role [32]byte, callerConfirmation common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.contract.Transact(opts, "renounceRole", role, callerConfirmation)
 }
 
-// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+// RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
 //
-// Solidity: function transferOwnership(address newOwner) returns()
-func (_AccountManagerContract *AccountManagerContractSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.TransferOwnership(&_AccountManagerContract.TransactOpts, newOwner)
+// Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
+func (_AccountManagerContract *AccountManagerContractSession) RenounceRole(role [32]byte, callerConfirmation common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.RenounceRole(&_AccountManagerContract.TransactOpts, role, callerConfirmation)
 }
 
-// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+// RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
 //
-// Solidity: function transferOwnership(address newOwner) returns()
-func (_AccountManagerContract *AccountManagerContractTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
-	return _AccountManagerContract.Contract.TransferOwnership(&_AccountManagerContract.TransactOpts, newOwner)
+// Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
+func (_AccountManagerContract *AccountManagerContractTransactorSession) RenounceRole(role [32]byte, callerConfirmation common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.RenounceRole(&_AccountManagerContract.TransactOpts, role, callerConfirmation)
+}
+
+// RevokeRole is a paid mutator transaction binding the contract method 0xd547741f.
+//
+// Solidity: function revokeRole(bytes32 role, address account) returns()
+func (_AccountManagerContract *AccountManagerContractTransactor) RevokeRole(opts *bind.TransactOpts, role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.contract.Transact(opts, "revokeRole", role, account)
+}
+
+// RevokeRole is a paid mutator transaction binding the contract method 0xd547741f.
+//
+// Solidity: function revokeRole(bytes32 role, address account) returns()
+func (_AccountManagerContract *AccountManagerContractSession) RevokeRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.RevokeRole(&_AccountManagerContract.TransactOpts, role, account)
+}
+
+// RevokeRole is a paid mutator transaction binding the contract method 0xd547741f.
+//
+// Solidity: function revokeRole(bytes32 role, address account) returns()
+func (_AccountManagerContract *AccountManagerContractTransactorSession) RevokeRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.RevokeRole(&_AccountManagerContract.TransactOpts, role, account)
+}
+
+// SubmitRegisterTask is a paid mutator transaction binding the contract method 0xdf7692fd.
+//
+// Solidity: function submitRegisterTask(address _userAddr, uint256 _account, uint8 _chain, uint256 _index, string _address) returns(uint64)
+func (_AccountManagerContract *AccountManagerContractTransactor) SubmitRegisterTask(opts *bind.TransactOpts, _userAddr common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
+	return _AccountManagerContract.contract.Transact(opts, "submitRegisterTask", _userAddr, _account, _chain, _index, _address)
+}
+
+// SubmitRegisterTask is a paid mutator transaction binding the contract method 0xdf7692fd.
+//
+// Solidity: function submitRegisterTask(address _userAddr, uint256 _account, uint8 _chain, uint256 _index, string _address) returns(uint64)
+func (_AccountManagerContract *AccountManagerContractSession) SubmitRegisterTask(_userAddr common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.SubmitRegisterTask(&_AccountManagerContract.TransactOpts, _userAddr, _account, _chain, _index, _address)
+}
+
+// SubmitRegisterTask is a paid mutator transaction binding the contract method 0xdf7692fd.
+//
+// Solidity: function submitRegisterTask(address _userAddr, uint256 _account, uint8 _chain, uint256 _index, string _address) returns(uint64)
+func (_AccountManagerContract *AccountManagerContractTransactorSession) SubmitRegisterTask(_userAddr common.Address, _account *big.Int, _chain uint8, _index *big.Int, _address string) (*types.Transaction, error) {
+	return _AccountManagerContract.Contract.SubmitRegisterTask(&_AccountManagerContract.TransactOpts, _userAddr, _account, _chain, _index, _address)
 }
 
 // AccountManagerContractAddressRegisteredIterator is returned from FilterAddressRegistered and is used to iterate over the raw logs and unpacked data for AddressRegistered events raised by the AccountManagerContract contract.
@@ -457,6 +685,7 @@ func (it *AccountManagerContractAddressRegisteredIterator) Close() error {
 
 // AccountManagerContractAddressRegistered represents a AddressRegistered event raised by the AccountManagerContract contract.
 type AccountManagerContractAddressRegistered struct {
+	UserAddr   common.Address
 	Account    *big.Int
 	Chain      uint8
 	Index      *big.Int
@@ -464,9 +693,9 @@ type AccountManagerContractAddressRegistered struct {
 	Raw        types.Log // Blockchain specific contextual infos
 }
 
-// FilterAddressRegistered is a free log retrieval operation binding the contract event 0x7a67473c3abd26f528f517c1969c03e5c8ef10f890e62ec2cd946ce0a8fe3447.
+// FilterAddressRegistered is a free log retrieval operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
 //
-// Solidity: event AddressRegistered(uint256 indexed account, uint8 indexed chain, uint256 indexed index, string newAddress)
+// Solidity: event AddressRegistered(address userAddr, uint256 indexed account, uint8 indexed chain, uint256 indexed index, string newAddress)
 func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegistered(opts *bind.FilterOpts, account []*big.Int, chain []uint8, index []*big.Int) (*AccountManagerContractAddressRegisteredIterator, error) {
 
 	var accountRule []interface{}
@@ -489,9 +718,9 @@ func (_AccountManagerContract *AccountManagerContractFilterer) FilterAddressRegi
 	return &AccountManagerContractAddressRegisteredIterator{contract: _AccountManagerContract.contract, event: "AddressRegistered", logs: logs, sub: sub}, nil
 }
 
-// WatchAddressRegistered is a free log subscription operation binding the contract event 0x7a67473c3abd26f528f517c1969c03e5c8ef10f890e62ec2cd946ce0a8fe3447.
+// WatchAddressRegistered is a free log subscription operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
 //
-// Solidity: event AddressRegistered(uint256 indexed account, uint8 indexed chain, uint256 indexed index, string newAddress)
+// Solidity: event AddressRegistered(address userAddr, uint256 indexed account, uint8 indexed chain, uint256 indexed index, string newAddress)
 func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegistered(opts *bind.WatchOpts, sink chan<- *AccountManagerContractAddressRegistered, account []*big.Int, chain []uint8, index []*big.Int) (event.Subscription, error) {
 
 	var accountRule []interface{}
@@ -539,9 +768,9 @@ func (_AccountManagerContract *AccountManagerContractFilterer) WatchAddressRegis
 	}), nil
 }
 
-// ParseAddressRegistered is a log parse operation binding the contract event 0x7a67473c3abd26f528f517c1969c03e5c8ef10f890e62ec2cd946ce0a8fe3447.
+// ParseAddressRegistered is a log parse operation binding the contract event 0x0ab661710c67363885e0e51920050375aff9dcd587adf3e2e468e060ee8f0e1e.
 //
-// Solidity: event AddressRegistered(uint256 indexed account, uint8 indexed chain, uint256 indexed index, string newAddress)
+// Solidity: event AddressRegistered(address userAddr, uint256 indexed account, uint8 indexed chain, uint256 indexed index, string newAddress)
 func (_AccountManagerContract *AccountManagerContractFilterer) ParseAddressRegistered(log types.Log) (*AccountManagerContractAddressRegistered, error) {
 	event := new(AccountManagerContractAddressRegistered)
 	if err := _AccountManagerContract.contract.UnpackLog(event, "AddressRegistered", log); err != nil {
@@ -685,9 +914,9 @@ func (_AccountManagerContract *AccountManagerContractFilterer) ParseInitialized(
 	return event, nil
 }
 
-// AccountManagerContractOwnershipTransferredIterator is returned from FilterOwnershipTransferred and is used to iterate over the raw logs and unpacked data for OwnershipTransferred events raised by the AccountManagerContract contract.
-type AccountManagerContractOwnershipTransferredIterator struct {
-	Event *AccountManagerContractOwnershipTransferred // Event containing the contract specifics and raw log
+// AccountManagerContractRoleAdminChangedIterator is returned from FilterRoleAdminChanged and is used to iterate over the raw logs and unpacked data for RoleAdminChanged events raised by the AccountManagerContract contract.
+type AccountManagerContractRoleAdminChangedIterator struct {
+	Event *AccountManagerContractRoleAdminChanged // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -701,7 +930,7 @@ type AccountManagerContractOwnershipTransferredIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *AccountManagerContractOwnershipTransferredIterator) Next() bool {
+func (it *AccountManagerContractRoleAdminChangedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -710,7 +939,7 @@ func (it *AccountManagerContractOwnershipTransferredIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(AccountManagerContractOwnershipTransferred)
+			it.Event = new(AccountManagerContractRoleAdminChanged)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -725,7 +954,7 @@ func (it *AccountManagerContractOwnershipTransferredIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(AccountManagerContractOwnershipTransferred)
+		it.Event = new(AccountManagerContractRoleAdminChanged)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -741,60 +970,69 @@ func (it *AccountManagerContractOwnershipTransferredIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *AccountManagerContractOwnershipTransferredIterator) Error() error {
+func (it *AccountManagerContractRoleAdminChangedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *AccountManagerContractOwnershipTransferredIterator) Close() error {
+func (it *AccountManagerContractRoleAdminChangedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// AccountManagerContractOwnershipTransferred represents a OwnershipTransferred event raised by the AccountManagerContract contract.
-type AccountManagerContractOwnershipTransferred struct {
-	PreviousOwner common.Address
-	NewOwner      common.Address
-	Raw           types.Log // Blockchain specific contextual infos
+// AccountManagerContractRoleAdminChanged represents a RoleAdminChanged event raised by the AccountManagerContract contract.
+type AccountManagerContractRoleAdminChanged struct {
+	Role              [32]byte
+	PreviousAdminRole [32]byte
+	NewAdminRole      [32]byte
+	Raw               types.Log // Blockchain specific contextual infos
 }
 
-// FilterOwnershipTransferred is a free log retrieval operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+// FilterRoleAdminChanged is a free log retrieval operation binding the contract event 0xbd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff.
 //
-// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-func (_AccountManagerContract *AccountManagerContractFilterer) FilterOwnershipTransferred(opts *bind.FilterOpts, previousOwner []common.Address, newOwner []common.Address) (*AccountManagerContractOwnershipTransferredIterator, error) {
+// Solidity: event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
+func (_AccountManagerContract *AccountManagerContractFilterer) FilterRoleAdminChanged(opts *bind.FilterOpts, role [][32]byte, previousAdminRole [][32]byte, newAdminRole [][32]byte) (*AccountManagerContractRoleAdminChangedIterator, error) {
 
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
 	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	var previousAdminRoleRule []interface{}
+	for _, previousAdminRoleItem := range previousAdminRole {
+		previousAdminRoleRule = append(previousAdminRoleRule, previousAdminRoleItem)
+	}
+	var newAdminRoleRule []interface{}
+	for _, newAdminRoleItem := range newAdminRole {
+		newAdminRoleRule = append(newAdminRoleRule, newAdminRoleItem)
 	}
 
-	logs, sub, err := _AccountManagerContract.contract.FilterLogs(opts, "OwnershipTransferred", previousOwnerRule, newOwnerRule)
+	logs, sub, err := _AccountManagerContract.contract.FilterLogs(opts, "RoleAdminChanged", roleRule, previousAdminRoleRule, newAdminRoleRule)
 	if err != nil {
 		return nil, err
 	}
-	return &AccountManagerContractOwnershipTransferredIterator{contract: _AccountManagerContract.contract, event: "OwnershipTransferred", logs: logs, sub: sub}, nil
+	return &AccountManagerContractRoleAdminChangedIterator{contract: _AccountManagerContract.contract, event: "RoleAdminChanged", logs: logs, sub: sub}, nil
 }
 
-// WatchOwnershipTransferred is a free log subscription operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+// WatchRoleAdminChanged is a free log subscription operation binding the contract event 0xbd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff.
 //
-// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-func (_AccountManagerContract *AccountManagerContractFilterer) WatchOwnershipTransferred(opts *bind.WatchOpts, sink chan<- *AccountManagerContractOwnershipTransferred, previousOwner []common.Address, newOwner []common.Address) (event.Subscription, error) {
+// Solidity: event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
+func (_AccountManagerContract *AccountManagerContractFilterer) WatchRoleAdminChanged(opts *bind.WatchOpts, sink chan<- *AccountManagerContractRoleAdminChanged, role [][32]byte, previousAdminRole [][32]byte, newAdminRole [][32]byte) (event.Subscription, error) {
 
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
 	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	var previousAdminRoleRule []interface{}
+	for _, previousAdminRoleItem := range previousAdminRole {
+		previousAdminRoleRule = append(previousAdminRoleRule, previousAdminRoleItem)
+	}
+	var newAdminRoleRule []interface{}
+	for _, newAdminRoleItem := range newAdminRole {
+		newAdminRoleRule = append(newAdminRoleRule, newAdminRoleItem)
 	}
 
-	logs, sub, err := _AccountManagerContract.contract.WatchLogs(opts, "OwnershipTransferred", previousOwnerRule, newOwnerRule)
+	logs, sub, err := _AccountManagerContract.contract.WatchLogs(opts, "RoleAdminChanged", roleRule, previousAdminRoleRule, newAdminRoleRule)
 	if err != nil {
 		return nil, err
 	}
@@ -804,8 +1042,8 @@ func (_AccountManagerContract *AccountManagerContractFilterer) WatchOwnershipTra
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(AccountManagerContractOwnershipTransferred)
-				if err := _AccountManagerContract.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+				event := new(AccountManagerContractRoleAdminChanged)
+				if err := _AccountManagerContract.contract.UnpackLog(event, "RoleAdminChanged", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -826,12 +1064,336 @@ func (_AccountManagerContract *AccountManagerContractFilterer) WatchOwnershipTra
 	}), nil
 }
 
-// ParseOwnershipTransferred is a log parse operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+// ParseRoleAdminChanged is a log parse operation binding the contract event 0xbd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff.
 //
-// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-func (_AccountManagerContract *AccountManagerContractFilterer) ParseOwnershipTransferred(log types.Log) (*AccountManagerContractOwnershipTransferred, error) {
-	event := new(AccountManagerContractOwnershipTransferred)
-	if err := _AccountManagerContract.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+// Solidity: event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
+func (_AccountManagerContract *AccountManagerContractFilterer) ParseRoleAdminChanged(log types.Log) (*AccountManagerContractRoleAdminChanged, error) {
+	event := new(AccountManagerContractRoleAdminChanged)
+	if err := _AccountManagerContract.contract.UnpackLog(event, "RoleAdminChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// AccountManagerContractRoleGrantedIterator is returned from FilterRoleGranted and is used to iterate over the raw logs and unpacked data for RoleGranted events raised by the AccountManagerContract contract.
+type AccountManagerContractRoleGrantedIterator struct {
+	Event *AccountManagerContractRoleGranted // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AccountManagerContractRoleGrantedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AccountManagerContractRoleGranted)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AccountManagerContractRoleGranted)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AccountManagerContractRoleGrantedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AccountManagerContractRoleGrantedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AccountManagerContractRoleGranted represents a RoleGranted event raised by the AccountManagerContract contract.
+type AccountManagerContractRoleGranted struct {
+	Role    [32]byte
+	Account common.Address
+	Sender  common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterRoleGranted is a free log retrieval operation binding the contract event 0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d.
+//
+// Solidity: event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
+func (_AccountManagerContract *AccountManagerContractFilterer) FilterRoleGranted(opts *bind.FilterOpts, role [][32]byte, account []common.Address, sender []common.Address) (*AccountManagerContractRoleGrantedIterator, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _AccountManagerContract.contract.FilterLogs(opts, "RoleGranted", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return &AccountManagerContractRoleGrantedIterator{contract: _AccountManagerContract.contract, event: "RoleGranted", logs: logs, sub: sub}, nil
+}
+
+// WatchRoleGranted is a free log subscription operation binding the contract event 0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d.
+//
+// Solidity: event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
+func (_AccountManagerContract *AccountManagerContractFilterer) WatchRoleGranted(opts *bind.WatchOpts, sink chan<- *AccountManagerContractRoleGranted, role [][32]byte, account []common.Address, sender []common.Address) (event.Subscription, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _AccountManagerContract.contract.WatchLogs(opts, "RoleGranted", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AccountManagerContractRoleGranted)
+				if err := _AccountManagerContract.contract.UnpackLog(event, "RoleGranted", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRoleGranted is a log parse operation binding the contract event 0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d.
+//
+// Solidity: event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
+func (_AccountManagerContract *AccountManagerContractFilterer) ParseRoleGranted(log types.Log) (*AccountManagerContractRoleGranted, error) {
+	event := new(AccountManagerContractRoleGranted)
+	if err := _AccountManagerContract.contract.UnpackLog(event, "RoleGranted", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// AccountManagerContractRoleRevokedIterator is returned from FilterRoleRevoked and is used to iterate over the raw logs and unpacked data for RoleRevoked events raised by the AccountManagerContract contract.
+type AccountManagerContractRoleRevokedIterator struct {
+	Event *AccountManagerContractRoleRevoked // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *AccountManagerContractRoleRevokedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(AccountManagerContractRoleRevoked)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(AccountManagerContractRoleRevoked)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *AccountManagerContractRoleRevokedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *AccountManagerContractRoleRevokedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// AccountManagerContractRoleRevoked represents a RoleRevoked event raised by the AccountManagerContract contract.
+type AccountManagerContractRoleRevoked struct {
+	Role    [32]byte
+	Account common.Address
+	Sender  common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterRoleRevoked is a free log retrieval operation binding the contract event 0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b.
+//
+// Solidity: event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
+func (_AccountManagerContract *AccountManagerContractFilterer) FilterRoleRevoked(opts *bind.FilterOpts, role [][32]byte, account []common.Address, sender []common.Address) (*AccountManagerContractRoleRevokedIterator, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _AccountManagerContract.contract.FilterLogs(opts, "RoleRevoked", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return &AccountManagerContractRoleRevokedIterator{contract: _AccountManagerContract.contract, event: "RoleRevoked", logs: logs, sub: sub}, nil
+}
+
+// WatchRoleRevoked is a free log subscription operation binding the contract event 0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b.
+//
+// Solidity: event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
+func (_AccountManagerContract *AccountManagerContractFilterer) WatchRoleRevoked(opts *bind.WatchOpts, sink chan<- *AccountManagerContractRoleRevoked, role [][32]byte, account []common.Address, sender []common.Address) (event.Subscription, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _AccountManagerContract.contract.WatchLogs(opts, "RoleRevoked", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(AccountManagerContractRoleRevoked)
+				if err := _AccountManagerContract.contract.UnpackLog(event, "RoleRevoked", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRoleRevoked is a log parse operation binding the contract event 0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b.
+//
+// Solidity: event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
+func (_AccountManagerContract *AccountManagerContractFilterer) ParseRoleRevoked(log types.Log) (*AccountManagerContractRoleRevoked, error) {
+	event := new(AccountManagerContractRoleRevoked)
+	if err := _AccountManagerContract.contract.UnpackLog(event, "RoleRevoked", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

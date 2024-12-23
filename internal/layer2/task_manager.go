@@ -9,18 +9,17 @@ import (
 )
 
 type TaskManager interface {
-	GetLatestTask() (contracts.ITaskManagerTask, error)
+	GetLatestTask() (contracts.Task, error)
 	IsTaskCompleted(taskId uint64) (bool, error)
 	GetTaskState(taskId uint64) (uint8, error)
-	GetUncompletedTasks() ([]contracts.ITaskManagerTask, error)
+	GetUncompletedTasks() ([]contracts.Task, error)
 	EncodeSubmitTask(submitter common.Address, context []byte) []byte
 	NextTaskId() (uint64, error)
-	Tasks(taskId uint64) (contracts.ITaskManagerTask, error)
-	TaskSubmitter() (common.Address, error)
+	Tasks(taskId uint64) (contracts.Task, error)
 	EncodeMarkTaskCompleted(taskId *big.Int, result []byte) []byte
 }
 
-func (l *Layer2Listener) GetLatestTask() (contracts.ITaskManagerTask, error) {
+func (l *Layer2Listener) GetLatestTask() (contracts.Task, error) {
 	return l.taskManager.GetLatestTask(nil)
 }
 
@@ -33,7 +32,7 @@ func (l *Layer2Listener) GetTaskState(taskId uint64) (uint8, error) {
 	return l.taskManager.GetTaskState(nil, taskId)
 }
 
-func (l *Layer2Listener) GetUncompletedTasks() ([]contracts.ITaskManagerTask, error) {
+func (l *Layer2Listener) GetUncompletedTasks() ([]contracts.Task, error) {
 	return l.taskManager.GetUncompletedTasks(nil)
 }
 
@@ -41,12 +40,8 @@ func (l *Layer2Listener) NextTaskId() (uint64, error) {
 	return l.taskManager.NextTaskId(nil)
 }
 
-func (l *Layer2Listener) Tasks(taskId uint64) (contracts.ITaskManagerTask, error) {
+func (l *Layer2Listener) Tasks(taskId uint64) (contracts.Task, error) {
 	return l.taskManager.Tasks(nil, taskId)
-}
-
-func (l *Layer2Listener) TaskSubmitter() (common.Address, error) {
-	return l.taskManager.TaskSubmitter(nil)
 }
 
 func (l *Layer2Listener) EncodeSubmitTask(submitter common.Address, context []byte) []byte {

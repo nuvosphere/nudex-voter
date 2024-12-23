@@ -29,27 +29,25 @@ var (
 	_ = abi.ConvertType
 )
 
-// IDepositManagerDepositInfo is an auto generated low-level Go binding around an user-defined struct.
-type IDepositManagerDepositInfo struct {
-	TargetAddress common.Address
-	ChainId       *big.Int
-	Amount        *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
+// IFundsHandlerDepositInfo is an auto generated low-level Go binding around an user-defined struct.
+type IFundsHandlerDepositInfo struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
 }
 
-// IDepositManagerWithdrawalInfo is an auto generated low-level Go binding around an user-defined struct.
-type IDepositManagerWithdrawalInfo struct {
-	TargetAddress common.Address
-	Amount        *big.Int
-	ChainId       *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
+// IFundsHandlerWithdrawalInfo is an auto generated low-level Go binding around an user-defined struct.
+type IFundsHandlerWithdrawalInfo struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
 }
 
 // DepositManagerContractMetaData contains all meta data concerning the DepositManagerContract contract.
 var DepositManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"deposits\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposit\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIDepositManager.DepositInfo\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposits\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIDepositManager.DepositInfo[]\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawal\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIDepositManager.WithdrawalInfo\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawals\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIDepositManager.WithdrawalInfo[]\",\"components\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"recordDeposit\",\"inputs\":[{\"name\":\"_targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"recordWithdrawal\",\"inputs\":[{\"name\":\"_targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"_extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawals\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"DepositRecorded\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRecorded\",\"inputs\":[{\"name\":\"targetAddress\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"chainId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"txInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"extraInfo\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_assetHandler\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_taskManager\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ENTRYPOINT_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"SUBMITTER_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"assetHandler\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIAssetHandler\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"deposits\",\"inputs\":[{\"name\":\"userAddr\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposit\",\"inputs\":[{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIFundsHandler.DepositInfo\",\"components\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDeposits\",\"inputs\":[{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIFundsHandler.DepositInfo[]\",\"components\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawal\",\"inputs\":[{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"_index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIFundsHandler.WithdrawalInfo\",\"components\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getWithdrawals\",\"inputs\":[{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple[]\",\"internalType\":\"structIFundsHandler.WithdrawalInfo[]\",\"components\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_entryPoint\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_submitter\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"pauseState\",\"inputs\":[{\"name\":\"pauseType\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"isPaused\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"recordDeposit\",\"inputs\":[{\"name\":\"_userAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"recordWithdrawal\",\"inputs\":[{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPauseState\",\"inputs\":[{\"name\":\"_condition\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_newState\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitDepositTask\",\"inputs\":[{\"name\":\"_userAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitWithdrawTask\",\"inputs\":[{\"name\":\"_userAddress\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"taskManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractITaskManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"withdrawals\",\"inputs\":[{\"name\":\"userAddr\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"DepositRecorded\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"NIP20TokenEvent_burnb\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"NIP20TokenEvent_mintb\",\"inputs\":[{\"name\":\"recipient\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"NewPauseState\",\"inputs\":[{\"name\":\"condition\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newState\",\"type\":\"bool\",\"indexed\":true,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WithdrawalRecorded\",\"inputs\":[{\"name\":\"depositAddress\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInput\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"Paused\",\"inputs\":[]}]",
 }
 
 // DepositManagerContractABI is the input ABI used to generate the binding from.
@@ -198,196 +196,105 @@ func (_DepositManagerContract *DepositManagerContractTransactorRaw) Transact(opt
 	return _DepositManagerContract.Contract.contract.Transact(opts, method, params...)
 }
 
-// Deposits is a free data retrieval call binding the contract method 0xd6d68177.
+// DEFAULTADMINROLE is a free data retrieval call binding the contract method 0xa217fddf.
 //
-// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint256 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractCaller) Deposits(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (struct {
-	TargetAddress common.Address
-	ChainId       *big.Int
-	Amount        *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
-}, error) {
+// Solidity: function DEFAULT_ADMIN_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCaller) DEFAULTADMINROLE(opts *bind.CallOpts) ([32]byte, error) {
 	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "deposits", arg0, arg1)
-
-	outstruct := new(struct {
-		TargetAddress common.Address
-		ChainId       *big.Int
-		Amount        *big.Int
-		TxInfo        []byte
-		ExtraInfo     []byte
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.TargetAddress = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-	outstruct.ChainId = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.Amount = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
-	outstruct.TxInfo = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
-	outstruct.ExtraInfo = *abi.ConvertType(out[4], new([]byte)).(*[]byte)
-
-	return *outstruct, err
-
-}
-
-// Deposits is a free data retrieval call binding the contract method 0xd6d68177.
-//
-// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint256 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractSession) Deposits(arg0 common.Address, arg1 *big.Int) (struct {
-	TargetAddress common.Address
-	ChainId       *big.Int
-	Amount        *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
-}, error) {
-	return _DepositManagerContract.Contract.Deposits(&_DepositManagerContract.CallOpts, arg0, arg1)
-}
-
-// Deposits is a free data retrieval call binding the contract method 0xd6d68177.
-//
-// Solidity: function deposits(address , uint256 ) view returns(address targetAddress, uint256 chainId, uint256 amount, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractCallerSession) Deposits(arg0 common.Address, arg1 *big.Int) (struct {
-	TargetAddress common.Address
-	ChainId       *big.Int
-	Amount        *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
-}, error) {
-	return _DepositManagerContract.Contract.Deposits(&_DepositManagerContract.CallOpts, arg0, arg1)
-}
-
-// GetDeposit is a free data retrieval call binding the contract method 0x2726b506.
-//
-// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
-func (_DepositManagerContract *DepositManagerContractCaller) GetDeposit(opts *bind.CallOpts, targetAddress common.Address, index *big.Int) (IDepositManagerDepositInfo, error) {
-	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "getDeposit", targetAddress, index)
+	err := _DepositManagerContract.contract.Call(opts, &out, "DEFAULT_ADMIN_ROLE")
 
 	if err != nil {
-		return *new(IDepositManagerDepositInfo), err
+		return *new([32]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(IDepositManagerDepositInfo)).(*IDepositManagerDepositInfo)
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
 
 	return out0, err
 
 }
 
-// GetDeposit is a free data retrieval call binding the contract method 0x2726b506.
+// DEFAULTADMINROLE is a free data retrieval call binding the contract method 0xa217fddf.
 //
-// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
-func (_DepositManagerContract *DepositManagerContractSession) GetDeposit(targetAddress common.Address, index *big.Int) (IDepositManagerDepositInfo, error) {
-	return _DepositManagerContract.Contract.GetDeposit(&_DepositManagerContract.CallOpts, targetAddress, index)
+// Solidity: function DEFAULT_ADMIN_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractSession) DEFAULTADMINROLE() ([32]byte, error) {
+	return _DepositManagerContract.Contract.DEFAULTADMINROLE(&_DepositManagerContract.CallOpts)
 }
 
-// GetDeposit is a free data retrieval call binding the contract method 0x2726b506.
+// DEFAULTADMINROLE is a free data retrieval call binding the contract method 0xa217fddf.
 //
-// Solidity: function getDeposit(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
-func (_DepositManagerContract *DepositManagerContractCallerSession) GetDeposit(targetAddress common.Address, index *big.Int) (IDepositManagerDepositInfo, error) {
-	return _DepositManagerContract.Contract.GetDeposit(&_DepositManagerContract.CallOpts, targetAddress, index)
+// Solidity: function DEFAULT_ADMIN_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCallerSession) DEFAULTADMINROLE() ([32]byte, error) {
+	return _DepositManagerContract.Contract.DEFAULTADMINROLE(&_DepositManagerContract.CallOpts)
 }
 
-// GetDeposits is a free data retrieval call binding the contract method 0x94f649dd.
+// ENTRYPOINTROLE is a free data retrieval call binding the contract method 0x5445bd5d.
 //
-// Solidity: function getDeposits(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
-func (_DepositManagerContract *DepositManagerContractCaller) GetDeposits(opts *bind.CallOpts, targetAddress common.Address) ([]IDepositManagerDepositInfo, error) {
+// Solidity: function ENTRYPOINT_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCaller) ENTRYPOINTROLE(opts *bind.CallOpts) ([32]byte, error) {
 	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "getDeposits", targetAddress)
+	err := _DepositManagerContract.contract.Call(opts, &out, "ENTRYPOINT_ROLE")
 
 	if err != nil {
-		return *new([]IDepositManagerDepositInfo), err
+		return *new([32]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([]IDepositManagerDepositInfo)).(*[]IDepositManagerDepositInfo)
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
 
 	return out0, err
 
 }
 
-// GetDeposits is a free data retrieval call binding the contract method 0x94f649dd.
+// ENTRYPOINTROLE is a free data retrieval call binding the contract method 0x5445bd5d.
 //
-// Solidity: function getDeposits(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
-func (_DepositManagerContract *DepositManagerContractSession) GetDeposits(targetAddress common.Address) ([]IDepositManagerDepositInfo, error) {
-	return _DepositManagerContract.Contract.GetDeposits(&_DepositManagerContract.CallOpts, targetAddress)
+// Solidity: function ENTRYPOINT_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractSession) ENTRYPOINTROLE() ([32]byte, error) {
+	return _DepositManagerContract.Contract.ENTRYPOINTROLE(&_DepositManagerContract.CallOpts)
 }
 
-// GetDeposits is a free data retrieval call binding the contract method 0x94f649dd.
+// ENTRYPOINTROLE is a free data retrieval call binding the contract method 0x5445bd5d.
 //
-// Solidity: function getDeposits(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
-func (_DepositManagerContract *DepositManagerContractCallerSession) GetDeposits(targetAddress common.Address) ([]IDepositManagerDepositInfo, error) {
-	return _DepositManagerContract.Contract.GetDeposits(&_DepositManagerContract.CallOpts, targetAddress)
+// Solidity: function ENTRYPOINT_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCallerSession) ENTRYPOINTROLE() ([32]byte, error) {
+	return _DepositManagerContract.Contract.ENTRYPOINTROLE(&_DepositManagerContract.CallOpts)
 }
 
-// GetWithdrawal is a free data retrieval call binding the contract method 0x5be4f765.
+// SUBMITTERROLE is a free data retrieval call binding the contract method 0x91712a0b.
 //
-// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
-func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawal(opts *bind.CallOpts, targetAddress common.Address, index *big.Int) (IDepositManagerWithdrawalInfo, error) {
+// Solidity: function SUBMITTER_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCaller) SUBMITTERROLE(opts *bind.CallOpts) ([32]byte, error) {
 	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "getWithdrawal", targetAddress, index)
+	err := _DepositManagerContract.contract.Call(opts, &out, "SUBMITTER_ROLE")
 
 	if err != nil {
-		return *new(IDepositManagerWithdrawalInfo), err
+		return *new([32]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(IDepositManagerWithdrawalInfo)).(*IDepositManagerWithdrawalInfo)
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
 
 	return out0, err
 
 }
 
-// GetWithdrawal is a free data retrieval call binding the contract method 0x5be4f765.
+// SUBMITTERROLE is a free data retrieval call binding the contract method 0x91712a0b.
 //
-// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
-func (_DepositManagerContract *DepositManagerContractSession) GetWithdrawal(targetAddress common.Address, index *big.Int) (IDepositManagerWithdrawalInfo, error) {
-	return _DepositManagerContract.Contract.GetWithdrawal(&_DepositManagerContract.CallOpts, targetAddress, index)
+// Solidity: function SUBMITTER_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractSession) SUBMITTERROLE() ([32]byte, error) {
+	return _DepositManagerContract.Contract.SUBMITTERROLE(&_DepositManagerContract.CallOpts)
 }
 
-// GetWithdrawal is a free data retrieval call binding the contract method 0x5be4f765.
+// SUBMITTERROLE is a free data retrieval call binding the contract method 0x91712a0b.
 //
-// Solidity: function getWithdrawal(address targetAddress, uint256 index) view returns((address,uint256,uint256,bytes,bytes))
-func (_DepositManagerContract *DepositManagerContractCallerSession) GetWithdrawal(targetAddress common.Address, index *big.Int) (IDepositManagerWithdrawalInfo, error) {
-	return _DepositManagerContract.Contract.GetWithdrawal(&_DepositManagerContract.CallOpts, targetAddress, index)
+// Solidity: function SUBMITTER_ROLE() view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCallerSession) SUBMITTERROLE() ([32]byte, error) {
+	return _DepositManagerContract.Contract.SUBMITTERROLE(&_DepositManagerContract.CallOpts)
 }
 
-// GetWithdrawals is a free data retrieval call binding the contract method 0x3a2b643a.
+// AssetHandler is a free data retrieval call binding the contract method 0xb18a6b93.
 //
-// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
-func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawals(opts *bind.CallOpts, targetAddress common.Address) ([]IDepositManagerWithdrawalInfo, error) {
+// Solidity: function assetHandler() view returns(address)
+func (_DepositManagerContract *DepositManagerContractCaller) AssetHandler(opts *bind.CallOpts) (common.Address, error) {
 	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "getWithdrawals", targetAddress)
-
-	if err != nil {
-		return *new([]IDepositManagerWithdrawalInfo), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([]IDepositManagerWithdrawalInfo)).(*[]IDepositManagerWithdrawalInfo)
-
-	return out0, err
-
-}
-
-// GetWithdrawals is a free data retrieval call binding the contract method 0x3a2b643a.
-//
-// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
-func (_DepositManagerContract *DepositManagerContractSession) GetWithdrawals(targetAddress common.Address) ([]IDepositManagerWithdrawalInfo, error) {
-	return _DepositManagerContract.Contract.GetWithdrawals(&_DepositManagerContract.CallOpts, targetAddress)
-}
-
-// GetWithdrawals is a free data retrieval call binding the contract method 0x3a2b643a.
-//
-// Solidity: function getWithdrawals(address targetAddress) view returns((address,uint256,uint256,bytes,bytes)[])
-func (_DepositManagerContract *DepositManagerContractCallerSession) GetWithdrawals(targetAddress common.Address) ([]IDepositManagerWithdrawalInfo, error) {
-	return _DepositManagerContract.Contract.GetWithdrawals(&_DepositManagerContract.CallOpts, targetAddress)
-}
-
-// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
-//
-// Solidity: function owner() view returns(address)
-func (_DepositManagerContract *DepositManagerContractCaller) Owner(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "owner")
+	err := _DepositManagerContract.contract.Call(opts, &out, "assetHandler")
 
 	if err != nil {
 		return *new(common.Address), err
@@ -399,183 +306,596 @@ func (_DepositManagerContract *DepositManagerContractCaller) Owner(opts *bind.Ca
 
 }
 
-// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+// AssetHandler is a free data retrieval call binding the contract method 0xb18a6b93.
 //
-// Solidity: function owner() view returns(address)
-func (_DepositManagerContract *DepositManagerContractSession) Owner() (common.Address, error) {
-	return _DepositManagerContract.Contract.Owner(&_DepositManagerContract.CallOpts)
+// Solidity: function assetHandler() view returns(address)
+func (_DepositManagerContract *DepositManagerContractSession) AssetHandler() (common.Address, error) {
+	return _DepositManagerContract.Contract.AssetHandler(&_DepositManagerContract.CallOpts)
 }
 
-// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+// AssetHandler is a free data retrieval call binding the contract method 0xb18a6b93.
 //
-// Solidity: function owner() view returns(address)
-func (_DepositManagerContract *DepositManagerContractCallerSession) Owner() (common.Address, error) {
-	return _DepositManagerContract.Contract.Owner(&_DepositManagerContract.CallOpts)
+// Solidity: function assetHandler() view returns(address)
+func (_DepositManagerContract *DepositManagerContractCallerSession) AssetHandler() (common.Address, error) {
+	return _DepositManagerContract.Contract.AssetHandler(&_DepositManagerContract.CallOpts)
 }
 
-// Withdrawals is a free data retrieval call binding the contract method 0x422b1077.
+// Deposits is a free data retrieval call binding the contract method 0xfbabc61c.
 //
-// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint256 chainId, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractCaller) Withdrawals(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (struct {
-	TargetAddress common.Address
-	Amount        *big.Int
-	ChainId       *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
+// Solidity: function deposits(string userAddr, uint256 ) view returns(string depositAddress, bytes32 ticker, bytes32 chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractCaller) Deposits(opts *bind.CallOpts, userAddr string, arg1 *big.Int) (struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
 }, error) {
 	var out []interface{}
-	err := _DepositManagerContract.contract.Call(opts, &out, "withdrawals", arg0, arg1)
+	err := _DepositManagerContract.contract.Call(opts, &out, "deposits", userAddr, arg1)
 
 	outstruct := new(struct {
-		TargetAddress common.Address
-		Amount        *big.Int
-		ChainId       *big.Int
-		TxInfo        []byte
-		ExtraInfo     []byte
+		DepositAddress string
+		Ticker         [32]byte
+		ChainId        [32]byte
+		Amount         *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
-	outstruct.TargetAddress = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-	outstruct.Amount = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.ChainId = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
-	outstruct.TxInfo = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
-	outstruct.ExtraInfo = *abi.ConvertType(out[4], new([]byte)).(*[]byte)
+	outstruct.DepositAddress = *abi.ConvertType(out[0], new(string)).(*string)
+	outstruct.Ticker = *abi.ConvertType(out[1], new([32]byte)).(*[32]byte)
+	outstruct.ChainId = *abi.ConvertType(out[2], new([32]byte)).(*[32]byte)
+	outstruct.Amount = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
 }
 
-// Withdrawals is a free data retrieval call binding the contract method 0x422b1077.
+// Deposits is a free data retrieval call binding the contract method 0xfbabc61c.
 //
-// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint256 chainId, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractSession) Withdrawals(arg0 common.Address, arg1 *big.Int) (struct {
-	TargetAddress common.Address
-	Amount        *big.Int
-	ChainId       *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
+// Solidity: function deposits(string userAddr, uint256 ) view returns(string depositAddress, bytes32 ticker, bytes32 chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractSession) Deposits(userAddr string, arg1 *big.Int) (struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
 }, error) {
-	return _DepositManagerContract.Contract.Withdrawals(&_DepositManagerContract.CallOpts, arg0, arg1)
+	return _DepositManagerContract.Contract.Deposits(&_DepositManagerContract.CallOpts, userAddr, arg1)
 }
 
-// Withdrawals is a free data retrieval call binding the contract method 0x422b1077.
+// Deposits is a free data retrieval call binding the contract method 0xfbabc61c.
 //
-// Solidity: function withdrawals(address , uint256 ) view returns(address targetAddress, uint256 amount, uint256 chainId, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractCallerSession) Withdrawals(arg0 common.Address, arg1 *big.Int) (struct {
-	TargetAddress common.Address
-	Amount        *big.Int
-	ChainId       *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
+// Solidity: function deposits(string userAddr, uint256 ) view returns(string depositAddress, bytes32 ticker, bytes32 chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractCallerSession) Deposits(userAddr string, arg1 *big.Int) (struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
 }, error) {
-	return _DepositManagerContract.Contract.Withdrawals(&_DepositManagerContract.CallOpts, arg0, arg1)
+	return _DepositManagerContract.Contract.Deposits(&_DepositManagerContract.CallOpts, userAddr, arg1)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// GetDeposit is a free data retrieval call binding the contract method 0xe499bcd5.
 //
-// Solidity: function initialize(address _owner) returns()
-func (_DepositManagerContract *DepositManagerContractTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.contract.Transact(opts, "initialize", _owner)
+// Solidity: function getDeposit(string _depositAddress, uint256 _index) view returns((string,bytes32,bytes32,uint256))
+func (_DepositManagerContract *DepositManagerContractCaller) GetDeposit(opts *bind.CallOpts, _depositAddress string, _index *big.Int) (IFundsHandlerDepositInfo, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "getDeposit", _depositAddress, _index)
+
+	if err != nil {
+		return *new(IFundsHandlerDepositInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(IFundsHandlerDepositInfo)).(*IFundsHandlerDepositInfo)
+
+	return out0, err
+
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// GetDeposit is a free data retrieval call binding the contract method 0xe499bcd5.
 //
-// Solidity: function initialize(address _owner) returns()
-func (_DepositManagerContract *DepositManagerContractSession) Initialize(_owner common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner)
+// Solidity: function getDeposit(string _depositAddress, uint256 _index) view returns((string,bytes32,bytes32,uint256))
+func (_DepositManagerContract *DepositManagerContractSession) GetDeposit(_depositAddress string, _index *big.Int) (IFundsHandlerDepositInfo, error) {
+	return _DepositManagerContract.Contract.GetDeposit(&_DepositManagerContract.CallOpts, _depositAddress, _index)
 }
 
-// Initialize is a paid mutator transaction binding the contract method 0xc4d66de8.
+// GetDeposit is a free data retrieval call binding the contract method 0xe499bcd5.
 //
-// Solidity: function initialize(address _owner) returns()
-func (_DepositManagerContract *DepositManagerContractTransactorSession) Initialize(_owner common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner)
+// Solidity: function getDeposit(string _depositAddress, uint256 _index) view returns((string,bytes32,bytes32,uint256))
+func (_DepositManagerContract *DepositManagerContractCallerSession) GetDeposit(_depositAddress string, _index *big.Int) (IFundsHandlerDepositInfo, error) {
+	return _DepositManagerContract.Contract.GetDeposit(&_DepositManagerContract.CallOpts, _depositAddress, _index)
 }
 
-// RecordDeposit is a paid mutator transaction binding the contract method 0xbac89758.
+// GetDeposits is a free data retrieval call binding the contract method 0x49a9eba2.
 //
-// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactor) RecordDeposit(opts *bind.TransactOpts, _targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
-	return _DepositManagerContract.contract.Transact(opts, "recordDeposit", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
+// Solidity: function getDeposits(string _depositAddress) view returns((string,bytes32,bytes32,uint256)[])
+func (_DepositManagerContract *DepositManagerContractCaller) GetDeposits(opts *bind.CallOpts, _depositAddress string) ([]IFundsHandlerDepositInfo, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "getDeposits", _depositAddress)
+
+	if err != nil {
+		return *new([]IFundsHandlerDepositInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]IFundsHandlerDepositInfo)).(*[]IFundsHandlerDepositInfo)
+
+	return out0, err
+
 }
 
-// RecordDeposit is a paid mutator transaction binding the contract method 0xbac89758.
+// GetDeposits is a free data retrieval call binding the contract method 0x49a9eba2.
 //
-// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractSession) RecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.RecordDeposit(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
+// Solidity: function getDeposits(string _depositAddress) view returns((string,bytes32,bytes32,uint256)[])
+func (_DepositManagerContract *DepositManagerContractSession) GetDeposits(_depositAddress string) ([]IFundsHandlerDepositInfo, error) {
+	return _DepositManagerContract.Contract.GetDeposits(&_DepositManagerContract.CallOpts, _depositAddress)
 }
 
-// RecordDeposit is a paid mutator transaction binding the contract method 0xbac89758.
+// GetDeposits is a free data retrieval call binding the contract method 0x49a9eba2.
 //
-// Solidity: function recordDeposit(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordDeposit(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.RecordDeposit(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
+// Solidity: function getDeposits(string _depositAddress) view returns((string,bytes32,bytes32,uint256)[])
+func (_DepositManagerContract *DepositManagerContractCallerSession) GetDeposits(_depositAddress string) ([]IFundsHandlerDepositInfo, error) {
+	return _DepositManagerContract.Contract.GetDeposits(&_DepositManagerContract.CallOpts, _depositAddress)
 }
 
-// RecordWithdrawal is a paid mutator transaction binding the contract method 0x57673f43.
+// GetRoleAdmin is a free data retrieval call binding the contract method 0x248a9ca3.
 //
-// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactor) RecordWithdrawal(opts *bind.TransactOpts, _targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
-	return _DepositManagerContract.contract.Transact(opts, "recordWithdrawal", _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
+// Solidity: function getRoleAdmin(bytes32 role) view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCaller) GetRoleAdmin(opts *bind.CallOpts, role [32]byte) ([32]byte, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "getRoleAdmin", role)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
-// RecordWithdrawal is a paid mutator transaction binding the contract method 0x57673f43.
+// GetRoleAdmin is a free data retrieval call binding the contract method 0x248a9ca3.
 //
-// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractSession) RecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.RecordWithdrawal(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
+// Solidity: function getRoleAdmin(bytes32 role) view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractSession) GetRoleAdmin(role [32]byte) ([32]byte, error) {
+	return _DepositManagerContract.Contract.GetRoleAdmin(&_DepositManagerContract.CallOpts, role)
 }
 
-// RecordWithdrawal is a paid mutator transaction binding the contract method 0x57673f43.
+// GetRoleAdmin is a free data retrieval call binding the contract method 0x248a9ca3.
 //
-// Solidity: function recordWithdrawal(address _targetAddress, uint256 _amount, uint256 _chainId, bytes _txInfo, bytes _extraInfo) returns(bytes)
-func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordWithdrawal(_targetAddress common.Address, _amount *big.Int, _chainId *big.Int, _txInfo []byte, _extraInfo []byte) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.RecordWithdrawal(&_DepositManagerContract.TransactOpts, _targetAddress, _amount, _chainId, _txInfo, _extraInfo)
+// Solidity: function getRoleAdmin(bytes32 role) view returns(bytes32)
+func (_DepositManagerContract *DepositManagerContractCallerSession) GetRoleAdmin(role [32]byte) ([32]byte, error) {
+	return _DepositManagerContract.Contract.GetRoleAdmin(&_DepositManagerContract.CallOpts, role)
 }
 
-// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
+// GetWithdrawal is a free data retrieval call binding the contract method 0xfbbdaad3.
 //
-// Solidity: function renounceOwnership() returns()
-func (_DepositManagerContract *DepositManagerContractTransactor) RenounceOwnership(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _DepositManagerContract.contract.Transact(opts, "renounceOwnership")
+// Solidity: function getWithdrawal(string _depositAddress, uint256 _index) view returns((string,bytes32,bytes32,uint256))
+func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawal(opts *bind.CallOpts, _depositAddress string, _index *big.Int) (IFundsHandlerWithdrawalInfo, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "getWithdrawal", _depositAddress, _index)
+
+	if err != nil {
+		return *new(IFundsHandlerWithdrawalInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(IFundsHandlerWithdrawalInfo)).(*IFundsHandlerWithdrawalInfo)
+
+	return out0, err
+
 }
 
-// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
+// GetWithdrawal is a free data retrieval call binding the contract method 0xfbbdaad3.
 //
-// Solidity: function renounceOwnership() returns()
-func (_DepositManagerContract *DepositManagerContractSession) RenounceOwnership() (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.RenounceOwnership(&_DepositManagerContract.TransactOpts)
+// Solidity: function getWithdrawal(string _depositAddress, uint256 _index) view returns((string,bytes32,bytes32,uint256))
+func (_DepositManagerContract *DepositManagerContractSession) GetWithdrawal(_depositAddress string, _index *big.Int) (IFundsHandlerWithdrawalInfo, error) {
+	return _DepositManagerContract.Contract.GetWithdrawal(&_DepositManagerContract.CallOpts, _depositAddress, _index)
 }
 
-// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
+// GetWithdrawal is a free data retrieval call binding the contract method 0xfbbdaad3.
 //
-// Solidity: function renounceOwnership() returns()
-func (_DepositManagerContract *DepositManagerContractTransactorSession) RenounceOwnership() (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.RenounceOwnership(&_DepositManagerContract.TransactOpts)
+// Solidity: function getWithdrawal(string _depositAddress, uint256 _index) view returns((string,bytes32,bytes32,uint256))
+func (_DepositManagerContract *DepositManagerContractCallerSession) GetWithdrawal(_depositAddress string, _index *big.Int) (IFundsHandlerWithdrawalInfo, error) {
+	return _DepositManagerContract.Contract.GetWithdrawal(&_DepositManagerContract.CallOpts, _depositAddress, _index)
 }
 
-// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+// GetWithdrawals is a free data retrieval call binding the contract method 0xdfa9a1e8.
 //
-// Solidity: function transferOwnership(address newOwner) returns()
-func (_DepositManagerContract *DepositManagerContractTransactor) TransferOwnership(opts *bind.TransactOpts, newOwner common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.contract.Transact(opts, "transferOwnership", newOwner)
+// Solidity: function getWithdrawals(string _depositAddress) view returns((string,bytes32,bytes32,uint256)[])
+func (_DepositManagerContract *DepositManagerContractCaller) GetWithdrawals(opts *bind.CallOpts, _depositAddress string) ([]IFundsHandlerWithdrawalInfo, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "getWithdrawals", _depositAddress)
+
+	if err != nil {
+		return *new([]IFundsHandlerWithdrawalInfo), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]IFundsHandlerWithdrawalInfo)).(*[]IFundsHandlerWithdrawalInfo)
+
+	return out0, err
+
 }
 
-// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+// GetWithdrawals is a free data retrieval call binding the contract method 0xdfa9a1e8.
 //
-// Solidity: function transferOwnership(address newOwner) returns()
-func (_DepositManagerContract *DepositManagerContractSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.TransferOwnership(&_DepositManagerContract.TransactOpts, newOwner)
+// Solidity: function getWithdrawals(string _depositAddress) view returns((string,bytes32,bytes32,uint256)[])
+func (_DepositManagerContract *DepositManagerContractSession) GetWithdrawals(_depositAddress string) ([]IFundsHandlerWithdrawalInfo, error) {
+	return _DepositManagerContract.Contract.GetWithdrawals(&_DepositManagerContract.CallOpts, _depositAddress)
 }
 
-// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+// GetWithdrawals is a free data retrieval call binding the contract method 0xdfa9a1e8.
 //
-// Solidity: function transferOwnership(address newOwner) returns()
-func (_DepositManagerContract *DepositManagerContractTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
-	return _DepositManagerContract.Contract.TransferOwnership(&_DepositManagerContract.TransactOpts, newOwner)
+// Solidity: function getWithdrawals(string _depositAddress) view returns((string,bytes32,bytes32,uint256)[])
+func (_DepositManagerContract *DepositManagerContractCallerSession) GetWithdrawals(_depositAddress string) ([]IFundsHandlerWithdrawalInfo, error) {
+	return _DepositManagerContract.Contract.GetWithdrawals(&_DepositManagerContract.CallOpts, _depositAddress)
+}
+
+// HasRole is a free data retrieval call binding the contract method 0x91d14854.
+//
+// Solidity: function hasRole(bytes32 role, address account) view returns(bool)
+func (_DepositManagerContract *DepositManagerContractCaller) HasRole(opts *bind.CallOpts, role [32]byte, account common.Address) (bool, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "hasRole", role, account)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// HasRole is a free data retrieval call binding the contract method 0x91d14854.
+//
+// Solidity: function hasRole(bytes32 role, address account) view returns(bool)
+func (_DepositManagerContract *DepositManagerContractSession) HasRole(role [32]byte, account common.Address) (bool, error) {
+	return _DepositManagerContract.Contract.HasRole(&_DepositManagerContract.CallOpts, role, account)
+}
+
+// HasRole is a free data retrieval call binding the contract method 0x91d14854.
+//
+// Solidity: function hasRole(bytes32 role, address account) view returns(bool)
+func (_DepositManagerContract *DepositManagerContractCallerSession) HasRole(role [32]byte, account common.Address) (bool, error) {
+	return _DepositManagerContract.Contract.HasRole(&_DepositManagerContract.CallOpts, role, account)
+}
+
+// PauseState is a free data retrieval call binding the contract method 0xc94db23c.
+//
+// Solidity: function pauseState(bytes32 pauseType) view returns(bool isPaused)
+func (_DepositManagerContract *DepositManagerContractCaller) PauseState(opts *bind.CallOpts, pauseType [32]byte) (bool, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "pauseState", pauseType)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// PauseState is a free data retrieval call binding the contract method 0xc94db23c.
+//
+// Solidity: function pauseState(bytes32 pauseType) view returns(bool isPaused)
+func (_DepositManagerContract *DepositManagerContractSession) PauseState(pauseType [32]byte) (bool, error) {
+	return _DepositManagerContract.Contract.PauseState(&_DepositManagerContract.CallOpts, pauseType)
+}
+
+// PauseState is a free data retrieval call binding the contract method 0xc94db23c.
+//
+// Solidity: function pauseState(bytes32 pauseType) view returns(bool isPaused)
+func (_DepositManagerContract *DepositManagerContractCallerSession) PauseState(pauseType [32]byte) (bool, error) {
+	return _DepositManagerContract.Contract.PauseState(&_DepositManagerContract.CallOpts, pauseType)
+}
+
+// SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
+//
+// Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
+func (_DepositManagerContract *DepositManagerContractCaller) SupportsInterface(opts *bind.CallOpts, interfaceId [4]byte) (bool, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "supportsInterface", interfaceId)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
+//
+// Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
+func (_DepositManagerContract *DepositManagerContractSession) SupportsInterface(interfaceId [4]byte) (bool, error) {
+	return _DepositManagerContract.Contract.SupportsInterface(&_DepositManagerContract.CallOpts, interfaceId)
+}
+
+// SupportsInterface is a free data retrieval call binding the contract method 0x01ffc9a7.
+//
+// Solidity: function supportsInterface(bytes4 interfaceId) view returns(bool)
+func (_DepositManagerContract *DepositManagerContractCallerSession) SupportsInterface(interfaceId [4]byte) (bool, error) {
+	return _DepositManagerContract.Contract.SupportsInterface(&_DepositManagerContract.CallOpts, interfaceId)
+}
+
+// TaskManager is a free data retrieval call binding the contract method 0xa50a640e.
+//
+// Solidity: function taskManager() view returns(address)
+func (_DepositManagerContract *DepositManagerContractCaller) TaskManager(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "taskManager")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// TaskManager is a free data retrieval call binding the contract method 0xa50a640e.
+//
+// Solidity: function taskManager() view returns(address)
+func (_DepositManagerContract *DepositManagerContractSession) TaskManager() (common.Address, error) {
+	return _DepositManagerContract.Contract.TaskManager(&_DepositManagerContract.CallOpts)
+}
+
+// TaskManager is a free data retrieval call binding the contract method 0xa50a640e.
+//
+// Solidity: function taskManager() view returns(address)
+func (_DepositManagerContract *DepositManagerContractCallerSession) TaskManager() (common.Address, error) {
+	return _DepositManagerContract.Contract.TaskManager(&_DepositManagerContract.CallOpts)
+}
+
+// Withdrawals is a free data retrieval call binding the contract method 0xaf930a9c.
+//
+// Solidity: function withdrawals(string userAddr, uint256 ) view returns(string depositAddress, bytes32 ticker, bytes32 chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractCaller) Withdrawals(opts *bind.CallOpts, userAddr string, arg1 *big.Int) (struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
+}, error) {
+	var out []interface{}
+	err := _DepositManagerContract.contract.Call(opts, &out, "withdrawals", userAddr, arg1)
+
+	outstruct := new(struct {
+		DepositAddress string
+		Ticker         [32]byte
+		ChainId        [32]byte
+		Amount         *big.Int
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.DepositAddress = *abi.ConvertType(out[0], new(string)).(*string)
+	outstruct.Ticker = *abi.ConvertType(out[1], new([32]byte)).(*[32]byte)
+	outstruct.ChainId = *abi.ConvertType(out[2], new([32]byte)).(*[32]byte)
+	outstruct.Amount = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
+
+	return *outstruct, err
+
+}
+
+// Withdrawals is a free data retrieval call binding the contract method 0xaf930a9c.
+//
+// Solidity: function withdrawals(string userAddr, uint256 ) view returns(string depositAddress, bytes32 ticker, bytes32 chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractSession) Withdrawals(userAddr string, arg1 *big.Int) (struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
+}, error) {
+	return _DepositManagerContract.Contract.Withdrawals(&_DepositManagerContract.CallOpts, userAddr, arg1)
+}
+
+// Withdrawals is a free data retrieval call binding the contract method 0xaf930a9c.
+//
+// Solidity: function withdrawals(string userAddr, uint256 ) view returns(string depositAddress, bytes32 ticker, bytes32 chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractCallerSession) Withdrawals(userAddr string, arg1 *big.Int) (struct {
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
+}, error) {
+	return _DepositManagerContract.Contract.Withdrawals(&_DepositManagerContract.CallOpts, userAddr, arg1)
+}
+
+// GrantRole is a paid mutator transaction binding the contract method 0x2f2ff15d.
+//
+// Solidity: function grantRole(bytes32 role, address account) returns()
+func (_DepositManagerContract *DepositManagerContractTransactor) GrantRole(opts *bind.TransactOpts, role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "grantRole", role, account)
+}
+
+// GrantRole is a paid mutator transaction binding the contract method 0x2f2ff15d.
+//
+// Solidity: function grantRole(bytes32 role, address account) returns()
+func (_DepositManagerContract *DepositManagerContractSession) GrantRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.GrantRole(&_DepositManagerContract.TransactOpts, role, account)
+}
+
+// GrantRole is a paid mutator transaction binding the contract method 0x2f2ff15d.
+//
+// Solidity: function grantRole(bytes32 role, address account) returns()
+func (_DepositManagerContract *DepositManagerContractTransactorSession) GrantRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.GrantRole(&_DepositManagerContract.TransactOpts, role, account)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0xc0c53b8b.
+//
+// Solidity: function initialize(address _owner, address _entryPoint, address _submitter) returns()
+func (_DepositManagerContract *DepositManagerContractTransactor) Initialize(opts *bind.TransactOpts, _owner common.Address, _entryPoint common.Address, _submitter common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "initialize", _owner, _entryPoint, _submitter)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0xc0c53b8b.
+//
+// Solidity: function initialize(address _owner, address _entryPoint, address _submitter) returns()
+func (_DepositManagerContract *DepositManagerContractSession) Initialize(_owner common.Address, _entryPoint common.Address, _submitter common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner, _entryPoint, _submitter)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0xc0c53b8b.
+//
+// Solidity: function initialize(address _owner, address _entryPoint, address _submitter) returns()
+func (_DepositManagerContract *DepositManagerContractTransactorSession) Initialize(_owner common.Address, _entryPoint common.Address, _submitter common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.Initialize(&_DepositManagerContract.TransactOpts, _owner, _entryPoint, _submitter)
+}
+
+// RecordDeposit is a paid mutator transaction binding the contract method 0xce017f12.
+//
+// Solidity: function recordDeposit(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactor) RecordDeposit(opts *bind.TransactOpts, _userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "recordDeposit", _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// RecordDeposit is a paid mutator transaction binding the contract method 0xce017f12.
+//
+// Solidity: function recordDeposit(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractSession) RecordDeposit(_userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RecordDeposit(&_DepositManagerContract.TransactOpts, _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// RecordDeposit is a paid mutator transaction binding the contract method 0xce017f12.
+//
+// Solidity: function recordDeposit(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordDeposit(_userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RecordDeposit(&_DepositManagerContract.TransactOpts, _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// RecordWithdrawal is a paid mutator transaction binding the contract method 0x5bac9376.
+//
+// Solidity: function recordWithdrawal(string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactor) RecordWithdrawal(opts *bind.TransactOpts, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "recordWithdrawal", _depositAddress, _ticker, _chainId, _amount)
+}
+
+// RecordWithdrawal is a paid mutator transaction binding the contract method 0x5bac9376.
+//
+// Solidity: function recordWithdrawal(string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractSession) RecordWithdrawal(_depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RecordWithdrawal(&_DepositManagerContract.TransactOpts, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// RecordWithdrawal is a paid mutator transaction binding the contract method 0x5bac9376.
+//
+// Solidity: function recordWithdrawal(string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(bytes)
+func (_DepositManagerContract *DepositManagerContractTransactorSession) RecordWithdrawal(_depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RecordWithdrawal(&_DepositManagerContract.TransactOpts, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
+//
+// Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
+func (_DepositManagerContract *DepositManagerContractTransactor) RenounceRole(opts *bind.TransactOpts, role [32]byte, callerConfirmation common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "renounceRole", role, callerConfirmation)
+}
+
+// RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
+//
+// Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
+func (_DepositManagerContract *DepositManagerContractSession) RenounceRole(role [32]byte, callerConfirmation common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RenounceRole(&_DepositManagerContract.TransactOpts, role, callerConfirmation)
+}
+
+// RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
+//
+// Solidity: function renounceRole(bytes32 role, address callerConfirmation) returns()
+func (_DepositManagerContract *DepositManagerContractTransactorSession) RenounceRole(role [32]byte, callerConfirmation common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RenounceRole(&_DepositManagerContract.TransactOpts, role, callerConfirmation)
+}
+
+// RevokeRole is a paid mutator transaction binding the contract method 0xd547741f.
+//
+// Solidity: function revokeRole(bytes32 role, address account) returns()
+func (_DepositManagerContract *DepositManagerContractTransactor) RevokeRole(opts *bind.TransactOpts, role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "revokeRole", role, account)
+}
+
+// RevokeRole is a paid mutator transaction binding the contract method 0xd547741f.
+//
+// Solidity: function revokeRole(bytes32 role, address account) returns()
+func (_DepositManagerContract *DepositManagerContractSession) RevokeRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RevokeRole(&_DepositManagerContract.TransactOpts, role, account)
+}
+
+// RevokeRole is a paid mutator transaction binding the contract method 0xd547741f.
+//
+// Solidity: function revokeRole(bytes32 role, address account) returns()
+func (_DepositManagerContract *DepositManagerContractTransactorSession) RevokeRole(role [32]byte, account common.Address) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.RevokeRole(&_DepositManagerContract.TransactOpts, role, account)
+}
+
+// SetPauseState is a paid mutator transaction binding the contract method 0xa9b92ccf.
+//
+// Solidity: function setPauseState(bytes32 _condition, bool _newState) returns()
+func (_DepositManagerContract *DepositManagerContractTransactor) SetPauseState(opts *bind.TransactOpts, _condition [32]byte, _newState bool) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "setPauseState", _condition, _newState)
+}
+
+// SetPauseState is a paid mutator transaction binding the contract method 0xa9b92ccf.
+//
+// Solidity: function setPauseState(bytes32 _condition, bool _newState) returns()
+func (_DepositManagerContract *DepositManagerContractSession) SetPauseState(_condition [32]byte, _newState bool) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.SetPauseState(&_DepositManagerContract.TransactOpts, _condition, _newState)
+}
+
+// SetPauseState is a paid mutator transaction binding the contract method 0xa9b92ccf.
+//
+// Solidity: function setPauseState(bytes32 _condition, bool _newState) returns()
+func (_DepositManagerContract *DepositManagerContractTransactorSession) SetPauseState(_condition [32]byte, _newState bool) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.SetPauseState(&_DepositManagerContract.TransactOpts, _condition, _newState)
+}
+
+// SubmitDepositTask is a paid mutator transaction binding the contract method 0x28b71b32.
+//
+// Solidity: function submitDepositTask(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
+func (_DepositManagerContract *DepositManagerContractTransactor) SubmitDepositTask(opts *bind.TransactOpts, _userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "submitDepositTask", _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// SubmitDepositTask is a paid mutator transaction binding the contract method 0x28b71b32.
+//
+// Solidity: function submitDepositTask(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
+func (_DepositManagerContract *DepositManagerContractSession) SubmitDepositTask(_userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.SubmitDepositTask(&_DepositManagerContract.TransactOpts, _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// SubmitDepositTask is a paid mutator transaction binding the contract method 0x28b71b32.
+//
+// Solidity: function submitDepositTask(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
+func (_DepositManagerContract *DepositManagerContractTransactorSession) SubmitDepositTask(_userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.SubmitDepositTask(&_DepositManagerContract.TransactOpts, _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// SubmitWithdrawTask is a paid mutator transaction binding the contract method 0x2833f885.
+//
+// Solidity: function submitWithdrawTask(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
+func (_DepositManagerContract *DepositManagerContractTransactor) SubmitWithdrawTask(opts *bind.TransactOpts, _userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.contract.Transact(opts, "submitWithdrawTask", _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// SubmitWithdrawTask is a paid mutator transaction binding the contract method 0x2833f885.
+//
+// Solidity: function submitWithdrawTask(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
+func (_DepositManagerContract *DepositManagerContractSession) SubmitWithdrawTask(_userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.SubmitWithdrawTask(&_DepositManagerContract.TransactOpts, _userAddress, _depositAddress, _ticker, _chainId, _amount)
+}
+
+// SubmitWithdrawTask is a paid mutator transaction binding the contract method 0x2833f885.
+//
+// Solidity: function submitWithdrawTask(address _userAddress, string _depositAddress, bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
+func (_DepositManagerContract *DepositManagerContractTransactorSession) SubmitWithdrawTask(_userAddress common.Address, _depositAddress string, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
+	return _DepositManagerContract.Contract.SubmitWithdrawTask(&_DepositManagerContract.TransactOpts, _userAddress, _depositAddress, _ticker, _chainId, _amount)
 }
 
 // DepositManagerContractDepositRecordedIterator is returned from FilterDepositRecorded and is used to iterate over the raw logs and unpacked data for DepositRecorded events raised by the DepositManagerContract contract.
@@ -647,58 +967,49 @@ func (it *DepositManagerContractDepositRecordedIterator) Close() error {
 
 // DepositManagerContractDepositRecorded represents a DepositRecorded event raised by the DepositManagerContract contract.
 type DepositManagerContractDepositRecorded struct {
-	TargetAddress common.Address
-	Amount        *big.Int
-	ChainId       *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
-	Raw           types.Log // Blockchain specific contextual infos
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterDepositRecorded is a free log retrieval operation binding the contract event 0xda0e7c971690dbb1d8118c31cf27f8303b471719eb78a6200d35300175974100.
+// FilterDepositRecorded is a free log retrieval operation binding the contract event 0xc81b018d055616352576702d0318bf7fc5c5b37693d9d4555113e2490d87dd80.
 //
-// Solidity: event DepositRecorded(address indexed targetAddress, uint256 indexed amount, uint256 indexed chainId, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractFilterer) FilterDepositRecorded(opts *bind.FilterOpts, targetAddress []common.Address, amount []*big.Int, chainId []*big.Int) (*DepositManagerContractDepositRecordedIterator, error) {
+// Solidity: event DepositRecorded(string depositAddress, bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterDepositRecorded(opts *bind.FilterOpts, ticker [][32]byte, chainId [][32]byte) (*DepositManagerContractDepositRecordedIterator, error) {
 
-	var targetAddressRule []interface{}
-	for _, targetAddressItem := range targetAddress {
-		targetAddressRule = append(targetAddressRule, targetAddressItem)
-	}
-	var amountRule []interface{}
-	for _, amountItem := range amount {
-		amountRule = append(amountRule, amountItem)
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
 	}
 	var chainIdRule []interface{}
 	for _, chainIdItem := range chainId {
 		chainIdRule = append(chainIdRule, chainIdItem)
 	}
 
-	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "DepositRecorded", targetAddressRule, amountRule, chainIdRule)
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "DepositRecorded", tickerRule, chainIdRule)
 	if err != nil {
 		return nil, err
 	}
 	return &DepositManagerContractDepositRecordedIterator{contract: _DepositManagerContract.contract, event: "DepositRecorded", logs: logs, sub: sub}, nil
 }
 
-// WatchDepositRecorded is a free log subscription operation binding the contract event 0xda0e7c971690dbb1d8118c31cf27f8303b471719eb78a6200d35300175974100.
+// WatchDepositRecorded is a free log subscription operation binding the contract event 0xc81b018d055616352576702d0318bf7fc5c5b37693d9d4555113e2490d87dd80.
 //
-// Solidity: event DepositRecorded(address indexed targetAddress, uint256 indexed amount, uint256 indexed chainId, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractFilterer) WatchDepositRecorded(opts *bind.WatchOpts, sink chan<- *DepositManagerContractDepositRecorded, targetAddress []common.Address, amount []*big.Int, chainId []*big.Int) (event.Subscription, error) {
+// Solidity: event DepositRecorded(string depositAddress, bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchDepositRecorded(opts *bind.WatchOpts, sink chan<- *DepositManagerContractDepositRecorded, ticker [][32]byte, chainId [][32]byte) (event.Subscription, error) {
 
-	var targetAddressRule []interface{}
-	for _, targetAddressItem := range targetAddress {
-		targetAddressRule = append(targetAddressRule, targetAddressItem)
-	}
-	var amountRule []interface{}
-	for _, amountItem := range amount {
-		amountRule = append(amountRule, amountItem)
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
 	}
 	var chainIdRule []interface{}
 	for _, chainIdItem := range chainId {
 		chainIdRule = append(chainIdRule, chainIdItem)
 	}
 
-	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "DepositRecorded", targetAddressRule, amountRule, chainIdRule)
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "DepositRecorded", tickerRule, chainIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -730,9 +1041,9 @@ func (_DepositManagerContract *DepositManagerContractFilterer) WatchDepositRecor
 	}), nil
 }
 
-// ParseDepositRecorded is a log parse operation binding the contract event 0xda0e7c971690dbb1d8118c31cf27f8303b471719eb78a6200d35300175974100.
+// ParseDepositRecorded is a log parse operation binding the contract event 0xc81b018d055616352576702d0318bf7fc5c5b37693d9d4555113e2490d87dd80.
 //
-// Solidity: event DepositRecorded(address indexed targetAddress, uint256 indexed amount, uint256 indexed chainId, bytes txInfo, bytes extraInfo)
+// Solidity: event DepositRecorded(string depositAddress, bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
 func (_DepositManagerContract *DepositManagerContractFilterer) ParseDepositRecorded(log types.Log) (*DepositManagerContractDepositRecorded, error) {
 	event := new(DepositManagerContractDepositRecorded)
 	if err := _DepositManagerContract.contract.UnpackLog(event, "DepositRecorded", log); err != nil {
@@ -876,9 +1187,9 @@ func (_DepositManagerContract *DepositManagerContractFilterer) ParseInitialized(
 	return event, nil
 }
 
-// DepositManagerContractOwnershipTransferredIterator is returned from FilterOwnershipTransferred and is used to iterate over the raw logs and unpacked data for OwnershipTransferred events raised by the DepositManagerContract contract.
-type DepositManagerContractOwnershipTransferredIterator struct {
-	Event *DepositManagerContractOwnershipTransferred // Event containing the contract specifics and raw log
+// DepositManagerContractNIP20TokenEventBurnbIterator is returned from FilterNIP20TokenEventBurnb and is used to iterate over the raw logs and unpacked data for NIP20TokenEventBurnb events raised by the DepositManagerContract contract.
+type DepositManagerContractNIP20TokenEventBurnbIterator struct {
+	Event *DepositManagerContractNIP20TokenEventBurnb // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -892,7 +1203,7 @@ type DepositManagerContractOwnershipTransferredIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *DepositManagerContractOwnershipTransferredIterator) Next() bool {
+func (it *DepositManagerContractNIP20TokenEventBurnbIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -901,7 +1212,7 @@ func (it *DepositManagerContractOwnershipTransferredIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(DepositManagerContractOwnershipTransferred)
+			it.Event = new(DepositManagerContractNIP20TokenEventBurnb)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -916,7 +1227,7 @@ func (it *DepositManagerContractOwnershipTransferredIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(DepositManagerContractOwnershipTransferred)
+		it.Event = new(DepositManagerContractNIP20TokenEventBurnb)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -932,60 +1243,61 @@ func (it *DepositManagerContractOwnershipTransferredIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *DepositManagerContractOwnershipTransferredIterator) Error() error {
+func (it *DepositManagerContractNIP20TokenEventBurnbIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *DepositManagerContractOwnershipTransferredIterator) Close() error {
+func (it *DepositManagerContractNIP20TokenEventBurnbIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// DepositManagerContractOwnershipTransferred represents a OwnershipTransferred event raised by the DepositManagerContract contract.
-type DepositManagerContractOwnershipTransferred struct {
-	PreviousOwner common.Address
-	NewOwner      common.Address
-	Raw           types.Log // Blockchain specific contextual infos
+// DepositManagerContractNIP20TokenEventBurnb represents a NIP20TokenEventBurnb event raised by the DepositManagerContract contract.
+type DepositManagerContractNIP20TokenEventBurnb struct {
+	From   common.Address
+	Ticker [32]byte
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterOwnershipTransferred is a free log retrieval operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+// FilterNIP20TokenEventBurnb is a free log retrieval operation binding the contract event 0xebe23dd93b970477278ceb9abd3082df92d977d6131fb0ef75f18c3d353b565a.
 //
-// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-func (_DepositManagerContract *DepositManagerContractFilterer) FilterOwnershipTransferred(opts *bind.FilterOpts, previousOwner []common.Address, newOwner []common.Address) (*DepositManagerContractOwnershipTransferredIterator, error) {
+// Solidity: event NIP20TokenEvent_burnb(address indexed from, bytes32 indexed ticker, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterNIP20TokenEventBurnb(opts *bind.FilterOpts, from []common.Address, ticker [][32]byte) (*DepositManagerContractNIP20TokenEventBurnbIterator, error) {
 
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	var fromRule []interface{}
+	for _, fromItem := range from {
+		fromRule = append(fromRule, fromItem)
 	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
 	}
 
-	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "OwnershipTransferred", previousOwnerRule, newOwnerRule)
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "NIP20TokenEvent_burnb", fromRule, tickerRule)
 	if err != nil {
 		return nil, err
 	}
-	return &DepositManagerContractOwnershipTransferredIterator{contract: _DepositManagerContract.contract, event: "OwnershipTransferred", logs: logs, sub: sub}, nil
+	return &DepositManagerContractNIP20TokenEventBurnbIterator{contract: _DepositManagerContract.contract, event: "NIP20TokenEvent_burnb", logs: logs, sub: sub}, nil
 }
 
-// WatchOwnershipTransferred is a free log subscription operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+// WatchNIP20TokenEventBurnb is a free log subscription operation binding the contract event 0xebe23dd93b970477278ceb9abd3082df92d977d6131fb0ef75f18c3d353b565a.
 //
-// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-func (_DepositManagerContract *DepositManagerContractFilterer) WatchOwnershipTransferred(opts *bind.WatchOpts, sink chan<- *DepositManagerContractOwnershipTransferred, previousOwner []common.Address, newOwner []common.Address) (event.Subscription, error) {
+// Solidity: event NIP20TokenEvent_burnb(address indexed from, bytes32 indexed ticker, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchNIP20TokenEventBurnb(opts *bind.WatchOpts, sink chan<- *DepositManagerContractNIP20TokenEventBurnb, from []common.Address, ticker [][32]byte) (event.Subscription, error) {
 
-	var previousOwnerRule []interface{}
-	for _, previousOwnerItem := range previousOwner {
-		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	var fromRule []interface{}
+	for _, fromItem := range from {
+		fromRule = append(fromRule, fromItem)
 	}
-	var newOwnerRule []interface{}
-	for _, newOwnerItem := range newOwner {
-		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
 	}
 
-	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "OwnershipTransferred", previousOwnerRule, newOwnerRule)
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "NIP20TokenEvent_burnb", fromRule, tickerRule)
 	if err != nil {
 		return nil, err
 	}
@@ -995,8 +1307,8 @@ func (_DepositManagerContract *DepositManagerContractFilterer) WatchOwnershipTra
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(DepositManagerContractOwnershipTransferred)
-				if err := _DepositManagerContract.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+				event := new(DepositManagerContractNIP20TokenEventBurnb)
+				if err := _DepositManagerContract.contract.UnpackLog(event, "NIP20TokenEvent_burnb", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1017,12 +1329,805 @@ func (_DepositManagerContract *DepositManagerContractFilterer) WatchOwnershipTra
 	}), nil
 }
 
-// ParseOwnershipTransferred is a log parse operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+// ParseNIP20TokenEventBurnb is a log parse operation binding the contract event 0xebe23dd93b970477278ceb9abd3082df92d977d6131fb0ef75f18c3d353b565a.
 //
-// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-func (_DepositManagerContract *DepositManagerContractFilterer) ParseOwnershipTransferred(log types.Log) (*DepositManagerContractOwnershipTransferred, error) {
-	event := new(DepositManagerContractOwnershipTransferred)
-	if err := _DepositManagerContract.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+// Solidity: event NIP20TokenEvent_burnb(address indexed from, bytes32 indexed ticker, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) ParseNIP20TokenEventBurnb(log types.Log) (*DepositManagerContractNIP20TokenEventBurnb, error) {
+	event := new(DepositManagerContractNIP20TokenEventBurnb)
+	if err := _DepositManagerContract.contract.UnpackLog(event, "NIP20TokenEvent_burnb", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// DepositManagerContractNIP20TokenEventMintbIterator is returned from FilterNIP20TokenEventMintb and is used to iterate over the raw logs and unpacked data for NIP20TokenEventMintb events raised by the DepositManagerContract contract.
+type DepositManagerContractNIP20TokenEventMintbIterator struct {
+	Event *DepositManagerContractNIP20TokenEventMintb // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *DepositManagerContractNIP20TokenEventMintbIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(DepositManagerContractNIP20TokenEventMintb)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(DepositManagerContractNIP20TokenEventMintb)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *DepositManagerContractNIP20TokenEventMintbIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *DepositManagerContractNIP20TokenEventMintbIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// DepositManagerContractNIP20TokenEventMintb represents a NIP20TokenEventMintb event raised by the DepositManagerContract contract.
+type DepositManagerContractNIP20TokenEventMintb struct {
+	Recipient common.Address
+	Ticker    [32]byte
+	Amount    *big.Int
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterNIP20TokenEventMintb is a free log retrieval operation binding the contract event 0x685c530c280ee1f7a4e96d082303ee9ebf21cec512259c6a943eda3854e05102.
+//
+// Solidity: event NIP20TokenEvent_mintb(address indexed recipient, bytes32 indexed ticker, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterNIP20TokenEventMintb(opts *bind.FilterOpts, recipient []common.Address, ticker [][32]byte) (*DepositManagerContractNIP20TokenEventMintbIterator, error) {
+
+	var recipientRule []interface{}
+	for _, recipientItem := range recipient {
+		recipientRule = append(recipientRule, recipientItem)
+	}
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "NIP20TokenEvent_mintb", recipientRule, tickerRule)
+	if err != nil {
+		return nil, err
+	}
+	return &DepositManagerContractNIP20TokenEventMintbIterator{contract: _DepositManagerContract.contract, event: "NIP20TokenEvent_mintb", logs: logs, sub: sub}, nil
+}
+
+// WatchNIP20TokenEventMintb is a free log subscription operation binding the contract event 0x685c530c280ee1f7a4e96d082303ee9ebf21cec512259c6a943eda3854e05102.
+//
+// Solidity: event NIP20TokenEvent_mintb(address indexed recipient, bytes32 indexed ticker, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchNIP20TokenEventMintb(opts *bind.WatchOpts, sink chan<- *DepositManagerContractNIP20TokenEventMintb, recipient []common.Address, ticker [][32]byte) (event.Subscription, error) {
+
+	var recipientRule []interface{}
+	for _, recipientItem := range recipient {
+		recipientRule = append(recipientRule, recipientItem)
+	}
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "NIP20TokenEvent_mintb", recipientRule, tickerRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(DepositManagerContractNIP20TokenEventMintb)
+				if err := _DepositManagerContract.contract.UnpackLog(event, "NIP20TokenEvent_mintb", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseNIP20TokenEventMintb is a log parse operation binding the contract event 0x685c530c280ee1f7a4e96d082303ee9ebf21cec512259c6a943eda3854e05102.
+//
+// Solidity: event NIP20TokenEvent_mintb(address indexed recipient, bytes32 indexed ticker, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) ParseNIP20TokenEventMintb(log types.Log) (*DepositManagerContractNIP20TokenEventMintb, error) {
+	event := new(DepositManagerContractNIP20TokenEventMintb)
+	if err := _DepositManagerContract.contract.UnpackLog(event, "NIP20TokenEvent_mintb", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// DepositManagerContractNewPauseStateIterator is returned from FilterNewPauseState and is used to iterate over the raw logs and unpacked data for NewPauseState events raised by the DepositManagerContract contract.
+type DepositManagerContractNewPauseStateIterator struct {
+	Event *DepositManagerContractNewPauseState // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *DepositManagerContractNewPauseStateIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(DepositManagerContractNewPauseState)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(DepositManagerContractNewPauseState)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *DepositManagerContractNewPauseStateIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *DepositManagerContractNewPauseStateIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// DepositManagerContractNewPauseState represents a NewPauseState event raised by the DepositManagerContract contract.
+type DepositManagerContractNewPauseState struct {
+	Condition [32]byte
+	NewState  bool
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterNewPauseState is a free log retrieval operation binding the contract event 0xfa6e53b4fcee476e09253f70545d292a28f0bd8254ea05c37283b9b8ab040402.
+//
+// Solidity: event NewPauseState(bytes32 indexed condition, bool indexed newState)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterNewPauseState(opts *bind.FilterOpts, condition [][32]byte, newState []bool) (*DepositManagerContractNewPauseStateIterator, error) {
+
+	var conditionRule []interface{}
+	for _, conditionItem := range condition {
+		conditionRule = append(conditionRule, conditionItem)
+	}
+	var newStateRule []interface{}
+	for _, newStateItem := range newState {
+		newStateRule = append(newStateRule, newStateItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "NewPauseState", conditionRule, newStateRule)
+	if err != nil {
+		return nil, err
+	}
+	return &DepositManagerContractNewPauseStateIterator{contract: _DepositManagerContract.contract, event: "NewPauseState", logs: logs, sub: sub}, nil
+}
+
+// WatchNewPauseState is a free log subscription operation binding the contract event 0xfa6e53b4fcee476e09253f70545d292a28f0bd8254ea05c37283b9b8ab040402.
+//
+// Solidity: event NewPauseState(bytes32 indexed condition, bool indexed newState)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchNewPauseState(opts *bind.WatchOpts, sink chan<- *DepositManagerContractNewPauseState, condition [][32]byte, newState []bool) (event.Subscription, error) {
+
+	var conditionRule []interface{}
+	for _, conditionItem := range condition {
+		conditionRule = append(conditionRule, conditionItem)
+	}
+	var newStateRule []interface{}
+	for _, newStateItem := range newState {
+		newStateRule = append(newStateRule, newStateItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "NewPauseState", conditionRule, newStateRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(DepositManagerContractNewPauseState)
+				if err := _DepositManagerContract.contract.UnpackLog(event, "NewPauseState", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseNewPauseState is a log parse operation binding the contract event 0xfa6e53b4fcee476e09253f70545d292a28f0bd8254ea05c37283b9b8ab040402.
+//
+// Solidity: event NewPauseState(bytes32 indexed condition, bool indexed newState)
+func (_DepositManagerContract *DepositManagerContractFilterer) ParseNewPauseState(log types.Log) (*DepositManagerContractNewPauseState, error) {
+	event := new(DepositManagerContractNewPauseState)
+	if err := _DepositManagerContract.contract.UnpackLog(event, "NewPauseState", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// DepositManagerContractRoleAdminChangedIterator is returned from FilterRoleAdminChanged and is used to iterate over the raw logs and unpacked data for RoleAdminChanged events raised by the DepositManagerContract contract.
+type DepositManagerContractRoleAdminChangedIterator struct {
+	Event *DepositManagerContractRoleAdminChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *DepositManagerContractRoleAdminChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(DepositManagerContractRoleAdminChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(DepositManagerContractRoleAdminChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *DepositManagerContractRoleAdminChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *DepositManagerContractRoleAdminChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// DepositManagerContractRoleAdminChanged represents a RoleAdminChanged event raised by the DepositManagerContract contract.
+type DepositManagerContractRoleAdminChanged struct {
+	Role              [32]byte
+	PreviousAdminRole [32]byte
+	NewAdminRole      [32]byte
+	Raw               types.Log // Blockchain specific contextual infos
+}
+
+// FilterRoleAdminChanged is a free log retrieval operation binding the contract event 0xbd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff.
+//
+// Solidity: event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterRoleAdminChanged(opts *bind.FilterOpts, role [][32]byte, previousAdminRole [][32]byte, newAdminRole [][32]byte) (*DepositManagerContractRoleAdminChangedIterator, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var previousAdminRoleRule []interface{}
+	for _, previousAdminRoleItem := range previousAdminRole {
+		previousAdminRoleRule = append(previousAdminRoleRule, previousAdminRoleItem)
+	}
+	var newAdminRoleRule []interface{}
+	for _, newAdminRoleItem := range newAdminRole {
+		newAdminRoleRule = append(newAdminRoleRule, newAdminRoleItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "RoleAdminChanged", roleRule, previousAdminRoleRule, newAdminRoleRule)
+	if err != nil {
+		return nil, err
+	}
+	return &DepositManagerContractRoleAdminChangedIterator{contract: _DepositManagerContract.contract, event: "RoleAdminChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchRoleAdminChanged is a free log subscription operation binding the contract event 0xbd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff.
+//
+// Solidity: event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchRoleAdminChanged(opts *bind.WatchOpts, sink chan<- *DepositManagerContractRoleAdminChanged, role [][32]byte, previousAdminRole [][32]byte, newAdminRole [][32]byte) (event.Subscription, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var previousAdminRoleRule []interface{}
+	for _, previousAdminRoleItem := range previousAdminRole {
+		previousAdminRoleRule = append(previousAdminRoleRule, previousAdminRoleItem)
+	}
+	var newAdminRoleRule []interface{}
+	for _, newAdminRoleItem := range newAdminRole {
+		newAdminRoleRule = append(newAdminRoleRule, newAdminRoleItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "RoleAdminChanged", roleRule, previousAdminRoleRule, newAdminRoleRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(DepositManagerContractRoleAdminChanged)
+				if err := _DepositManagerContract.contract.UnpackLog(event, "RoleAdminChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRoleAdminChanged is a log parse operation binding the contract event 0xbd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff.
+//
+// Solidity: event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
+func (_DepositManagerContract *DepositManagerContractFilterer) ParseRoleAdminChanged(log types.Log) (*DepositManagerContractRoleAdminChanged, error) {
+	event := new(DepositManagerContractRoleAdminChanged)
+	if err := _DepositManagerContract.contract.UnpackLog(event, "RoleAdminChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// DepositManagerContractRoleGrantedIterator is returned from FilterRoleGranted and is used to iterate over the raw logs and unpacked data for RoleGranted events raised by the DepositManagerContract contract.
+type DepositManagerContractRoleGrantedIterator struct {
+	Event *DepositManagerContractRoleGranted // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *DepositManagerContractRoleGrantedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(DepositManagerContractRoleGranted)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(DepositManagerContractRoleGranted)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *DepositManagerContractRoleGrantedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *DepositManagerContractRoleGrantedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// DepositManagerContractRoleGranted represents a RoleGranted event raised by the DepositManagerContract contract.
+type DepositManagerContractRoleGranted struct {
+	Role    [32]byte
+	Account common.Address
+	Sender  common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterRoleGranted is a free log retrieval operation binding the contract event 0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d.
+//
+// Solidity: event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterRoleGranted(opts *bind.FilterOpts, role [][32]byte, account []common.Address, sender []common.Address) (*DepositManagerContractRoleGrantedIterator, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "RoleGranted", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return &DepositManagerContractRoleGrantedIterator{contract: _DepositManagerContract.contract, event: "RoleGranted", logs: logs, sub: sub}, nil
+}
+
+// WatchRoleGranted is a free log subscription operation binding the contract event 0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d.
+//
+// Solidity: event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchRoleGranted(opts *bind.WatchOpts, sink chan<- *DepositManagerContractRoleGranted, role [][32]byte, account []common.Address, sender []common.Address) (event.Subscription, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "RoleGranted", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(DepositManagerContractRoleGranted)
+				if err := _DepositManagerContract.contract.UnpackLog(event, "RoleGranted", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRoleGranted is a log parse operation binding the contract event 0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d.
+//
+// Solidity: event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
+func (_DepositManagerContract *DepositManagerContractFilterer) ParseRoleGranted(log types.Log) (*DepositManagerContractRoleGranted, error) {
+	event := new(DepositManagerContractRoleGranted)
+	if err := _DepositManagerContract.contract.UnpackLog(event, "RoleGranted", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// DepositManagerContractRoleRevokedIterator is returned from FilterRoleRevoked and is used to iterate over the raw logs and unpacked data for RoleRevoked events raised by the DepositManagerContract contract.
+type DepositManagerContractRoleRevokedIterator struct {
+	Event *DepositManagerContractRoleRevoked // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *DepositManagerContractRoleRevokedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(DepositManagerContractRoleRevoked)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(DepositManagerContractRoleRevoked)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *DepositManagerContractRoleRevokedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *DepositManagerContractRoleRevokedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// DepositManagerContractRoleRevoked represents a RoleRevoked event raised by the DepositManagerContract contract.
+type DepositManagerContractRoleRevoked struct {
+	Role    [32]byte
+	Account common.Address
+	Sender  common.Address
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterRoleRevoked is a free log retrieval operation binding the contract event 0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b.
+//
+// Solidity: event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterRoleRevoked(opts *bind.FilterOpts, role [][32]byte, account []common.Address, sender []common.Address) (*DepositManagerContractRoleRevokedIterator, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "RoleRevoked", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return &DepositManagerContractRoleRevokedIterator{contract: _DepositManagerContract.contract, event: "RoleRevoked", logs: logs, sub: sub}, nil
+}
+
+// WatchRoleRevoked is a free log subscription operation binding the contract event 0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b.
+//
+// Solidity: event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchRoleRevoked(opts *bind.WatchOpts, sink chan<- *DepositManagerContractRoleRevoked, role [][32]byte, account []common.Address, sender []common.Address) (event.Subscription, error) {
+
+	var roleRule []interface{}
+	for _, roleItem := range role {
+		roleRule = append(roleRule, roleItem)
+	}
+	var accountRule []interface{}
+	for _, accountItem := range account {
+		accountRule = append(accountRule, accountItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "RoleRevoked", roleRule, accountRule, senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(DepositManagerContractRoleRevoked)
+				if err := _DepositManagerContract.contract.UnpackLog(event, "RoleRevoked", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRoleRevoked is a log parse operation binding the contract event 0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b.
+//
+// Solidity: event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
+func (_DepositManagerContract *DepositManagerContractFilterer) ParseRoleRevoked(log types.Log) (*DepositManagerContractRoleRevoked, error) {
+	event := new(DepositManagerContractRoleRevoked)
+	if err := _DepositManagerContract.contract.UnpackLog(event, "RoleRevoked", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1098,58 +2203,49 @@ func (it *DepositManagerContractWithdrawalRecordedIterator) Close() error {
 
 // DepositManagerContractWithdrawalRecorded represents a WithdrawalRecorded event raised by the DepositManagerContract contract.
 type DepositManagerContractWithdrawalRecorded struct {
-	TargetAddress common.Address
-	Amount        *big.Int
-	ChainId       *big.Int
-	TxInfo        []byte
-	ExtraInfo     []byte
-	Raw           types.Log // Blockchain specific contextual infos
+	DepositAddress string
+	Ticker         [32]byte
+	ChainId        [32]byte
+	Amount         *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
 }
 
-// FilterWithdrawalRecorded is a free log retrieval operation binding the contract event 0x07c8f2d211076c7cba51f2504af48025acdaf410e993e6c7f62b066a51d9b068.
+// FilterWithdrawalRecorded is a free log retrieval operation binding the contract event 0x2afe20970cc53fcbca49f0fd13ca943d027d7636ad0d9ac543a995a0cd03c9ec.
 //
-// Solidity: event WithdrawalRecorded(address indexed targetAddress, uint256 indexed amount, uint256 indexed chainId, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractFilterer) FilterWithdrawalRecorded(opts *bind.FilterOpts, targetAddress []common.Address, amount []*big.Int, chainId []*big.Int) (*DepositManagerContractWithdrawalRecordedIterator, error) {
+// Solidity: event WithdrawalRecorded(string depositAddress, bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) FilterWithdrawalRecorded(opts *bind.FilterOpts, ticker [][32]byte, chainId [][32]byte) (*DepositManagerContractWithdrawalRecordedIterator, error) {
 
-	var targetAddressRule []interface{}
-	for _, targetAddressItem := range targetAddress {
-		targetAddressRule = append(targetAddressRule, targetAddressItem)
-	}
-	var amountRule []interface{}
-	for _, amountItem := range amount {
-		amountRule = append(amountRule, amountItem)
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
 	}
 	var chainIdRule []interface{}
 	for _, chainIdItem := range chainId {
 		chainIdRule = append(chainIdRule, chainIdItem)
 	}
 
-	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "WithdrawalRecorded", targetAddressRule, amountRule, chainIdRule)
+	logs, sub, err := _DepositManagerContract.contract.FilterLogs(opts, "WithdrawalRecorded", tickerRule, chainIdRule)
 	if err != nil {
 		return nil, err
 	}
 	return &DepositManagerContractWithdrawalRecordedIterator{contract: _DepositManagerContract.contract, event: "WithdrawalRecorded", logs: logs, sub: sub}, nil
 }
 
-// WatchWithdrawalRecorded is a free log subscription operation binding the contract event 0x07c8f2d211076c7cba51f2504af48025acdaf410e993e6c7f62b066a51d9b068.
+// WatchWithdrawalRecorded is a free log subscription operation binding the contract event 0x2afe20970cc53fcbca49f0fd13ca943d027d7636ad0d9ac543a995a0cd03c9ec.
 //
-// Solidity: event WithdrawalRecorded(address indexed targetAddress, uint256 indexed amount, uint256 indexed chainId, bytes txInfo, bytes extraInfo)
-func (_DepositManagerContract *DepositManagerContractFilterer) WatchWithdrawalRecorded(opts *bind.WatchOpts, sink chan<- *DepositManagerContractWithdrawalRecorded, targetAddress []common.Address, amount []*big.Int, chainId []*big.Int) (event.Subscription, error) {
+// Solidity: event WithdrawalRecorded(string depositAddress, bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
+func (_DepositManagerContract *DepositManagerContractFilterer) WatchWithdrawalRecorded(opts *bind.WatchOpts, sink chan<- *DepositManagerContractWithdrawalRecorded, ticker [][32]byte, chainId [][32]byte) (event.Subscription, error) {
 
-	var targetAddressRule []interface{}
-	for _, targetAddressItem := range targetAddress {
-		targetAddressRule = append(targetAddressRule, targetAddressItem)
-	}
-	var amountRule []interface{}
-	for _, amountItem := range amount {
-		amountRule = append(amountRule, amountItem)
+	var tickerRule []interface{}
+	for _, tickerItem := range ticker {
+		tickerRule = append(tickerRule, tickerItem)
 	}
 	var chainIdRule []interface{}
 	for _, chainIdItem := range chainId {
 		chainIdRule = append(chainIdRule, chainIdItem)
 	}
 
-	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "WithdrawalRecorded", targetAddressRule, amountRule, chainIdRule)
+	logs, sub, err := _DepositManagerContract.contract.WatchLogs(opts, "WithdrawalRecorded", tickerRule, chainIdRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1181,9 +2277,9 @@ func (_DepositManagerContract *DepositManagerContractFilterer) WatchWithdrawalRe
 	}), nil
 }
 
-// ParseWithdrawalRecorded is a log parse operation binding the contract event 0x07c8f2d211076c7cba51f2504af48025acdaf410e993e6c7f62b066a51d9b068.
+// ParseWithdrawalRecorded is a log parse operation binding the contract event 0x2afe20970cc53fcbca49f0fd13ca943d027d7636ad0d9ac543a995a0cd03c9ec.
 //
-// Solidity: event WithdrawalRecorded(address indexed targetAddress, uint256 indexed amount, uint256 indexed chainId, bytes txInfo, bytes extraInfo)
+// Solidity: event WithdrawalRecorded(string depositAddress, bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
 func (_DepositManagerContract *DepositManagerContractFilterer) ParseWithdrawalRecorded(log types.Log) (*DepositManagerContractWithdrawalRecorded, error) {
 	event := new(DepositManagerContractWithdrawalRecorded)
 	if err := _DepositManagerContract.contract.UnpackLog(event, "WithdrawalRecorded", log); err != nil {

@@ -46,7 +46,7 @@ func (m *Scheduler) loopSigInToOut() {
 						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
 						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
 						m.processOperationSignResult(ops)
-						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
+						lo.ForEach(ops.Operation, func(item contracts.TaskOperation, _ int) { m.AddDiscussedTask(item.TaskId) })
 						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
 
 					case types.SignTestTxSessionType:
@@ -79,9 +79,18 @@ func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest string,
 	}
 }
 
-// only used test
+func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal]) error {
+	defer m.crw.RUnlock()
+	m.crw.RLock()
+	c, ok := m.tssClients[msg.ChainType]
+	if ok {
+		return c.Verify(msg.SeqId, msg.ProposalID, msg.Data)
+	}
+	return nil
+}
 
-func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
+// only used test
+func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
 	sessionId := ZeroSessionID
 	seqId := task.TaskID()
@@ -96,11 +105,11 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 		case types.ChainBitcoin: // todo
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
-				// coinType := types.GetCoinTypeByChain(taskData.Chain)
+				// coinType := types.GetCoinTypeByChain(taskData.AddressType)
 				localData, _ := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
 				c := btc.NewTxClient(m.ctx, time.Second*60, &chaincfg.MainNetParams, localData.PublicKey())
 				//sigCtx := &SignerContext{
-				//	chainType:          taskData.Chain,
+				//	chainType:          taskData.AddressType,
 				//	localData:          localData,
 				//	keyDerivationDelta: keyDerivationDelta,
 				//}
@@ -243,7 +252,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 			hotAddress := address.HotAddressOfSui(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			signer = m.GetSigner(hotAddress)
-			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(taskData.ContractAddress, taskData.Ticker), hotAddress, []sui.Recipient{
+			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(taskData.ContractAddress, taskData.Ticker.String()), hotAddress, []sui.Recipient{
 				{
 					Recipient: taskData.TargetAddress,
 					Amount:    fmt.Sprintf("%d", taskData.Amount),
@@ -273,7 +282,7 @@ func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal], tas
 				})
 			}
 		default:
-			panic(fmt.Errorf("unknown Chain type: %v", taskData.Chain))
+			panic(fmt.Errorf("unknown AddressType type: %v", taskData.Chain))
 		}
 	default:
 		log.Errorf("error pending task id: %v", task.TaskID())

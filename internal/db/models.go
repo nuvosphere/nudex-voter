@@ -3,6 +3,8 @@ package db
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	vtypes "github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -12,7 +14,7 @@ type LogIndex struct {
 	EventName       string         `json:"eventName"`                                         // event name
 	Log             *types.Log     `gorm:"serializer:json"               json:"log"`          // event content
 	TxHash          common.Hash    `gorm:"index;size:256"                json:"tx_hash"`      // tx hash
-	ChainId         uint64         `gorm:"index:log_index_unique,unique" json:"chain_id"`     // chainId
+	ChainId         vtypes.Byte32  `gorm:"index:log_index_unique,unique" json:"chain_id"`     // chainId
 	BlockNumber     uint64         `gorm:"index:log_index_unique,unique" json:"block_number"` // block number of the tx
 	LogIndex        uint64         `gorm:"index:log_index_unique,unique" json:"log_index"`    // block log index
 	ForeignID       uint           `gorm:"index"                         json:"foreign_id"`   // task table ID;submitter table ID;participant_event table ID;...
@@ -83,12 +85,12 @@ func (Account) TableName() string {
 
 type DepositRecord struct {
 	gorm.Model
-	TargetAddress string   `gorm:"not null"             json:"target_address"`
-	Amount        uint64   `gorm:"not null"             json:"amount"`
-	ChainId       uint64   `gorm:"not null"             json:"chain_id"`
-	TxInfo        []byte   `gorm:"not null"             json:"tx_info"`
-	ExtraInfo     []byte   `gorm:"not null"             json:"extra_info"`
-	LogIndex      LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	TargetAddress string        `gorm:"not null"             json:"target_address"`
+	Amount        uint64        `gorm:"not null"             json:"amount"`
+	ChainId       vtypes.Byte32 `gorm:"not null"             json:"chain_id"`
+	TxInfo        []byte        `gorm:"not null"             json:"tx_info"`
+	ExtraInfo     []byte        `gorm:"not null"             json:"extra_info"`
+	LogIndex      LogIndex      `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (DepositRecord) TableName() string {
@@ -97,16 +99,26 @@ func (DepositRecord) TableName() string {
 
 type WithdrawalRecord struct {
 	gorm.Model
-	TargetAddress string   `gorm:"not null"             json:"target_address"`
-	Amount        uint64   `gorm:"not null"             json:"amount"`
-	ChainId       uint64   `gorm:"not null"             json:"chain_id"`
-	TxInfo        []byte   `gorm:"not null"             json:"tx_info"`
-	ExtraInfo     []byte   `gorm:"not null"             json:"extra_info"`
-	LogIndex      LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	DepositAddress string        `gorm:"not null"             json:"target_address"`
+	Amount         uint64        `gorm:"not null"             json:"amount"`
+	ChainId        vtypes.Byte32 `gorm:"not null"             json:"chain_id"`
+	LogIndex       LogIndex      `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (WithdrawalRecord) TableName() string {
 	return "withdrawal_record"
+}
+
+type AddressBalance struct {
+	gorm.Model
+	Address string          `gorm:"uniqueIndex; not null"             json:"address"`
+	Token   string          `gorm:"uniqueIndex; not null"             json:"token"`
+	Amount  decimal.Decimal `gorm:"not null"                          json:"amount"`
+	ChainId vtypes.Byte32   `gorm:"not null"                          json:"chain_id"`
+}
+
+func (AddressBalance) TableName() string {
+	return "address_balance"
 }
 
 type InscriptionMintb struct {

@@ -64,12 +64,12 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		return nil, err
 	}
 
-	detailTask := codec.DecodeTask(t.Id, t.Context)
+	detailTask := codec.DecodeTask(t.Id, t.Result)
 
 	baseTask := db.Task{
 		TaskId:    t.Id,
 		TaskType:  detailTask.Type(),
-		Context:   t.Context,
+		Context:   t.Result,
 		Submitter: t.Submitter.Hex(),
 		State:     int(t.State),
 	}
@@ -156,6 +156,9 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	case types.ReShareGroupSessionType:
 		err = m.JoinReShareGroupSession(msg)
 
+	case types.SignOperationSessionType, types.SignTxSessionType:
+		err = m.processTxSign(&msg)
+
 	case types.SignTestOperationSessionType:
 		err = m.joinSignOperationSession(msg)
 	case types.SignTestTxSessionType: // blockchain wallet tx signature
@@ -186,7 +189,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 
 // only used test
 func (m *Scheduler) joinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
-	m.processTxSign(&msg, task)
+	m.processTxSignForTest(&msg, task)
 }
 
 // only used test
@@ -262,6 +265,6 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 			log.Errorf("unknown asset type: %v", taskData.AssetType)
 		}
 	case *db.WithdrawalTask:
-		m.processTxSign(nil, taskData)
+		m.processTxSignForTest(nil, taskData)
 	}
 }

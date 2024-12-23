@@ -1,5 +1,55 @@
 [
   {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_taskManager",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "DEFAULT_ADMIN_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ENTRYPOINT_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "SUBMITTER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
     "type": "function",
     "name": "addressRecord",
     "inputs": [
@@ -30,7 +80,7 @@
       {
         "name": "_chain",
         "type": "uint8",
-        "internalType": "enum IAccountManager.Chain"
+        "internalType": "enum IAccountHandler.AddressCategory"
       },
       {
         "name": "_index",
@@ -49,10 +99,34 @@
   },
   {
     "type": "function",
-    "name": "initialize",
+    "name": "getRoleAdmin",
     "inputs": [
       {
-        "name": "_owner",
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "grantRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
         "type": "address",
         "internalType": "address"
       }
@@ -62,21 +136,60 @@
   },
   {
     "type": "function",
-    "name": "owner",
-    "inputs": [],
+    "name": "hasRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
   },
   {
     "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_entryPoint",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_submitter",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "registerNewAddress",
     "inputs": [
+      {
+        "name": "_userAddr",
+        "type": "address",
+        "internalType": "address"
+      },
       {
         "name": "_account",
         "type": "uint256",
@@ -85,7 +198,7 @@
       {
         "name": "_chain",
         "type": "uint8",
-        "internalType": "enum IAccountManager.Chain"
+        "internalType": "enum IAccountHandler.AddressCategory"
       },
       {
         "name": "_index",
@@ -109,23 +222,110 @@
   },
   {
     "type": "function",
-    "name": "renounceOwnership",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "transferOwnership",
+    "name": "renounceRole",
     "inputs": [
       {
-        "name": "newOwner",
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "callerConfirmation",
         "type": "address",
         "internalType": "address"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "submitRegisterTask",
+    "inputs": [
+      {
+        "name": "_userAddr",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_account",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_chain",
+        "type": "uint8",
+        "internalType": "enum IAccountHandler.AddressCategory"
+      },
+      {
+        "name": "_index",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_address",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "supportsInterface",
+    "inputs": [
+      {
+        "name": "interfaceId",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "taskManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ITaskManager"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -139,7 +339,7 @@
       {
         "name": "",
         "type": "uint8",
-        "internalType": "enum IAccountManager.Chain"
+        "internalType": "enum IAccountHandler.AddressCategory"
       }
     ],
     "outputs": [
@@ -156,6 +356,12 @@
     "name": "AddressRegistered",
     "inputs": [
       {
+        "name": "userAddr",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
         "name": "account",
         "type": "uint256",
         "indexed": true,
@@ -165,7 +371,7 @@
         "name": "chain",
         "type": "uint8",
         "indexed": true,
-        "internalType": "enum IAccountManager.Chain"
+        "internalType": "enum IAccountHandler.AddressCategory"
       },
       {
         "name": "index",
@@ -197,22 +403,99 @@
   },
   {
     "type": "event",
-    "name": "OwnershipTransferred",
+    "name": "RoleAdminChanged",
     "inputs": [
       {
-        "name": "previousOwner",
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "previousAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "newAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleGranted",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "newOwner",
+        "name": "sender",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleRevoked",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AccessControlBadConfirmation",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AccessControlUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "neededRole",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
   },
   {
     "type": "error",
@@ -242,30 +525,13 @@
   },
   {
     "type": "error",
-    "name": "NotInitializing",
+    "name": "InvalidUserAddress",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "OwnableInvalidOwner",
-    "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "OwnableUnauthorizedAccount",
-    "inputs": [
-      {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
+    "name": "NotInitializing",
+    "inputs": []
   },
   {
     "type": "error",

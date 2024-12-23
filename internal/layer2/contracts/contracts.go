@@ -165,6 +165,18 @@ func unpackEventLog(meta *bind.MetaData, out interface{}, event string, log type
 	return abi.ParseTopics(out, indexed, log.Topics[1:])
 }
 
-func EncodeOperation(tssNonce *big.Int, operations []Operation) []byte {
+func EncodeOperation(tssNonce *big.Int, operations []TaskOperation) []byte {
 	return EncodeFun(codec.VoterCodecMetaData.ABI, "", tssNonce, operations)
+}
+
+func EventTopic(meta *bind.MetaData, eventName string) common.Hash {
+	abi, err := meta.GetAbi()
+	if err != nil {
+		panic(err)
+	}
+	ev, ok := abi.Events[eventName]
+	if !ok {
+		panic(fmt.Errorf("ethcontract: event '%s' not found in contract abi", eventName))
+	}
+	return crypto.Keccak256Hash([]byte(ev.Sig))
 }

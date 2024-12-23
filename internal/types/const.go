@@ -11,6 +11,7 @@ const (
 	ChainEthereum
 	ChainSolana
 	ChainSui
+	ChainDOG
 )
 
 // https://docs.expand.network/ids/chain-ids
@@ -19,6 +20,7 @@ const (
 	ChainIdEthereum = 1
 	ChainIdSolana   = 900
 	ChainIdSui      = 101
+	ChainIdDog      = 102
 )
 
 const (
@@ -26,6 +28,7 @@ const (
 	CoinTypeEVM = 60
 	CoinTypeSOL = 501
 	CoinTypeSUI = 784
+	CoinTypeDOG = 1 // todo
 )
 
 const (
@@ -45,6 +48,8 @@ func GetCoinTypeByChain(chain uint8) int {
 		return CoinTypeSOL
 	case ChainSui:
 		return CoinTypeSUI
+	case ChainDOG:
+		return CoinTypeDOG
 	default:
 		panic(ErrCoinType)
 	}
@@ -60,6 +65,8 @@ func GetChainByCoinType(coinType int) uint8 {
 		return ChainSolana
 	case CoinTypeSUI:
 		return ChainSui
+	case CoinTypeDOG:
+		return ChainDOG
 	default:
 		panic(ErrCoinType)
 	}
@@ -67,7 +74,7 @@ func GetChainByCoinType(coinType int) uint8 {
 
 func GetCurveTypeByChain(chain uint8) crypto.CurveType {
 	switch chain {
-	case ChainBitcoin, ChainEthereum:
+	case ChainBitcoin, ChainEthereum, ChainDOG:
 		return crypto.ECDSA
 	case ChainSolana, ChainSui:
 		return crypto.EDDSA

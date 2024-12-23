@@ -1,10 +1,12 @@
 package btc
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/btcsuite/btcd/btcjson"
@@ -40,6 +42,8 @@ type txClient struct {
 	client       *rpcclient.Client
 	params       *chaincfg.Params
 	tx           *wire.MsgTx
+	txInHash     [][]byte
+	hashCounter  atomic.Int64
 	signChan     chan *SignatureCtx
 	nextSignChan chan []byte
 }
@@ -137,9 +141,7 @@ func (c *txClient) buildTxIn(amount int64) error {
 		c.tx.AddTxOut(txOut)
 	}
 
-	// group := errgroup.WithContext(c.ctx)
-	// group.Go(func() error {})
-	for i, txIn := range c.tx.TxIn {
+	for i := range c.tx.TxIn {
 		prevOutputScript, err := hex.DecodeString(utxos[i].ScriptPubKey)
 		if err != nil {
 			return err
@@ -149,22 +151,49 @@ func (c *txClient) buildTxIn(amount int64) error {
 			return err
 		}
 		outPoint := wire.OutPoint{Hash: *txHash, Index: utxos[i].Vout}
-		prevOutputFetcher := txscript.NewMultiPrevOutFetcher(map[wire.OutPoint]*wire.TxOut{
-			outPoint: {Value: int64(utxos[i].Amount * precision), PkScript: prevOutputScript},
-		})
-		sigHashes := txscript.NewTxSigHashes(c.tx, prevOutputFetcher)
-		sigScript, err := c.witnessSignature(
-			sigHashes,
-			int(utxos[i].Vout),
-			int64(utxos[i].Amount*precision), // todo
-			prevOutputScript,
+		prevOutputFetcher := txscript.NewMultiPrevOutFetcher(
+			map[wire.OutPoint]*wire.TxOut{outPoint: {Value: int64(utxos[i].Amount * precision), PkScript: prevOutputScript}},
 		)
+		sigHashes := txscript.NewTxSigHashes(c.tx, prevOutputFetcher)
+
+		hash, err := txscript.CalcWitnessSigHash(prevOutputScript, sigHashes, txscript.SigHashAll, c.tx, int(utxos[i].Vout), int64(utxos[i].Amount*precision))
 		if err != nil {
 			return err
 		}
-		txIn.Witness = sigScript
+		c.txInHash = append(c.txInHash, hash)
+		c.hashCounter.Add(1)
+
+		//signature, err := c.sign(hash) //todo
+		//if err != nil {
+		//	return err
+		//}
+		//txscript.SigHashAll, // https://www.btcstudy.org/2021/11/09/bitcoin-signature-types-sighash/
+		//signature = append(signature, byte(txscript.SigHashAll)) //todo
+		//
+		//txIn.Witness = wire.TxWitness{signature, c.publicKey.SerializeCompressed()}
 	}
 	return nil
+}
+
+func (c *txClient) AddWitnessSignature(hash, signature []byte) bool {
+	for i, inHash := range c.txInHash {
+		if bytes.Equal(inHash, hash) {
+			// txscript.SigHashAll, // https://www.btcstudy.org/2021/11/09/bitcoin-signature-types-sighash/
+			signature = append(signature, byte(txscript.SigHashAll)) // todo
+			c.tx.TxIn[i].Witness = wire.TxWitness{signature, c.publicKey.SerializeCompressed()}
+			c.hashCounter.Add(-1)
+		}
+	}
+	return c.hashCounter.Load() == 0
+}
+
+func (c *txClient) IsHaveWitnessSignature(hash []byte) bool {
+	for _, inHash := range c.txInHash {
+		if bytes.Equal(inHash, hash) {
+			return true
+		}
+	}
+	return false
 }
 
 // rawTxInWitnessSignature returns the serialized ECDA signature for the input
@@ -189,15 +218,21 @@ func (c *txClient) rawTxInWitnessSignature(sigHashes *txscript.TxSigHashes, idx 
 // template. The passed transaction must contain all the inputs and outputs as
 // dictated by the passed hashType. The signature generated observes the new
 // transaction digest algorithm defined within BIP0143.
-func (c *txClient) witnessSignature(sigHashes *txscript.TxSigHashes, idx int, amt int64, subscript []byte) (wire.TxWitness, error) {
-	sig, err := c.rawTxInWitnessSignature(sigHashes, idx, amt, subscript)
+func (c *txClient) witnessSignature(sigHashes *txscript.TxSigHashes, idx int, amt int64, subScript []byte) (wire.TxWitness, error) {
+	hash, err := txscript.CalcWitnessSigHash(subScript, sigHashes, txscript.SigHashAll, c.tx, idx, amt)
 	if err != nil {
 		return nil, err
 	}
+	signature, err := c.sign(hash) ///todo
+	if err != nil {
+		return nil, err
+	}
+	// txscript.SigHashAll, // https://www.btcstudy.org/2021/11/09/bitcoin-signature-types-sighash/
+	signature = append(signature, byte(txscript.SigHashAll))
 
 	// A witness script is actually a stack, so we return an array of byte
 	// slices here, rather than a single byte slice.
-	return wire.TxWitness{sig, c.publicKey.SerializeCompressed()}, nil
+	return wire.TxWitness{signature, c.publicKey.SerializeCompressed()}, nil
 }
 
 func (c *txClient) sign(hash []byte) ([]byte, error) {
@@ -220,6 +255,26 @@ func (c *txClient) sendTx(allowHighFees bool) (*chainhash.Hash, error) {
 
 func (c *txClient) BuildTx(to string, amount int64) error {
 	return errors.Join(c.buildTxOut(to, amount), c.buildTxIn(amount))
+}
+
+type Receipt struct {
+	To     string `json:"to"`
+	Amount uint64 `json:"amount"`
+}
+
+func (c *txClient) BuildMultiTransfer(receipt []Receipt) error {
+	errs := make([]error, 0)
+	var amount uint64
+	for _, r := range receipt {
+		errs = append(errs, c.buildTxOut(r.To, int64(r.Amount)))
+		amount += r.Amount
+	}
+
+	if amount > 0 {
+		errs = append(errs, c.buildTxIn(int64(amount)))
+	}
+
+	return errors.Join(errs...)
 }
 
 func (c *txClient) SendTx() error {

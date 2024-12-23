@@ -13,6 +13,8 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/p2p"
 	"github.com/nuvosphere/nudex-voter/internal/tss"
+	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types/address"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/spf13/cobra"
 )
@@ -92,6 +94,66 @@ var printChainAddressCmd = &cobra.Command{
 		}
 	},
 }
+
+var printChainHotAddressCmd = &cobra.Command{
+	Use:     "chainHotAddress",
+	Short:   "print chain hot address from config data",
+	Example: `nudex-voter tool chainHotAddress 0 1 2 3 4`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		partyData := tss.NewPartyData(config.AppConfig.DbDir)
+		for _, arg := range args {
+			chain, err := strconv.Atoi(arg)
+			utils.Assert(err)
+			point := partyData.GetDataByChain(uint8(chain)).ECPoint()
+			coinType := types.GetCoinTypeByChain(uint8(chain))
+			address := address.GenerateAddressByPath(point, uint32(coinType), 0, 0)
+			switch chain {
+			case types.ChainBitcoin:
+				fmt.Println("ChainBitcoin: ", address)
+			case types.ChainEthereum:
+				fmt.Println("ChainEthereum: ", address)
+			case types.ChainSolana:
+				fmt.Println("ChainSolana: ", address)
+			case types.ChainSui:
+				fmt.Println("ChainSui: ", address)
+			case types.ChainDOG:
+				fmt.Println("ChainDOG: ", address)
+			}
+		}
+	},
+}
+
+var printChainGasAddressCmd = &cobra.Command{
+	Use:     "chainGasAddress",
+	Short:   "print chain gas address from config data",
+	Example: `nudex-voter tool chainGasAddress 0 1 2 3 4`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.InitConfig(configPath)
+		partyData := tss.NewPartyData(config.AppConfig.DbDir)
+		for _, arg := range args {
+			chain, err := strconv.Atoi(arg)
+			utils.Assert(err)
+			point := partyData.GetDataByChain(uint8(chain)).ECPoint()
+			coinType := types.GetCoinTypeByChain(uint8(chain))
+			address := address.GenerateAddressByPath(point, uint32(coinType), 1, 0)
+			switch chain {
+			case types.ChainBitcoin:
+				fmt.Println("ChainBitcoin: ", address)
+			case types.ChainEthereum:
+				fmt.Println("ChainEthereum: ", address)
+			case types.ChainSolana:
+				fmt.Println("ChainSolana: ", address)
+			case types.ChainSui:
+				fmt.Println("ChainSui: ", address)
+			case types.ChainDOG:
+				fmt.Println("ChainDOG: ", address)
+			}
+		}
+	},
+}
+
+// GenerateAddressByPath(masterPubKey, types.CoinTypeEVM, 0, 0)
 
 var printEDDSAPublicKeyCmd = &cobra.Command{
 	Use:     "eddsaPublicKey",

@@ -52,8 +52,11 @@ type WalletClient struct {
 }
 
 func (w *WalletClient) Start(context.Context) {
-	log.Info("evm wallet client is stopping...")
-	w.loopApproveProposal()
+	log.Info("evm wallet client is starting...")
+	w.tss.RegisterTssClient(w)
+	w.receiveL2TaskLoop()
+	w.receiveSubmitTaskLoop()
+	w.loopProcessOperation()
 }
 
 func (w *WalletClient) Stop(context.Context) {

@@ -457,11 +457,11 @@ func (m *Scheduler) ProcessOperation() {
 		log.Info("batch proposal")
 		tasks := m.taskQueue.GetTopN(TopN)
 
-		var operations = make([]contracts.Operation, 0, len(tasks))
+		operations := make([]contracts.TaskOperation, 0, len(tasks))
 		for _, item := range tasks {
 			op, err := m.operation(item)
 			if err != nil {
-				log.Errorf("failed to process task: %w", err)
+				log.Errorf("failed to process task: %v", err)
 				return
 			}
 			operations = append(operations, *op)
@@ -630,7 +630,7 @@ func (m *Scheduler) proposalLoop() {
 							m.pendingStateTasks.Add(task)
 							// pending task
 							if m.isCanProposal() {
-								m.processTxSign(nil, task)
+								m.processTxSignForTest(nil, task)
 							}
 						}
 					case db.Created:

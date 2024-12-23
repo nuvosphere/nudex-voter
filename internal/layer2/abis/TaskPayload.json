@@ -11,14 +11,8 @@
       },
       {
         "indexed": false,
-        "internalType": "uint8",
-        "name": "taskType",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
         "internalType": "string",
-        "name": "targetAddress",
+        "name": "userTssAddress",
         "type": "string"
       },
       {
@@ -29,21 +23,71 @@
       },
       {
         "indexed": false,
-        "internalType": "enum TaskPayload.Chain",
-        "name": "chain",
+        "internalType": "bytes32",
+        "name": "chainId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "contractAddress",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "ticker",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum TaskPayload.AssetType",
+        "name": "assetType",
         "type": "uint8"
       },
       {
         "indexed": false,
-        "internalType": "uint32",
-        "name": "chainId",
-        "type": "uint32"
+        "internalType": "uint8",
+        "name": "decimal",
+        "type": "uint8"
       },
       {
         "indexed": false,
         "internalType": "uint64",
-        "name": "blockHeight",
+        "name": "fee",
         "type": "uint64"
+      }
+    ],
+    "name": "ConsolidationRequest",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs":
+    [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "userTssAddress",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "amount",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "chainId",
+        "type": "bytes32"
       },
       {
         "indexed": false,
@@ -143,20 +187,14 @@
       },
       {
         "indexed": false,
-        "internalType": "uint8",
-        "name": "taskType",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
         "internalType": "uint32",
         "name": "account",
         "type": "uint32"
       },
       {
         "indexed": false,
-        "internalType": "enum TaskPayload.Chain",
-        "name": "chain",
+        "internalType": "enum TaskPayload.AddressCategory",
+        "name": "addressType",
         "type": "uint8"
       },
       {
@@ -213,14 +251,8 @@
       },
       {
         "indexed": false,
-        "internalType": "uint8",
-        "name": "taskType",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
         "internalType": "string",
-        "name": "targetAddress",
+        "name": "userTssAddress",
         "type": "string"
       },
       {
@@ -231,21 +263,9 @@
       },
       {
         "indexed": false,
-        "internalType": "enum TaskPayload.Chain",
-        "name": "chain",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint32",
+        "internalType": "bytes32",
         "name": "chainId",
-        "type": "uint32"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint64",
-        "name": "blockHeight",
-        "type": "uint64"
+        "type": "bytes32"
       },
       {
         "indexed": false,
@@ -261,9 +281,9 @@
       },
       {
         "indexed": false,
-        "internalType": "string",
+        "internalType": "bytes32",
         "name": "ticker",
-        "type": "string"
+        "type": "bytes32"
       },
       {
         "indexed": false,

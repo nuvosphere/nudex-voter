@@ -127,23 +127,23 @@ func NewCreateWalletTask(taskId uint64, req *contracts.TaskPayloadContractWallet
 			TaskType: TaskTypeCreateWallet,
 		},
 		Account: req.Account,
-		Chain:   req.Chain,
+		Chain:   req.AddressType,
 		Index:   req.Index,
 	}
 }
 
 type DepositTask struct {
 	BaseTask
-	TargetAddress   string `json:"target_address"`
-	Amount          uint64 `json:"amount"`
-	Chain           uint8  `json:"chain"`
-	ChainId         uint32 `json:"chain_id"`
-	BlockHeight     uint64 `json:"block_height"`
-	TxHash          string `json:"tx_hash"`
-	ContractAddress string `json:"contract_address"`
-	Ticker          string `json:"ticker"`
-	AssetType       uint8  `json:"asset_type"`
-	Decimal         uint8  `json:"decimal"`
+	TargetAddress   string       `json:"target_address"`
+	Amount          uint64       `json:"amount"`
+	Chain           uint8        `json:"chain"`
+	ChainId         types.Byte32 `json:"chain_id"`
+	BlockHeight     uint64       `json:"block_height"`
+	TxHash          string       `json:"tx_hash"`
+	ContractAddress string       `json:"contract_address"`
+	Ticker          string       `json:"ticker"`
+	AssetType       uint8        `json:"asset_type"`
+	Decimal         uint8        `json:"decimal"`
 }
 
 func (c *DepositTask) Status() int {
@@ -165,11 +165,9 @@ func NewDepositTask(taskId uint64, req *contracts.TaskPayloadContractDepositRequ
 			TaskId:   taskId,
 			TaskType: TaskTypeDeposit,
 		},
-		TargetAddress:   req.TargetAddress,
+		TargetAddress:   req.UserTssAddress,
 		Amount:          req.Amount,
-		Chain:           req.Chain,
 		ChainId:         req.ChainId,
-		BlockHeight:     req.BlockHeight,
 		TxHash:          req.TxHash,
 		ContractAddress: req.ContractAddress,
 		Ticker:          req.Ticker,
@@ -180,17 +178,17 @@ func NewDepositTask(taskId uint64, req *contracts.TaskPayloadContractDepositRequ
 
 type WithdrawalTask struct {
 	BaseTask
-	TargetAddress   string `json:"target_address"`
-	Amount          uint64 `json:"amount"`
-	Chain           uint8  `json:"chain"`
-	ChainId         uint32 `json:"chain_id"`
-	BlockHeight     uint64 `json:"block_height"`
-	TxHash          string `json:"tx_hash"`
-	ContractAddress string `json:"contract_address"`
-	Ticker          string `json:"ticker"`
-	AssetType       uint8  `json:"asset_type"`
-	Decimal         uint8  `json:"decimal"`
-	Fee             uint64 `json:"fee"`
+	TargetAddress   string       `json:"target_address"`
+	Amount          uint64       `json:"amount"`
+	Chain           uint8        `json:"chain"`
+	ChainId         types.Byte32 `json:"chain_id"`
+	BlockHeight     uint64       `json:"block_height"`
+	TxHash          string       `json:"tx_hash"`
+	ContractAddress string       `json:"contract_address"`
+	Ticker          types.Byte32 `json:"ticker"`
+	AssetType       uint8        `json:"asset_type"`
+	Decimal         uint8        `json:"decimal"`
+	Fee             uint64       `json:"fee"`
 }
 
 func (*WithdrawalTask) TableName() string {
@@ -207,11 +205,9 @@ func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdraw
 			TaskId:   taskId,
 			TaskType: TaskTypeWithdrawal,
 		},
-		TargetAddress:   req.TargetAddress,
+		TargetAddress:   req.UserTssAddress,
 		Amount:          req.Amount,
-		Chain:           req.Chain,
 		ChainId:         req.ChainId,
-		BlockHeight:     req.BlockHeight,
 		TxHash:          req.TxHash,
 		ContractAddress: req.ContractAddress,
 		Ticker:          req.Ticker,
@@ -223,17 +219,17 @@ func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdraw
 
 type ConsolidationTask struct {
 	BaseTask
-	TargetAddress   string `json:"target_address"`
-	Amount          uint64 `json:"amount"`
-	Chain           uint8  `json:"chain"`
-	ChainId         uint32 `json:"chain_id"`
-	BlockHeight     uint64 `json:"block_height"`
-	TxHash          string `json:"tx_hash"`
-	ContractAddress string `json:"contract_address"`
-	Ticker          string `json:"ticker"`
-	AssetType       uint8  `json:"asset_type"`
-	Decimal         uint8  `json:"decimal"`
-	Fee             uint64 `json:"fee"`
+	TargetAddress   string       `json:"target_address"`
+	Amount          uint64       `json:"amount"`
+	Chain           uint8        `json:"chain"`
+	ChainId         types.Byte32 `json:"chain_id"`
+	BlockHeight     uint64       `json:"block_height"`
+	TxHash          string       `json:"tx_hash"`
+	ContractAddress string       `json:"contract_address"`
+	Ticker          string       `json:"ticker"`
+	AssetType       uint8        `json:"asset_type"`
+	Decimal         uint8        `json:"decimal"`
+	Fee             uint64       `json:"fee"`
 }
 
 func (*ConsolidationTask) TableName() string {

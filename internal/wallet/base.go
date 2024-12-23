@@ -68,12 +68,12 @@ func (w *BaseWallet) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		return nil, err
 	}
 
-	detailTask := codec.DecodeTask(t.Id, t.Context)
+	detailTask := codec.DecodeTask(t.Id, t.Result)
 
 	baseTask := db.Task{
 		TaskId:    t.Id,
 		TaskType:  detailTask.Type(),
-		Context:   t.Context,
+		Context:   t.Result,
 		Submitter: t.Submitter.Hex(),
 		State:     int(t.State),
 	}
@@ -93,4 +93,9 @@ func (w *BaseWallet) IsDiscussed(taskID uint64) bool {
 
 func (w *BaseWallet) AddDiscussedTask(taskID uint64) {
 	w.discussedTaskCache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
+}
+
+func (w *BaseWallet) GetAddressBalance(chainID uint64, minAmount uint64) []db.AddressBalance {
+	address, _ := w.stateDB.GetAddressBalanceByCondition(chainID, minAmount)
+	return address
 }
