@@ -456,7 +456,7 @@ func (m *Scheduler) ProcessOperation() {
 	if m.isCanProposal() && m.isCanNextOperation() {
 		log.Info("batch proposal")
 		tasks := m.taskQueue.GetTopN(TopN)
-		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.operation(item) })
+		operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.TaskOperation { return *m.operation(item) })
 		if len(operations) == 0 {
 			log.Warnf("operationsQueue is empty")
 			return

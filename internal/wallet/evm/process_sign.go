@@ -38,7 +38,7 @@ func (w *WalletClient) ReceiveSignature(res *suite.SignRes) {
 			operations := op.(*Operations)
 			operations.Signature = res.Signature
 			w.processOperationSignResult(operations)
-			lo.ForEach(operations.Operation, func(item contracts.Operation, _ int) { w.AddDiscussedTask(item.TaskId) })
+			lo.ForEach(operations.Operation, func(item contracts.TaskOperation, _ int) { w.AddDiscussedTask(item.TaskId) })
 			w.operationsQueue.RemoveTopN(operations.TaskID() - 1)
 		}
 

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -23,7 +22,7 @@ import (
 
 type Operations struct {
 	Nonce     *big.Int
-	Operation []contracts.Operation
+	Operation []contracts.TaskOperation
 	Hash      common.Hash
 	DataHash  common.Hash
 	Signature []byte
@@ -38,8 +37,8 @@ func (o *Operations) Type() int {
 }
 
 // only used test
-func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.Operation {
-	operation := &contracts.Operation{
+func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.TaskOperation {
+	operation := &contracts.TaskOperation{
 		TaskId: detailTask.TaskID(),
 	}
 
@@ -47,44 +46,45 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) *contracts.Operation
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.AddressType)
 		ec := types.GetCurveTypeByCoinType(coinType)
-		userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
-		data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
-		operation.OptData = data
-		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
+		// userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
+		_ = address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
+		// data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		// operation.OptData = data
+		// operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
 	case *db.DepositTask:
-		data := m.voterContract.EncodeRecordDeposit(
-			common.HexToAddress(task.TargetAddress),
-			big.NewInt(int64(task.Amount)),
-			task.ChainId.Big(),
-			common.HexToHash(task.TxHash).Bytes(), // todo
-			nil,
-		)
-		operation.OptData = data
-		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		//data := m.voterContract.EncodeRecordDeposit(
+		//	common.HexToAddress(task.TargetAddress),
+		//	big.NewInt(int64(task.Amount)),
+		//	task.ChainId.Big(),
+		//	common.HexToHash(task.TxHash).Bytes(), // todo
+		//	nil,
+		//)
+		//operation.OptData = data
+		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = db.Completed
 	case *db.WithdrawalTask:
-		data := m.voterContract.EncodeRecordWithdrawal(
-			common.HexToAddress(task.TargetAddress),
-			big.NewInt(int64(task.Amount)),
-			task.ChainId.Big(),
-			common.HexToHash(task.TxHash).Bytes(), // todo
-			nil,
-		)
-		operation.OptData = data
-		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		//data := m.voterContract.EncodeRecordWithdrawal(
+		//	common.HexToAddress(task.TargetAddress),
+		//	big.NewInt(int64(task.Amount)),
+		//	task.ChainId.Big(),
+		//	common.HexToHash(task.TxHash).Bytes(), // todo
+		//	nil,
+		//)
+		//operation.OptData = data
+		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = db.Pending
 	default:
 		log.Errorf("unhandled default case")
 		operation.State = db.Completed
-		operation.OptData = nil // todo
+		// operation.OptData = nil // todo
 	}
 
 	return operation
 }
 
 // only used test
-func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
+func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.TaskOperation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
 		Operation: ops,
@@ -102,7 +102,7 @@ func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Prop
 	batchData := &types.BatchData{}
 	batchData.FromBytes(msg.Data)
 	tasks := m.taskQueue.BatchGet(batchData.Ids)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *m.operation(item) })
+	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.TaskOperation { return *m.operation(item) })
 
 	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {

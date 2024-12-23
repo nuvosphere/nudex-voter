@@ -3,7 +3,6 @@ package evm
 import (
 	"encoding/json"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -23,7 +22,7 @@ import (
 
 type Operations struct {
 	Nonce     *big.Int
-	Operation []contracts.Operation
+	Operation []contracts.TaskOperation
 	Hash      common.Hash
 	DataHash  common.Hash
 	Signature []byte
@@ -37,45 +36,44 @@ func (o *Operations) Type() int {
 	return db.TypeOperations
 }
 
-func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.Operation {
-	operation := &contracts.Operation{
+func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.TaskOperation {
+	operation := &contracts.TaskOperation{
 		TaskId: detailTask.TaskID(),
 	}
 
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
-		coinType := types.GetCoinTypeByChain(task.AddressType)
-		userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		data := w.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
-		operation.OptData = data
-		operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
+		// coinType := types.GetCoinTypeByChain(task.AddressType)
+		// userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
+		// data := w.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		operation.State = uint8(task.Task.State)
+		// operation.TxHash = ""
 	case *db.DepositTask:
-		data := w.VoterContract().EncodeRecordDeposit(
-			common.HexToAddress(task.TargetAddress),
-			big.NewInt(int64(task.Amount)),
-			task.ChainId.Big(),
-			common.HexToHash(task.TxHash).Bytes(), // todo
-			nil,
-		)
-		operation.OptData = data
-		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		//data := w.VoterContract().EncodeRecordDeposit(
+		//	common.HexToAddress(task.TargetAddress),
+		//	big.NewInt(int64(task.Amount)),
+		//	task.ChainId.Big(),
+		//	common.HexToHash(task.TxHash).Bytes(), // todo
+		//	nil,
+		//)
+		//operation.OptData = data
+		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = uint8(task.Task.State)
 	case *db.WithdrawalTask:
-		data := w.VoterContract().EncodeRecordWithdrawal(
-			common.HexToAddress(task.TargetAddress),
-			big.NewInt(int64(task.Amount)),
-			task.ChainId.Big(),
-			common.HexToHash(task.TxHash).Bytes(), // todo
-			nil,
-		)
-		operation.OptData = data
-		operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
+		//data := w.VoterContract().EncodeRecordWithdrawal(
+		//	common.HexToAddress(task.TargetAddress),
+		//	big.NewInt(int64(task.Amount)),
+		//	task.ChainId.Big(),
+		//	common.HexToHash(task.TxHash).Bytes(), // todo
+		//	nil,
+		//)
+		//operation.OptData = data
+		//operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
 		operation.State = uint8(task.Task.State)
 	default:
 		log.Errorf("unhandled default case")
 		operation.State = db.Completed
-		operation.OptData = nil // todo
+		// operation.OptData = nil // todo
 	}
 
 	return operation
@@ -103,7 +101,7 @@ const TopN = 20
 func (w *WalletClient) processOperation() {
 	log.Info("batch proposal")
 	tasks := w.submitTaskQueue.GetTopN(TopN)
-	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.Operation { return *w.Operation(item) })
+	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.TaskOperation { return *w.Operation(item) })
 	if len(operations) == 0 {
 		log.Warnf("operationsQueue is empty")
 		return
@@ -136,7 +134,7 @@ func (w *WalletClient) processOperation() {
 	w.saveOperations(nonce, operations, dataHash, msg)
 }
 
-func (w *WalletClient) saveOperations(nonce *big.Int, ops []contracts.Operation, dataHash, hash common.Hash) {
+func (w *WalletClient) saveOperations(nonce *big.Int, ops []contracts.TaskOperation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
 		Operation: ops,

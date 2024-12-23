@@ -125,12 +125,12 @@ func (v *VoterContractMocker) TaskCompletionThreshold() (*big.Int, error) {
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) EncodeVerifyAndCall(operations []contracts.Operation, signature []byte) []byte {
+func (v *VoterContractMocker) EncodeVerifyAndCall(operations []contracts.TaskOperation, signature []byte) []byte {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.Operation) (*big.Int, common.Hash, common.Hash, error) {
+func (v *VoterContractMocker) GenerateVerifyTaskUnSignMsg(operations []contracts.TaskOperation) (*big.Int, common.Hash, common.Hash, error) {
 	nonce, err := v.TssNonce()
 	if err != nil {
 		return nil, common.Hash{}, common.Hash{}, err
@@ -157,12 +157,12 @@ func (v *VoterContractMocker) IsParticipant(participant common.Address) (bool, e
 	return slices.Contains(participants, participant), nil
 }
 
-func (v *VoterContractMocker) GetRandomParticipant(_salt *big.Int) (common.Address, error) {
+func (v *VoterContractMocker) GetRandomParticipant(_salt common.Address) (common.Address, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GetLatestTask() (contracts.ITaskManagerTask, error) {
+func (v *VoterContractMocker) GetLatestTask() (contracts.Task, error) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -177,7 +177,7 @@ func (v *VoterContractMocker) GetTaskState(taskId uint64) (uint8, error) {
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) GetUncompletedTasks() ([]contracts.ITaskManagerTask, error) {
+func (v *VoterContractMocker) GetUncompletedTasks() ([]contracts.Task, error) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -192,7 +192,7 @@ func (v *VoterContractMocker) NextTaskId() (uint64, error) {
 	panic("implement me")
 }
 
-func (v *VoterContractMocker) Tasks(taskId uint64) (contracts.ITaskManagerTask, error) {
+func (v *VoterContractMocker) Tasks(taskId uint64) (contracts.Task, error) {
 	// TODO implement me
 	panic("implement me")
 }

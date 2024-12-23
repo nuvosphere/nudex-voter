@@ -15,5 +15,5 @@ type VoterContract interface {
 }
 
 type Operation interface {
-	Operation(detail db.DetailTask) *contracts.Operation
+	Operation(detail db.DetailTask) *contracts.TaskOperation
 }

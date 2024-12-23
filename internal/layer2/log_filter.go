@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	vtypes "github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
@@ -67,11 +69,11 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, TaskSubmitted, vLog)
-		actualTask := codec.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Context)
+		actualTask := codec.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Data)
 		baseTask := db.Task{
 			TaskId:    actualTask.TaskID(),
 			TaskType:  actualTask.Type(),
-			Context:   taskSubmitted.Context,
+			Context:   taskSubmitted.Data,
 			Submitter: taskSubmitted.Submitter.Hex(),
 			LogIndex:  l.LogIndex(TaskSubmitted, vLog),
 		}
@@ -141,7 +143,7 @@ func (l *Layer2Listener) LogIndex(eventName string, vlog types.Log) db.LogIndex 
 		EventName:       eventName,
 		Log:             &vlog,
 		TxHash:          vlog.TxHash,
-		ChainId:         chainID.Uint64(),
+		ChainId:         vtypes.BigToByte32(chainID),
 		BlockNumber:     vlog.BlockNumber,
 		LogIndex:        uint64(vlog.Index),
 	}
@@ -234,20 +236,18 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, DepositRecorded, vLog)
 		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			depositRecord := db.DepositRecord{
-				TargetAddress: depositRecorded.TargetAddress.Hex(),
+				TargetAddress: strings.ToLower(depositRecorded.DepositAddress),
 				Amount:        depositRecorded.Amount.Uint64(),
-				ChainId:       depositRecorded.ChainId.Uint64(),
-				TxInfo:        depositRecorded.TxInfo,
-				ExtraInfo:     depositRecorded.ExtraInfo,
+				ChainId:       depositRecorded.ChainId,
 				LogIndex:      l.LogIndex(DepositRecorded, vLog),
 			}
 			err1 := tx.Save(&depositRecord).Error
 
 			addressBalance := db.AddressBalance{
-				Address: depositRecorded.TargetAddress.Hex(),
+				Address: depositRecorded.DepositAddress,
 				// Token:   ,
 				Amount:  decimal.NewFromBigInt(depositRecorded.Amount, 0),
-				ChainId: depositRecorded.ChainId.Uint64(),
+				ChainId: depositRecorded.ChainId,
 			}
 
 			err2 := tx.Clauses(clause.OnConflict{
@@ -267,17 +267,15 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 
 		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			withdrawalRecord := db.WithdrawalRecord{
-				TargetAddress: withdrawalRecorded.TargetAddress.Hex(),
-				Amount:        withdrawalRecorded.Amount.Uint64(),
-				ChainId:       withdrawalRecorded.ChainId.Uint64(),
-				TxInfo:        withdrawalRecorded.TxInfo,
-				ExtraInfo:     withdrawalRecorded.ExtraInfo,
-				LogIndex:      l.LogIndex(WithdrawalRecorded, vLog),
+				DepositAddress: withdrawalRecorded.DepositAddress,
+				Amount:         withdrawalRecorded.Amount.Uint64(),
+				ChainId:        withdrawalRecorded.ChainId,
+				LogIndex:       l.LogIndex(WithdrawalRecorded, vLog),
 			}
 			err1 := tx.Save(&withdrawalRecord).Error
 
 			err2 := tx.Model(&db.AddressBalance{}).
-				Where("address = ?", withdrawalRecorded.TargetAddress.Hex()).
+				Where("address = ?", withdrawalRecorded.DepositAddress).
 				Update("amount", gorm.Expr("amount - ?", decimal.NewFromBigInt(withdrawalRecorded.Amount, 0))).
 				Error
 

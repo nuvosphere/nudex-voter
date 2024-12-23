@@ -1,10 +1,12 @@
 package db
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/config"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm/clause"
@@ -32,7 +34,7 @@ func TestTask(t *testing.T) {
 					ContractAddress: common.HexToAddress("0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
 					EventName:       "121221",
 					TxHash:          common.Hash{},
-					ChainId:         60,
+					ChainId:         types.BigToByte32(big.NewInt(60)),
 					BlockNumber:     10,
 					LogIndex:        20,
 				},
@@ -90,7 +92,7 @@ func TestUniqueTask(t *testing.T) {
 					ContractAddress: common.HexToAddress("0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A"),
 					EventName:       "121221",
 					TxHash:          common.Hash{},
-					ChainId:         60,
+					ChainId:         types.BigToByte32(big.NewInt(60)),
 					BlockNumber:     10,
 					LogIndex:        20,
 				},

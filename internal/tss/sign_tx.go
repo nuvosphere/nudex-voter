@@ -46,7 +46,7 @@ func (m *Scheduler) loopSigInToOut() {
 						log.Infof("result.Data.SignatureRecovery: len: %d, result.Data.SignatureRecovery: %x", len(result.Data.SignatureRecovery), result.Data.SignatureRecovery)
 						log.Infof("ops.Signature: len: %d, ops.Signature: %x, Hash: %v,dataHash: %v", len(ops.Signature), ops.Signature, ops.Hash, ops.DataHash)
 						m.processOperationSignResult(ops)
-						lo.ForEach(ops.Operation, func(item contracts.Operation, _ int) { m.AddDiscussedTask(item.TaskId) })
+						lo.ForEach(ops.Operation, func(item contracts.TaskOperation, _ int) { m.AddDiscussedTask(item.TaskId) })
 						m.operationsQueue.RemoveTopN(ops.TaskID() - 1)
 
 					case types.SignTestTxSessionType:

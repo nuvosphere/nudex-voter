@@ -1,20 +1,7 @@
 [
   {
     "type": "function",
-    "name": "chooseNewSubmitter",
-    "inputs": [
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "forcedRotationWindow",
+    "name": "FORCE_ROTATION_WINDOW",
     "inputs": [],
     "outputs": [
       {
@@ -27,6 +14,37 @@
   },
   {
     "type": "function",
+    "name": "MAX_OPT_COUNT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "chooseNewSubmitter",
+    "inputs": [
+      {
+        "name": "_uncompletedTaskCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "initialize",
     "inputs": [
       {
@@ -35,7 +53,7 @@
         "internalType": "address"
       },
       {
-        "name": "_participantManager",
+        "name": "_participantHandler",
         "type": "address",
         "internalType": "address"
       },
@@ -97,14 +115,14 @@
     "name": "operationHash",
     "inputs": [
       {
-        "name": "_opts",
+        "name": "_operations",
         "type": "tuple[]",
-        "internalType": "struct Operation[]",
+        "internalType": "struct TaskOperation[]",
         "components": [
           {
-            "name": "managerAddr",
-            "type": "address",
-            "internalType": "address"
+            "name": "taskId",
+            "type": "uint64",
+            "internalType": "uint64"
           },
           {
             "name": "state",
@@ -112,14 +130,9 @@
             "internalType": "enum State"
           },
           {
-            "name": "taskId",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "optData",
-            "type": "bytes",
-            "internalType": "bytes"
+            "name": "txHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
           }
         ]
       },
@@ -141,17 +154,17 @@
         "internalType": "bytes32"
       }
     ],
-    "stateMutability": "pure"
+    "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "participantManager",
+    "name": "participantHandler",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IParticipantManager"
+        "internalType": "contract IParticipantHandler"
       }
     ],
     "stateMutability": "view"
@@ -173,19 +186,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "taskCompletionThreshold",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -231,14 +231,14 @@
     "name": "verifyAndCall",
     "inputs": [
       {
-        "name": "_opts",
+        "name": "_operations",
         "type": "tuple[]",
-        "internalType": "struct Operation[]",
+        "internalType": "struct TaskOperation[]",
         "components": [
           {
-            "name": "managerAddr",
-            "type": "address",
-            "internalType": "address"
+            "name": "taskId",
+            "type": "uint64",
+            "internalType": "uint64"
           },
           {
             "name": "state",
@@ -246,14 +246,9 @@
             "internalType": "enum State"
           },
           {
-            "name": "taskId",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "optData",
-            "type": "bytes",
-            "internalType": "bytes"
+            "name": "txHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
           }
         ]
       },
@@ -271,14 +266,14 @@
     "name": "verifyOperation",
     "inputs": [
       {
-        "name": "_opts",
+        "name": "_operations",
         "type": "tuple[]",
-        "internalType": "struct Operation[]",
+        "internalType": "struct TaskOperation[]",
         "components": [
           {
-            "name": "managerAddr",
-            "type": "address",
-            "internalType": "address"
+            "name": "taskId",
+            "type": "uint64",
+            "internalType": "uint64"
           },
           {
             "name": "state",
@@ -286,29 +281,30 @@
             "internalType": "enum State"
           },
           {
-            "name": "taskId",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "optData",
-            "type": "bytes",
-            "internalType": "bytes"
+            "name": "txHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
           }
         ]
-      },
-      {
-        "name": "_signature",
-        "type": "bytes",
-        "internalType": "bytes"
       },
       {
         "name": "_nonce",
         "type": "uint256",
         "internalType": "uint256"
+      },
+      {
+        "name": "_signature",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
     "stateMutability": "view"
   },
   {
@@ -320,19 +316,6 @@
         "type": "uint64",
         "indexed": false,
         "internalType": "uint64"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "OperationFailed",
-    "inputs": [
-      {
-        "name": "errInfo",
-        "type": "bytes",
-        "indexed": true,
-        "internalType": "bytes"
       }
     ],
     "anonymous": false
@@ -376,6 +359,11 @@
   },
   {
     "type": "error",
+    "name": "ExceedMaxOptCount",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "IncorrectSubmitter",
     "inputs": [
       {
@@ -413,6 +401,17 @@
   },
   {
     "type": "error",
+    "name": "NotEligibleForPending",
+    "inputs": [
+      {
+        "name": "taskId",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "NotInitializing",
     "inputs": []
   },
@@ -443,17 +442,6 @@
       },
       {
         "name": "window",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "TaskAlreadyCompleted",
-    "inputs": [
-      {
-        "name": "taskId",
         "type": "uint256",
         "internalType": "uint256"
       }
