@@ -157,7 +157,6 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 		data, err := json.Marshal(operations)
 		utils.Assert(err)
 		tx, err := w.BuildUnsignTx(
-			w.ctx,
 			w.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),
@@ -172,7 +171,7 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		chainId, err := w.ChainID(w.ctx)
+		chainId, err := w.ChainID()
 		if err != nil {
 			log.Errorf("failed to ChainID: %v", err)
 			return
@@ -183,13 +182,13 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		err = w.SendSingedTx(w.ctx, signedTx)
+		err = w.SendSingedTx(signedTx)
 		if err != nil {
 			log.Errorf("failed to send transaction: %v", err)
 			return
 		}
 		// updated status to pending
-		receipt, err := w.WaitTxSuccess(w.ctx, signedTx.Hash())
+		receipt, err := w.WaitTxSuccess(signedTx.Hash())
 		if err != nil {
 			log.Errorf("failed to wait transaction success: %v", err)
 			return

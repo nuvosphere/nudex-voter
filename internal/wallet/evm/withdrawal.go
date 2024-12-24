@@ -32,14 +32,13 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	switch task.AssetType {
 	case types.AssetTypeMain:
 		tx, err = w.BuildUnsignTx(
-			w.ctx,
 			hotAddress,
 			to,
 			big.NewInt(int64(task.Amount)), nil, nil, withdraw, nil,
 		)
 	case types.AssetTypeErc20:
 		tx, err = w.BuildUnsignTx(
-			w.ctx,
+
 			hotAddress,
 			common.HexToAddress(task.ContractAddress),
 			nil,
@@ -83,13 +82,13 @@ func (w *WalletClient) processTxSignResult(res *suite.SignRes) {
 		switch ctx := txCtx.(type) {
 		case *TxContext:
 			hash := ctx.tx.Hash()
-			err := w.SendTransactionWithSignature(w.ctx, ctx.tx, res.Signature)
+			err := w.SendTransactionWithSignature(ctx.tx, res.Signature)
 			if err != nil {
 				log.Errorf("send transaction err: %v", err)
 				return
 			}
 			// updated status to pending
-			receipt, err := w.WaitTxSuccess(w.ctx, hash)
+			receipt, err := w.WaitTxSuccess(hash)
 			if err != nil {
 				log.Errorf("failed to wait transaction success: %v", err)
 				return

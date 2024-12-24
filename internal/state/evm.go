@@ -70,6 +70,21 @@ func (d *EvmWalletState) PendingBlockchainTransaction(tx *gorm.DB, txHash common
 	return bt, nil
 }
 
+func (d *EvmWalletState) PendingBlockchainTransactions(tx *gorm.DB) (txs []db.EvmTransaction, err error) {
+	tx = d.tx(tx)
+
+	err = tx.
+		Model(&db.EvmTransaction{}).
+		Where("status = ?", db.Pending).
+		Find(&txs).
+		Error
+	if err != nil {
+		return nil, err
+	}
+
+	return txs, nil
+}
+
 func (d *EvmWalletState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Decimal, error) {
 	tx = d.tx(tx)
 	bt := &db.EvmTransaction{}
