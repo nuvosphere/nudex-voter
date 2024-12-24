@@ -231,13 +231,11 @@ func (s *Wallet) BuildUnsignTx(
 		return nil, wrapError(err)
 	}
 
-	err = s.state.CreateTx(
+	_, err = s.state.CreateTx(
 		nil,
-		account,
-		decimal.NewFromUint64(nextNonce),
-		jsonData,
-		calldata,
 		tx.Hash(),
+		jsonData,
+		decimal.NewFromUint64(nextNonce),
 		head.Number.Uint64(),
 		Operations,
 		EvmWithdraw,
@@ -306,12 +304,10 @@ func (s *Wallet) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransac
 		return signedTx, wrapError(err)
 	}
 
-	err = s.state.CreateTx(nil,
-		oldOrderTx.Sender,
-		oldOrderTx.TxNonce,
-		jsonData,
-		oldOrderTx.Calldata,
+	_, err = s.state.CreateTx(nil,
 		newTxHash,
+		jsonData,
+		oldOrderTx.TxNonce,
 		head.Number.Uint64(),
 		oldOrderTx.Operations,
 		oldOrderTx.EvmWithdraw,

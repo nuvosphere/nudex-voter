@@ -21,8 +21,9 @@ var (
 	ErrTxCompleted        = fmt.Errorf("tx completed: %w", ErrWallet)
 )
 
-var wrapErrorList = []error{
-	ErrAlreadyKnown,
+var wrapErrorList = append(failErrorList, ErrAlreadyKnown)
+
+var failErrorList = []error{
 	ErrNonceTooLow,
 	ErrReplacement,
 	ErrIntrinsicGasTooLow,

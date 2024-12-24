@@ -33,7 +33,7 @@ func (o *Operations) TaskID() uint64 {
 }
 
 func (o *Operations) Type() int {
-	return db.TypeOperations
+	return db.TaskTypeOperations
 }
 
 func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.TaskOperation {
