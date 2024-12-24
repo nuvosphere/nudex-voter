@@ -83,15 +83,17 @@ func (w *WalletClient) loopProcessOperation() {
 	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {
-		select {
-		case <-w.ctx.Done():
-			log.Info("approve proposal done")
+		for {
+			select {
+			case <-w.ctx.Done():
+				log.Info("approve proposal done")
 
-		case <-ticker.C:
-			w.processOperation()
+			case <-ticker.C:
+				w.processOperation()
 
-		case <-w.notify:
-			w.processOperation()
+			case <-w.notify:
+				w.processOperation()
+			}
 		}
 	}()
 }
@@ -207,16 +209,18 @@ func (w *WalletClient) receiveSubmitTaskLoop() {
 	taskEvent := w.event.Subscribe(eventbus.EventSubmitTask{})
 
 	go func() {
-		select {
-		case <-w.ctx.Done():
-			log.Info("evm wallet receive task event done")
+		for {
+			select {
+			case <-w.ctx.Done():
+				log.Info("evm wallet receive task event done")
 
-		case detailTask := <-taskEvent:
-			val, ok := detailTask.(db.DetailTask)
-			if ok {
-				w.submitTaskQueue.Add(val)
-				if w.submitTaskQueue.Len() >= TopN {
-					w.notify <- struct{}{}
+			case detailTask := <-taskEvent:
+				val, ok := detailTask.(db.DetailTask)
+				if ok {
+					w.submitTaskQueue.Add(val)
+					if w.submitTaskQueue.Len() >= TopN {
+						w.notify <- struct{}{}
+					}
 				}
 			}
 		}
