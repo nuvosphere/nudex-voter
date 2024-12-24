@@ -350,13 +350,10 @@ func (w *WalletClient) sendTransaction(ctx context.Context, tx *types.Transactio
 	err := w.client.SendTransaction(ctx, tx)
 	if err != nil {
 		err = errors.Join(ErrSendTransaction, wrapError(err))
+		return err
 	}
 
-	dbErr := w.walletState.UpdatePendingTx(tx.Hash())
-
-	time.Sleep(2 * time.Second)
-
-	return errors.Join(err, dbErr)
+	return w.walletState.UpdatePendingTx(tx.Hash())
 }
 
 // SpeedSendOrderTx
@@ -406,7 +403,7 @@ func (w *WalletClient) AgainSendOrderTx(ctx context.Context, tx *db.EvmTransacti
 
 	err = w.sendTransaction(ctx, orderTx)
 	if err != nil {
-		if errors.Is(err, ErrIntrinsicGasTooLow) || errors.Is(err, ErrReplacement) || errors.Is(err, ErrAlreadyKnown) {
+		if errors.Is(err, ErrIntrinsicGasTooLow) || errors.Is(err, ErrReplacement) {
 			_ = w.walletState.UpdateFailTx(txHash, err)
 			return w.SpeedSendOrderTx(ctx, tx)
 		}
@@ -517,7 +514,7 @@ func (w *WalletClient) IsOnline(ctx context.Context, txHash common.Hash) bool {
 
 func wrapError(err error) error {
 	for _, wrap := range wrapErrorList {
-		if errors.Is(err, wrap) {
+		if utils.ContainErr(err, wrap) {
 			return errors.Join(err, wrap, ErrWallet)
 		}
 	}

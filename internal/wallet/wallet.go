@@ -497,7 +497,7 @@ func (s *Wallet) IsOnline(ctx context.Context, txHash common.Hash) bool {
 
 func wrapError(err error) error {
 	for _, wrap := range wrapErrorList {
-		if errors.Is(err, wrap) {
+		if utils.ContainErr(err, wrap) {
 			return errors.Join(err, wrap, ErrWallet)
 		}
 	}
