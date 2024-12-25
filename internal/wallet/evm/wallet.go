@@ -150,7 +150,7 @@ func (w *WalletClient) SendSingedTx(ctx *TxContext) error {
 		w.pendingTx.Delete(oldTx.TxHash)
 		w.pendingTx.Store(ctx.TxHash(), ctx)
 
-		err := w.sign(ctx)
+		err := w.signTx(ctx)
 		if err != nil {
 			return err
 		}
@@ -325,24 +325,6 @@ func (w *WalletClient) SignOperationNewTx(unSignedTx *types.Transaction) ([]byte
 	return crypto.Sign(signer.Hash(unSignedTx).Bytes(), w.submitterPrivateKey)
 }
 
-func (w *WalletClient) sign(ctx *TxContext) error {
-	switch ctx.dbTX.Type {
-	case db.TaskTypeWithdrawal:
-		// todo
-	case db.TaskTypeConsolidation:
-		// todo
-	case db.TaskTypeOperations:
-		sig, err := w.SignOperationNewTx(ctx.UnSignTx())
-		if err != nil {
-			return err
-		}
-		ctx.sig = sig
-	default:
-		panic("unhandled default case")
-	}
-	return fmt.Errorf("unknown task:%d, type %d", ctx.SeqID(), ctx.dbTX.Type)
-}
-
 func (w *WalletClient) sendTransaction(ctx *TxContext) error {
 	tx, err := ctx.UnSignTx().WithSignature(w.Signer(), ctx.sig)
 	if err != nil {
@@ -385,7 +367,7 @@ func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
 	ctx.dbTX = dbTX
 	w.pendingTx.Delete(oldOrderTx.TxHash)
 	w.pendingTx.Store(unSignedTx.Hash(), ctx)
-	err = w.sign(ctx) // todo
+	err = w.signTx(ctx) // todo
 	if err != nil {
 		return wrapError(err)
 	}
@@ -527,7 +509,7 @@ func (w *WalletClient) tickerRetryUpdateTx() {
 		group.Add(1)
 		go func() {
 			if w.IsCanProcess(tx.TxHash) {
-				ctx := &TxContext{dbTX: &tx}
+				ctx := &TxContext{dbTX: &tx, notify: make(chan struct{})}
 				w.pendingTx.Store(ctx.TxHash(), ctx)
 				defer w.pendingTx.Delete(ctx.TxHash())
 				err := w.AgainSendTx(ctx)

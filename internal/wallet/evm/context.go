@@ -8,8 +8,9 @@ import (
 )
 
 type TxContext struct {
-	dbTX *db.EvmTransaction
-	sig  []byte
+	dbTX   *db.EvmTransaction
+	sig    []byte
+	notify chan struct{}
 }
 
 func (t *TxContext) TxHash() common.Hash {

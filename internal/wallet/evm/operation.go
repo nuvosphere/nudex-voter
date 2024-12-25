@@ -129,7 +129,7 @@ func (w *WalletClient) processOperation() {
 
 	err = w.tss.Sign(signReq)
 	if err != nil {
-		log.Errorf("batch task sign err:%v", err)
+		log.Errorf("batch task signTx err:%v", err)
 		return
 	}
 	w.saveOperations(nonce, operations, dataHash, msg)
@@ -170,12 +170,12 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		ctx := &TxContext{dbTX: tx}
+		ctx := &TxContext{dbTX: tx, notify: w.notify}
 		w.pendingTx.Store(ctx.TxHash(), ctx)
 		defer w.pendingTx.Delete(ctx.TxHash())
-		err = w.sign(ctx)
+		err = w.signTx(ctx)
 		if err != nil {
-			log.Errorf("failed to sign transaction: %v", err)
+			log.Errorf("failed to signTx transaction: %v", err)
 			return
 		}
 

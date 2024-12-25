@@ -3,6 +3,7 @@ package evm
 import (
 	"fmt"
 
+	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -45,4 +46,34 @@ func (w *WalletClient) ReceiveSignature(res *suite.SignRes) {
 	case types.SignTxSessionType:
 		w.processTxSignResult(res)
 	}
+}
+
+func (w *WalletClient) signTx(ctx *TxContext) error {
+	switch ctx.dbTX.Type {
+	case db.TaskTypeWithdrawal, db.TaskTypeConsolidation:
+		// todo
+		req := &suite.SignReq{
+			SeqId:      ctx.SeqID(),
+			Type:       types.SignTxSessionType,
+			ChainType:  w.ChainType(),
+			Signer:     ctx.dbTX.Sender.String(),
+			DataDigest: ctx.TxHash().String(),
+			SignData:   ctx.TxHash().Bytes(),
+			ExtraData:  nil,
+		}
+		err := w.tss.Sign(req)
+		if err != nil {
+			return err
+		}
+
+	case db.TaskTypeOperations:
+		sig, err := w.SignOperationNewTx(ctx.UnSignTx())
+		if err != nil {
+			return err
+		}
+		ctx.sig = sig
+	default:
+		panic("unhandled default case")
+	}
+	return fmt.Errorf("unknown task:%d, type %d", ctx.SeqID(), ctx.dbTX.Type)
 }

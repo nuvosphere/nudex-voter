@@ -45,50 +45,42 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		log.Errorf("failed to build unsign tx: %v", err)
 		return
 	}
-	hash := tx.TxHash
+	ctx := &TxContext{dbTX: tx, notify: make(chan struct{})}
+	w.pendingTx.Store(ctx.TxHash(), ctx)
+	defer w.pendingTx.Delete(ctx.TxHash())
 
-	req := &suite.SignReq{
-		SeqId:      task.TaskID(),
-		Type:       types.SignTxSessionType,
-		ChainType:  w.ChainType(),
-		Signer:     hotAddress.String(),
-		DataDigest: hash.String(),
-		SignData:   hash.Bytes(),
-		ExtraData:  nil,
-	}
-	w.pendingTx.Store(hash, &TxContext{dbTX: tx})
-
-	err = w.tss.Sign(req)
+	err = w.signTx(ctx)
 	if err != nil {
-		log.Errorf("failed to sign tx: %v", err)
+		log.Errorf("failed to signTx tx: %v", err)
+	}
+	<-ctx.notify // todo
+	err = w.SendSingedTx(ctx)
+	if err != nil {
+		log.Errorf("send transaction err: %v", err)
+		return
+	}
+	// updated status to pending
+	receipt, err := w.WaitTxSuccess(ctx.TxHash())
+	if err != nil {
+		log.Errorf("failed to wait transaction success: %v", err)
+		return
+	}
+	if receipt.Status == 0 {
+		// updated status to fail
+		log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", ctx.SeqID(), ctx.TxHash())
+	} else {
+		// updated status to completed
+		log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.SeqID(), ctx.TxHash())
 	}
 }
 
 func (w *WalletClient) processTxSignResult(res *suite.SignRes) {
 	txCtx, ok := w.pendingTx.Load(res.DataDigest)
-	defer w.pendingTx.Delete(res.DataDigest)
 	if ok {
 		switch ctx := txCtx.(type) {
 		case *TxContext:
 			ctx.sig = res.Signature
-			err := w.SendSingedTx(ctx)
-			if err != nil {
-				log.Errorf("send transaction err: %v", err)
-				return
-			}
-			// updated status to pending
-			receipt, err := w.WaitTxSuccess(ctx.TxHash())
-			if err != nil {
-				log.Errorf("failed to wait transaction success: %v", err)
-				return
-			}
-			if receipt.Status == 0 {
-				// updated status to fail
-				log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", res.SeqId, ctx.TxHash())
-			} else {
-				// updated status to completed
-				log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", res.SeqId, ctx.TxHash())
-			}
+			ctx.notify <- struct{}{}
 		}
 	}
 }

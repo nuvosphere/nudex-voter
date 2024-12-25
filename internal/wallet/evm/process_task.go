@@ -80,7 +80,7 @@ func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 		// w.submitTask()
 
 	case *db.WithdrawalTask:
-		w.processWithdrawTxSign(task)
+		go w.processWithdrawTxSign(task)
 
 	case *db.ConsolidationTask:
 		// todo
