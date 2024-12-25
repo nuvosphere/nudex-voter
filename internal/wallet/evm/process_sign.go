@@ -14,7 +14,7 @@ func (w *WalletClient) ChainType() uint8 {
 }
 
 func (w *WalletClient) Verify(reqId uint64, signDigest string, ExtraData []byte) error {
-	ctx, ok := w.txContext.Load(reqId)
+	ctx, ok := w.pendingTx.Load(signDigest)
 	if !ok {
 		return fmt.Errorf("tx id %d is not found", reqId)
 	}
@@ -23,7 +23,7 @@ func (w *WalletClient) Verify(reqId uint64, signDigest string, ExtraData []byte)
 		return fmt.Errorf("tx id %d is not TxContext", reqId)
 	}
 
-	if txCtx.tx.Hash().String() != signDigest {
+	if txCtx.TxHash().String() != signDigest {
 		return fmt.Errorf("tx id %d hash does not match", reqId)
 	}
 

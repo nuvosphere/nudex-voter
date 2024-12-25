@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
@@ -171,24 +170,22 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		chainId, err := w.ChainID()
-		if err != nil {
-			log.Errorf("failed to ChainID: %v", err)
-			return
-		}
-		signedTx, err := ethtypes.SignTx(tx, ethtypes.LatestSignerForChainID(chainId), config.L2PrivateKey)
+		ctx := &TxContext{dbTX: tx}
+		w.pendingTx.Store(ctx.TxHash(), ctx)
+		defer w.pendingTx.Delete(ctx.TxHash())
+		err = w.sign(ctx)
 		if err != nil {
 			log.Errorf("failed to sign transaction: %v", err)
 			return
 		}
 
-		err = w.SendSingedTx(signedTx)
+		err = w.SendSingedTx(ctx)
 		if err != nil {
 			log.Errorf("failed to send transaction: %v", err)
 			return
 		}
 		// updated status to pending
-		receipt, err := w.WaitTxSuccess(signedTx.Hash())
+		receipt, err := w.WaitTxSuccess(ctx.TxHash())
 		if err != nil {
 			log.Errorf("failed to wait transaction success: %v", err)
 			return
@@ -196,10 +193,10 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 
 		if receipt.Status == 0 {
 			// updated status to fail
-			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), signedTx.Hash().String())
+			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), ctx.TxHash().String())
 		} else {
 			// updated status to completed
-			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), signedTx.Hash().String())
+			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), ctx.TxHash().String())
 		}
 	}
 }

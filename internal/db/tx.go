@@ -15,7 +15,7 @@ type EvmTransaction struct {
 	TxHash           common.Hash       `gorm:"uniqueIndex;size:256"                   json:"txHash"`  // tx hash
 	TxJsonData       []byte            `json:"tx"`                                                    // blockchain origin tx of json format
 	TxNonce          decimal.Decimal   `gorm:"index:sender_nonce"                     json:"txNonce"` // tx nonce
-	BuildHeight      uint64            `json:"buildHeight"`
+	Sender           common.Address    `json:"sender"`
 	Status           int               `json:"status"` // 0: new，1:booked
 	Error            string            `json:"error"`
 	Type             int               // operation、withdraw、consolidation

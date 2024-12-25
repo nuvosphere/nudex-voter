@@ -32,7 +32,7 @@ func (w *WalletClient) receiveL2TaskLoop() {
 						case db.Completed, db.Failed:
 							w.RemoveTask(v.TaskID())
 							w.submitTaskQueue.Remove(v.TaskID())
-							w.txContext.Delete(v.TaskID())
+							w.pendingTx.Delete(v.TaskID()) // todo
 						default:
 							log.Errorf("taskID: %d, invalid task walletState : %v", v.TaskID(), v.Status())
 						}

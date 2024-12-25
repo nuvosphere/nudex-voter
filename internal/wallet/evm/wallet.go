@@ -41,7 +41,6 @@ type WalletClient struct {
 	client              *ethclient.Client
 	submitterPrivateKey *ecdsa.PrivateKey
 	submitter           common.Address
-	pendingTx           sync.Map // txHash: EvmTx
 	chainID             atomic.Int64
 	walletState         *state.EvmWalletState
 	tss                 suite.TssService
@@ -49,7 +48,7 @@ type WalletClient struct {
 	currentVoterNonce   *atomic.Uint64
 	submitTaskQueue     *pool.Pool[uint64] // submit task
 	operationsQueue     *pool.Pool[uint64] // pending batch task
-	txContext           sync.Map           // taskID:TxContext
+	pendingTx           sync.Map           // txHash: EvmTx
 }
 
 func (w *WalletClient) Start(context.Context) {
@@ -93,7 +92,6 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 		currentVoterNonce:   currentNonce,
 		submitTaskQueue:     pool.NewTaskPool[uint64](),
 		operationsQueue:     pool.NewTaskPool[uint64](),
-		txContext:           sync.Map{},
 	}
 }
 
@@ -134,21 +132,29 @@ func (w *WalletClient) ChainID() (*big.Int, error) {
 	return big.NewInt(w.chainID.Load()), nil
 }
 
-func (w *WalletClient) SendSingedTx(tx *types.Transaction) error {
-	err := w.sendTransaction(tx)
-
+func (w *WalletClient) SendSingedTx(ctx *TxContext) error {
+	err := w.sendTransaction(ctx)
 	if errors.Is(err, ErrIntrinsicGasTooLow) || errors.Is(err, ErrReplacement) {
-		dbTX, is := w.pendingTx.Load(tx.Hash())
-		if is {
-			_, err = w.SpeedSendTx(dbTX.(*db.EvmTransaction))
-		}
+		return w.SpeedSendTx(ctx)
 	}
 
 	if errors.Is(err, ErrNonceTooLow) {
-		dbTX, is := w.pendingTx.Load(tx.Hash())
-		if is {
-			_, err = w.BuildNewDbTx(dbTX.(*db.EvmTransaction))
+		oldTx := ctx.dbTX
+		tx := oldTx.Tx()
+		sender := w.From(tx)
+		ctx.dbTX, err = w.BuildUnsignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
+		if err != nil {
+			return err
 		}
+		w.pendingTx.Delete(oldTx.TxHash)
+		w.pendingTx.Store(ctx.TxHash(), ctx)
+
+		err := w.sign(ctx)
+		if err != nil {
+			return err
+		}
+
+		return w.SendSingedTx(ctx)
 	}
 
 	return err
@@ -192,7 +198,7 @@ func (w *WalletClient) BuildUnsignTx(
 	Operations *db.Operations,
 	EvmWithdraw *db.EvmWithdraw,
 	EvmConsolidation *db.EvmConsolidation,
-) (*types.Transaction, error) {
+) (*db.EvmTransaction, error) {
 	head, err := w.client.HeaderByNumber(w.ctx, nil)
 	if err != nil {
 		return nil, wrapError(err)
@@ -274,43 +280,23 @@ func (w *WalletClient) BuildUnsignTx(
 	}
 
 	tx := types.NewTx(baseTx)
-
 	jsonData, err := tx.MarshalJSON()
-	if err != nil {
-		return nil, wrapError(err)
-	}
+	utils.Assert(err)
 
-	dbTX, err := w.walletState.CreateTx(
+	return w.walletState.CreateTx(
 		nil,
 		tx.Hash(),
 		jsonData,
 		decimal.NewFromUint64(nextNonce),
-		head.Number.Uint64(),
+		account,
 		Operations,
 		EvmWithdraw,
 		EvmConsolidation,
 	)
-	if err != nil {
-		w.pendingTx.Store(tx.Hash(), dbTX)
-	}
-
-	return tx, err
 }
 
-func (w *WalletClient) BuildNewDbTx(oldTx *db.EvmTransaction) (*types.Transaction, error) {
-	tx := oldTx.Tx()
-	sender := w.From(tx)
-
-	return w.BuildUnsignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
-}
-
-func (w *WalletClient) ExtendTxGas(tx *db.EvmTransaction) (*types.Transaction, error) {
-	oldTx := types.Transaction{}
-
-	err := oldTx.UnmarshalJSON(tx.TxJsonData)
-	if err != nil {
-		return nil, err
-	}
+func (w *WalletClient) ExtendTxGas(tx *db.EvmTransaction) *types.Transaction {
+	oldTx := tx.Tx()
 
 	gasLimit := oldTx.Gas()
 	if gasLimit < defaultGasLimit {
@@ -330,81 +316,42 @@ func (w *WalletClient) ExtendTxGas(tx *db.EvmTransaction) (*types.Transaction, e
 	}
 	unSignedTx := types.NewTx(baseTx)
 
-	return unSignedTx, nil
+	return unSignedTx
 }
 
-func (w *WalletClient) SignOperationNewTx(unSignedTx *types.Transaction) (*types.Transaction, error) {
+func (w *WalletClient) SignOperationNewTx(unSignedTx *types.Transaction) ([]byte, error) {
 	signer := types.LatestSignerForChainID(unSignedTx.ChainId())
-	signature, err := crypto.Sign(signer.Hash(unSignedTx).Bytes(), w.submitterPrivateKey)
-	if err != nil {
-		return nil, err
-	}
-	return unSignedTx.WithSignature(signer, signature)
+	return crypto.Sign(signer.Hash(unSignedTx).Bytes(), w.submitterPrivateKey)
 }
 
-// BuildSpeedSendTx
-// 1. resend order tx
-// 2. speed resend.
-func (w *WalletClient) BuildSpeedSendTx(oldOrderTx *db.EvmTransaction) (*types.Transaction, error) {
-	UnSignedTx, err := w.ExtendTxGas(oldOrderTx)
-	if err != nil {
-		return nil, wrapError(err)
-	}
-
-	w.pendingTx.Store(UnSignedTx.Hash(), nil)
-	signedTx, err := w.sign(oldOrderTx.Type, UnSignedTx) // todo
-	if err != nil {
-		return nil, wrapError(err)
-	}
-
-	newTxHash := signedTx.Hash()
-
-	jsonData, err := signedTx.MarshalJSON()
-	if err != nil {
-		return signedTx, wrapError(err)
-	}
-
-	head, err := w.client.HeaderByNumber(w.ctx, nil)
-	if err != nil {
-		return signedTx, wrapError(err)
-	}
-
-	dbTX, err := w.walletState.CreateTx(nil,
-		newTxHash,
-		jsonData,
-		oldOrderTx.TxNonce,
-		head.Number.Uint64(),
-		oldOrderTx.Operations,
-		oldOrderTx.EvmWithdraw,
-		oldOrderTx.EvmConsolidation,
-	)
-	if err != nil {
-		w.pendingTx.Store(newTxHash, dbTX)
-	}
-
-	return signedTx, wrapError(err)
-}
-
-func (w *WalletClient) sign(ty int, tx *types.Transaction) (*types.Transaction, error) {
-	switch ty {
+func (w *WalletClient) sign(ctx *TxContext) error {
+	switch ctx.dbTX.Type {
 	case db.TaskTypeWithdrawal:
 		// todo
 	case db.TaskTypeConsolidation:
 		// todo
 	case db.TaskTypeOperations:
-		return w.SignOperationNewTx(tx)
+		sig, err := w.SignOperationNewTx(ctx.Tx())
+		if err != nil {
+			return err
+		}
+		ctx.sig = sig
 	default:
 		panic("unhandled default case")
 	}
-	return nil, fmt.Errorf("unknown task type %d", ty)
+	return fmt.Errorf("unknown task:%d, type %d", ctx.SeqID(), ctx.dbTX.Type)
 }
 
-func (w *WalletClient) sendTransaction(tx *types.Transaction) error {
-	err := w.client.SendTransaction(w.ctx, tx)
+func (w *WalletClient) sendTransaction(ctx *TxContext) error {
+	tx, err := ctx.Tx().WithSignature(w.Signer(), ctx.sig)
+	if err != nil {
+		return err
+	}
+	err = w.client.SendTransaction(w.ctx, tx)
 	if err != nil {
 		err = errors.Join(ErrSendTransaction, wrapError(err))
 		_, is := lo.Find(failErrorList, func(item error) bool { return errors.Is(err, item) })
-		if !is {
+		if is {
 			dbErr := w.walletState.UpdateFailTx(tx.Hash(), err)
 			err = errors.Join(err, dbErr)
 		}
@@ -417,72 +364,72 @@ func (w *WalletClient) sendTransaction(tx *types.Transaction) error {
 // SpeedSendTx
 // 1. resend order tx
 // 2. speed resend.
-func (w *WalletClient) SpeedSendTx(oldOrderTx *db.EvmTransaction) (common.Hash, error) {
-	signedTx, err := w.BuildSpeedSendTx(oldOrderTx)
+func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
+	oldOrderTx := ctx.dbTX
+	unSignedTx := w.ExtendTxGas(oldOrderTx)
+	jsonData, err := unSignedTx.MarshalJSON()
+	utils.Assert(err)
+	dbTX, err := w.walletState.CreateTx(nil,
+		unSignedTx.Hash(),
+		jsonData,
+		oldOrderTx.TxNonce,
+		oldOrderTx.Sender,
+		oldOrderTx.Operations,
+		oldOrderTx.EvmWithdraw,
+		oldOrderTx.EvmConsolidation,
+	)
 	if err != nil {
-		return common.Hash{}, err
+		return err
 	}
+	ctx.dbTX = dbTX
+	w.pendingTx.Delete(oldOrderTx.TxHash)
+	w.pendingTx.Store(unSignedTx.Hash(), ctx)
+	err = w.sign(ctx) // todo
+	if err != nil {
+		return wrapError(err)
+	}
+	w.pendingTx.Store(unSignedTx.Hash(), ctx)
 
-	return signedTx.Hash(), w.SendSingedTx(signedTx)
+	return w.SendSingedTx(ctx)
 }
 
-// AgainSendOrderTx
+// AgainSendTx
 // 1. resend order tx
 // 2. speed resend.
-func (w *WalletClient) AgainSendOrderTx(tx *db.EvmTransaction) (common.Hash, error) {
-	orderTx := &types.Transaction{}
-	utils.Assert(orderTx.UnmarshalJSON(tx.TxJsonData))
-	txHash := tx.TxHash
-	err := w.SendSingedTx(orderTx)
+func (w *WalletClient) AgainSendTx(ctx *TxContext) error {
+	err := w.SendSingedTx(ctx)
 	if err != nil {
-		return txHash, err
+		return err
 	}
 
-	_, err = w.WaitTxSuccess(txHash)
+	_, err = w.WaitTxSuccess(ctx.TxHash())
 
-	return txHash, err
+	return err
 }
 
 func (w *WalletClient) RawTxBytes(tx *types.Transaction) []byte {
-	chainID, err := w.ChainID()
-	utils.Assert(err)
-	signer := types.LatestSignerForChainID(chainID)
-
+	signer := w.Signer()
 	return signer.Hash(tx).Bytes()
 }
 
-func (w *WalletClient) From(tx *types.Transaction) common.Address {
+func (w *WalletClient) Signer() types.Signer {
 	chainID, err := w.ChainID()
 	utils.Assert(err)
 	signer := types.LatestSignerForChainID(chainID)
+	return signer
+}
+
+func (w *WalletClient) From(tx *types.Transaction) common.Address {
+	signer := w.Signer()
 	address, err := signer.Sender(tx)
 	utils.Assert(err)
 	return address
 }
 
 func (w *WalletClient) TransactionWithSignature(tx *types.Transaction, signature []byte) (*types.Transaction, error) {
-	chainID, err := w.ChainID()
-	if err != nil {
-		return nil, err
-	}
-	signer := types.LatestSignerForChainID(chainID)
+	signer := w.Signer()
 
 	return tx.WithSignature(signer, signature)
-}
-
-func (w *WalletClient) SendTransactionWithSignature(tx *types.Transaction, signature []byte) error {
-	chainID, err := w.ChainID()
-	if err != nil {
-		return err
-	}
-	signer := types.LatestSignerForChainID(chainID)
-
-	tx, err = tx.WithSignature(signer, signature)
-	if err != nil {
-		return fmt.Errorf("tx with signature: %w", err)
-	}
-
-	return w.SendSingedTx(tx)
 }
 
 func (w *WalletClient) WaitTxSuccess(txHash common.Hash) (*types.Receipt, error) {
@@ -579,10 +526,12 @@ func (w *WalletClient) tickerRetryUpdateTx() {
 		group.Add(1)
 		go func() {
 			if w.IsCanProcess(tx.TxHash) {
-				w.pendingTx.Store(tx.TxHash, &tx)
-				_, err := w.AgainSendOrderTx(&tx)
+				ctx := &TxContext{dbTX: &tx}
+				w.pendingTx.Store(tx.TxHash, ctx)
+				defer w.pendingTx.Delete(tx.TxHash)
+				err := w.AgainSendTx(ctx)
 				if err != nil {
-					log.Infof("evm wallet AgainSendOrderTx: tx hash:%v, err:%v", tx.TxHash, err)
+					log.Infof("evm wallet AgainSendTx: tx hash:%v, err:%v", tx.TxHash, err)
 				}
 			}
 			group.Done()

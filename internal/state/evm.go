@@ -29,7 +29,7 @@ func (d *EvmWalletState) CreateTx(tx *gorm.DB,
 	txHash common.Hash,
 	txJsonData []byte,
 	txNonce decimal.Decimal,
-	buildHeight uint64,
+	sender common.Address,
 	Operations *db.Operations,
 	EvmWithdraw *db.EvmWithdraw,
 	EvmConsolidation *db.EvmConsolidation,
@@ -49,7 +49,7 @@ func (d *EvmWalletState) CreateTx(tx *gorm.DB,
 		TxHash:           txHash,
 		TxJsonData:       txJsonData,
 		TxNonce:          txNonce,
-		BuildHeight:      buildHeight,
+		Sender:           sender,
 		Status:           db.Created,
 		Error:            "",
 		Type:             ty,
@@ -70,11 +70,7 @@ func (d *EvmWalletState) PendingBlockchainTransaction(tx *gorm.DB, txHash common
 		Where("tx_hash = ? AND status = ?", txHash, db.Pending).
 		Last(&bt).
 		Error
-	if err != nil {
-		return nil, err
-	}
-
-	return bt, nil
+	return bt, err
 }
 
 func (d *EvmWalletState) PendingBlockchainTransactions(tx *gorm.DB) (txs []db.EvmTransaction, err error) {
@@ -85,11 +81,8 @@ func (d *EvmWalletState) PendingBlockchainTransactions(tx *gorm.DB) (txs []db.Ev
 		Where("status = ?", db.Pending).
 		Find(&txs).
 		Error
-	if err != nil {
-		return nil, err
-	}
 
-	return txs, nil
+	return txs, err
 }
 
 func (d *EvmWalletState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Decimal, error) {

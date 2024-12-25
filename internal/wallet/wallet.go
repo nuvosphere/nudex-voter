@@ -236,7 +236,7 @@ func (s *Wallet) BuildUnsignTx(
 		tx.Hash(),
 		jsonData,
 		decimal.NewFromUint64(nextNonce),
-		head.Number.Uint64(),
+		account,
 		Operations,
 		EvmWithdraw,
 		EvmConsolidation,
@@ -299,16 +299,11 @@ func (s *Wallet) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransac
 		return signedTx, wrapError(err)
 	}
 
-	head, err := s.client.HeaderByNumber(ctx, nil)
-	if err != nil {
-		return signedTx, wrapError(err)
-	}
-
 	_, err = s.state.CreateTx(nil,
 		newTxHash,
 		jsonData,
 		oldOrderTx.TxNonce,
-		head.Number.Uint64(),
+		oldOrderTx.Sender,
 		oldOrderTx.Operations,
 		oldOrderTx.EvmWithdraw,
 		oldOrderTx.EvmConsolidation,
