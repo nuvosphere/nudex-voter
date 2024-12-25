@@ -9,7 +9,8 @@ type TxContext struct {
 	c txClient
 }
 
-func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {}
+func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
+}
 
 func (w *WalletClient) processTxSignResult(res *suite.SignRes) {
 }

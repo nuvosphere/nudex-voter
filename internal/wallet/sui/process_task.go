@@ -60,10 +60,7 @@ func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 
 func (w *WalletClient) processPendingTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
-	case *db.WithdrawalTask:
-		// todo
-		w.submitTask(task)
-	case *db.ConsolidationTask:
+	case *db.TaskUpdatedEvent:
 		// todo
 		w.submitTask(task)
 	default:

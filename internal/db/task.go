@@ -282,7 +282,7 @@ func (t *TaskUpdatedEvent) TaskID() uint64 {
 }
 
 func (t *TaskUpdatedEvent) Type() int {
-	panic("implement me")
+	return t.Task.Type()
 }
 
 func (t *TaskUpdatedEvent) ChainType() uint8 {
