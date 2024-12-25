@@ -78,8 +78,8 @@ func (t *Task) ChainType() uint8 {
 	return t.DetailTask().ChainType()
 }
 
-func (c *Task) Status() int {
-	return c.State
+func (t *Task) Status() int {
+	return t.State
 }
 
 type BaseTask struct {

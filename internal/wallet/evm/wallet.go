@@ -487,6 +487,7 @@ func (w *WalletClient) tickerRetrySendTx() {
 			case <-w.ctx.Done():
 				log.Info("evm wallet tickerRetrySendTx done")
 			case <-ticker.C:
+				w.tickerLoopUnCompletedTasks()
 				w.tickerRetryUpdateTx()
 			}
 		}

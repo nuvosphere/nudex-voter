@@ -91,6 +91,10 @@ func (w *BaseWallet) IsDiscussed(taskID uint64) bool {
 	return ok
 }
 
+func (w *BaseWallet) ContractState() *state.ContractState {
+	return w.stateDB
+}
+
 func (w *BaseWallet) AddDiscussedTask(taskID uint64) {
 	w.discussedTaskCache.SetDefault(fmt.Sprintf("%d", taskID), struct{}{})
 }
