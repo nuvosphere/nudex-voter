@@ -76,19 +76,18 @@ func (w *WalletClient) processTxSignResult(res *suite.SignRes) {
 				log.Errorf("send transaction err: %v", err)
 				return
 			}
-			hash := ctx.TxHash()
 			// updated status to pending
-			receipt, err := w.WaitTxSuccess(hash)
+			receipt, err := w.WaitTxSuccess(ctx.TxHash())
 			if err != nil {
 				log.Errorf("failed to wait transaction success: %v", err)
 				return
 			}
 			if receipt.Status == 0 {
 				// updated status to fail
-				log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", res.SeqId, hash)
+				log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", res.SeqId, ctx.TxHash())
 			} else {
 				// updated status to completed
-				log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", res.SeqId, hash)
+				log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", res.SeqId, ctx.TxHash())
 			}
 		}
 	}
