@@ -170,7 +170,7 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		ctx := &TxContext{dbTX: tx, notify: make(chan struct{}, 1)}
+		ctx := w.NewTxContext(tx)
 		w.pendingTx.Store(ctx.TxHash(), ctx)
 		defer w.pendingTx.Delete(ctx.TxHash())
 		err = w.signTx(ctx)

@@ -1,6 +1,8 @@
 package evm
 
 import (
+	"context"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/db"
@@ -10,7 +12,9 @@ import (
 type TxContext struct {
 	dbTX   *db.EvmTransaction
 	sig    []byte
-	notify chan struct{}
+	notify chan error
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func (t *TxContext) TxHash() common.Hash {

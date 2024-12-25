@@ -500,7 +500,7 @@ func (w *WalletClient) tickerRetryUpdateTx() {
 		group.Add(1)
 		go func() {
 			if w.IsCanProcess(tx.TxHash) {
-				ctx := &TxContext{dbTX: &tx, notify: make(chan struct{}, 1)}
+				ctx := w.NewTxContext(&tx)
 				w.pendingTx.Store(ctx.TxHash(), ctx)
 				defer w.pendingTx.Delete(ctx.TxHash())
 				err := w.SendUnSignTx(ctx)

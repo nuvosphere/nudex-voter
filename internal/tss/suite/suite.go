@@ -21,6 +21,7 @@ type SignRes struct {
 	Type       string
 	DataDigest string
 	Signature  []byte
+	Err        error
 }
 
 type TssService interface {

@@ -1,7 +1,9 @@
 package evm
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
@@ -65,7 +67,12 @@ func (w *WalletClient) signTx(ctx *TxContext) error {
 		if err != nil {
 			return err
 		}
-		<-ctx.notify
+		select {
+		case <-w.ctx.Done():
+			return w.ctx.Err()
+		case err := <-ctx.notify:
+			return err
+		}
 
 	case db.TaskTypeOperations:
 		sig, err := w.SignOperationNewTx(ctx.UnSignTx())
@@ -77,4 +84,15 @@ func (w *WalletClient) signTx(ctx *TxContext) error {
 		panic("unhandled default case")
 	}
 	return fmt.Errorf("unknown task:%d, type %d", ctx.SeqID(), ctx.dbTX.Type)
+}
+
+func (w *WalletClient) NewTxContext(dbTX *db.EvmTransaction) *TxContext {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	return &TxContext{
+		dbTX:   dbTX,
+		sig:    nil,
+		notify: make(chan error, 1),
+		ctx:    ctx,
+		cancel: cancel,
+	}
 }
