@@ -143,7 +143,7 @@ func (w *WalletClient) SendSingedTx(ctx *TxContext) error {
 		oldTx := ctx.dbTX
 		tx := oldTx.Tx()
 		sender := w.From(tx)
-		ctx.dbTX, err = w.BuildUnsignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
+		ctx.dbTX, err = w.BuildUnSignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
 		if err != nil {
 			return err
 		}
@@ -193,7 +193,7 @@ func (w *WalletClient) EstimateGas(account, contractAddress common.Address, data
 	return w.EstimateGasAPI(msg)
 }
 
-func (w *WalletClient) BuildUnsignTx(
+func (w *WalletClient) BuildUnSignTx(
 	account, contractAddress common.Address,
 	value *big.Int, calldata []byte,
 	Operations *db.Operations,
@@ -332,7 +332,7 @@ func (w *WalletClient) sign(ctx *TxContext) error {
 	case db.TaskTypeConsolidation:
 		// todo
 	case db.TaskTypeOperations:
-		sig, err := w.SignOperationNewTx(ctx.Tx())
+		sig, err := w.SignOperationNewTx(ctx.UnSignTx())
 		if err != nil {
 			return err
 		}
@@ -344,7 +344,7 @@ func (w *WalletClient) sign(ctx *TxContext) error {
 }
 
 func (w *WalletClient) sendTransaction(ctx *TxContext) error {
-	tx, err := ctx.Tx().WithSignature(w.Signer(), ctx.sig)
+	tx, err := ctx.UnSignTx().WithSignature(w.Signer(), ctx.sig)
 	if err != nil {
 		return err
 	}
@@ -528,11 +528,11 @@ func (w *WalletClient) tickerRetryUpdateTx() {
 		go func() {
 			if w.IsCanProcess(tx.TxHash) {
 				ctx := &TxContext{dbTX: &tx}
-				w.pendingTx.Store(tx.TxHash, ctx)
-				defer w.pendingTx.Delete(tx.TxHash)
+				w.pendingTx.Store(ctx.TxHash(), ctx)
+				defer w.pendingTx.Delete(ctx.TxHash())
 				err := w.AgainSendTx(ctx)
 				if err != nil {
-					log.Infof("evm wallet AgainSendTx: tx hash:%v, err:%v", tx.TxHash, err)
+					log.Infof("evm wallet AgainSendTx: tx hash:%v, err:%v", ctx.TxHash(), err)
 				}
 			}
 			group.Done()

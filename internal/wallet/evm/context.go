@@ -33,7 +33,7 @@ func (t *TxContext) IsSig() bool {
 	return t.sig != nil
 }
 
-func (t *TxContext) Tx() *types.Transaction {
+func (t *TxContext) UnSignTx() *types.Transaction {
 	return t.dbTX.Tx()
 }
 

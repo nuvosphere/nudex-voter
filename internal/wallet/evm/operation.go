@@ -155,7 +155,7 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
 		data, err := json.Marshal(operations)
 		utils.Assert(err)
-		tx, err := w.BuildUnsignTx(
+		tx, err := w.BuildUnSignTx(
 			w.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),

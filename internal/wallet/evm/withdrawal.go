@@ -24,13 +24,13 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	}
 	switch task.AssetType {
 	case types.AssetTypeMain:
-		tx, err = w.BuildUnsignTx(
+		tx, err = w.BuildUnSignTx(
 			hotAddress,
 			to,
 			big.NewInt(int64(task.Amount)), nil, nil, withdraw, nil,
 		)
 	case types.AssetTypeErc20:
-		tx, err = w.BuildUnsignTx(
+		tx, err = w.BuildUnSignTx(
 
 			hotAddress,
 			common.HexToAddress(task.ContractAddress),
