@@ -45,7 +45,7 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		log.Errorf("failed to build unsign tx: %v", err)
 		return
 	}
-	ctx := &TxContext{dbTX: tx, notify: make(chan struct{})}
+	ctx := &TxContext{dbTX: tx, notify: make(chan struct{}, 1)}
 	w.pendingTx.Store(ctx.TxHash(), ctx)
 	defer w.pendingTx.Delete(ctx.TxHash())
 
@@ -53,7 +53,6 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	if err != nil {
 		log.Errorf("failed to signTx tx: %v", err)
 	}
-	<-ctx.notify // todo
 	err = w.SendSingedTx(ctx)
 	if err != nil {
 		log.Errorf("send transaction err: %v", err)

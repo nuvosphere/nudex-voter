@@ -140,22 +140,7 @@ func (w *WalletClient) SendSingedTx(ctx *TxContext) error {
 	}
 
 	if errors.Is(err, ErrNonceTooLow) {
-		oldTx := ctx.dbTX
-		tx := oldTx.Tx()
-		sender := w.From(tx)
-		ctx.dbTX, err = w.BuildUnSignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
-		if err != nil {
-			return err
-		}
-		w.pendingTx.Delete(oldTx.TxHash)
-		w.pendingTx.Store(ctx.TxHash(), ctx)
-
-		err := w.signTx(ctx)
-		if err != nil {
-			return err
-		}
-
-		return w.SendSingedTx(ctx)
+		return w.SendUnSignTx(ctx)
 	}
 
 	return err
@@ -376,18 +361,24 @@ func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
 	return w.SendSingedTx(ctx)
 }
 
-// AgainSendTx
-// 1. resend order tx
-// 2. speed resend.
-func (w *WalletClient) AgainSendTx(ctx *TxContext) error {
-	err := w.SendSingedTx(ctx)
+func (w *WalletClient) SendUnSignTx(ctx *TxContext) error {
+	oldTx := ctx.dbTX
+	tx := oldTx.Tx()
+	sender := w.From(tx)
+	var err error
+	ctx.dbTX, err = w.BuildUnSignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
+	if err != nil {
+		return err
+	}
+	w.pendingTx.Delete(oldTx.TxHash)
+	w.pendingTx.Store(ctx.TxHash(), ctx)
+
+	err = w.signTx(ctx)
 	if err != nil {
 		return err
 	}
 
-	_, err = w.WaitTxSuccess(ctx.TxHash())
-
-	return err
+	return w.SendSingedTx(ctx)
 }
 
 func (w *WalletClient) RawTxBytes(tx *types.Transaction) []byte {
@@ -509,12 +500,16 @@ func (w *WalletClient) tickerRetryUpdateTx() {
 		group.Add(1)
 		go func() {
 			if w.IsCanProcess(tx.TxHash) {
-				ctx := &TxContext{dbTX: &tx, notify: make(chan struct{})}
+				ctx := &TxContext{dbTX: &tx, notify: make(chan struct{}, 1)}
 				w.pendingTx.Store(ctx.TxHash(), ctx)
 				defer w.pendingTx.Delete(ctx.TxHash())
-				err := w.AgainSendTx(ctx)
+				err := w.SendUnSignTx(ctx)
 				if err != nil {
-					log.Infof("evm wallet AgainSendTx: tx hash:%v, err:%v", ctx.TxHash(), err)
+					log.Infof("evm wallet SendUnSignTx: tx hash:%v, err:%v", ctx.TxHash(), err)
+				}
+				_, err = w.WaitTxSuccess(ctx.TxHash())
+				if err != nil {
+					log.Infof("evm wallet WaitTxSuccess: err:%v", err)
 				}
 			}
 			group.Done()

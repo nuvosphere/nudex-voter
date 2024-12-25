@@ -65,6 +65,7 @@ func (w *WalletClient) signTx(ctx *TxContext) error {
 		if err != nil {
 			return err
 		}
+		<-ctx.notify
 
 	case db.TaskTypeOperations:
 		sig, err := w.SignOperationNewTx(ctx.UnSignTx())
