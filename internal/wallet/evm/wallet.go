@@ -54,6 +54,7 @@ type WalletClient struct {
 func (w *WalletClient) Start(context.Context) {
 	log.Info("evm wallet client is starting...")
 	w.tss.RegisterTssClient(w)
+	w.receiveL2CreateAddressTaskLoop()
 	w.receiveL2TaskLoop()
 	w.receiveSubmitTaskLoop()
 	w.loopProcessOperation()

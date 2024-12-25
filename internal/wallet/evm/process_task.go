@@ -8,6 +8,30 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func (w *WalletClient) receiveL2CreateAddressTaskLoop() {
+	taskEvent := w.event.Subscribe(eventbus.EventTask{})
+
+	go func() {
+		for {
+			select {
+			case <-w.ctx.Done():
+				log.Info("receiveL2CreateAddressTaskLoop evm wallet receive task event done")
+			case data := <-taskEvent: // from layer2 log scan
+				log.Debug("receiveL2CreateAddressTaskLoop received task from layer2 log scan: ", data)
+				switch v := data.(type) {
+				case *db.CreateWalletTask:
+					switch v.Status() {
+					case db.Created:
+						w.AddTask(v)
+						w.processCreatedTask(v)
+					default:
+					}
+				}
+			}
+		}
+	}()
+}
+
 func (w *WalletClient) receiveL2TaskLoop() {
 	taskEvent := w.event.Subscribe(eventbus.EventTask{})
 
@@ -47,11 +71,9 @@ func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
-		// userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		_ = w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-
+		task.Address = w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
 		// send to evm operation
-		// w.submitTask()
+		w.submitTask(task)
 
 	case *db.DepositTask:
 		// todo
