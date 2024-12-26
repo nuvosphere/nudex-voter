@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -27,31 +26,39 @@ func (d *EvmWalletState) tx(tx *gorm.DB) *gorm.DB {
 }
 
 func (d *EvmWalletState) CreateTx(tx *gorm.DB,
-	account common.Address,
-	txNonce decimal.Decimal,
-	txJsonData, calldata []byte,
 	txHash common.Hash,
-	buildHeight uint64,
+	txJsonData []byte,
+	txNonce decimal.Decimal,
+	sender common.Address,
 	Operations *db.Operations,
 	EvmWithdraw *db.EvmWithdraw,
 	EvmConsolidation *db.EvmConsolidation,
-) error {
+) (*db.EvmTransaction, error) {
 	tx = d.tx(tx)
-	return tx.Create(&db.EvmTransaction{
-		CalldataHash:     crypto.Keccak256Hash(calldata),
-		Calldata:         calldata,
-		TxNonce:          txNonce,
+	ty := 0
+	switch {
+	case Operations != nil:
+		ty = db.TaskTypeOperations
+	case EvmWithdraw != nil:
+		ty = db.TaskTypeWithdrawal
+	case EvmConsolidation != nil:
+		ty = db.TaskTypeConsolidation
+	}
+
+	dbTx := &db.EvmTransaction{
 		TxHash:           txHash,
 		TxJsonData:       txJsonData,
-		Sender:           account,
-		BuildHeight:      buildHeight,
+		TxNonce:          txNonce,
+		Sender:           sender,
 		Status:           db.Created,
 		Error:            "",
-		Type:             0, // todo
+		Type:             ty,
 		Operations:       Operations,
 		EvmWithdraw:      EvmWithdraw,
 		EvmConsolidation: EvmConsolidation,
-	}).Error
+	}
+
+	return dbTx, tx.Create(dbTx).Error
 }
 
 func (d *EvmWalletState) PendingBlockchainTransaction(tx *gorm.DB, txHash common.Hash) (*db.EvmTransaction, error) {
@@ -63,11 +70,19 @@ func (d *EvmWalletState) PendingBlockchainTransaction(tx *gorm.DB, txHash common
 		Where("tx_hash = ? AND status = ?", txHash, db.Pending).
 		Last(&bt).
 		Error
-	if err != nil {
-		return nil, err
-	}
+	return bt, err
+}
 
-	return bt, nil
+func (d *EvmWalletState) PendingBlockchainTransactions(tx *gorm.DB) (txs []db.EvmTransaction, err error) {
+	tx = d.tx(tx)
+
+	err = tx.
+		Model(&db.EvmTransaction{}).
+		Where("status = ?", db.Pending).
+		Find(&txs).
+		Error
+
+	return txs, err
 }
 
 func (d *EvmWalletState) LatestNonce(tx *gorm.DB, account common.Address) (decimal.Decimal, error) {
@@ -75,7 +90,7 @@ func (d *EvmWalletState) LatestNonce(tx *gorm.DB, account common.Address) (decim
 	bt := &db.EvmTransaction{}
 	result := tx.
 		Model(bt).
-		Where("sender = ? AND status IN ?", account, []int{db.Created, db.Pending}).
+		Where("sender = ? AND status IN ?", account, []int{db.Created, db.Pending, db.Completed}).
 		Last(&bt)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {

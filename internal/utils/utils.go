@@ -100,7 +100,7 @@ func GetFunctionName(fun any) string {
 }
 
 func ContainErr(err, subErr error) bool {
-	if errors.Is(err, subErr) {
+	if errors.Is(subErr, err) {
 		return true
 	}
 

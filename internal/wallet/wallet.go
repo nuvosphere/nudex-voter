@@ -231,14 +231,12 @@ func (s *Wallet) BuildUnsignTx(
 		return nil, wrapError(err)
 	}
 
-	err = s.state.CreateTx(
+	_, err = s.state.CreateTx(
 		nil,
-		account,
-		decimal.NewFromUint64(nextNonce),
-		jsonData,
-		calldata,
 		tx.Hash(),
-		head.Number.Uint64(),
+		jsonData,
+		decimal.NewFromUint64(nextNonce),
+		account,
 		Operations,
 		EvmWithdraw,
 		EvmConsolidation,
@@ -301,18 +299,11 @@ func (s *Wallet) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransac
 		return signedTx, wrapError(err)
 	}
 
-	head, err := s.client.HeaderByNumber(ctx, nil)
-	if err != nil {
-		return signedTx, wrapError(err)
-	}
-
-	err = s.state.CreateTx(nil,
-		oldOrderTx.Sender,
-		oldOrderTx.TxNonce,
-		jsonData,
-		oldOrderTx.Calldata,
+	_, err = s.state.CreateTx(nil,
 		newTxHash,
-		head.Number.Uint64(),
+		jsonData,
+		oldOrderTx.TxNonce,
+		oldOrderTx.Sender,
 		oldOrderTx.Operations,
 		oldOrderTx.EvmWithdraw,
 		oldOrderTx.EvmConsolidation,
@@ -497,7 +488,7 @@ func (s *Wallet) IsOnline(ctx context.Context, txHash common.Hash) bool {
 
 func wrapError(err error) error {
 	for _, wrap := range wrapErrorList {
-		if errors.Is(err, wrap) {
+		if utils.ContainErr(err, wrap) {
 			return errors.Join(err, wrap, ErrWallet)
 		}
 	}

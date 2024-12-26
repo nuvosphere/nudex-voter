@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/config"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
@@ -33,7 +32,7 @@ func (o *Operations) TaskID() uint64 {
 }
 
 func (o *Operations) Type() int {
-	return db.TypeOperations
+	return db.TaskTypeOperations
 }
 
 func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.TaskOperation {
@@ -83,15 +82,17 @@ func (w *WalletClient) loopProcessOperation() {
 	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {
-		select {
-		case <-w.ctx.Done():
-			log.Info("approve proposal done")
+		for {
+			select {
+			case <-w.ctx.Done():
+				log.Info("approve proposal done")
 
-		case <-ticker.C:
-			w.processOperation()
+			case <-ticker.C:
+				w.processOperation()
 
-		case <-w.notify:
-			w.processOperation()
+			case <-w.notify:
+				w.processOperation()
+			}
 		}
 	}()
 }
@@ -155,7 +156,6 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 		data, err := json.Marshal(operations)
 		utils.Assert(err)
 		tx, err := w.BuildUnsignTx(
-			w.ctx,
 			w.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),
@@ -170,24 +170,22 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 			return
 		}
 
-		chainId, err := w.ChainID(w.ctx)
-		if err != nil {
-			log.Errorf("failed to ChainID: %v", err)
-			return
-		}
-		signedTx, err := ethtypes.SignTx(tx, ethtypes.LatestSignerForChainID(chainId), config.L2PrivateKey)
+		ctx := &TxContext{dbTX: tx}
+		w.pendingTx.Store(ctx.TxHash(), ctx)
+		defer w.pendingTx.Delete(ctx.TxHash())
+		err = w.sign(ctx)
 		if err != nil {
 			log.Errorf("failed to sign transaction: %v", err)
 			return
 		}
 
-		err = w.SendSingedTx(w.ctx, signedTx)
+		err = w.SendSingedTx(ctx)
 		if err != nil {
 			log.Errorf("failed to send transaction: %v", err)
 			return
 		}
 		// updated status to pending
-		receipt, err := w.WaitTxSuccess(w.ctx, signedTx.Hash())
+		receipt, err := w.WaitTxSuccess(ctx.TxHash())
 		if err != nil {
 			log.Errorf("failed to wait transaction success: %v", err)
 			return
@@ -195,10 +193,10 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 
 		if receipt.Status == 0 {
 			// updated status to fail
-			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), signedTx.Hash().String())
+			log.Errorf("failed to submit transaction for taskId: %d,txHash: %s", operations.TaskID(), ctx.TxHash().String())
 		} else {
 			// updated status to completed
-			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), signedTx.Hash().String())
+			log.Infof("successfully submitted transaction for taskId: %d, txHash: %s", operations.TaskID(), ctx.TxHash().String())
 		}
 	}
 }
@@ -207,16 +205,18 @@ func (w *WalletClient) receiveSubmitTaskLoop() {
 	taskEvent := w.event.Subscribe(eventbus.EventSubmitTask{})
 
 	go func() {
-		select {
-		case <-w.ctx.Done():
-			log.Info("evm wallet receive task event done")
+		for {
+			select {
+			case <-w.ctx.Done():
+				log.Info("evm wallet receive task event done")
 
-		case detailTask := <-taskEvent:
-			val, ok := detailTask.(db.DetailTask)
-			if ok {
-				w.submitTaskQueue.Add(val)
-				if w.submitTaskQueue.Len() >= TopN {
-					w.notify <- struct{}{}
+			case detailTask := <-taskEvent:
+				val, ok := detailTask.(db.DetailTask)
+				if ok {
+					w.submitTaskQueue.Add(val)
+					if w.submitTaskQueue.Len() >= TopN {
+						w.notify <- struct{}{}
+					}
 				}
 			}
 		}

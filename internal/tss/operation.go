@@ -32,7 +32,7 @@ func (o *Operations) TaskID() uint64 {
 }
 
 func (o *Operations) Type() int {
-	return db.TypeOperations
+	return db.TaskTypeOperations
 }
 
 // only used test

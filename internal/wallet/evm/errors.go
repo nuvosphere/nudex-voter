@@ -11,6 +11,7 @@ var (
 	ErrReplacement        = errors.New("replacement transaction underpriced") // -32000
 	ErrIntrinsicGasTooLow = errors.New("intrinsic gas too low")               // -32000
 	ErrAlreadyKnown       = errors.New("already known")                       // -32000
+	ErrGasLimit           = errors.New("exceeds block gas limit")             // -32000
 	ErrExecutionReverted  = errors.New("execution reverted")
 	ErrWallet             = errors.New("wallet error")
 	ErrSendTransaction    = errors.Join(fmt.Errorf("send transaction"), ErrWallet)
@@ -20,11 +21,13 @@ var (
 	ErrTxCompleted        = fmt.Errorf("tx completed: %w", ErrWallet)
 )
 
-var wrapErrorList = []error{
-	ErrAlreadyKnown,
+var wrapErrorList = append(failErrorList, ErrAlreadyKnown)
+
+var failErrorList = []error{
 	ErrNonceTooLow,
 	ErrReplacement,
 	ErrIntrinsicGasTooLow,
 	ErrInsufficientFunds,
 	ErrExecutionReverted,
+	ErrGasLimit,
 }
