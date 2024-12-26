@@ -208,7 +208,7 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 			case types.AssetTypeMain:
 				tx, err = c.BuildSolTransferWithAddress(hotAddress, taskData.TargetAddress, taskData.Amount)
 			case types.AssetTypeErc20:
-				// todo
+				tx, err = c.BuildTokenTransfer(taskData.ContractAddress, hotAddress, taskData.TargetAddress, taskData.Amount, taskData.Decimal)
 			default:
 				log.Errorf("unknown asset type: %v", taskData.AssetType)
 				return

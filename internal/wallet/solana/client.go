@@ -52,7 +52,8 @@ func NewDevSolClient() *SolClient {
 // BuildTokenTransfer
 // https://blog.csdn.net/qq_44543317/article/details/136681475
 // https://solana.com/zh/docs/core/tokens#%E8%BD%AC%E7%A7%BB%E4%BB%A3%E5%B8%81
-func (c *SolClient) BuildTokenTransfer(splToken, from, to, t common.PublicKey, amount uint64, Decimals uint8) (*UnSignTx, error) {
+func (c *SolClient) BuildTokenTransfer(s, f, t string, amount uint64, Decimals uint8) (*UnSignTx, error) {
+	splToken, from, to := common.PublicKeyFromString(s), common.PublicKeyFromString(f), common.PublicKeyFromString(t)
 	ataFrom, _, err := common.FindAssociatedTokenAddress(from, splToken)
 	if err != nil {
 		return nil, err
