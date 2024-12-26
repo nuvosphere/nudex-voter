@@ -4,7 +4,6 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/eventbus"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
-	"github.com/nuvosphere/nudex-voter/internal/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -44,14 +43,6 @@ func (w *WalletClient) receiveL2TaskLoop() {
 
 func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
-	case *db.CreateWalletTask:
-		coinType := types.GetCoinTypeByChain(task.Chain)
-		// userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		_ = w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-
-		// send to evm operation
-		// w.submitTask()
-
 	case *db.DepositTask:
 		// todo
 		// w.submitTask()
@@ -68,10 +59,7 @@ func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 
 func (w *WalletClient) processPendingTask(detailTask pool.Task[uint64]) {
 	switch task := detailTask.(type) {
-	case *db.WithdrawalTask:
-		// todo
-		w.submitTask(task)
-	case *db.ConsolidationTask:
+	case *db.TaskUpdatedEvent:
 		// todo
 		w.submitTask(task)
 	default:

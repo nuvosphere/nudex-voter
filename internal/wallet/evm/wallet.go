@@ -54,6 +54,7 @@ type WalletClient struct {
 func (w *WalletClient) Start(context.Context) {
 	log.Info("evm wallet client is starting...")
 	w.tss.RegisterTssClient(w)
+	w.receiveL2CreateAddressTaskLoop()
 	w.receiveL2TaskLoop()
 	w.receiveSubmitTaskLoop()
 	w.loopProcessOperation()
@@ -139,22 +140,7 @@ func (w *WalletClient) SendSingedTx(ctx *TxContext) error {
 	}
 
 	if errors.Is(err, ErrNonceTooLow) {
-		oldTx := ctx.dbTX
-		tx := oldTx.Tx()
-		sender := w.From(tx)
-		ctx.dbTX, err = w.BuildUnsignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
-		if err != nil {
-			return err
-		}
-		w.pendingTx.Delete(oldTx.TxHash)
-		w.pendingTx.Store(ctx.TxHash(), ctx)
-
-		err := w.sign(ctx)
-		if err != nil {
-			return err
-		}
-
-		return w.SendSingedTx(ctx)
+		return w.SendUnSignTx(ctx)
 	}
 
 	return err
@@ -192,7 +178,7 @@ func (w *WalletClient) EstimateGas(account, contractAddress common.Address, data
 	return w.EstimateGasAPI(msg)
 }
 
-func (w *WalletClient) BuildUnsignTx(
+func (w *WalletClient) BuildUnSignTx(
 	account, contractAddress common.Address,
 	value *big.Int, calldata []byte,
 	Operations *db.Operations,
@@ -324,26 +310,8 @@ func (w *WalletClient) SignOperationNewTx(unSignedTx *types.Transaction) ([]byte
 	return crypto.Sign(signer.Hash(unSignedTx).Bytes(), w.submitterPrivateKey)
 }
 
-func (w *WalletClient) sign(ctx *TxContext) error {
-	switch ctx.dbTX.Type {
-	case db.TaskTypeWithdrawal:
-		// todo
-	case db.TaskTypeConsolidation:
-		// todo
-	case db.TaskTypeOperations:
-		sig, err := w.SignOperationNewTx(ctx.Tx())
-		if err != nil {
-			return err
-		}
-		ctx.sig = sig
-	default:
-		panic("unhandled default case")
-	}
-	return fmt.Errorf("unknown task:%d, type %d", ctx.SeqID(), ctx.dbTX.Type)
-}
-
 func (w *WalletClient) sendTransaction(ctx *TxContext) error {
-	tx, err := ctx.Tx().WithSignature(w.Signer(), ctx.sig)
+	tx, err := ctx.UnSignTx().WithSignature(w.Signer(), ctx.sig)
 	if err != nil {
 		return err
 	}
@@ -384,7 +352,7 @@ func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
 	ctx.dbTX = dbTX
 	w.pendingTx.Delete(oldOrderTx.TxHash)
 	w.pendingTx.Store(unSignedTx.Hash(), ctx)
-	err = w.sign(ctx) // todo
+	err = w.signTx(ctx) // todo
 	if err != nil {
 		return wrapError(err)
 	}
@@ -393,18 +361,24 @@ func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
 	return w.SendSingedTx(ctx)
 }
 
-// AgainSendTx
-// 1. resend order tx
-// 2. speed resend.
-func (w *WalletClient) AgainSendTx(ctx *TxContext) error {
-	err := w.SendSingedTx(ctx)
+func (w *WalletClient) SendUnSignTx(ctx *TxContext) error {
+	oldTx := ctx.dbTX
+	tx := oldTx.Tx()
+	sender := w.From(tx)
+	var err error
+	ctx.dbTX, err = w.BuildUnSignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
+	if err != nil {
+		return err
+	}
+	w.pendingTx.Delete(oldTx.TxHash)
+	w.pendingTx.Store(ctx.TxHash(), ctx)
+
+	err = w.signTx(ctx)
 	if err != nil {
 		return err
 	}
 
-	_, err = w.WaitTxSuccess(ctx.TxHash())
-
-	return err
+	return w.SendSingedTx(ctx)
 }
 
 func (w *WalletClient) RawTxBytes(tx *types.Transaction) []byte {
@@ -513,6 +487,7 @@ func (w *WalletClient) tickerRetrySendTx() {
 			case <-w.ctx.Done():
 				log.Info("evm wallet tickerRetrySendTx done")
 			case <-ticker.C:
+				w.tickerLoopUnCompletedTasks()
 				w.tickerRetryUpdateTx()
 			}
 		}
@@ -526,12 +501,16 @@ func (w *WalletClient) tickerRetryUpdateTx() {
 		group.Add(1)
 		go func() {
 			if w.IsCanProcess(tx.TxHash) {
-				ctx := &TxContext{dbTX: &tx}
-				w.pendingTx.Store(tx.TxHash, ctx)
-				defer w.pendingTx.Delete(tx.TxHash)
-				err := w.AgainSendTx(ctx)
+				ctx := w.NewTxContext(&tx)
+				w.pendingTx.Store(ctx.TxHash(), ctx)
+				defer w.pendingTx.Delete(ctx.TxHash())
+				err := w.SendUnSignTx(ctx)
 				if err != nil {
-					log.Infof("evm wallet AgainSendTx: tx hash:%v, err:%v", tx.TxHash, err)
+					log.Infof("evm wallet SendUnSignTx: tx hash:%v, err:%v", ctx.TxHash(), err)
+				}
+				_, err = w.WaitTxSuccess(ctx.TxHash())
+				if err != nil {
+					log.Infof("evm wallet WaitTxSuccess: err:%v", err)
 				}
 			}
 			group.Done()

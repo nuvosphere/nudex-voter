@@ -83,6 +83,15 @@ func (s *ContractState) GetUnCompletedTask(taskID uint64) (*db.Task, error) {
 	return task, err
 }
 
+func (s *ContractState) GetUnCompletedTasks() (tasks []db.Task, err error) {
+	err = s.l2InfoDb.
+		Preload(clause.Associations).
+		Where("state in ?", []int{db.Created, db.Pending}).
+		Last(&db.Task{}).
+		Error
+	return tasks, err
+}
+
 func (s *ContractState) GetCreatedTask() (tasks []db.Task, err error) {
 	return s.GetTaskByStatus(db.Created)
 }

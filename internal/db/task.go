@@ -78,8 +78,8 @@ func (t *Task) ChainType() uint8 {
 	return t.DetailTask().ChainType()
 }
 
-func (c *Task) Status() int {
-	return c.State
+func (t *Task) Status() int {
+	return t.State
 }
 
 type BaseTask struct {
@@ -282,7 +282,7 @@ func (t *TaskUpdatedEvent) TaskID() uint64 {
 }
 
 func (t *TaskUpdatedEvent) Type() int {
-	panic("implement me")
+	return t.Task.Type()
 }
 
 func (t *TaskUpdatedEvent) ChainType() uint8 {

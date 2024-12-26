@@ -24,13 +24,13 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	}
 	switch task.AssetType {
 	case types.AssetTypeMain:
-		tx, err = w.BuildUnsignTx(
+		tx, err = w.BuildUnSignTx(
 			hotAddress,
 			to,
 			big.NewInt(int64(task.Amount)), nil, nil, withdraw, nil,
 		)
 	case types.AssetTypeErc20:
-		tx, err = w.BuildUnsignTx(
+		tx, err = w.BuildUnSignTx(
 
 			hotAddress,
 			common.HexToAddress(task.ContractAddress),
@@ -45,51 +45,41 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		log.Errorf("failed to build unsign tx: %v", err)
 		return
 	}
-	hash := tx.TxHash
+	ctx := w.NewTxContext(tx)
+	w.pendingTx.Store(ctx.TxHash(), ctx)
+	defer w.pendingTx.Delete(ctx.TxHash())
 
-	req := &suite.SignReq{
-		SeqId:      task.TaskID(),
-		Type:       types.SignTxSessionType,
-		ChainType:  w.ChainType(),
-		Signer:     hotAddress.String(),
-		DataDigest: hash.String(),
-		SignData:   hash.Bytes(),
-		ExtraData:  nil,
-	}
-	w.pendingTx.Store(hash, &TxContext{dbTX: tx})
-
-	err = w.tss.Sign(req)
+	err = w.signTx(ctx)
 	if err != nil {
-		log.Errorf("failed to sign tx: %v", err)
+		log.Errorf("failed to signTx tx: %v", err)
+	}
+	err = w.SendSingedTx(ctx)
+	if err != nil {
+		log.Errorf("send transaction err: %v", err)
+		return
+	}
+	// updated status to pending
+	receipt, err := w.WaitTxSuccess(ctx.TxHash())
+	if err != nil {
+		log.Errorf("failed to wait transaction success: %v", err)
+		return
+	}
+	if receipt.Status == 0 {
+		// updated status to fail
+		log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", ctx.SeqID(), ctx.TxHash())
+	} else {
+		// updated status to completed
+		log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.SeqID(), ctx.TxHash())
 	}
 }
 
 func (w *WalletClient) processTxSignResult(res *suite.SignRes) {
 	txCtx, ok := w.pendingTx.Load(res.DataDigest)
-	defer w.pendingTx.Delete(res.DataDigest)
 	if ok {
 		switch ctx := txCtx.(type) {
 		case *TxContext:
 			ctx.sig = res.Signature
-			err := w.SendSingedTx(ctx)
-			if err != nil {
-				log.Errorf("send transaction err: %v", err)
-				return
-			}
-			hash := ctx.TxHash()
-			// updated status to pending
-			receipt, err := w.WaitTxSuccess(hash)
-			if err != nil {
-				log.Errorf("failed to wait transaction success: %v", err)
-				return
-			}
-			if receipt.Status == 0 {
-				// updated status to fail
-				log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", res.SeqId, hash)
-			} else {
-				// updated status to completed
-				log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", res.SeqId, hash)
-			}
+			ctx.notify <- res.Err
 		}
 	}
 }
