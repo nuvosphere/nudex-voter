@@ -181,9 +181,8 @@ func (w *WalletClient) EstimateGas(account, contractAddress common.Address, data
 func (w *WalletClient) BuildUnSignTx(
 	account, contractAddress common.Address,
 	value *big.Int, calldata []byte,
-	Operations *db.Operations,
-	EvmWithdraw *db.EvmWithdraw,
-	EvmConsolidation *db.EvmConsolidation,
+	ty int,
+	seqID uint64,
 ) (*db.EvmTransaction, error) {
 	head, err := w.client.HeaderByNumber(w.ctx, nil)
 	if err != nil {
@@ -275,9 +274,8 @@ func (w *WalletClient) BuildUnSignTx(
 		jsonData,
 		decimal.NewFromUint64(nextNonce),
 		account,
-		Operations,
-		EvmWithdraw,
-		EvmConsolidation,
+		ty,
+		seqID,
 	)
 }
 
@@ -342,9 +340,8 @@ func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
 		jsonData,
 		oldOrderTx.TxNonce,
 		oldOrderTx.Sender,
-		oldOrderTx.Operations,
-		oldOrderTx.EvmWithdraw,
-		oldOrderTx.EvmConsolidation,
+		oldOrderTx.Type,
+		oldOrderTx.SeqID,
 	)
 	if err != nil {
 		return err
@@ -366,7 +363,7 @@ func (w *WalletClient) SendUnSignTx(ctx *TxContext) error {
 	tx := oldTx.Tx()
 	sender := w.From(tx)
 	var err error
-	ctx.dbTX, err = w.BuildUnSignTx(sender, *tx.To(), tx.Value(), tx.Data(), oldTx.Operations, oldTx.EvmWithdraw, oldTx.EvmConsolidation)
+	ctx.dbTX, err = w.BuildUnSignTx(sender, *tx.To(), tx.Value(), tx.Data(), ctx.dbTX.Type, ctx.SeqID())
 	if err != nil {
 		return err
 	}

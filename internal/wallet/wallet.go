@@ -152,9 +152,8 @@ func (s *Wallet) BuildUnsignTx(
 	ctx context.Context,
 	account, contractAddress common.Address,
 	value *big.Int, calldata []byte,
-	Operations *db.Operations,
-	EvmWithdraw *db.EvmWithdraw,
-	EvmConsolidation *db.EvmConsolidation,
+	ty int,
+	seqID uint64,
 ) (*types.Transaction, error) {
 	head, err := s.client.HeaderByNumber(ctx, nil)
 	if err != nil {
@@ -237,9 +236,8 @@ func (s *Wallet) BuildUnsignTx(
 		jsonData,
 		decimal.NewFromUint64(nextNonce),
 		account,
-		Operations,
-		EvmWithdraw,
-		EvmConsolidation,
+		ty,
+		seqID,
 	)
 
 	return tx, err
@@ -304,9 +302,8 @@ func (s *Wallet) speedSendOrderTx(ctx context.Context, oldOrderTx *db.EvmTransac
 		jsonData,
 		oldOrderTx.TxNonce,
 		oldOrderTx.Sender,
-		oldOrderTx.Operations,
-		oldOrderTx.EvmWithdraw,
-		oldOrderTx.EvmConsolidation,
+		oldOrderTx.Type,
+		oldOrderTx.SeqID,
 	)
 	if err != nil {
 		return signedTx, wrapError(err)

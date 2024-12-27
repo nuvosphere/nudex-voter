@@ -31,14 +31,15 @@ var (
 
 // TaskOperation is an auto generated low-level Go binding around an user-defined struct.
 type TaskOperation struct {
-	TaskId uint64
-	State  uint8
-	TxHash [32]byte
+	TaskId    uint64
+	State     uint8
+	TxHash    [32]byte
+	ExtraData []byte
 }
 
 // VotingManagerContractMetaData contains all meta data concerning the VotingManagerContract contract.
 var VotingManagerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"FORCE_ROTATION_WINDOW\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"MAX_OPT_COUNT\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"chooseNewSubmitter\",\"inputs\":[{\"name\":\"_uncompletedTaskCount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_tssSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_participantHandler\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_taskManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_nuvoLock\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"lastSubmissionTime\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nextSubmitter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuvoLock\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuvoLock\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"operationHash\",\"inputs\":[{\"name\":\"_operations\",\"type\":\"tuple[]\",\"internalType\":\"structTaskOperation[]\",\"components\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"txHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"_nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"hash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"messageHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"participantHandler\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIParticipantHandler\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"setSignerAddress\",\"inputs\":[{\"name\":\"_newSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"taskManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractITaskManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tssNonce\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tssSigner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyAndCall\",\"inputs\":[{\"name\":\"_operations\",\"type\":\"tuple[]\",\"internalType\":\"structTaskOperation[]\",\"components\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"txHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyOperation\",\"inputs\":[{\"name\":\"_operations\",\"type\":\"tuple[]\",\"internalType\":\"structTaskOperation[]\",\"components\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"txHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"_nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterChosen\",\"inputs\":[{\"name\":\"newSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterRotationRequested\",\"inputs\":[{\"name\":\"requester\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"currentSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"EmptyOperationsArray\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ExceedMaxOptCount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"IncorrectSubmitter\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSigner\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NotEligibleForPending\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotParticipant\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RotationWindowNotPassed\",\"inputs\":[{\"name\":\"current\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"window\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"FORCE_ROTATION_WINDOW\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"MAX_OPT_COUNT\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"chooseNewSubmitter\",\"inputs\":[{\"name\":\"_uncompletedTaskCount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_tssSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_participantHandler\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_taskManager\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_nuvoLock\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"lastSubmissionTime\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nextSubmitter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"nuvoLock\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINuvoLock\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"operationHash\",\"inputs\":[{\"name\":\"_operations\",\"type\":\"tuple[]\",\"internalType\":\"structTaskOperation[]\",\"components\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"txHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"extraData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"_nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"hash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"messageHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"participantHandler\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIParticipantHandler\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"setSignerAddress\",\"inputs\":[{\"name\":\"_newSigner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"taskManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractITaskManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tssNonce\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tssSigner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyAndCall\",\"inputs\":[{\"name\":\"_operations\",\"type\":\"tuple[]\",\"internalType\":\"structTaskOperation[]\",\"components\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"txHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"extraData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyOperation\",\"inputs\":[{\"name\":\"_operations\",\"type\":\"tuple[]\",\"internalType\":\"structTaskOperation[]\",\"components\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"state\",\"type\":\"uint8\",\"internalType\":\"enumState\"},{\"name\":\"txHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"extraData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"_nonce\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"_signature\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterChosen\",\"inputs\":[{\"name\":\"newSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SubmitterRotationRequested\",\"inputs\":[{\"name\":\"requester\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"currentSubmitter\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"EmptyOperationsArray\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ExceedMaxOptCount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"IncorrectSubmitter\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"submitter\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSigner\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"NotEligibleForPending\",\"inputs\":[{\"name\":\"taskId\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotParticipant\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RotationWindowNotPassed\",\"inputs\":[{\"name\":\"current\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"window\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}]",
 }
 
 // VotingManagerContractABI is the input ABI used to generate the binding from.
@@ -342,9 +343,9 @@ func (_VotingManagerContract *VotingManagerContractCallerSession) NuvoLock() (co
 	return _VotingManagerContract.Contract.NuvoLock(&_VotingManagerContract.CallOpts)
 }
 
-// OperationHash is a free data retrieval call binding the contract method 0x4b7ed08c.
+// OperationHash is a free data retrieval call binding the contract method 0x69919da6.
 //
-// Solidity: function operationHash((uint64,uint8,bytes32)[] _operations, uint256 _nonce) view returns(bytes32 hash, bytes32 messageHash)
+// Solidity: function operationHash((uint64,uint8,bytes32,bytes)[] _operations, uint256 _nonce) view returns(bytes32 hash, bytes32 messageHash)
 func (_VotingManagerContract *VotingManagerContractCaller) OperationHash(opts *bind.CallOpts, _operations []TaskOperation, _nonce *big.Int) (struct {
 	Hash        [32]byte
 	MessageHash [32]byte
@@ -367,9 +368,9 @@ func (_VotingManagerContract *VotingManagerContractCaller) OperationHash(opts *b
 
 }
 
-// OperationHash is a free data retrieval call binding the contract method 0x4b7ed08c.
+// OperationHash is a free data retrieval call binding the contract method 0x69919da6.
 //
-// Solidity: function operationHash((uint64,uint8,bytes32)[] _operations, uint256 _nonce) view returns(bytes32 hash, bytes32 messageHash)
+// Solidity: function operationHash((uint64,uint8,bytes32,bytes)[] _operations, uint256 _nonce) view returns(bytes32 hash, bytes32 messageHash)
 func (_VotingManagerContract *VotingManagerContractSession) OperationHash(_operations []TaskOperation, _nonce *big.Int) (struct {
 	Hash        [32]byte
 	MessageHash [32]byte
@@ -377,9 +378,9 @@ func (_VotingManagerContract *VotingManagerContractSession) OperationHash(_opera
 	return _VotingManagerContract.Contract.OperationHash(&_VotingManagerContract.CallOpts, _operations, _nonce)
 }
 
-// OperationHash is a free data retrieval call binding the contract method 0x4b7ed08c.
+// OperationHash is a free data retrieval call binding the contract method 0x69919da6.
 //
-// Solidity: function operationHash((uint64,uint8,bytes32)[] _operations, uint256 _nonce) view returns(bytes32 hash, bytes32 messageHash)
+// Solidity: function operationHash((uint64,uint8,bytes32,bytes)[] _operations, uint256 _nonce) view returns(bytes32 hash, bytes32 messageHash)
 func (_VotingManagerContract *VotingManagerContractCallerSession) OperationHash(_operations []TaskOperation, _nonce *big.Int) (struct {
 	Hash        [32]byte
 	MessageHash [32]byte
@@ -511,9 +512,9 @@ func (_VotingManagerContract *VotingManagerContractCallerSession) TssSigner() (c
 	return _VotingManagerContract.Contract.TssSigner(&_VotingManagerContract.CallOpts)
 }
 
-// VerifyOperation is a free data retrieval call binding the contract method 0xd1fa696f.
+// VerifyOperation is a free data retrieval call binding the contract method 0x75d0afdd.
 //
-// Solidity: function verifyOperation((uint64,uint8,bytes32)[] _operations, uint256 _nonce, bytes _signature) view returns(bool)
+// Solidity: function verifyOperation((uint64,uint8,bytes32,bytes)[] _operations, uint256 _nonce, bytes _signature) view returns(bool)
 func (_VotingManagerContract *VotingManagerContractCaller) VerifyOperation(opts *bind.CallOpts, _operations []TaskOperation, _nonce *big.Int, _signature []byte) (bool, error) {
 	var out []interface{}
 	err := _VotingManagerContract.contract.Call(opts, &out, "verifyOperation", _operations, _nonce, _signature)
@@ -528,16 +529,16 @@ func (_VotingManagerContract *VotingManagerContractCaller) VerifyOperation(opts 
 
 }
 
-// VerifyOperation is a free data retrieval call binding the contract method 0xd1fa696f.
+// VerifyOperation is a free data retrieval call binding the contract method 0x75d0afdd.
 //
-// Solidity: function verifyOperation((uint64,uint8,bytes32)[] _operations, uint256 _nonce, bytes _signature) view returns(bool)
+// Solidity: function verifyOperation((uint64,uint8,bytes32,bytes)[] _operations, uint256 _nonce, bytes _signature) view returns(bool)
 func (_VotingManagerContract *VotingManagerContractSession) VerifyOperation(_operations []TaskOperation, _nonce *big.Int, _signature []byte) (bool, error) {
 	return _VotingManagerContract.Contract.VerifyOperation(&_VotingManagerContract.CallOpts, _operations, _nonce, _signature)
 }
 
-// VerifyOperation is a free data retrieval call binding the contract method 0xd1fa696f.
+// VerifyOperation is a free data retrieval call binding the contract method 0x75d0afdd.
 //
-// Solidity: function verifyOperation((uint64,uint8,bytes32)[] _operations, uint256 _nonce, bytes _signature) view returns(bool)
+// Solidity: function verifyOperation((uint64,uint8,bytes32,bytes)[] _operations, uint256 _nonce, bytes _signature) view returns(bool)
 func (_VotingManagerContract *VotingManagerContractCallerSession) VerifyOperation(_operations []TaskOperation, _nonce *big.Int, _signature []byte) (bool, error) {
 	return _VotingManagerContract.Contract.VerifyOperation(&_VotingManagerContract.CallOpts, _operations, _nonce, _signature)
 }
@@ -605,23 +606,23 @@ func (_VotingManagerContract *VotingManagerContractTransactorSession) SetSignerA
 	return _VotingManagerContract.Contract.SetSignerAddress(&_VotingManagerContract.TransactOpts, _newSigner, _signature)
 }
 
-// VerifyAndCall is a paid mutator transaction binding the contract method 0x79e521ad.
+// VerifyAndCall is a paid mutator transaction binding the contract method 0x83bf0314.
 //
-// Solidity: function verifyAndCall((uint64,uint8,bytes32)[] _operations, bytes _signature) returns()
+// Solidity: function verifyAndCall((uint64,uint8,bytes32,bytes)[] _operations, bytes _signature) returns()
 func (_VotingManagerContract *VotingManagerContractTransactor) VerifyAndCall(opts *bind.TransactOpts, _operations []TaskOperation, _signature []byte) (*types.Transaction, error) {
 	return _VotingManagerContract.contract.Transact(opts, "verifyAndCall", _operations, _signature)
 }
 
-// VerifyAndCall is a paid mutator transaction binding the contract method 0x79e521ad.
+// VerifyAndCall is a paid mutator transaction binding the contract method 0x83bf0314.
 //
-// Solidity: function verifyAndCall((uint64,uint8,bytes32)[] _operations, bytes _signature) returns()
+// Solidity: function verifyAndCall((uint64,uint8,bytes32,bytes)[] _operations, bytes _signature) returns()
 func (_VotingManagerContract *VotingManagerContractSession) VerifyAndCall(_operations []TaskOperation, _signature []byte) (*types.Transaction, error) {
 	return _VotingManagerContract.Contract.VerifyAndCall(&_VotingManagerContract.TransactOpts, _operations, _signature)
 }
 
-// VerifyAndCall is a paid mutator transaction binding the contract method 0x79e521ad.
+// VerifyAndCall is a paid mutator transaction binding the contract method 0x83bf0314.
 //
-// Solidity: function verifyAndCall((uint64,uint8,bytes32)[] _operations, bytes _signature) returns()
+// Solidity: function verifyAndCall((uint64,uint8,bytes32,bytes)[] _operations, bytes _signature) returns()
 func (_VotingManagerContract *VotingManagerContractTransactorSession) VerifyAndCall(_operations []TaskOperation, _signature []byte) (*types.Transaction, error) {
 	return _VotingManagerContract.Contract.VerifyAndCall(&_VotingManagerContract.TransactOpts, _operations, _signature)
 }

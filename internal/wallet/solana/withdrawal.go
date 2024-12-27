@@ -35,7 +35,7 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	case types.AssetTypeMain:
 		tx, err = c.BuildSolTransferWithAddress(hotAddress, task.TargetAddress, task.Amount)
 	case types.AssetTypeErc20:
-		// todo
+		tx, err = c.BuildTokenTransfer(task.ContractAddress, hotAddress, task.TargetAddress, task.Amount, task.Decimal)
 	default:
 		log.Errorf("unknown asset type: %v", task.AssetType)
 		return

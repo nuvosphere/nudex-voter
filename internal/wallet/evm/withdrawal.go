@@ -12,6 +12,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func (w *WalletClient) signTask(from, to, contract common.Address, amount *big.Int) error {
+	panic("todo")
+}
+
 func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
 
@@ -19,15 +23,15 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	to := common.HexToAddress(task.TargetAddress)
 	var tx *db.EvmTransaction
 	var err error
-	withdraw := &db.EvmWithdraw{
-		TaskID: task.TaskId,
-	}
 	switch task.AssetType {
 	case types.AssetTypeMain:
 		tx, err = w.BuildUnSignTx(
 			hotAddress,
 			to,
-			big.NewInt(int64(task.Amount)), nil, nil, withdraw, nil,
+			big.NewInt(int64(task.Amount)),
+			nil,
+			db.TaskTypeWithdrawal,
+			task.TaskId,
 		)
 	case types.AssetTypeErc20:
 		tx, err = w.BuildUnSignTx(
@@ -35,7 +39,9 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 			hotAddress,
 			common.HexToAddress(task.ContractAddress),
 			nil,
-			contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(task.Amount))), nil, withdraw, nil,
+			contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(task.Amount))),
+			db.TaskTypeWithdrawal,
+			task.TaskId,
 		)
 	default:
 		log.Errorf("unknown asset type: %v", task.AssetType)

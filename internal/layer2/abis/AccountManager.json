@@ -279,11 +279,6 @@
         "name": "_index",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "_address",
-        "type": "string",
-        "internalType": "string"
       }
     ],
     "outputs": [

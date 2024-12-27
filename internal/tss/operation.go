@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -13,9 +12,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
-	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,12 +42,13 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOper
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
 		ec := types.GetCurveTypeByCoinType(coinType)
-		// userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
-		_ = address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
+		userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
+		//_ = address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
 		// data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		// operation.OptData = data
 		// operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
+		operation.ExtraData = []byte(userAddress) // todo
 	case *db.DepositTask:
 		needConfirm, checkCode, err := m.checkTask(task)
 		if !needConfirm {
@@ -171,18 +169,14 @@ func (m *Scheduler) processOperationSignResult(operations *Operations) {
 		w := wallet.NewWallet()
 		calldata := m.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
-		data, err := json.Marshal(operations)
-		utils.Assert(err)
 		tx, err := w.BuildUnsignTx(
 			m.ctx,
 			m.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),
 			calldata,
-			&db.Operations{
-				Nonce: decimal.NewFromBigInt(operations.Nonce, 0),
-				Data:  string(data),
-			}, nil, nil,
+			operations.Type(),
+			operations.TaskID(),
 		)
 		if err != nil {
 			log.Errorf("failed to build unsigned transaction: %v", err)
