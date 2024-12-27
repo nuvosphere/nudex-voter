@@ -42,12 +42,13 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOper
 	case *db.CreateWalletTask:
 		coinType := types.GetCoinTypeByChain(task.Chain)
 		ec := types.GetCurveTypeByCoinType(coinType)
-		// userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
-		_ = address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
+		userAddress := address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
+		//_ = address.GenerateAddressByPath(m.partyData.GetData(ec).ECPoint(), uint32(coinType), task.Account, task.Index)
 		// data := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
 		// operation.OptData = data
 		// operation.ManagerAddr = common.HexToAddress(config.AppConfig.AccountContract)
 		operation.State = db.Completed
+		operation.ExtraData = []byte(userAddress) // todo
 	case *db.DepositTask:
 		needConfirm, checkCode, err := m.checkTask(task)
 		if !needConfirm {

@@ -133,6 +133,11 @@
             "name": "txHash",
             "type": "bytes32",
             "internalType": "bytes32"
+          },
+          {
+            "name": "extraData",
+            "type": "bytes",
+            "internalType": "bytes"
           }
         ]
       },
@@ -249,6 +254,11 @@
             "name": "txHash",
             "type": "bytes32",
             "internalType": "bytes32"
+          },
+          {
+            "name": "extraData",
+            "type": "bytes",
+            "internalType": "bytes"
           }
         ]
       },
@@ -284,6 +294,11 @@
             "name": "txHash",
             "type": "bytes32",
             "internalType": "bytes32"
+          },
+          {
+            "name": "extraData",
+            "type": "bytes",
+            "internalType": "bytes"
           }
         ]
       },

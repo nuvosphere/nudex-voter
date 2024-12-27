@@ -39,11 +39,10 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.TaskOp
 
 	switch task := detailTask.(type) {
 	case *db.CreateWalletTask:
-		// coinType := types.GetCoinTypeByChain(task.AddressType)
-		// userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
-		// data := w.VoterContract().EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.AddressType, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		coinType := types.GetCoinTypeByChain(task.Chain)
+		userAddress := w.tss.GetUserAddress(uint32(coinType), task.Account, task.Index)
 		operation.State = uint8(task.Task.State)
-		// operation.TxHash = ""
+		operation.ExtraData = []byte(userAddress) // todo
 	case *db.DepositTask:
 		//data := w.VoterContract().EncodeRecordDeposit(
 		//	common.HexToAddress(task.TargetAddress),
