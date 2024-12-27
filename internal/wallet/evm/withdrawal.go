@@ -12,6 +12,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func (w *WalletClient) signTask(from, to, contract common.Address, amount *big.Int) error {
+	panic("todo")
+}
+
 func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
 
