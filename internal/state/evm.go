@@ -30,32 +30,19 @@ func (d *EvmWalletState) CreateTx(tx *gorm.DB,
 	txJsonData []byte,
 	txNonce decimal.Decimal,
 	sender common.Address,
-	Operations *db.Operations,
-	EvmWithdraw *db.EvmWithdraw,
-	EvmConsolidation *db.EvmConsolidation,
+	ty int,
+	seqID uint64,
 ) (*db.EvmTransaction, error) {
 	tx = d.tx(tx)
-	ty := 0
-	switch {
-	case Operations != nil:
-		ty = db.TaskTypeOperations
-	case EvmWithdraw != nil:
-		ty = db.TaskTypeWithdrawal
-	case EvmConsolidation != nil:
-		ty = db.TaskTypeConsolidation
-	}
-
 	dbTx := &db.EvmTransaction{
-		TxHash:           txHash,
-		TxJsonData:       txJsonData,
-		TxNonce:          txNonce,
-		Sender:           sender,
-		Status:           db.Created,
-		Error:            "",
-		Type:             ty,
-		Operations:       Operations,
-		EvmWithdraw:      EvmWithdraw,
-		EvmConsolidation: EvmConsolidation,
+		TxHash:     txHash,
+		TxJsonData: txJsonData,
+		TxNonce:    txNonce,
+		Sender:     sender,
+		Status:     db.Created,
+		Error:      "",
+		Type:       ty,
+		SeqID:      seqID,
 	}
 
 	return dbTx, tx.Create(dbTx).Error

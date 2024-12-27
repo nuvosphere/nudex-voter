@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/big"
 
@@ -13,9 +12,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/nuvosphere/nudex-voter/internal/wallet"
-	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -171,18 +168,14 @@ func (m *Scheduler) processOperationSignResult(operations *Operations) {
 		w := wallet.NewWallet()
 		calldata := m.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
-		data, err := json.Marshal(operations)
-		utils.Assert(err)
 		tx, err := w.BuildUnsignTx(
 			m.ctx,
 			m.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),
 			calldata,
-			&db.Operations{
-				Nonce: decimal.NewFromBigInt(operations.Nonce, 0),
-				Data:  string(data),
-			}, nil, nil,
+			operations.Type(),
+			operations.TaskID(),
 		)
 		if err != nil {
 			log.Errorf("failed to build unsigned transaction: %v", err)

@@ -22,16 +22,7 @@ func (t *TxContext) TxHash() common.Hash {
 }
 
 func (t *TxContext) SeqID() uint64 {
-	switch t.dbTX.Type {
-	case db.TaskTypeConsolidation:
-		return t.dbTX.EvmConsolidation.TaskID
-	case db.TaskTypeWithdrawal:
-		return t.dbTX.EvmWithdraw.TaskID
-	case db.TaskTypeOperations:
-		return t.dbTX.Operations.Nonce.BigInt().Uint64()
-	default:
-		panic("unknown task type")
-	}
+	return t.dbTX.SeqID
 }
 
 func (t *TxContext) IsSig() bool {

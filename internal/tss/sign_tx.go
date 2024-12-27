@@ -148,16 +148,16 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 			to := common.HexToAddress(taskData.TargetAddress)
 			var tx *ethtypes.Transaction
 			var err error
-			withdraw := &db.EvmWithdraw{
-				TaskID: taskData.TaskId,
-			}
 			switch taskData.AssetType {
 			case types.AssetTypeMain:
 				tx, err = w.BuildUnsignTx(
 					m.ctx,
 					hotAddress,
 					to,
-					big.NewInt(int64(taskData.Amount)), nil, nil, withdraw, nil,
+					big.NewInt(int64(taskData.Amount)),
+					nil,
+					db.TaskTypeWithdrawal,
+					taskData.TaskId,
 				)
 			case types.AssetTypeErc20:
 				tx, err = w.BuildUnsignTx(
@@ -165,7 +165,9 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 					hotAddress,
 					common.HexToAddress(taskData.ContractAddress),
 					nil,
-					contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(taskData.Amount))), nil, withdraw, nil,
+					contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(taskData.Amount))),
+					db.TaskTypeWithdrawal,
+					taskData.TaskId,
 				)
 			default:
 				log.Errorf("unknown asset type: %v", taskData.AssetType)

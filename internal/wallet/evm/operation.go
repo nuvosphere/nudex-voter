@@ -1,7 +1,6 @@
 package evm
 
 import (
-	"encoding/json"
 	"math/big"
 	"time"
 
@@ -13,9 +12,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/tss/suite"
 	"github.com/nuvosphere/nudex-voter/internal/types"
-	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -153,17 +150,13 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 		log.Info("proposer submit signature")
 		calldata := w.VoterContract().EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
-		data, err := json.Marshal(operations)
-		utils.Assert(err)
 		tx, err := w.BuildUnSignTx(
 			w.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
 			big.NewInt(0),
 			calldata,
-			&db.Operations{
-				Nonce: decimal.NewFromBigInt(operations.Nonce, 0),
-				Data:  string(data),
-			}, nil, nil,
+			operations.Type(),
+			operations.TaskID(),
 		)
 		if err != nil {
 			log.Errorf("failed to build unsigned transaction: %v", err)
