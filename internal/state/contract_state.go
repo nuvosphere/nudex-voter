@@ -42,11 +42,11 @@ func (s *ContractState) AccountByChain(chain uint8) ([]db.Account, error) {
 	return accounts, err
 }
 
-func (s *ContractState) GetAddressBalance(address string) (decimal.Decimal, error) {
+func (s *ContractState) GetAddressBalance(address, token string) (decimal.Decimal, error) {
 	var balance decimal.Decimal
 	err := s.l2InfoDb.
 		Model(&db.AddressBalance{}).
-		Where("address = ?", address).
+		Where("address = ? AND token = ?", address, token).
 		Select("SUM(amount)").
 		Scan(&balance).
 		Error
