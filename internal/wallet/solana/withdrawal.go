@@ -31,13 +31,18 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		tx  *UnSignTx
 		err error
 	)
-	switch task.AssetType {
+	tokenInfo, err := w.ContractState().GetTokenInfo(task.Ticker)
+	if err != nil {
+		log.Errorf("GetAsset err: %v", err)
+		return
+	}
+	switch tokenInfo.AssetType {
 	case types.AssetTypeMain:
-		tx, err = c.BuildSolTransferWithAddress(hotAddress, task.TargetAddress, task.Amount)
+		tx, err = c.BuildSolTransferWithAddress(hotAddress, task.TargetAddress, task.Amount.BigInt().Uint64())
 	case types.AssetTypeErc20:
-		tx, err = c.BuildTokenTransfer(task.ContractAddress, hotAddress, task.TargetAddress, task.Amount, task.Decimal)
+		tx, err = c.BuildTokenTransfer(tokenInfo.ContractAddress, hotAddress, task.TargetAddress, task.Amount.BigInt().Uint64(), tokenInfo.Decimals)
 	default:
-		log.Errorf("unknown asset type: %v", task.AssetType)
+		log.Errorf("unknown tokenInfo type: %v", tokenInfo.AssetType)
 		return
 	}
 	if err != nil {

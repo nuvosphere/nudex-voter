@@ -21,6 +21,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 	"github.com/samber/lo"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
@@ -490,16 +491,11 @@ func TestSchedulerSolanaWithdrawSignature(t *testing.T) {
 			TaskId:   1,
 		},
 		TargetAddress: "2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59",
-		Amount:        3000,
+		Amount:        decimal.NewFromInt(3000),
 		Chain:         types.ChainSolana,
 		// ChainId:         0,
-		BlockHeight:     0,
-		TxHash:          "",
-		ContractAddress: "",
+		TxHash: "",
 		// Ticker:          "SOL",
-		AssetType: types.AssetTypeMain,
-		Decimal:   9,
-		Fee:       0,
 	}
 
 	t.Log("send WithdrawalTask")
@@ -577,17 +573,12 @@ func TestSchedulerSuiWithdrawSignature(t *testing.T) {
 			TaskId:   1,
 		},
 		// from 0x6e3b7823972bffb6107abc008ff257c89a268fb0e3dfb27d503741fe9a38749f
-		TargetAddress:   "0x9099b85cce1e63a584f981390bf3457611df3f7778c0d77de3f16cb57951bcf9",
-		Amount:          3000,
-		Chain:           types.ChainSui,
-		ChainId:         types.BigToByte32(big.NewInt(0)),
-		BlockHeight:     0,
-		TxHash:          "",
-		ContractAddress: "0x02", // token address
+		TargetAddress: "0x9099b85cce1e63a584f981390bf3457611df3f7778c0d77de3f16cb57951bcf9",
+		Amount:        decimal.NewFromInt(3000),
+		Chain:         types.ChainSui,
+		ChainId:       types.BigToByte32(big.NewInt(0)),
+		TxHash:        "",
 		// Ticker:          "sui",
-		AssetType: types.AssetTypeMain,
-		Decimal:   9,
-		Fee:       0,
 	}
 
 	t.Log("send WithdrawalTask")

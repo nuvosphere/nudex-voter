@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
@@ -68,7 +67,7 @@ func (w *BaseWallet) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		return nil, err
 	}
 
-	detailTask := codec.DecodeTask(t.Id, t.Result)
+	detailTask := layer2.DecodeTask(t.Id, t.Result)
 
 	baseTask := db.Task{
 		TaskId:    t.Id,

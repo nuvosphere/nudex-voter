@@ -103,7 +103,11 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 		log.Debugf("processTxSign task: %v", taskData)
 		switch taskData.Chain {
 		case types.ChainBitcoin: // todo
-			switch taskData.AssetType {
+			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
+			if err != nil {
+				return
+			}
+			switch tokenInof.AssetType {
 			case types.AssetTypeMain:
 				// coinType := types.GetCoinTypeByChain(taskData.AddressType)
 				localData, _ := m.GenerateDerivationWalletProposal(types.CoinTypeBTC, 0, 0)
@@ -117,7 +121,7 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 				// m.sigContext.Store(hotAddress, sigCtx)
 				signer = m.GetSigner(hotAddress)
 				go func() {
-					err := c.BuildTx(taskData.TargetAddress, int64(taskData.Amount))
+					err := c.BuildTx(taskData.TargetAddress, taskData.Amount.BigInt().Int64())
 					if err != nil {
 						log.Errorf("failed to send transaction: %v", err)
 						return
@@ -139,7 +143,7 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 
 			case types.AssetTypeErc20:
 			default:
-				log.Errorf("unknown asset type: %v", taskData.AssetType)
+				log.Errorf("unknown asset type: %v", tokenInof.AssetType)
 			}
 		case types.ChainEthereum:
 			w := wallet.NewWallet()
@@ -148,13 +152,17 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 			to := common.HexToAddress(taskData.TargetAddress)
 			var tx *ethtypes.Transaction
 			var err error
-			switch taskData.AssetType {
+			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
+			if err != nil {
+				return
+			}
+			switch tokenInof.AssetType {
 			case types.AssetTypeMain:
 				tx, err = w.BuildUnsignTx(
 					m.ctx,
 					hotAddress,
 					to,
-					big.NewInt(int64(taskData.Amount)),
+					taskData.Amount.BigInt(),
 					nil,
 					db.TaskTypeWithdrawal,
 					taskData.TaskId,
@@ -163,14 +171,14 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 				tx, err = w.BuildUnsignTx(
 					m.ctx,
 					hotAddress,
-					common.HexToAddress(taskData.ContractAddress),
+					common.HexToAddress(tokenInof.ContractAddress),
 					nil,
-					contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(taskData.Amount))),
+					contracts.EncodeTransferOfERC20(hotAddress, to, taskData.Amount.BigInt()),
 					db.TaskTypeWithdrawal,
 					taskData.TaskId,
 				)
 			default:
-				log.Errorf("unknown asset type: %v", taskData.AssetType)
+				log.Errorf("unknown asset type: %v", tokenInof.AssetType)
 				return
 			}
 			if err != nil {
@@ -206,13 +214,17 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 				tx  *solana.UnSignTx
 				err error
 			)
-			switch taskData.AssetType {
+			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
+			if err != nil {
+				return
+			}
+			switch tokenInof.AssetType {
 			case types.AssetTypeMain:
-				tx, err = c.BuildSolTransferWithAddress(hotAddress, taskData.TargetAddress, taskData.Amount)
+				tx, err = c.BuildSolTransferWithAddress(hotAddress, taskData.TargetAddress, taskData.Amount.BigInt().Uint64())
 			case types.AssetTypeErc20:
-				tx, err = c.BuildTokenTransfer(taskData.ContractAddress, hotAddress, taskData.TargetAddress, taskData.Amount, taskData.Decimal)
+				tx, err = c.BuildTokenTransfer(tokenInof.ContractAddress, hotAddress, taskData.TargetAddress, taskData.Amount.BigInt().Uint64(), tokenInof.Decimals)
 			default:
-				log.Errorf("unknown asset type: %v", taskData.AssetType)
+				log.Errorf("unknown asset type: %v", tokenInof.AssetType)
 				return
 			}
 			if err != nil {
@@ -251,10 +263,14 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 			} else {
 				c = sui.NewDevClient()
 			}
+			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
+			if err != nil {
+				return
+			}
 			hotAddress := address.HotAddressOfSui(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			signer = m.GetSigner(hotAddress)
-			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(taskData.ContractAddress, taskData.Ticker.String()), hotAddress, []sui.Recipient{
+			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(tokenInof.ContractAddress, taskData.Ticker.String()), hotAddress, []sui.Recipient{
 				{
 					Recipient: taskData.TargetAddress,
 					Amount:    fmt.Sprintf("%d", taskData.Amount),

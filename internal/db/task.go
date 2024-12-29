@@ -1,9 +1,12 @@
 package db
 
 import (
-	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -23,11 +26,33 @@ const (
 	Failed
 )
 
+type WalletCreationRequest struct {
+	Account     uint32 `json:"account,omitempty"`
+	AddressType uint8  `json:"address_type,omitempty"`
+	Index       uint8  `json:"index,omitempty"`
+}
+
+type DepositRequest struct {
+	UserAddress    common.Address
+	UserTssAddress string
+	Ticker         types.Byte32
+	ChainId        types.Byte32
+	Amount         *big.Int // uint256
+}
+
+type WithdrawalRequest struct {
+	UserTssAddress string
+	Ticker         types.Byte32
+	ChainId        types.Byte32
+	Amount         *big.Int // uint256
+}
+
 type DetailTask interface {
 	types.ChainType
 	pool.Task[uint64]
 	SetBaseTask(task Task)
 	Status() int
+	// GetTicker() types.Byte32
 }
 
 type Task struct {
@@ -121,7 +146,7 @@ func (c *CreateWalletTask) ChainType() uint8 {
 	return c.Chain
 }
 
-func NewCreateWalletTask(taskId uint64, req *contracts.TaskPayloadContractWalletCreationRequest) *CreateWalletTask {
+func NewCreateWalletTask(taskId uint64, req *WalletCreationRequest) *CreateWalletTask {
 	return &CreateWalletTask{
 		BaseTask: BaseTask{
 			TaskId:   taskId,
@@ -135,16 +160,12 @@ func NewCreateWalletTask(taskId uint64, req *contracts.TaskPayloadContractWallet
 
 type DepositTask struct {
 	BaseTask
-	TargetAddress   string       `json:"target_address"`
-	Amount          uint64       `json:"amount"`
-	Chain           uint8        `json:"chain"`
-	ChainId         types.Byte32 `json:"chain_id"`
-	BlockHeight     uint64       `json:"block_height"`
-	TxHash          string       `json:"tx_hash"`
-	ContractAddress string       `json:"contract_address"`
-	Ticker          string       `json:"ticker"`
-	AssetType       uint8        `json:"asset_type"`
-	Decimal         uint8        `json:"decimal"`
+	TargetAddress string          `json:"target_address"`
+	Amount        decimal.Decimal `json:"amount"`
+	Chain         uint8           `json:"chain"`
+	ChainId       types.Byte32    `json:"chain_id"`
+	TxHash        string          `json:"tx_hash"`
+	Ticker        types.Byte32    `json:"ticker"`
 }
 
 func (c *DepositTask) Status() int {
@@ -160,36 +181,28 @@ func (c *DepositTask) ChainType() uint8 {
 	return c.Chain
 }
 
-func NewDepositTask(taskId uint64, req *contracts.TaskPayloadContractDepositRequest) *DepositTask {
+func NewDepositTask(taskId uint64, req *DepositRequest) *DepositTask {
 	return &DepositTask{
 		BaseTask: BaseTask{
 			TaskId:   taskId,
 			TaskType: TaskTypeDeposit,
 		},
-		TargetAddress:   req.UserTssAddress,
-		Amount:          req.Amount,
-		ChainId:         req.ChainId,
-		TxHash:          req.TxHash,
-		ContractAddress: req.ContractAddress,
-		Ticker:          req.Ticker,
-		AssetType:       req.AssetType,
-		Decimal:         req.Decimal,
+		TargetAddress: req.UserTssAddress,
+		Amount:        decimal.NewFromBigInt(req.Amount, 0),
+		ChainId:       req.ChainId,
+		// TxHash:          req.TxHash,
+		Ticker: req.Ticker,
 	}
 }
 
 type WithdrawalTask struct {
 	BaseTask
-	TargetAddress   string       `json:"target_address"`
-	Amount          uint64       `json:"amount"`
-	Chain           uint8        `json:"chain"`
-	ChainId         types.Byte32 `json:"chain_id"`
-	BlockHeight     uint64       `json:"block_height"`
-	TxHash          string       `json:"tx_hash"`
-	ContractAddress string       `json:"contract_address"`
-	Ticker          types.Byte32 `json:"ticker"`
-	AssetType       uint8        `json:"asset_type"`
-	Decimal         uint8        `json:"decimal"`
-	Fee             uint64       `json:"fee"`
+	TargetAddress string          `json:"target_address"`
+	Amount        decimal.Decimal `json:"amount"`
+	Chain         uint8           `json:"chain"`
+	ChainId       types.Byte32    `json:"chain_id"`
+	TxHash        string          `json:"tx_hash"`
+	Ticker        types.Byte32    `json:"ticker"`
 }
 
 func (*WithdrawalTask) TableName() string {
@@ -200,21 +213,17 @@ func (c *WithdrawalTask) ChainType() uint8 {
 	return c.Chain
 }
 
-func NewWithdrawalTask(taskId uint64, req *contracts.TaskPayloadContractWithdrawalRequest) *WithdrawalTask {
+func NewWithdrawalTask(taskId uint64, req *WithdrawalRequest) *WithdrawalTask {
 	return &WithdrawalTask{
 		BaseTask: BaseTask{
 			TaskId:   taskId,
 			TaskType: TaskTypeWithdrawal,
 		},
-		TargetAddress:   req.UserTssAddress,
-		Amount:          req.Amount,
-		ChainId:         req.ChainId,
-		TxHash:          req.TxHash,
-		ContractAddress: req.ContractAddress,
-		Ticker:          req.Ticker,
-		AssetType:       req.AssetType,
-		Decimal:         req.Decimal,
-		Fee:             req.Fee,
+		TargetAddress: req.UserTssAddress,
+		Amount:        decimal.NewFromBigInt(req.Amount, 0),
+		ChainId:       req.ChainId,
+		// TxHash:          req.TxHash,
+		Ticker: req.Ticker,
 	}
 }
 
