@@ -185,7 +185,7 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 		account := db.Account{
 			Account:  addressRegistered.Account.Uint64(),
 			Chain:    addressRegistered.Chain,
-			Index:    addressRegistered.Index.Uint64(),
+			Index:    uint32(addressRegistered.Index.Uint64()),
 			Address:  addressRegistered.NewAddress,
 			LogIndex: l.LogIndex(AddressRegistered, vLog),
 		}

@@ -66,7 +66,7 @@ func (s *Wallet) SetTssPublicKey(tssPublicKey ecdsa.PublicKey) {
 	s.tssPublicKey = tssPublicKey
 }
 
-func (s *Wallet) Address(coinType, account uint32, index uint8) common.Address {
+func (s *Wallet) Address(coinType, account, index uint32) common.Address {
 	address := address.GenerateAddressByPath(bip44.ECPoint(&s.tssPublicKey), coinType, account, index)
 	return common.HexToAddress(address)
 }

@@ -185,7 +185,7 @@ func (p *DerivePathParams) Indexes() []uint32 {
 //	return ckd.DeriveChildKeyFromHierarchy(path, extendedParentPk, ec.Params().N, ec)
 //}
 
-func Bip44DerivationPath(coinType, account uint32, index uint8) DerivePath {
+func Bip44DerivationPath(coinType, account, index uint32) DerivePath {
 	// https://learnblockchain.cn/2018/09/28/hdwallet
 	// m / purpose' / coin' / account' / change / address_index
 	// coin list https://github.com/satoshilabs/slips/blob/master/slip-0044.md

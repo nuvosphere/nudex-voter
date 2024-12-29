@@ -9,6 +9,12 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/utils"
 )
 
+type WalletCreationRequest struct {
+	Account     uint32
+	AddressType uint8
+	Index       uint8
+}
+
 func DecodeTask(taskId uint64, context []byte) db.DetailTask {
 	parsedABI, err := contracts.ParseABI(contracts.TaskPayloadContractMetaData.ABI)
 	utils.Assert(err)

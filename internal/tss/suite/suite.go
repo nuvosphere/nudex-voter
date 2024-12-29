@@ -26,7 +26,7 @@ type SignRes struct {
 
 type TssService interface {
 	ECPoint(chainType uint8) *tssCrypto.ECPoint
-	GetUserAddress(coinType, account uint32, index uint8) string
+	GetUserAddress(coinType, account, index uint32) string
 	GetPublicKey(address string) crypto.PublicKey
 	TssSigner() common.Address
 	IsMeeting(signDigest string) bool

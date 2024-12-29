@@ -109,7 +109,7 @@ type CreateWalletTask struct {
 	BaseTask
 	Account uint32 `json:"account"`
 	Chain   uint8  `json:"chain"` // evm_tss btc solana sui
-	Index   uint8  `json:"index"`
+	Index   uint32 `json:"index"`
 	Address string `json:"address"` // new create bip44 address
 }
 
@@ -129,7 +129,7 @@ func NewCreateWalletTask(taskId uint64, req *contracts.TaskPayloadContractWallet
 		},
 		Account: req.Account,
 		Chain:   req.AddressType,
-		Index:   req.Index,
+		Index:   uint32(req.Index),
 	}
 }
 
