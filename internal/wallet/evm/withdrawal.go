@@ -23,12 +23,18 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	to := common.HexToAddress(task.TargetAddress)
 	var tx *db.EvmTransaction
 	var err error
-	switch task.AssetType {
+	tokenInfo, err := w.ContractState().GetTokenInfo(task.Ticker)
+	if err != nil {
+		log.Errorf("Failed to get token info: %v", err)
+		return
+	}
+
+	switch tokenInfo.AssetType {
 	case types.AssetTypeMain:
 		tx, err = w.BuildUnSignTx(
 			hotAddress,
 			to,
-			big.NewInt(int64(task.Amount)),
+			task.Amount.BigInt(),
 			nil,
 			db.TaskTypeWithdrawal,
 			task.TaskId,
@@ -37,14 +43,14 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		tx, err = w.BuildUnSignTx(
 
 			hotAddress,
-			common.HexToAddress(task.ContractAddress),
+			common.HexToAddress(tokenInfo.ContractAddress),
 			nil,
-			contracts.EncodeTransferOfERC20(hotAddress, to, big.NewInt(int64(task.Amount))),
+			contracts.EncodeTransferOfERC20(hotAddress, to, task.Amount.BigInt()),
 			db.TaskTypeWithdrawal,
 			task.TaskId,
 		)
 	default:
-		log.Errorf("unknown asset type: %v", task.AssetType)
+		log.Errorf("unknown asset type: %v", tokenInfo.AssetType)
 		return
 	}
 	if err != nil {

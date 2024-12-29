@@ -26,9 +26,16 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	} else {
 		c = NewDevClient()
 	}
+
+	tokenInfo, err := w.ContractState().GetTokenInfo(task.Ticker)
+	if err != nil {
+		log.Errorf("Failed to get token info: %v", err)
+		return
+	}
+
 	hotAddress := address.HotAddressOfSui(w.tss.ECPoint(w.ChainType()))
 	log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, task.TargetAddress, task.Amount)
-	unSignTx, err := c.BuildPaySuiTx(CoinType(task.ContractAddress, task.Ticker.String()), hotAddress, []Recipient{
+	unSignTx, err := c.BuildPaySuiTx(CoinType(tokenInfo.ContractAddress, task.Ticker.String()), hotAddress, []Recipient{
 		{
 			Recipient: task.TargetAddress,
 			Amount:    fmt.Sprintf("%d", task.Amount),

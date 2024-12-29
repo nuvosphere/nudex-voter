@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
-	vtypes "github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -145,7 +145,7 @@ func (s *ContractState) GetInscriptionBurnb(txHash string) (*db.InscriptionBurnb
 	return &inscriptionBurnb, nil
 }
 
-func (s *ContractState) GetAsset(ticker string) (*db.Asset, error) {
+func (s *ContractState) GetAsset(ticker types.Byte32) (*db.Asset, error) {
 	var asset db.Asset
 
 	result := s.l2InfoDb.
@@ -163,19 +163,19 @@ func (s *ContractState) GetAsset(ticker string) (*db.Asset, error) {
 	return &asset, nil
 }
 
-func (s *ContractState) GetTokenInfo(ticker string, chainId vtypes.Byte32) (*db.TokenInfo, error) {
+func (s *ContractState) GetTokenInfo(ticker types.Byte32) (*db.TokenInfo, error) {
 	var tokenInfo db.TokenInfo
 
 	result := s.l2InfoDb.
 		Preload(clause.Associations).
-		Where("ticker = ? and chain_id = ?", ticker, chainId).
-		First(tokenInfo)
+		Where("ticker = ?", ticker).
+		First(&tokenInfo)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("token info not found for ticker: %s, chainId: %d", ticker, chainId)
+			return nil, fmt.Errorf("token info not found for ticker: %s", ticker)
 		}
-		return nil, fmt.Errorf("failed to query asset for ticker: %s, chainId: %d, %w", ticker, chainId, result.Error)
+		return nil, fmt.Errorf("failed to query asset for ticker: %s, %w", ticker, result.Error)
 	}
 
 	return &tokenInfo, nil

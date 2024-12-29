@@ -74,7 +74,7 @@ type Account struct {
 	User     string   `gorm:"not null"              json:"user"`
 	Account  uint64   `gorm:"not null"              json:"account"`
 	Chain    uint8    `gorm:"not null"              json:"chain"`
-	Index    uint64   `gorm:"not null"              json:"index"`
+	Index    uint32   `gorm:"not null"              json:"index"`
 	Address  string   `gorm:"uniqueIndex; not null" json:"address"`
 	LogIndex LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
@@ -85,12 +85,12 @@ func (Account) TableName() string {
 
 type DepositRecord struct {
 	gorm.Model
-	TargetAddress string        `gorm:"not null"             json:"target_address"`
-	Amount        uint64        `gorm:"not null"             json:"amount"`
-	ChainId       vtypes.Byte32 `gorm:"not null"             json:"chain_id"`
-	TxInfo        []byte        `gorm:"not null"             json:"tx_info"`
-	ExtraInfo     []byte        `gorm:"not null"             json:"extra_info"`
-	LogIndex      LogIndex      `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	TargetAddress string          `gorm:"not null"             json:"target_address"`
+	Amount        decimal.Decimal `gorm:"not null"             json:"amount"`
+	ChainId       vtypes.Byte32   `gorm:"not null"             json:"chain_id"`
+	TxInfo        []byte          `gorm:"not null"             json:"tx_info"`
+	ExtraInfo     []byte          `gorm:"not null"             json:"extra_info"`
+	LogIndex      LogIndex        `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (DepositRecord) TableName() string {
@@ -99,10 +99,10 @@ func (DepositRecord) TableName() string {
 
 type WithdrawalRecord struct {
 	gorm.Model
-	DepositAddress string        `gorm:"not null"             json:"target_address"`
-	Amount         uint64        `gorm:"not null"             json:"amount"`
-	ChainId        vtypes.Byte32 `gorm:"not null"             json:"chain_id"`
-	LogIndex       LogIndex      `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	DepositAddress string          `gorm:"not null"             json:"target_address"`
+	Amount         decimal.Decimal `gorm:"not null"             json:"amount"`
+	ChainId        vtypes.Byte32   `gorm:"not null"             json:"chain_id"`
+	LogIndex       LogIndex        `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (WithdrawalRecord) TableName() string {
@@ -123,10 +123,10 @@ func (AddressBalance) TableName() string {
 
 type InscriptionMintb struct {
 	gorm.Model
-	Recipient string   `gorm:"not null"             json:"recipient"`
-	Ticker    string   `gorm:"not null"             json:"ticker"`
-	Amount    uint64   `gorm:"not null"             json:"amount"`
-	LogIndex  LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	Recipient string          `gorm:"not null"             json:"recipient"`
+	Ticker    vtypes.Byte32   `gorm:"not null"             json:"ticker"`
+	Amount    decimal.Decimal `gorm:"not null"             json:"amount"`
+	LogIndex  LogIndex        `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (InscriptionMintb) TableName() string {
@@ -135,10 +135,10 @@ func (InscriptionMintb) TableName() string {
 
 type InscriptionBurnb struct {
 	gorm.Model
-	From     string   `gorm:"not null"             json:"from"`
-	Ticker   string   `gorm:"not null"             json:"ticker"`
-	Amount   uint64   `gorm:"not null"             json:"amount"`
-	LogIndex LogIndex `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
+	From     string          `gorm:"not null"             json:"from"`
+	Ticker   vtypes.Byte32   `gorm:"not null"             json:"ticker"`
+	Amount   decimal.Decimal `gorm:"not null"             json:"amount"`
+	LogIndex LogIndex        `gorm:"foreignKey:ForeignID"` // has one https://gorm.io/zh_CN/docs/has_one.html
 }
 
 func (InscriptionBurnb) TableName() string {
@@ -147,15 +147,15 @@ func (InscriptionBurnb) TableName() string {
 
 type Asset struct {
 	gorm.Model
-	Ticker            string `gorm:"uniqueIndex;not null" json:"ticker"`
-	AssetType         uint8  `gorm:"not null" json:"asset_type"`
-	Decimals          uint8  `gorm:"not null" json:"decimals"`
-	DepositEnabled    bool   `gorm:"not null" json:"deposit_enabled"`
-	WithdrawalEnabled bool   `gorm:"not null" json:"withdrawal_enabled"`
-	MinDepositAmount  uint64 `gorm:"not null" json:"min_deposit_amount"`
-	MinWithdrawAmount uint64 `gorm:"not null" json:"min_withdraw_amount"`
-	AssetAlias        string `gorm:"not null"             json:"asset_alias"`
-	AssetLogo         string `gorm:"not null"             json:"asset_logo"`
+	Ticker            vtypes.Byte32 `gorm:"uniqueIndex;not null" json:"ticker"`
+	AssetType         uint8         `gorm:"not null" json:"asset_type"`
+	Decimals          uint8         `gorm:"not null" json:"decimals"`
+	DepositEnabled    bool          `gorm:"not null" json:"deposit_enabled"`
+	WithdrawalEnabled bool          `gorm:"not null" json:"withdrawal_enabled"`
+	MinDepositAmount  uint64        `gorm:"not null" json:"min_deposit_amount"`
+	MinWithdrawAmount uint64        `gorm:"not null" json:"min_withdraw_amount"`
+	AssetAlias        string        `gorm:"not null"             json:"asset_alias"`
+	AssetLogo         string        `gorm:"not null"             json:"asset_logo"`
 }
 
 func (Asset) TableName() string {
@@ -164,12 +164,12 @@ func (Asset) TableName() string {
 
 type TokenInfo struct {
 	gorm.Model
-	Ticker          string `gorm:"not null" json:"ticker"`
-	IsActive        bool   `gorm:"not null" json:"is_active"`
-	AssetType       uint8  `gorm:"not null" json:"asset_type"`
-	Decimals        uint8  `gorm:"not null" json:"decimals"`
-	ContractAddress string `gorm:"not null"             json:"contract_address"`
-	Symbol          string `gorm:"not null"             json:"symbol"`
+	Ticker          vtypes.Byte32 `gorm:"not null" json:"ticker"`
+	IsActive        bool          `gorm:"not null" json:"is_active"`
+	AssetType       uint8         `gorm:"not null" json:"asset_type"`
+	Decimals        uint8         `gorm:"not null" json:"decimals"`
+	ContractAddress string        `gorm:"not null"             json:"contract_address"`
+	Symbol          string        `gorm:"not null"             json:"symbol"`
 }
 
 func (TokenInfo) TableName() string {

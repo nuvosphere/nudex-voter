@@ -1,6 +1,7 @@
 package contracts
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -77,14 +78,17 @@ func MustParseABI(abiJSON string) abi.ABI {
 }
 
 type Contract struct {
-	Address common.Address
-	ABI     abi.ABI
+	ABI abi.ABI
 }
 
-func NewContract(address common.Address, abi abi.ABI) *Contract {
+func NewContract(abiMeta *bind.MetaData) *Contract {
+	abi, err := ParseABI(abiMeta.ABI)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Contract{
-		Address: address,
-		ABI:     abi,
+		ABI: abi,
 	}
 }
 
@@ -95,6 +99,20 @@ func (c *Contract) Encode(method string, args ...any) ([]byte, error) {
 
 func (c *Contract) Decode(method string, data []byte) ([]any, error) {
 	return c.ABI.Unpack(method, data)
+}
+
+func (c *Contract) MethodID(method string) string {
+	m := c.ABI.Methods[method]
+	return hex.EncodeToString(m.ID)
+}
+
+func (c *Contract) UnPackInput(method string, input any, data []byte) error {
+	m := c.ABI.Methods[method]
+	unpacked, err := m.Inputs.Unpack(data)
+	if err != nil {
+		return err
+	}
+	return m.Inputs.Copy(input, unpacked)
 }
 
 func (c *Contract) EventTopicHash(eventName string) (common.Hash, error) {
@@ -179,4 +197,16 @@ func EventTopic(meta *bind.MetaData, eventName string) common.Hash {
 		panic(fmt.Errorf("ethcontract: event '%s' not found in contract abi", eventName))
 	}
 	return crypto.Keccak256Hash([]byte(ev.Sig))
+}
+
+func MethodID(meta *bind.MetaData, method string) string {
+	abi, err := meta.GetAbi()
+	if err != nil {
+		panic(err)
+	}
+	ev, ok := abi.Methods[method]
+	if !ok {
+		panic(fmt.Errorf("ethcontract: event '%s' not found in contract abi", method))
+	}
+	return hex.EncodeToString(ev.ID)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/shopspring/decimal"
 )
 
 type TxStatusResponse struct {
@@ -40,11 +41,11 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 		if !asset.DepositEnabled {
 			return true, db.TaskErrorCodeDepositAssetNotEnabled, err
 		}
-		if taskData.Amount < asset.MinDepositAmount {
+		if taskData.Amount.Cmp(decimal.NewFromUint64(asset.MinDepositAmount)) == -1 {
 			return true, db.TaskErrorCodeDepositAmountTooLow, err
 		}
 
-		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionMintb.Ticker, taskData.ChainId)
+		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionMintb.Ticker)
 		if err != nil || tokenInfo == nil {
 			return true, db.TaskErrorCodeDepositTokenNotSupported, err
 		}
@@ -76,11 +77,11 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 		if !asset.WithdrawalEnabled {
 			return true, db.TaskErrorCodeWithdrawalAssetNotEnabled, err
 		}
-		if taskData.Amount < asset.MinWithdrawAmount {
+		if taskData.Amount.Cmp(decimal.NewFromUint64(asset.MinWithdrawAmount)) == -1 {
 			return true, db.TaskErrorCodeWithdrawalAmountTooLow, err
 		}
 
-		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionBurnb.Ticker, taskData.ChainId)
+		tokenInfo, err := m.stateDB.GetTokenInfo(inscriptionBurnb.Ticker)
 		if err != nil || tokenInfo == nil {
 			return true, db.TaskErrorCodeWithdrawalTokenNotSupported, err
 		}
@@ -88,38 +89,40 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 			return true, db.TaskErrorCodeWithdrawalTokenNotActive, err
 		}
 
+		assetType := tokenInfo.AssetType
+
 		switch taskData.Chain {
 		case types.CoinTypeBTC:
-			switch taskData.AssetType {
+			switch assetType {
 			case types.AssetTypeMain:
 
 			case types.AssetTypeErc20:
 			default:
-				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", taskData.AssetType)
+				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", assetType)
 			}
 		case types.ChainEthereum:
-			switch taskData.AssetType {
+			switch assetType {
 			case types.AssetTypeMain:
 				// @todo check main asset
 			case types.AssetTypeErc20:
 				// @todo check erc20 asset
 			default:
-				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", taskData.AssetType)
+				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", assetType)
 			}
 		case types.ChainSolana:
-			switch taskData.AssetType {
+			switch assetType {
 			case types.AssetTypeMain:
 			case types.AssetTypeErc20:
 			default:
-				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", taskData.AssetType)
+				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", assetType)
 			}
 		case types.ChainSui:
-			switch taskData.AssetType {
+			switch assetType {
 			case types.AssetTypeMain:
 
 			case types.AssetTypeErc20:
 			default:
-				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", taskData.AssetType)
+				return true, db.TaskErrorCodeAssetNotSupported, fmt.Errorf("unknown asset type: %v", assetType)
 			}
 		default:
 			return true, db.TaskErrorCodeChainNotSupported, fmt.Errorf("unknown Chain type: %v", taskData.Chain)

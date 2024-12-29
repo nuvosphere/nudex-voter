@@ -256,7 +256,7 @@ func (m *Scheduler) IsGenesis() bool {
 	return !m.partyData.LoadData()
 }
 
-func (m *Scheduler) GetUserAddress(coinType, account uint32, index uint8) string {
+func (m *Scheduler) GetUserAddress(coinType, account, index uint32) string {
 	return address.GenerateAddressByPath(m.partyData.GetData(types.GetCurveTypeByCoinType(int(coinType))).ECPoint(), coinType, account, index)
 }
 
@@ -332,7 +332,7 @@ func (m *Scheduler) GetSigner(address string) *SignerContext {
 		return nil
 	}
 
-	local, keyDerivationDelta := m.GenerateDerivationWalletProposal(uint32(types.GetCoinTypeByChain(account.Chain)), uint32(account.Account), uint8(account.Index))
+	local, keyDerivationDelta := m.GenerateDerivationWalletProposal(uint32(types.GetCoinTypeByChain(account.Chain)), uint32(account.Account), account.Index)
 
 	signer = &SignerContext{
 		chainType:          account.Chain,
@@ -746,7 +746,7 @@ func (m *Scheduler) Participants() types.Participants {
 	return types.Participants{}
 }
 
-func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account uint32, index uint8) (LocalPartySaveData, *big.Int) {
+func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account, index uint32) (LocalPartySaveData, *big.Int) {
 	// coinType := types.GetCoinTypeByChain(coinType)
 	path := bip44.Bip44DerivationPath(coinType, account, index)
 	param, err := path.ToParams()

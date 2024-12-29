@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
 	"github.com/nuvosphere/nudex-voter/internal/db"
+	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/types/address"
@@ -64,7 +64,7 @@ func (m *Scheduler) GetOnlineTask(taskId uint64) (pool.Task[uint64], error) {
 		return nil, err
 	}
 
-	detailTask := codec.DecodeTask(t.Id, t.Result)
+	detailTask := layer2.DecodeTask(t.Id, t.Result)
 
 	baseTask := db.Task{
 		TaskId:    t.Id,
@@ -258,12 +258,12 @@ func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 			return
 		}
 
-		switch taskData.AssetType {
-		case types.AssetTypeMain:
-		case types.AssetTypeErc20:
-		default:
-			log.Errorf("unknown asset type: %v", taskData.AssetType)
-		}
+		//switch taskData.AssetType {
+		//case types.AssetTypeMain:
+		//case types.AssetTypeErc20:
+		//default:
+		//	log.Errorf("unknown asset type: %v", taskData.AssetType)
+		//}
 	case *db.WithdrawalTask:
 		m.processTxSignForTest(nil, taskData)
 	}

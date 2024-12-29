@@ -98,7 +98,7 @@ func (c *txClient) buildTxOut(addr string, amount int64) error {
 
 func (c *txClient) getUTXOs(from btcutil.Address) ([]btcjson.ListUnspentResult, error) {
 	// todo
-	return c.client.ListUnspentMinMaxAddresses(0, 9999999, []btcutil.Address{from})
+	return c.client.ListUnspentMinMaxAddresses(0, 50, []btcutil.Address{from})
 }
 
 func (c *txClient) buildTxIn(amount int64) error {

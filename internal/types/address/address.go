@@ -28,12 +28,12 @@ func GenerateAddressByECPoint(point *tssCrypto.ECPoint, coinType int) string {
 	panic("invalid coin type")
 }
 
-func GenerateAddressByPath(masterPubKey *tssCrypto.ECPoint, coinType, account uint32, index uint8) string {
+func GenerateAddressByPath(masterPubKey *tssCrypto.ECPoint, coinType, account, index uint32) string {
 	address, _, _ := GenerateSignerByPath(masterPubKey, coinType, account, index)
 	return address
 }
 
-func GenerateSignerByPath(masterPubKey *tssCrypto.ECPoint, coinType, account uint32, index uint8) (string, *tssCrypto.ECPoint, *big.Int) {
+func GenerateSignerByPath(masterPubKey *tssCrypto.ECPoint, coinType, account, index uint32) (string, *tssCrypto.ECPoint, *big.Int) {
 	bip44Path := bip44.Bip44DerivationPath(coinType, account, index)
 
 	p, err := bip44Path.ToParams()

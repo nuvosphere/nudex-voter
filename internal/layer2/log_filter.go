@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/nuvosphere/nudex-voter/internal/codec"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	vtypes "github.com/nuvosphere/nudex-voter/internal/types"
@@ -70,7 +69,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 	case contracts.TaskSubmittedTopic:
 		taskSubmitted := contracts.TaskManagerContractTaskSubmitted{}
 		contracts.UnpackEventLog(contracts.TaskManagerContractMetaData, &taskSubmitted, TaskSubmitted, vLog)
-		actualTask := codec.DecodeTask(taskSubmitted.TaskId, taskSubmitted.Data)
+		actualTask := DecodeTask(taskSubmitted.TaskId, taskSubmitted.Data)
 		baseTask := db.Task{
 			TaskId:    actualTask.TaskID(),
 			TaskType:  actualTask.Type(),
@@ -130,8 +129,8 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 		mintbEvent := &db.InscriptionMintb{
 			Recipient: mintb.Recipient.Hex(),
-			Ticker:    strings.Trim(string(mintb.Ticker[:]), "\x00"),
-			Amount:    mintb.Amount.Uint64(),
+			Ticker:    mintb.Ticker,
+			Amount:    decimal.NewFromBigInt(mintb.Amount, 0),
 			LogIndex:  l.LogIndex(NIP20TokenMintbEvent, vLog),
 		}
 		err := l.db.GetL2InfoDB().Create(mintbEvent)
@@ -144,8 +143,8 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 
 		burnbEvent := &db.InscriptionBurnb{
 			From:     burnb.From.Hex(),
-			Ticker:   strings.Trim(string(burnb.Ticker[:]), "\x00"),
-			Amount:   burnb.Amount.Uint64(),
+			Ticker:   burnb.Ticker,
+			Amount:   decimal.NewFromBigInt(burnb.Amount, 0),
 			LogIndex: l.LogIndex(NIP20TokenBurnbEvent, vLog),
 		}
 		err := l.db.GetL2InfoDB().Create(burnbEvent)
@@ -185,7 +184,7 @@ func (l *Layer2Listener) processAccountLog(vLog types.Log) error {
 		account := db.Account{
 			Account:  addressRegistered.Account.Uint64(),
 			Chain:    addressRegistered.Chain,
-			Index:    addressRegistered.Index.Uint64(),
+			Index:    uint32(addressRegistered.Index.Uint64()),
 			Address:  addressRegistered.NewAddress,
 			LogIndex: l.LogIndex(AddressRegistered, vLog),
 		}
@@ -266,7 +265,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			depositRecord := db.DepositRecord{
 				TargetAddress: strings.ToLower(depositRecorded.DepositAddress),
-				Amount:        depositRecorded.Amount.Uint64(),
+				Amount:        decimal.NewFromBigInt(depositRecorded.Amount, 0),
 				ChainId:       depositRecorded.ChainId,
 				LogIndex:      l.LogIndex(DepositRecorded, vLog),
 			}
@@ -297,7 +296,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			withdrawalRecord := db.WithdrawalRecord{
 				DepositAddress: withdrawalRecorded.DepositAddress,
-				Amount:         withdrawalRecorded.Amount.Uint64(),
+				Amount:         decimal.NewFromBigInt(withdrawalRecorded.Amount, 0),
 				ChainId:        withdrawalRecorded.ChainId,
 				LogIndex:       l.LogIndex(WithdrawalRecorded, vLog),
 			}
@@ -324,7 +323,7 @@ func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
 		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetListed, vLog)
 
 		asset := &db.Asset{
-			Ticker:            strings.Trim(string(event.Ticker[:]), "\x00"),
+			Ticker:            event.Ticker,
 			Decimals:          event.AssetParam.Decimals,
 			DepositEnabled:    event.AssetParam.DepositEnabled,
 			WithdrawalEnabled: event.AssetParam.WithdrawalEnabled,
@@ -337,14 +336,12 @@ func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
 		event := contracts.AssetHandlerContractAssetUpdated{}
 		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetUpdated, vLog)
 
-		ticker := strings.Trim(string(event.Ticker[:]), "\x00")
-
 		var existingAsset db.Asset
-		result := l.db.GetL2SyncDB().Where("ticker = ?", ticker).First(&existingAsset)
+		result := l.db.GetL2SyncDB().Where("ticker = ?", event.Ticker).First(&existingAsset)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				newAsset := &db.Asset{
-					Ticker:            ticker,
+					Ticker:            event.Ticker,
 					Decimals:          event.AssetParam.Decimals,
 					DepositEnabled:    event.AssetParam.DepositEnabled,
 					WithdrawalEnabled: event.AssetParam.WithdrawalEnabled,
@@ -354,7 +351,7 @@ func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
 				}
 				return l.db.GetL2SyncDB().Save(newAsset).Error
 			}
-			return fmt.Errorf("failed to query asset by ticker:%s, %w", ticker, result.Error)
+			return fmt.Errorf("failed to query asset by ticker:%s, %w", event.Ticker, result.Error)
 		}
 
 		existingAsset.Decimals = event.AssetParam.Decimals
