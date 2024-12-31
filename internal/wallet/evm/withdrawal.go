@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -12,50 +13,39 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (w *WalletClient) signTask(from, to, contract common.Address, amount *big.Int) error {
-	panic("todo")
-}
-
-func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
-	log.Debugf("processTxSign taskId: %v", task.TaskID())
-
-	hotAddress := common.HexToAddress(address.HotAddressOfEth(w.tss.ECPoint(w.ChainType())))
-	to := common.HexToAddress(task.TargetAddress)
+func (w *WalletClient) signTask(from, to common.Address, amount *big.Int, taskId uint64, ticker types.Byte32, ty int) (common.Hash, error) {
 	var tx *db.EvmTransaction
 	var err error
-	tokenInfo, err := w.ContractState().GetTokenInfo(task.Ticker)
+	tokenInfo, err := w.ContractState().GetTokenInfo(ticker)
 	if err != nil {
-		log.Errorf("Failed to get token info: %v", err)
-		return
+		return common.Hash{}, fmt.Errorf("failed to get token info: %w", err)
 	}
 
 	switch tokenInfo.AssetType {
 	case types.AssetTypeMain:
 		tx, err = w.BuildUnSignTx(
-			hotAddress,
+			from,
 			to,
-			task.Amount.BigInt(),
+			amount,
 			nil,
-			db.TaskTypeWithdrawal,
-			task.TaskId,
+			ty,
+			taskId,
 		)
 	case types.AssetTypeErc20:
 		tx, err = w.BuildUnSignTx(
 
-			hotAddress,
+			from,
 			common.HexToAddress(tokenInfo.ContractAddress),
 			nil,
-			contracts.EncodeTransferOfERC20(hotAddress, to, task.Amount.BigInt()),
+			contracts.EncodeTransferOfERC20(from, to, amount),
 			db.TaskTypeWithdrawal,
-			task.TaskId,
+			taskId,
 		)
 	default:
-		log.Errorf("unknown asset type: %v", tokenInfo.AssetType)
-		return
+		return common.Hash{}, fmt.Errorf("unknown asset type: %w", tokenInfo.AssetType)
 	}
 	if err != nil {
-		log.Errorf("failed to build unsign tx: %v", err)
-		return
+		return common.Hash{}, fmt.Errorf("failed to build unsign tx: %w", err)
 	}
 	ctx := w.NewTxContext(tx)
 	w.pendingTx.Store(ctx.TxHash(), ctx)
@@ -63,25 +53,35 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 
 	err = w.signTx(ctx)
 	if err != nil {
-		log.Errorf("failed to signTx tx: %v", err)
+		return ctx.TxHash(), fmt.Errorf("failed to sign tx: %w", err)
 	}
 	err = w.SendSingedTx(ctx)
 	if err != nil {
-		log.Errorf("send transaction err: %v", err)
-		return
+		return ctx.TxHash(), fmt.Errorf("failed to send transaction: %w", err)
 	}
 	// updated status to pending
 	receipt, err := w.WaitTxSuccess(ctx.TxHash())
 	if err != nil {
-		log.Errorf("failed to wait transaction success: %v", err)
-		return
+		return ctx.TxHash(), fmt.Errorf("failed to wait transaction success: %w", err)
 	}
 	if receipt.Status == 0 {
 		// updated status to fail
 		log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", ctx.SeqID(), ctx.TxHash())
+		return ctx.TxHash(), fmt.Errorf("failed to submit transaction for taskId: %d", ctx.SeqID())
 	} else {
 		// updated status to completed
 		log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.SeqID(), ctx.TxHash())
+		return ctx.TxHash(), nil
+	}
+}
+
+func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
+	log.Debugf("processTxSign taskId: %v", task.TaskID())
+	hotAddress := common.HexToAddress(address.HotAddressOfEth(w.tss.ECPoint(w.ChainType())))
+	to := common.HexToAddress(task.TargetAddress)
+	_, err := w.signTask(hotAddress, to, task.Amount.BigInt(), task.TaskID(), task.Ticker, db.TaskTypeWithdrawal)
+	if err != nil {
+		log.Errorf("failed to sign task %d: %v", task.TaskID(), err)
 	}
 }
 

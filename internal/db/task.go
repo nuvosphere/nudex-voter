@@ -229,17 +229,13 @@ func NewWithdrawalTask(taskId uint64, req *WithdrawalRequest) *WithdrawalTask {
 
 type ConsolidationTask struct {
 	BaseTask
-	TargetAddress   string       `json:"target_address"`
-	Amount          uint64       `json:"amount"`
-	Chain           uint8        `json:"chain"`
-	ChainId         types.Byte32 `json:"chain_id"`
-	BlockHeight     uint64       `json:"block_height"`
-	TxHash          string       `json:"tx_hash"`
-	ContractAddress string       `json:"contract_address"`
-	Ticker          string       `json:"ticker"`
-	AssetType       uint8        `json:"asset_type"`
-	Decimal         uint8        `json:"decimal"`
-	Fee             uint64       `json:"fee"`
+	TargetAddress   string          `json:"target_address"`
+	Amount          decimal.Decimal `json:"amount"`
+	Chain           uint8           `json:"chain"`
+	ChainId         types.Byte32    `json:"chain_id"`
+	TxHash          string          `json:"tx_hash"`
+	ContractAddress string          `json:"contract_address"`
+	Ticker          types.Byte32    `json:"ticker"`
 }
 
 func (*ConsolidationTask) TableName() string {
