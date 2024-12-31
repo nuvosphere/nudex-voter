@@ -388,29 +388,51 @@
     "name": "recordDeposit",
     "inputs": [
       {
-        "name": "_userAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_depositAddress",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_ticker",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_chainId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "_param",
+        "type": "tuple",
+        "internalType": "struct DepositTaskParam",
+        "components": [
+          {
+            "name": "userAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositAddress",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "ticker",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "txHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "blockHeight",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "logIndex",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
     "outputs": [
@@ -427,24 +449,36 @@
     "name": "recordWithdrawal",
     "inputs": [
       {
-        "name": "_depositAddress",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_ticker",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_chainId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "_param",
+        "type": "tuple",
+        "internalType": "struct WithdrawTaskParam",
+        "components": [
+          {
+            "name": "userAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositAddress",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "ticker",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
     "outputs": [
@@ -515,38 +549,54 @@
     "name": "submitDepositTask",
     "inputs": [
       {
-        "name": "_userAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_depositAddress",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_ticker",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_chainId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "_params",
+        "type": "tuple[]",
+        "internalType": "struct DepositTaskParam[]",
+        "components": [
+          {
+            "name": "userAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositAddress",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "ticker",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "txHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "blockHeight",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "logIndex",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -554,38 +604,39 @@
     "name": "submitWithdrawTask",
     "inputs": [
       {
-        "name": "_userAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_depositAddress",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_ticker",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_chainId",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "_params",
+        "type": "tuple[]",
+        "internalType": "struct WithdrawTaskParam[]",
+        "components": [
+          {
+            "name": "userAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositAddress",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "ticker",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -683,6 +734,24 @@
       },
       {
         "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "txHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "blockHeight",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "logIndex",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"

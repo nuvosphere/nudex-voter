@@ -202,7 +202,7 @@ func (m *Scheduler) createUserAddressProposal(task *db.CreateWalletTask) (LocalP
 	case crypto.ECDSA:
 		localPartySaveData := m.partyData.GetData(ec)
 		userAddress := address.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
-		msg := m.voterContract.EncodeRegisterNewAddress(big.NewInt(int64(task.Account)), task.Chain, big.NewInt(int64(task.Index)), strings.ToLower(userAddress))
+		msg := m.voterContract.EncodeRegisterNewAddress(task.Account, task.Chain, task.Index, strings.ToLower(userAddress))
 		hash := ethCrypto.Keccak256Hash(msg)
 		return *localPartySaveData, hash.Big()
 	default:

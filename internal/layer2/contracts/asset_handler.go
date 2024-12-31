@@ -39,6 +39,14 @@ type AssetParam struct {
 	AssetAlias        string
 }
 
+// ConsolidateTaskParam is an auto generated low-level Go binding around an user-defined struct.
+type ConsolidateTaskParam struct {
+	FromAddr []string
+	Ticker   [32]byte
+	ChainId  [32]byte
+	Amount   *big.Int
+}
+
 // NudexAsset is an auto generated low-level Go binding around an user-defined struct.
 type NudexAsset struct {
 	ListIndex         uint32
@@ -61,12 +69,11 @@ type TokenInfo struct {
 	ContractAddress string
 	Symbol          string
 	WithdrawFee     *big.Int
-	Balance         *big.Int
 }
 
 // AssetHandlerContractMetaData contains all meta data concerning the AssetHandlerContract contract.
 var AssetHandlerContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_taskManager\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ENTRYPOINT_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"FUNDS_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"SUBMITTER_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"assetTickerList\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"consolidate\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"delistAsset\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getAllAssets\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32[]\",\"internalType\":\"bytes32[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAllLinkedTokens\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32[]\",\"internalType\":\"bytes32[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAssetDetails\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structNudexAsset\",\"components\":[{\"name\":\"listIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"isListed\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"createdTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"updatedTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getLinkedToken\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structTokenInfo\",\"components\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"balance\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_entryPoint\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_submitter\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isAssetListed\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"linkToken\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_tokenInfos\",\"type\":\"tuple[]\",\"internalType\":\"structTokenInfo[]\",\"components\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"balance\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"linkedTokenList\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"chainIds\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"linkedTokens\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"balance\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"listNewAsset\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_assetParam\",\"type\":\"tuple\",\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nudexAssets\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"listIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"isListed\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"createdTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"updatedTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"resetlinkedToken\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitAssetTask\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_callData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitConsolidateTask\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitListAssetTask\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_assetParam\",\"type\":\"tuple\",\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"taskManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractITaskManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tokenSwitch\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_isActive\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"updateAsset\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_assetParam\",\"type\":\"tuple\",\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdraw\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"AssetDelisted\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetListed\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"assetParam\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetUpdated\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"assetParam\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Consolidate\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"LinkToken\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"tokens\",\"type\":\"tuple[]\",\"indexed\":false,\"internalType\":\"structTokenInfo[]\",\"components\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"balance\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ResetLinkedToken\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TokenSwitch\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Withdraw\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"AssetNotListed\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"InsufficientBalance\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_taskManager\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"DEFAULT_ADMIN_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ENTRYPOINT_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"FUNDS_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"SUBMITTER_ROLE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"assetTickerList\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"consolidate\",\"inputs\":[{\"name\":\"_param\",\"type\":\"tuple\",\"internalType\":\"structConsolidateTaskParam\",\"components\":[{\"name\":\"fromAddr\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"delistAsset\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getAllAssets\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32[]\",\"internalType\":\"bytes32[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAllLinkedTokens\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32[]\",\"internalType\":\"bytes32[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAssetDetails\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structNudexAsset\",\"components\":[{\"name\":\"listIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"isListed\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"createdTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"updatedTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getLinkedToken\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structTokenInfo\",\"components\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoleAdmin\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"grantRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"hasRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_entryPoint\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_submitter\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isAssetListed\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"linkToken\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_tokenInfos\",\"type\":\"tuple[]\",\"internalType\":\"structTokenInfo[]\",\"components\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"linkedTokenList\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"chainIds\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"linkedTokens\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"listNewAsset\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_assetParam\",\"type\":\"tuple\",\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"nudexAssets\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"listIndex\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"isListed\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"createdTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"updatedTime\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"callerConfirmation\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"resetlinkedToken\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"revokeRole\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitAssetTask\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_callData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitConsolidateTask\",\"inputs\":[{\"name\":\"_params\",\"type\":\"tuple[]\",\"internalType\":\"structConsolidateTaskParam[]\",\"components\":[{\"name\":\"fromAddr\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"submitListAssetTask\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_assetParam\",\"type\":\"tuple\",\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"taskManager\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractITaskManager\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"tokenSwitch\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_isActive\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"updateAsset\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_assetParam\",\"type\":\"tuple\",\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdraw\",\"inputs\":[{\"name\":\"_ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"_amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"AssetDelisted\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetListed\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"assetParam\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"AssetUpdated\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"assetParam\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structAssetParam\",\"components\":[{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"depositEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"withdrawalEnabled\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"minDepositAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minWithdrawAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"assetAlias\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Consolidate\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"fromAddr\",\"type\":\"string[]\",\"indexed\":false,\"internalType\":\"string[]\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"LinkToken\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"tokens\",\"type\":\"tuple[]\",\"indexed\":false,\"internalType\":\"structTokenInfo[]\",\"components\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"},{\"name\":\"contractAddress\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"symbol\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"withdrawFee\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ResetLinkedToken\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleAdminChanged\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"previousAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newAdminRole\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleGranted\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RoleRevoked\",\"inputs\":[{\"name\":\"role\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"account\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TokenSwitch\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"isActive\",\"type\":\"bool\",\"indexed\":false,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Withdraw\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"chainId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AccessControlBadConfirmation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"AccessControlUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"neededRole\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"AssetNotListed\",\"inputs\":[{\"name\":\"ticker\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]}]",
 }
 
 // AssetHandlerContractABI is the input ABI used to generate the binding from.
@@ -465,7 +472,7 @@ func (_AssetHandlerContract *AssetHandlerContractCallerSession) GetAssetDetails(
 
 // GetLinkedToken is a free data retrieval call binding the contract method 0x2180b8f3.
 //
-// Solidity: function getLinkedToken(bytes32 _ticker, bytes32 _chainId) view returns((bytes32,bool,uint8,string,string,uint256,uint256))
+// Solidity: function getLinkedToken(bytes32 _ticker, bytes32 _chainId) view returns((bytes32,bool,uint8,string,string,uint256))
 func (_AssetHandlerContract *AssetHandlerContractCaller) GetLinkedToken(opts *bind.CallOpts, _ticker [32]byte, _chainId [32]byte) (TokenInfo, error) {
 	var out []interface{}
 	err := _AssetHandlerContract.contract.Call(opts, &out, "getLinkedToken", _ticker, _chainId)
@@ -482,14 +489,14 @@ func (_AssetHandlerContract *AssetHandlerContractCaller) GetLinkedToken(opts *bi
 
 // GetLinkedToken is a free data retrieval call binding the contract method 0x2180b8f3.
 //
-// Solidity: function getLinkedToken(bytes32 _ticker, bytes32 _chainId) view returns((bytes32,bool,uint8,string,string,uint256,uint256))
+// Solidity: function getLinkedToken(bytes32 _ticker, bytes32 _chainId) view returns((bytes32,bool,uint8,string,string,uint256))
 func (_AssetHandlerContract *AssetHandlerContractSession) GetLinkedToken(_ticker [32]byte, _chainId [32]byte) (TokenInfo, error) {
 	return _AssetHandlerContract.Contract.GetLinkedToken(&_AssetHandlerContract.CallOpts, _ticker, _chainId)
 }
 
 // GetLinkedToken is a free data retrieval call binding the contract method 0x2180b8f3.
 //
-// Solidity: function getLinkedToken(bytes32 _ticker, bytes32 _chainId) view returns((bytes32,bool,uint8,string,string,uint256,uint256))
+// Solidity: function getLinkedToken(bytes32 _ticker, bytes32 _chainId) view returns((bytes32,bool,uint8,string,string,uint256))
 func (_AssetHandlerContract *AssetHandlerContractCallerSession) GetLinkedToken(_ticker [32]byte, _chainId [32]byte) (TokenInfo, error) {
 	return _AssetHandlerContract.Contract.GetLinkedToken(&_AssetHandlerContract.CallOpts, _ticker, _chainId)
 }
@@ -620,7 +627,7 @@ func (_AssetHandlerContract *AssetHandlerContractCallerSession) LinkedTokenList(
 
 // LinkedTokens is a free data retrieval call binding the contract method 0x4dcb66fb.
 //
-// Solidity: function linkedTokens(bytes32 ticker, bytes32 chainId) view returns(bytes32 chainId, bool isActive, uint8 decimals, string contractAddress, string symbol, uint256 withdrawFee, uint256 balance)
+// Solidity: function linkedTokens(bytes32 ticker, bytes32 chainId) view returns(bytes32 chainId, bool isActive, uint8 decimals, string contractAddress, string symbol, uint256 withdrawFee)
 func (_AssetHandlerContract *AssetHandlerContractCaller) LinkedTokens(opts *bind.CallOpts, ticker [32]byte, chainId [32]byte) (struct {
 	ChainId         [32]byte
 	IsActive        bool
@@ -628,7 +635,6 @@ func (_AssetHandlerContract *AssetHandlerContractCaller) LinkedTokens(opts *bind
 	ContractAddress string
 	Symbol          string
 	WithdrawFee     *big.Int
-	Balance         *big.Int
 }, error) {
 	var out []interface{}
 	err := _AssetHandlerContract.contract.Call(opts, &out, "linkedTokens", ticker, chainId)
@@ -640,7 +646,6 @@ func (_AssetHandlerContract *AssetHandlerContractCaller) LinkedTokens(opts *bind
 		ContractAddress string
 		Symbol          string
 		WithdrawFee     *big.Int
-		Balance         *big.Int
 	})
 	if err != nil {
 		return *outstruct, err
@@ -652,7 +657,6 @@ func (_AssetHandlerContract *AssetHandlerContractCaller) LinkedTokens(opts *bind
 	outstruct.ContractAddress = *abi.ConvertType(out[3], new(string)).(*string)
 	outstruct.Symbol = *abi.ConvertType(out[4], new(string)).(*string)
 	outstruct.WithdrawFee = *abi.ConvertType(out[5], new(*big.Int)).(**big.Int)
-	outstruct.Balance = *abi.ConvertType(out[6], new(*big.Int)).(**big.Int)
 
 	return *outstruct, err
 
@@ -660,7 +664,7 @@ func (_AssetHandlerContract *AssetHandlerContractCaller) LinkedTokens(opts *bind
 
 // LinkedTokens is a free data retrieval call binding the contract method 0x4dcb66fb.
 //
-// Solidity: function linkedTokens(bytes32 ticker, bytes32 chainId) view returns(bytes32 chainId, bool isActive, uint8 decimals, string contractAddress, string symbol, uint256 withdrawFee, uint256 balance)
+// Solidity: function linkedTokens(bytes32 ticker, bytes32 chainId) view returns(bytes32 chainId, bool isActive, uint8 decimals, string contractAddress, string symbol, uint256 withdrawFee)
 func (_AssetHandlerContract *AssetHandlerContractSession) LinkedTokens(ticker [32]byte, chainId [32]byte) (struct {
 	ChainId         [32]byte
 	IsActive        bool
@@ -668,14 +672,13 @@ func (_AssetHandlerContract *AssetHandlerContractSession) LinkedTokens(ticker [3
 	ContractAddress string
 	Symbol          string
 	WithdrawFee     *big.Int
-	Balance         *big.Int
 }, error) {
 	return _AssetHandlerContract.Contract.LinkedTokens(&_AssetHandlerContract.CallOpts, ticker, chainId)
 }
 
 // LinkedTokens is a free data retrieval call binding the contract method 0x4dcb66fb.
 //
-// Solidity: function linkedTokens(bytes32 ticker, bytes32 chainId) view returns(bytes32 chainId, bool isActive, uint8 decimals, string contractAddress, string symbol, uint256 withdrawFee, uint256 balance)
+// Solidity: function linkedTokens(bytes32 ticker, bytes32 chainId) view returns(bytes32 chainId, bool isActive, uint8 decimals, string contractAddress, string symbol, uint256 withdrawFee)
 func (_AssetHandlerContract *AssetHandlerContractCallerSession) LinkedTokens(ticker [32]byte, chainId [32]byte) (struct {
 	ChainId         [32]byte
 	IsActive        bool
@@ -683,7 +686,6 @@ func (_AssetHandlerContract *AssetHandlerContractCallerSession) LinkedTokens(tic
 	ContractAddress string
 	Symbol          string
 	WithdrawFee     *big.Int
-	Balance         *big.Int
 }, error) {
 	return _AssetHandlerContract.Contract.LinkedTokens(&_AssetHandlerContract.CallOpts, ticker, chainId)
 }
@@ -835,25 +837,25 @@ func (_AssetHandlerContract *AssetHandlerContractCallerSession) TaskManager() (c
 	return _AssetHandlerContract.Contract.TaskManager(&_AssetHandlerContract.CallOpts)
 }
 
-// Consolidate is a paid mutator transaction binding the contract method 0xe6702d17.
+// Consolidate is a paid mutator transaction binding the contract method 0x1b391425.
 //
-// Solidity: function consolidate(bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns()
-func (_AssetHandlerContract *AssetHandlerContractTransactor) Consolidate(opts *bind.TransactOpts, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
-	return _AssetHandlerContract.contract.Transact(opts, "consolidate", _ticker, _chainId, _amount)
+// Solidity: function consolidate((string[],bytes32,bytes32,uint256) _param) returns()
+func (_AssetHandlerContract *AssetHandlerContractTransactor) Consolidate(opts *bind.TransactOpts, _param ConsolidateTaskParam) (*types.Transaction, error) {
+	return _AssetHandlerContract.contract.Transact(opts, "consolidate", _param)
 }
 
-// Consolidate is a paid mutator transaction binding the contract method 0xe6702d17.
+// Consolidate is a paid mutator transaction binding the contract method 0x1b391425.
 //
-// Solidity: function consolidate(bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns()
-func (_AssetHandlerContract *AssetHandlerContractSession) Consolidate(_ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
-	return _AssetHandlerContract.Contract.Consolidate(&_AssetHandlerContract.TransactOpts, _ticker, _chainId, _amount)
+// Solidity: function consolidate((string[],bytes32,bytes32,uint256) _param) returns()
+func (_AssetHandlerContract *AssetHandlerContractSession) Consolidate(_param ConsolidateTaskParam) (*types.Transaction, error) {
+	return _AssetHandlerContract.Contract.Consolidate(&_AssetHandlerContract.TransactOpts, _param)
 }
 
-// Consolidate is a paid mutator transaction binding the contract method 0xe6702d17.
+// Consolidate is a paid mutator transaction binding the contract method 0x1b391425.
 //
-// Solidity: function consolidate(bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns()
-func (_AssetHandlerContract *AssetHandlerContractTransactorSession) Consolidate(_ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
-	return _AssetHandlerContract.Contract.Consolidate(&_AssetHandlerContract.TransactOpts, _ticker, _chainId, _amount)
+// Solidity: function consolidate((string[],bytes32,bytes32,uint256) _param) returns()
+func (_AssetHandlerContract *AssetHandlerContractTransactorSession) Consolidate(_param ConsolidateTaskParam) (*types.Transaction, error) {
+	return _AssetHandlerContract.Contract.Consolidate(&_AssetHandlerContract.TransactOpts, _param)
 }
 
 // DelistAsset is a paid mutator transaction binding the contract method 0xe06e60a5.
@@ -919,23 +921,23 @@ func (_AssetHandlerContract *AssetHandlerContractTransactorSession) Initialize(_
 	return _AssetHandlerContract.Contract.Initialize(&_AssetHandlerContract.TransactOpts, _owner, _entryPoint, _submitter)
 }
 
-// LinkToken is a paid mutator transaction binding the contract method 0xc7ae44ea.
+// LinkToken is a paid mutator transaction binding the contract method 0x457f39f8.
 //
-// Solidity: function linkToken(bytes32 _ticker, (bytes32,bool,uint8,string,string,uint256,uint256)[] _tokenInfos) returns()
+// Solidity: function linkToken(bytes32 _ticker, (bytes32,bool,uint8,string,string,uint256)[] _tokenInfos) returns()
 func (_AssetHandlerContract *AssetHandlerContractTransactor) LinkToken(opts *bind.TransactOpts, _ticker [32]byte, _tokenInfos []TokenInfo) (*types.Transaction, error) {
 	return _AssetHandlerContract.contract.Transact(opts, "linkToken", _ticker, _tokenInfos)
 }
 
-// LinkToken is a paid mutator transaction binding the contract method 0xc7ae44ea.
+// LinkToken is a paid mutator transaction binding the contract method 0x457f39f8.
 //
-// Solidity: function linkToken(bytes32 _ticker, (bytes32,bool,uint8,string,string,uint256,uint256)[] _tokenInfos) returns()
+// Solidity: function linkToken(bytes32 _ticker, (bytes32,bool,uint8,string,string,uint256)[] _tokenInfos) returns()
 func (_AssetHandlerContract *AssetHandlerContractSession) LinkToken(_ticker [32]byte, _tokenInfos []TokenInfo) (*types.Transaction, error) {
 	return _AssetHandlerContract.Contract.LinkToken(&_AssetHandlerContract.TransactOpts, _ticker, _tokenInfos)
 }
 
-// LinkToken is a paid mutator transaction binding the contract method 0xc7ae44ea.
+// LinkToken is a paid mutator transaction binding the contract method 0x457f39f8.
 //
-// Solidity: function linkToken(bytes32 _ticker, (bytes32,bool,uint8,string,string,uint256,uint256)[] _tokenInfos) returns()
+// Solidity: function linkToken(bytes32 _ticker, (bytes32,bool,uint8,string,string,uint256)[] _tokenInfos) returns()
 func (_AssetHandlerContract *AssetHandlerContractTransactorSession) LinkToken(_ticker [32]byte, _tokenInfos []TokenInfo) (*types.Transaction, error) {
 	return _AssetHandlerContract.Contract.LinkToken(&_AssetHandlerContract.TransactOpts, _ticker, _tokenInfos)
 }
@@ -1045,25 +1047,25 @@ func (_AssetHandlerContract *AssetHandlerContractTransactorSession) SubmitAssetT
 	return _AssetHandlerContract.Contract.SubmitAssetTask(&_AssetHandlerContract.TransactOpts, _ticker, _callData)
 }
 
-// SubmitConsolidateTask is a paid mutator transaction binding the contract method 0x5bd24a4b.
+// SubmitConsolidateTask is a paid mutator transaction binding the contract method 0x4700ca07.
 //
-// Solidity: function submitConsolidateTask(bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
-func (_AssetHandlerContract *AssetHandlerContractTransactor) SubmitConsolidateTask(opts *bind.TransactOpts, _ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
-	return _AssetHandlerContract.contract.Transact(opts, "submitConsolidateTask", _ticker, _chainId, _amount)
+// Solidity: function submitConsolidateTask((string[],bytes32,bytes32,uint256)[] _params) returns()
+func (_AssetHandlerContract *AssetHandlerContractTransactor) SubmitConsolidateTask(opts *bind.TransactOpts, _params []ConsolidateTaskParam) (*types.Transaction, error) {
+	return _AssetHandlerContract.contract.Transact(opts, "submitConsolidateTask", _params)
 }
 
-// SubmitConsolidateTask is a paid mutator transaction binding the contract method 0x5bd24a4b.
+// SubmitConsolidateTask is a paid mutator transaction binding the contract method 0x4700ca07.
 //
-// Solidity: function submitConsolidateTask(bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
-func (_AssetHandlerContract *AssetHandlerContractSession) SubmitConsolidateTask(_ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
-	return _AssetHandlerContract.Contract.SubmitConsolidateTask(&_AssetHandlerContract.TransactOpts, _ticker, _chainId, _amount)
+// Solidity: function submitConsolidateTask((string[],bytes32,bytes32,uint256)[] _params) returns()
+func (_AssetHandlerContract *AssetHandlerContractSession) SubmitConsolidateTask(_params []ConsolidateTaskParam) (*types.Transaction, error) {
+	return _AssetHandlerContract.Contract.SubmitConsolidateTask(&_AssetHandlerContract.TransactOpts, _params)
 }
 
-// SubmitConsolidateTask is a paid mutator transaction binding the contract method 0x5bd24a4b.
+// SubmitConsolidateTask is a paid mutator transaction binding the contract method 0x4700ca07.
 //
-// Solidity: function submitConsolidateTask(bytes32 _ticker, bytes32 _chainId, uint256 _amount) returns(uint64)
-func (_AssetHandlerContract *AssetHandlerContractTransactorSession) SubmitConsolidateTask(_ticker [32]byte, _chainId [32]byte, _amount *big.Int) (*types.Transaction, error) {
-	return _AssetHandlerContract.Contract.SubmitConsolidateTask(&_AssetHandlerContract.TransactOpts, _ticker, _chainId, _amount)
+// Solidity: function submitConsolidateTask((string[],bytes32,bytes32,uint256)[] _params) returns()
+func (_AssetHandlerContract *AssetHandlerContractTransactorSession) SubmitConsolidateTask(_params []ConsolidateTaskParam) (*types.Transaction, error) {
+	return _AssetHandlerContract.Contract.SubmitConsolidateTask(&_AssetHandlerContract.TransactOpts, _params)
 }
 
 // SubmitListAssetTask is a paid mutator transaction binding the contract method 0xe1550b8c.
@@ -1653,15 +1655,16 @@ func (it *AssetHandlerContractConsolidateIterator) Close() error {
 
 // AssetHandlerContractConsolidate represents a Consolidate event raised by the AssetHandlerContract contract.
 type AssetHandlerContractConsolidate struct {
-	Ticker  [32]byte
-	ChainId [32]byte
-	Amount  *big.Int
-	Raw     types.Log // Blockchain specific contextual infos
+	Ticker   [32]byte
+	ChainId  [32]byte
+	Amount   *big.Int
+	FromAddr []string
+	Raw      types.Log // Blockchain specific contextual infos
 }
 
-// FilterConsolidate is a free log retrieval operation binding the contract event 0x76676b3fd21608cc5766e105d29bc4765d770cb3503470c4dab7458b4228fbcb.
+// FilterConsolidate is a free log retrieval operation binding the contract event 0x1a8dfb1b33ec086667484356f91a2c6ba31efa82f32375459055863764f3d927.
 //
-// Solidity: event Consolidate(bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
+// Solidity: event Consolidate(bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount, string[] fromAddr)
 func (_AssetHandlerContract *AssetHandlerContractFilterer) FilterConsolidate(opts *bind.FilterOpts, ticker [][32]byte, chainId [][32]byte) (*AssetHandlerContractConsolidateIterator, error) {
 
 	var tickerRule []interface{}
@@ -1680,9 +1683,9 @@ func (_AssetHandlerContract *AssetHandlerContractFilterer) FilterConsolidate(opt
 	return &AssetHandlerContractConsolidateIterator{contract: _AssetHandlerContract.contract, event: "Consolidate", logs: logs, sub: sub}, nil
 }
 
-// WatchConsolidate is a free log subscription operation binding the contract event 0x76676b3fd21608cc5766e105d29bc4765d770cb3503470c4dab7458b4228fbcb.
+// WatchConsolidate is a free log subscription operation binding the contract event 0x1a8dfb1b33ec086667484356f91a2c6ba31efa82f32375459055863764f3d927.
 //
-// Solidity: event Consolidate(bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
+// Solidity: event Consolidate(bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount, string[] fromAddr)
 func (_AssetHandlerContract *AssetHandlerContractFilterer) WatchConsolidate(opts *bind.WatchOpts, sink chan<- *AssetHandlerContractConsolidate, ticker [][32]byte, chainId [][32]byte) (event.Subscription, error) {
 
 	var tickerRule []interface{}
@@ -1726,9 +1729,9 @@ func (_AssetHandlerContract *AssetHandlerContractFilterer) WatchConsolidate(opts
 	}), nil
 }
 
-// ParseConsolidate is a log parse operation binding the contract event 0x76676b3fd21608cc5766e105d29bc4765d770cb3503470c4dab7458b4228fbcb.
+// ParseConsolidate is a log parse operation binding the contract event 0x1a8dfb1b33ec086667484356f91a2c6ba31efa82f32375459055863764f3d927.
 //
-// Solidity: event Consolidate(bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount)
+// Solidity: event Consolidate(bytes32 indexed ticker, bytes32 indexed chainId, uint256 amount, string[] fromAddr)
 func (_AssetHandlerContract *AssetHandlerContractFilterer) ParseConsolidate(log types.Log) (*AssetHandlerContractConsolidate, error) {
 	event := new(AssetHandlerContractConsolidate)
 	if err := _AssetHandlerContract.contract.UnpackLog(event, "Consolidate", log); err != nil {
@@ -1946,9 +1949,9 @@ type AssetHandlerContractLinkToken struct {
 	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterLinkToken is a free log retrieval operation binding the contract event 0x55e4de3709625cfd0e65cdc0cb39183023f1cf89aca8ec5f24723f98181a58a1.
+// FilterLinkToken is a free log retrieval operation binding the contract event 0x8ebde2f255b6646fbdd0aa775c6c067d015c7537705c818c486d48deee03d69f.
 //
-// Solidity: event LinkToken(bytes32 indexed ticker, (bytes32,bool,uint8,string,string,uint256,uint256)[] tokens)
+// Solidity: event LinkToken(bytes32 indexed ticker, (bytes32,bool,uint8,string,string,uint256)[] tokens)
 func (_AssetHandlerContract *AssetHandlerContractFilterer) FilterLinkToken(opts *bind.FilterOpts, ticker [][32]byte) (*AssetHandlerContractLinkTokenIterator, error) {
 
 	var tickerRule []interface{}
@@ -1963,9 +1966,9 @@ func (_AssetHandlerContract *AssetHandlerContractFilterer) FilterLinkToken(opts 
 	return &AssetHandlerContractLinkTokenIterator{contract: _AssetHandlerContract.contract, event: "LinkToken", logs: logs, sub: sub}, nil
 }
 
-// WatchLinkToken is a free log subscription operation binding the contract event 0x55e4de3709625cfd0e65cdc0cb39183023f1cf89aca8ec5f24723f98181a58a1.
+// WatchLinkToken is a free log subscription operation binding the contract event 0x8ebde2f255b6646fbdd0aa775c6c067d015c7537705c818c486d48deee03d69f.
 //
-// Solidity: event LinkToken(bytes32 indexed ticker, (bytes32,bool,uint8,string,string,uint256,uint256)[] tokens)
+// Solidity: event LinkToken(bytes32 indexed ticker, (bytes32,bool,uint8,string,string,uint256)[] tokens)
 func (_AssetHandlerContract *AssetHandlerContractFilterer) WatchLinkToken(opts *bind.WatchOpts, sink chan<- *AssetHandlerContractLinkToken, ticker [][32]byte) (event.Subscription, error) {
 
 	var tickerRule []interface{}
@@ -2005,9 +2008,9 @@ func (_AssetHandlerContract *AssetHandlerContractFilterer) WatchLinkToken(opts *
 	}), nil
 }
 
-// ParseLinkToken is a log parse operation binding the contract event 0x55e4de3709625cfd0e65cdc0cb39183023f1cf89aca8ec5f24723f98181a58a1.
+// ParseLinkToken is a log parse operation binding the contract event 0x8ebde2f255b6646fbdd0aa775c6c067d015c7537705c818c486d48deee03d69f.
 //
-// Solidity: event LinkToken(bytes32 indexed ticker, (bytes32,bool,uint8,string,string,uint256,uint256)[] tokens)
+// Solidity: event LinkToken(bytes32 indexed ticker, (bytes32,bool,uint8,string,string,uint256)[] tokens)
 func (_AssetHandlerContract *AssetHandlerContractFilterer) ParseLinkToken(log types.Log) (*AssetHandlerContractLinkToken, error) {
 	event := new(AssetHandlerContractLinkToken)
 	if err := _AssetHandlerContract.contract.UnpackLog(event, "LinkToken", log); err != nil {

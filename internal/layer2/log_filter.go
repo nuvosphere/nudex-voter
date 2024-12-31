@@ -267,6 +267,9 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 				TargetAddress: strings.ToLower(depositRecorded.DepositAddress),
 				Amount:        decimal.NewFromBigInt(depositRecorded.Amount, 0),
 				ChainId:       depositRecorded.ChainId,
+				TxHash:        depositRecorded.TxHash,
+				BlockHeight:   depositRecorded.BlockHeight.Uint64(),
+				LogTxIndex:    depositRecorded.LogIndex.Uint64(),
 				LogIndex:      l.LogIndex(DepositRecorded, vLog),
 			}
 			err1 := tx.Save(&depositRecord).Error

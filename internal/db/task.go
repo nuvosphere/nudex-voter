@@ -29,7 +29,7 @@ const (
 type WalletCreationRequest struct {
 	Account     uint32 `json:"account,omitempty"`
 	AddressType uint8  `json:"address_type,omitempty"`
-	Index       uint8  `json:"index,omitempty"`
+	Index       uint32 `json:"index,omitempty"`
 }
 
 type DepositRequest struct {
@@ -154,7 +154,7 @@ func NewCreateWalletTask(taskId uint64, req *WalletCreationRequest) *CreateWalle
 		},
 		Account: req.Account,
 		Chain:   req.AddressType,
-		Index:   uint32(req.Index),
+		Index:   req.Index,
 	}
 }
 

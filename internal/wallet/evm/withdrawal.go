@@ -42,7 +42,7 @@ func (w *WalletClient) signTask(from, to common.Address, amount *big.Int, taskId
 			taskId,
 		)
 	default:
-		return common.Hash{}, fmt.Errorf("unknown asset type: %w", tokenInfo.AssetType)
+		return common.Hash{}, fmt.Errorf("unknown asset type: %v", tokenInfo.AssetType)
 	}
 	if err != nil {
 		return common.Hash{}, fmt.Errorf("failed to build unsign tx: %w", err)

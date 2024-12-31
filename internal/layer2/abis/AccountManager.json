@@ -74,8 +74,8 @@
     "inputs": [
       {
         "name": "_account",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint32",
+        "internalType": "uint32"
       },
       {
         "name": "_chain",
@@ -84,8 +84,8 @@
       },
       {
         "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [
@@ -192,8 +192,8 @@
       },
       {
         "name": "_account",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint32",
+        "internalType": "uint32"
       },
       {
         "name": "_chain",
@@ -202,8 +202,8 @@
       },
       {
         "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint32",
+        "internalType": "uint32"
       },
       {
         "name": "_address",
@@ -267,8 +267,8 @@
       },
       {
         "name": "_account",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint32",
+        "internalType": "uint32"
       },
       {
         "name": "_chain",
@@ -277,8 +277,8 @@
       },
       {
         "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [

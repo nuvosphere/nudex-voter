@@ -15,7 +15,7 @@ func TestTopic(t *testing.T) {
 	assert.Equal(t, ParticipantAddedTopic.String(), "0x31d3ac54da09405b02d1de0ee0de648de637fbdc111123be0d7fc31f2a544c0b")
 	assert.Equal(t, ParticipantRemovedTopic.String(), "0x1a5e355a9a34d7eac1e439a6c610ba1fa72aa45f7645724ce5187fa19c3bd3fc")
 	assert.Equal(t, ParticipantsResetTopic.String(), "0x32e9d8d19fb1e71c8dc610e5f45fd7f1e2f81babf8ea90e267475a708e09c35e")
-	assert.Equal(t, DepositRecordedTopic.String(), "0xc81b018d055616352576702d0318bf7fc5c5b37693d9d4555113e2490d87dd80")
+	assert.Equal(t, DepositRecordedTopic.String(), "0x8185b6fdeefb24e6918abb5af00007e5bba2e904f6593d5517789c7b76e5d750")
 	assert.Equal(t, WithdrawalRecordedTopic.String(), "0x2afe20970cc53fcbca49f0fd13ca943d027d7636ad0d9ac543a995a0cd03c9ec")
 	assert.Equal(t, NIP20TokenEventBurnbTopic.String(), "0xebe23dd93b970477278ceb9abd3082df92d977d6131fb0ef75f18c3d353b565a")
 	assert.Equal(t, NIP20TokenEventMintbTopic.String(), "0x685c530c280ee1f7a4e96d082303ee9ebf21cec512259c6a943eda3854e05102")
