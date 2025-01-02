@@ -408,8 +408,7 @@ func TestSchedulerSignature(t *testing.T) {
 	// generate `CreateWalletTask`
 	task := &db.CreateWalletTask{
 		BaseTask: db.BaseTask{
-			TaskType: db.TaskTypeCreateWallet,
-			TaskId:   1,
+			TaskId: 1,
 		},
 		Account: 1,
 		Chain:   0, // eth
@@ -487,8 +486,7 @@ func TestSchedulerSolanaWithdrawSignature(t *testing.T) {
 	// generate pending `WithdrawalTask`
 	task := &db.WithdrawalTask{
 		BaseTask: db.BaseTask{
-			TaskType: db.TaskTypeWithdrawal,
-			TaskId:   1,
+			TaskId: 1,
 		},
 		TargetAddress: "2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59",
 		Amount:        decimal.NewFromInt(3000),
@@ -569,8 +567,7 @@ func TestSchedulerSuiWithdrawSignature(t *testing.T) {
 	// generate pending `WithdrawalTask`
 	task := &db.WithdrawalTask{
 		BaseTask: db.BaseTask{
-			TaskType: db.TaskTypeWithdrawal,
-			TaskId:   1,
+			TaskId: 1,
 		},
 		// from 0x6e3b7823972bffb6107abc008ff257c89a268fb0e3dfb27d503741fe9a38749f
 		TargetAddress: "0x9099b85cce1e63a584f981390bf3457611df3f7778c0d77de3f16cb57951bcf9",

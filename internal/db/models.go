@@ -114,8 +114,8 @@ type AddressBalance struct {
 	gorm.Model
 	Address string          `gorm:"uniqueIndex:address_token; not null"             json:"address"`
 	Token   string          `gorm:"uniqueIndex:address_token; not null"             json:"token"`
-	Amount  decimal.Decimal `gorm:"not null"                          json:"amount"`
 	ChainId vtypes.Byte32   `gorm:"not null"                          json:"chain_id"`
+	Amount  decimal.Decimal `gorm:"not null"                          json:"amount"`
 }
 
 func (AddressBalance) TableName() string {
@@ -166,7 +166,7 @@ func (Asset) TableName() string {
 type TokenInfo struct {
 	gorm.Model
 	ChainId         vtypes.Byte32   `gorm:"not null"             json:"chain_id"`
-	Ticker          vtypes.Byte32   `gorm:"not null" json:"ticker"`
+	Ticker          vtypes.Byte32   `gorm:"not null"             json:"ticker"`
 	IsActive        bool            `gorm:"not null" json:"is_active"`
 	AssetType       uint8           `gorm:"not null" json:"asset_type"`
 	Decimals        uint8           `gorm:"not null" json:"decimals"`

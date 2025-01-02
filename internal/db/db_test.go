@@ -22,8 +22,7 @@ func TestTask(t *testing.T) {
 	var taskId uint64 = 13
 	task := CreateWalletTask{
 		BaseTask: BaseTask{
-			TaskType: 0,
-			TaskId:   taskId,
+			TaskId: taskId,
 			Task: Task{
 				TaskId:    taskId,
 				TaskType:  0,
@@ -80,8 +79,7 @@ func TestUniqueTask(t *testing.T) {
 	var taskId uint64 = 26
 	task := CreateWalletTask{
 		BaseTask: BaseTask{
-			TaskType: 0,
-			TaskId:   taskId,
+			TaskId: taskId,
 			Task: Task{
 				TaskId:    taskId,
 				TaskType:  0,

@@ -47,6 +47,13 @@ type WithdrawalRequest struct {
 	Amount         *big.Int // uint256
 }
 
+type ConsolidateRequest struct {
+	FromAddress []string
+	Ticker      types.Byte32
+	ChainId     types.Byte32
+	Amount      *big.Int // uint256
+}
+
 type DetailTask interface {
 	types.ChainType
 	pool.Task[uint64]
@@ -109,13 +116,8 @@ func (t *Task) Status() int {
 
 type BaseTask struct {
 	gorm.Model
-	TaskType int    `gorm:"not null;default:0"                  json:"task_type"`
-	TaskId   uint64 `gorm:"unique;not null"                     json:"task_id"`
-	Task     Task   `gorm:"foreignKey:TaskId;references:TaskId"`
-}
-
-func (t *BaseTask) Type() int {
-	return t.TaskType
+	TaskId uint64 `gorm:"unique;not null"                     json:"task_id"`
+	Task   Task   `gorm:"foreignKey:TaskId;references:TaskId"`
 }
 
 func (t *BaseTask) TaskID() uint64 {
@@ -146,11 +148,14 @@ func (c *CreateWalletTask) ChainType() uint8 {
 	return c.Chain
 }
 
+func (t *CreateWalletTask) Type() int {
+	return TaskTypeCreateWallet
+}
+
 func NewCreateWalletTask(taskId uint64, req *WalletCreationRequest) *CreateWalletTask {
 	return &CreateWalletTask{
 		BaseTask: BaseTask{
-			TaskId:   taskId,
-			TaskType: TaskTypeCreateWallet,
+			TaskId: taskId,
 		},
 		Account: req.Account,
 		Chain:   req.AddressType,
@@ -177,6 +182,10 @@ func (*DepositTask) TableName() string {
 	return "deposit_task"
 }
 
+func (t *DepositTask) Type() int {
+	return TaskTypeDeposit
+}
+
 func (c *DepositTask) ChainType() uint8 {
 	return c.Chain
 }
@@ -184,8 +193,7 @@ func (c *DepositTask) ChainType() uint8 {
 func NewDepositTask(taskId uint64, req *DepositRequest) *DepositTask {
 	return &DepositTask{
 		BaseTask: BaseTask{
-			TaskId:   taskId,
-			TaskType: TaskTypeDeposit,
+			TaskId: taskId,
 		},
 		TargetAddress: req.UserTssAddress,
 		Amount:        decimal.NewFromBigInt(req.Amount, 0),
@@ -213,11 +221,14 @@ func (c *WithdrawalTask) ChainType() uint8 {
 	return c.Chain
 }
 
+func (t *WithdrawalTask) Type() int {
+	return TaskTypeWithdrawal
+}
+
 func NewWithdrawalTask(taskId uint64, req *WithdrawalRequest) *WithdrawalTask {
 	return &WithdrawalTask{
 		BaseTask: BaseTask{
-			TaskId:   taskId,
-			TaskType: TaskTypeWithdrawal,
+			TaskId: taskId,
 		},
 		TargetAddress: req.UserTssAddress,
 		Amount:        decimal.NewFromBigInt(req.Amount, 0),
@@ -229,13 +240,11 @@ func NewWithdrawalTask(taskId uint64, req *WithdrawalRequest) *WithdrawalTask {
 
 type ConsolidationTask struct {
 	BaseTask
-	TargetAddress   string          `json:"target_address"`
-	Amount          decimal.Decimal `json:"amount"`
-	Chain           uint8           `json:"chain"`
-	ChainId         types.Byte32    `json:"chain_id"`
-	TxHash          string          `json:"tx_hash"`
-	ContractAddress string          `json:"contract_address"`
-	Ticker          types.Byte32    `json:"ticker"`
+	FromAddress string          `json:"from_address"`
+	Amount      decimal.Decimal `json:"amount"`
+	Chain       uint8           `json:"chain"`
+	ChainId     types.Byte32    `json:"chain_id"`
+	Ticker      types.Byte32    `json:"ticker"`
 }
 
 func (*ConsolidationTask) TableName() string {
@@ -244,6 +253,10 @@ func (*ConsolidationTask) TableName() string {
 
 func (c *ConsolidationTask) ChainType() uint8 {
 	return c.Chain
+}
+
+func (c *ConsolidationTask) Type() int {
+	return TaskTypeConsolidation
 }
 
 const (

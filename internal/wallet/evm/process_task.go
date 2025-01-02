@@ -83,8 +83,7 @@ func (w *WalletClient) processCreatedTask(detailTask pool.Task[uint64]) {
 		go w.processWithdrawTxSign(task)
 
 	case *db.ConsolidationTask:
-		// todo
-		// w.submitTask()
+		go w.processConsolidation(task)
 	default:
 		log.Errorf("unhandled default case")
 	}

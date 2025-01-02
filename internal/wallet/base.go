@@ -8,6 +8,7 @@ import (
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/pool"
 	"github.com/nuvosphere/nudex-voter/internal/state"
+	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -101,4 +102,8 @@ func (w *BaseWallet) AddDiscussedTask(taskID uint64) {
 func (w *BaseWallet) GetAddressBalance(chainID uint64, minAmount uint64) []db.AddressBalance {
 	address, _ := w.stateDB.GetAddressBalanceByCondition(chainID, minAmount)
 	return address
+}
+
+func (w *BaseWallet) GetToken(ticker types.Byte32) (*db.TokenInfo, error) {
+	return w.stateDB.GetTokenInfo(ticker)
 }

@@ -1,9 +1,6 @@
 package state
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/types"
@@ -117,14 +114,7 @@ func (s *ContractState) GetInscriptionMintb(txHash string) (*db.InscriptionMintb
 		Preload("LogIndex", "tx_hash = ?", txHashBytes).
 		First(&inscriptionMintB)
 
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("inscriptionMintB not found for TxHash: %s", txHash)
-		}
-		return nil, fmt.Errorf("failed to query inscriptionMintB: %w", result.Error)
-	}
-
-	return &inscriptionMintB, nil
+	return &inscriptionMintB, result.Error
 }
 
 func (s *ContractState) GetInscriptionBurnb(txHash string) (*db.InscriptionBurnb, error) {
@@ -135,14 +125,7 @@ func (s *ContractState) GetInscriptionBurnb(txHash string) (*db.InscriptionBurnb
 		Preload("LogIndex", "tx_hash = ?", txHashBytes).
 		First(&inscriptionBurnb)
 
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("inscriptionBurnb not found for TxHash: %s", txHash)
-		}
-		return nil, fmt.Errorf("failed to query inscriptionBurnb: %w", result.Error)
-	}
-
-	return &inscriptionBurnb, nil
+	return &inscriptionBurnb, result.Error
 }
 
 func (s *ContractState) GetAsset(ticker types.Byte32) (*db.Asset, error) {
@@ -153,30 +136,17 @@ func (s *ContractState) GetAsset(ticker types.Byte32) (*db.Asset, error) {
 		Where("ticker = ?", ticker).
 		First(asset)
 
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("asset not found for ticker: %s", ticker)
-		}
-		return nil, fmt.Errorf("failed to query asset for ticker: %s,  %w", ticker, result.Error)
-	}
-
-	return &asset, nil
+	return &asset, result.Error
 }
 
 func (s *ContractState) GetTokenInfo(ticker types.Byte32) (*db.TokenInfo, error) {
 	var tokenInfo db.TokenInfo
 
-	result := s.l2InfoDb.
+	err := s.l2InfoDb.
 		Preload(clause.Associations).
 		Where("ticker = ?", ticker).
-		First(&tokenInfo)
+		First(&tokenInfo).
+		Error
 
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("token info not found for ticker: %s", ticker)
-		}
-		return nil, fmt.Errorf("failed to query asset for ticker: %s, %w", ticker, result.Error)
-	}
-
-	return &tokenInfo, nil
+	return &tokenInfo, err
 }
