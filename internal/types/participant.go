@@ -47,3 +47,8 @@ func (p Participants) GroupID() common.Hash {
 func (p Participants) Contains(address common.Address) bool {
 	return slices.Contains(p, address)
 }
+
+type ParticipantEvent struct {
+	EventName string
+	Address   []common.Address
+}

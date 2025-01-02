@@ -7,11 +7,13 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2/contracts"
 	vtypes "github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -233,7 +235,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 			removedErr := tx.Where("address = ?", removedParticipant).
 				Delete(&db.Participant{}).
 				Error
-			participantEvent := &db.ParticipantEvent{
+			participantEvent = &db.ParticipantEvent{
 				EventName:   ParticipantRemoved,
 				Address:     removedParticipant,
 				BlockNumber: vLog.BlockNumber,
@@ -243,6 +245,29 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 
 			return errors.Join(removedErr, vlogErr)
 		})
+	case contracts.ParticipantsResetTopic:
+		participantResetEvent := contracts.ParticipantManagerContractParticipantsReset{}
+		contracts.UnpackEventLog(contracts.ParticipantManagerContractMetaData, &participantResetEvent, ParticipantReset, vLog)
+		resetParticipant := participantResetEvent.Participants
+
+		err = l.db.
+			GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
+			removedErr := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&db.Participant{}).Error
+			saveErr := tx.Save(lo.Map(resetParticipant, func(item common.Address, index int) db.Participant {
+				return db.Participant{Address: item.String()}
+			})).Error
+
+			participantEvent = &db.ParticipantEvent{
+				EventName:   ParticipantReset,
+				Address:     strings.Join(lo.Map(resetParticipant, func(item common.Address, index int) string { return item.String() }), ","),
+				BlockNumber: vLog.BlockNumber,
+				LogIndex:    l.LogIndex(ParticipantReset, vLog),
+			}
+			vlogErr := tx.Save(participantEvent).Error
+
+			return errors.Join(removedErr, saveErr, vlogErr)
+		})
+
 	default:
 		return errors.New("invalid topic")
 	}
@@ -252,7 +277,7 @@ func (l *Layer2Listener) processParticipantLog(vLog types.Log) error {
 	}
 
 	if participantEvent != nil {
-		l.postTask(participantEvent)
+		l.postTask(participantEvent.ParticipantEvent())
 		log.Infof("Participant %s: %s", participantEvent.EventName, participantEvent.Address)
 	}
 

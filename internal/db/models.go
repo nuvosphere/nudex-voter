@@ -1,9 +1,12 @@
 package db
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	vtypes "github.com/nuvosphere/nudex-voter/internal/types"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
@@ -66,6 +69,15 @@ type ParticipantEvent struct {
 
 func (ParticipantEvent) TableName() string {
 	return "participant_event"
+}
+
+func (e ParticipantEvent) ParticipantEvent() vtypes.ParticipantEvent {
+	return vtypes.ParticipantEvent{
+		EventName: e.EventName,
+		Address: lo.Map(strings.Split(e.Address, ","), func(address string, index int) common.Address {
+			return common.HexToAddress(address)
+		}),
+	}
 }
 
 // Account save all accounts.

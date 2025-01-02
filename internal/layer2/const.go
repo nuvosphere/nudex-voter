@@ -8,6 +8,7 @@ const (
 	AddressRegistered          = "AddressRegistered"
 	ParticipantAdded           = "ParticipantAdded"
 	ParticipantRemoved         = "ParticipantRemoved"
+	ParticipantReset           = "ParticipantReset"
 	DepositRecorded            = "DepositRecorded"
 	WithdrawalRecorded         = "WithdrawalRecorded"
 

@@ -603,7 +603,7 @@ func (m *Scheduler) systemProposalLoop() {
 				log.Info("received task from layer2 log scan: ", data)
 
 				switch v := data.(type) {
-				case *db.ParticipantEvent: // regroup
+				case *types.ParticipantEvent: // regroup
 					m.processReGroupProposal(v)
 
 				case *db.SubmitterChosen: // charge proposer
@@ -687,7 +687,7 @@ func (m *Scheduler) proposalLoopForTest() {
 			log.Info("received task from layer2 log scan: ", data)
 
 			switch v := data.(type) {
-			case *db.ParticipantEvent: // regroup
+			case *types.ParticipantEvent: // regroup
 				m.processReGroupProposal(v)
 
 			case *db.SubmitterChosen: // charge proposer
@@ -819,7 +819,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account, index ui
 }
 
 type NewGroup struct {
-	Event    *db.ParticipantEvent
+	Event    *types.ParticipantEvent
 	NewParts types.Participants
 	OldParts types.Participants
 }

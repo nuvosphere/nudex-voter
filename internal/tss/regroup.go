@@ -3,12 +3,10 @@ package tss
 import (
 	"fmt"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/nuvosphere/nudex-voter/internal/crypto"
-	"github.com/nuvosphere/nudex-voter/internal/db"
 	"github.com/nuvosphere/nudex-voter/internal/layer2"
 	"github.com/nuvosphere/nudex-voter/internal/types"
 	"github.com/nuvosphere/nudex-voter/internal/utils"
@@ -37,8 +35,7 @@ func (m *Scheduler) reGroupResultLoop() {
 	}()
 }
 
-func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
-	joinAddress := common.HexToAddress(v.Address)
+func (m *Scheduler) processReGroupProposal(v *types.ParticipantEvent) {
 	newParts := types.Participants{}
 	oldParts := m.Participants()
 
@@ -46,14 +43,18 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 
 	switch v.EventName {
 	case layer2.ParticipantAdded:
+		joinAddress := v.Address[0]
 		if !slices.Contains(oldParts, joinAddress) {
 			newParts = append(oldParts, joinAddress)
 		}
 	case layer2.ParticipantRemoved:
+		joinAddress := v.Address[0]
 		newParts = lo.Filter(oldParts, func(item common.Address, index int) bool { return item != joinAddress })
+	case layer2.ParticipantReset:
+		newParts = v.Address
 	}
 
-	log.Debugf("newParts: %v, oldParts: %v, joinAddress:%v ", newParts, oldParts, joinAddress)
+	log.Debugf("newParts: %v, oldParts: %v", newParts, oldParts)
 
 	if len(newParts) > 0 && newParts.GroupID() != oldParts.GroupID() {
 		m.newGroup.Store(&NewGroup{
@@ -64,7 +65,11 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 
 		if m.isCanProposal() {
 			for {
-				if m.p2p.IsOnline(strings.ToLower(joinAddress.String())) {
+				_, have := lo.Find(newParts, func(item common.Address) bool {
+					return !m.p2p.IsOnline(item.String())
+				})
+
+				if !have {
 					break
 				}
 
