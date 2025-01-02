@@ -57,12 +57,15 @@ func TestBTCAddress(t *testing.T) {
 		t.Logf("SerializeCompressed pubkey: %x", pubkey.SerializeCompressed())
 
 		point := crypto.NewECPointNoCurveCheck(tss.S256(), pubkey.X(), pubkey.Y())
+
 		var address string
+
 		if arg.isCompress {
 			address, err = GenerateCompressedBTCAddress(point)
 		} else {
 			address, err = GenerateUnCompressedBTCAddress(point)
 		}
+
 		assert.NoError(t, err)
 		t.Log("address:", address)
 		assert.Equal(t, strings.ToLower(arg.expectedAddress), strings.ToLower(address))

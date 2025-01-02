@@ -31,6 +31,7 @@ func LoadTestPreParam(index int) *keygen.LocalPreParams {
 
 func TestPreParam(t *testing.T) {
 	utils.SkipCI(t)
+
 	for i := 0; i < 2; i++ {
 		preParams := LoadTestPreParam(i)
 		require.True(t, preParams.Validate(), "test-fixture preparams should be valid")

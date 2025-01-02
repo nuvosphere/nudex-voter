@@ -79,8 +79,10 @@ func InitConfig(configPath string) {
 
 	err := viper.ReadInConfig()
 	notFound := viper.ConfigFileNotFoundError{}
+
 	if !errors.As(err, &notFound) {
 		logrus.Info("load yaml config")
+
 		err = viper.Unmarshal(&AppConfig)
 		if err != nil {
 			panic(err)
@@ -90,6 +92,7 @@ func InitConfig(configPath string) {
 		setL2ChainId(AppConfig.L2ChainID)
 		setTssPublicKeys(strings.Join(AppConfig.TssPublicKeys, ","))
 		setLogLevel()
+
 		return
 	}
 
@@ -167,6 +170,7 @@ func InitConfig(configPath string) {
 		DepositContract:      viper.GetString("DEPOSIT_CONTRACT"),
 		AssetHandlerContract: viper.GetString("ASSET_CONTRACT"),
 	}
+
 	setLogLevel()
 }
 
@@ -193,11 +197,13 @@ func setL2PrivateKey(pk string) {
 	if err != nil {
 		logrus.Fatalf("Failed to load l2 private key: %v, given length %d", err, len(pk))
 	}
+
 	L2PrivateKey = privateKey
 }
 
 func setLogLevel() {
 	logrus.SetOutput(os.Stdout)
+
 	logLvl, err := logrus.ParseLevel(AppConfig.LogLevel)
 	if err != nil {
 		logLvl = logrus.WarnLevel

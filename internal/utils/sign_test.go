@@ -19,6 +19,7 @@ func TestSign(t *testing.T) {
 	hash := common.HexToHash("0x681b436b243e0e795fb16380f257b2ace153dc8917e29346bb4580e41c601e81")
 	hash1 := PersonalMsgHash(hash)
 	t.Log(hash1)
+
 	fullMessage := "\x19Ethereum Signed Message:\n32"
 	msg := append([]byte(fullMessage), hash.Bytes()...)
 	hash2 := crypto.Keccak256Hash(msg)

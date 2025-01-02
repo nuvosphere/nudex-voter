@@ -84,6 +84,7 @@ func (lp *Service) handleHandshake(s network.Stream, self host.Host) error {
 	if err != nil {
 		return fmt.Errorf("error extracting secp256k1PublicKey: %w", err)
 	}
+
 	publicKey, err := ethCrypto.DecompressPubkey(res)
 	if err != nil {
 		return fmt.Errorf("error decompressing secp256k1PublicKey: %w", err)
@@ -209,6 +210,7 @@ func (lp *Service) handleHeartbeatMessages(ctx context.Context, sub *pubsub.Subs
 				log.Errorf("Error decoding peer ID from heartbeat message: %v", err)
 				continue
 			}
+
 			lp.addPeerInfo(id, hbMsg.Message)
 			log.Infof("Received heartbeat from %d-%s: %s", hbMsg.Timestamp, hbMsg.PeerID, hbMsg.Message)
 		}

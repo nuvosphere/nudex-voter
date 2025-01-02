@@ -24,15 +24,18 @@ func (t *BigIntPool) First() Task[*big.Int] {
 	if len(items) == 0 {
 		return nil
 	}
+
 	return items[0]
 }
 
 func (t *BigIntPool) Last() Task[*big.Int] {
 	l := t.Len()
+
 	items := t.GetTopN(int64(l))
 	if len(items) == 0 {
 		return nil
 	}
+
 	return items[l-1]
 }
 

@@ -15,7 +15,9 @@ import (
 
 func (w *WalletClient) signTask(from, to common.Address, amount *big.Int, taskId uint64, ticker types.Byte32, ty int) (common.Hash, error) {
 	var tx *db.EvmTransaction
+
 	var err error
+
 	tokenInfo, err := w.ContractState().GetTokenInfo(ticker)
 	if err != nil {
 		return common.Hash{}, fmt.Errorf("failed to get token info: %w", err)
@@ -44,17 +46,21 @@ func (w *WalletClient) signTask(from, to common.Address, amount *big.Int, taskId
 	default:
 		return common.Hash{}, fmt.Errorf("unknown asset type: %v", tokenInfo.AssetType)
 	}
+
 	if err != nil {
 		return common.Hash{}, fmt.Errorf("failed to build unsign tx: %w", err)
 	}
+
 	ctx := w.NewTxContext(tx)
 	w.pendingTx.Store(ctx.TxHash(), ctx)
+
 	defer w.pendingTx.Delete(ctx.TxHash())
 
 	err = w.signTx(ctx)
 	if err != nil {
 		return ctx.TxHash(), fmt.Errorf("failed to sign tx: %w", err)
 	}
+
 	err = w.SendSingedTx(ctx)
 	if err != nil {
 		return ctx.TxHash(), fmt.Errorf("failed to send transaction: %w", err)
@@ -64,6 +70,7 @@ func (w *WalletClient) signTask(from, to common.Address, amount *big.Int, taskId
 	if err != nil {
 		return ctx.TxHash(), fmt.Errorf("failed to wait transaction success: %w", err)
 	}
+
 	if receipt.Status == 0 {
 		// updated status to fail
 		log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", ctx.SeqID(), ctx.TxHash())
@@ -77,8 +84,10 @@ func (w *WalletClient) signTask(from, to common.Address, amount *big.Int, taskId
 
 func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
+
 	hotAddress := common.HexToAddress(address.HotAddressOfEth(w.tss.ECPoint(w.ChainType())))
 	to := common.HexToAddress(task.TargetAddress)
+
 	_, err := w.signTask(hotAddress, to, task.Amount.BigInt(), task.TaskID(), task.Ticker, db.TaskTypeWithdrawal)
 	if err != nil {
 		log.Errorf("failed to sign task %d: %v", task.TaskID(), err)

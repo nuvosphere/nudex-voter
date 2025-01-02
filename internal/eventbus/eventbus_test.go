@@ -11,6 +11,7 @@ import (
 
 func TestEventBus(t *testing.T) {
 	utils.SkipCI(t)
+
 	bus := NewBus()
 
 	t.Log("test eventbus begin")

@@ -30,6 +30,7 @@ func (t *UnSignTx) Blake2bHash() []byte {
 func (t *UnSignTx) TxDigest() string {
 	digest, err := sutils.GetTxDigest(t.TxBytes)
 	utils.Assert(err)
+
 	return digest
 }
 
@@ -54,6 +55,7 @@ func (c *TxClient) SetUrl(url string) *TxClient {
 
 func NewClient(ctx context.Context) *TxClient {
 	ctx, cancel := context.WithCancel(ctx)
+
 	return &TxClient{
 		client: sui.NewSuiClient(constant.SuiMainnetEndpoint),
 		ctx:    ctx,
@@ -64,6 +66,7 @@ func NewClient(ctx context.Context) *TxClient {
 func NewDevClient() *TxClient {
 	c := NewClient(context.Background())
 	c.SetUrl("https://sui-devnet-endpoint.blockvision.org")
+
 	return c
 }
 
@@ -75,6 +78,7 @@ func (c *TxClient) GetBalance(address string, coinAddress string, coinName strin
 	if err != nil {
 		return nil, fmt.Errorf("sui get balance: %w", err)
 	}
+
 	return &res, nil
 }
 
@@ -106,10 +110,13 @@ func (c *TxClient) BuildPaySuiTx(coinType string, from string, recipients []Reci
 	}
 
 	is := false
+
 	for _, coins := range res.Data {
 		balance := decimal.RequireFromString(coins.Balance)
 		balanceTotal = balanceTotal.Add(balance)
+
 		suiObjectIdList = append(suiObjectIdList, coins.CoinObjectId)
+
 		if balanceTotal.Cmp(amountTotal) >= 0 {
 			is = true
 			break
@@ -145,6 +152,7 @@ func (c *TxClient) BuildTransferTx(coinType, from, to string, amount uint64) (*U
 	}
 
 	suiObjectId := ""
+
 	for _, coins := range res.Data {
 		balance := decimal.RequireFromString(coins.Balance)
 		if balance.Cmp(decimal.NewFromUint64(amount)) >= 0 {
@@ -173,6 +181,7 @@ func (c *TxClient) BuildTransferTx(coinType, from, to string, amount uint64) (*U
 
 func (c *TxClient) BuildCollectFoundTx(coinType string, from, to string) (*UnSignTx, error) {
 	var suiObjectId []string
+
 	for {
 		res, err := c.client.SuiXGetCoins(c.ctx, models.SuiXGetCoinsRequest{
 			Owner:    from,
@@ -182,6 +191,7 @@ func (c *TxClient) BuildCollectFoundTx(coinType string, from, to string) (*UnSig
 		if err != nil {
 			return nil, fmt.Errorf("call SuiXGetCoins error: %w", err)
 		}
+
 		for _, coins := range res.Data {
 			suiObjectId = append(suiObjectId, coins.CoinObjectId)
 		}
@@ -250,7 +260,7 @@ func (c *TxClient) WaitSuccess(digest string) error {
 	return nil
 }
 
-// TryExecuteTx todo: bug
+// TryExecuteTx todo: bug.
 func (c *TxClient) TryExecuteTx(tx *UnSignTx) (string, error) {
 	res, err := c.client.SuiDryRunTransactionBlock(c.ctx, models.SuiDryRunTransactionBlockRequest{TxBytes: tx.TxBytes})
 	if err != nil {
@@ -258,6 +268,7 @@ func (c *TxClient) TryExecuteTx(tx *UnSignTx) (string, error) {
 	}
 
 	fmt.Println(utils.FormatJSON(res))
+
 	return "", nil
 }
 
@@ -265,6 +276,7 @@ func Blake2bHash(data string) []byte {
 	txBytes, _ := base64.StdEncoding.DecodeString(data)
 	message := models.MessageWithIntent(txBytes)
 	digest := blake2b.Sum256(message)
+
 	return digest[:]
 }
 

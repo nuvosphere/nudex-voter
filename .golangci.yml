@@ -10,18 +10,45 @@ linters:
 #  - gomnd
 #  - revive
   - gofmt
-#  - gofumpt
+  - gofumpt
   - goimports
   - gci
   - unconvert
   - gosimple
+  - gosmopolitan
   - ineffassign
   - asciicheck
+  - grouper
+  - iface
+#  - inamedparam
   - bodyclose
   - bidichk
   - prealloc
   - predeclared
   - unconvert
+#  - stylecheck
+  - tagalign
+  - wsl
+  - godot
+  - asasalint
+  - asciicheck
+  - bidichk
+  - bodyclose
+  - canonicalheader
+#  - containedctx
+#  - contextcheck
+  - copyloopvar
+#  - cyclop
+  - decorder
+  - dogsled
+#  - dupl
+  - dupword
+#  - durationcheck
+  - errcheck
+#  - errchkjson
+  - errname
+  - errorlint
+  - goprintffuncname
   disable:
   - unused
 
@@ -48,14 +75,14 @@ linters-settings:
     sections:
       - standard                       # Captures all standard packages if they do not match another section.
       - default                        # Contains all imports that could not be matched to another section type.
-      - prefix(periphery)              # Groups all imports with the specified Prefix.
+      - prefix(nudex-voter)              # Groups all imports with the specified Prefix.
   gofmt:
     # simplify code: gofmt with `-s` option, true by default
     simplify: true
   goimports:
     # put imports beginning with prefix after 3rd-party packages;
     # it's a comma-separated list of prefixes
-    local-prefixes: periphery
+    local-prefixes: nudex-voter
   predeclared:
     # Comma-separated list of predeclared identifiers to not report on.
     # Default: ""

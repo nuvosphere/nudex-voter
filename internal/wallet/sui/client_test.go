@@ -72,6 +72,7 @@ func TestPaySui(t *testing.T) {
 
 	hashStr := unSignTx.TxDigest()
 	t.Log("hash", hashStr)
+
 	signature, err := pk.Sign(unSignTx.Blake2bHash())
 	assert.NoError(t, err)
 
@@ -106,6 +107,7 @@ func TestCollectFoundTx(t *testing.T) {
 
 	hashStr := unSignTx.TxDigest()
 	t.Log("hash", hashStr)
+
 	signature, err := pk.Sign(unSignTx.Blake2bHash())
 	assert.NoError(t, err)
 

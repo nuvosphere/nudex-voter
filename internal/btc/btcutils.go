@@ -31,7 +31,7 @@ func GenerateSPVProof(txHash string, txHashes []string) ([]byte, []byte, uint32,
 	for i, hashStr := range txHashes {
 		hash, err := chainhash.NewHashFromStr(hashStr)
 		if err != nil {
-			return nil, nil, 0, fmt.Errorf("failed to parse transaction hash: %v", err)
+			return nil, nil, 0, fmt.Errorf("failed to parse transaction hash: %w", err)
 		}
 
 		txHashesPtrs[i] = hash
@@ -85,33 +85,33 @@ func GenerateSPVProofByTx(msgTx *wire.MsgTx) (string, error) {
 
 	blockHash, err := chainhash.NewHash(blockHashBytes)
 	if err != nil {
-		return "", fmt.Errorf("invalid block hash: %v", err)
+		return "", fmt.Errorf("invalid block hash: %w", err)
 	}
 
 	// Get block header
 	headerBytes, err := db.Get([]byte("header:"+blockHash.String()), nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to get block header from db: %v", err)
+		return "", fmt.Errorf("failed to get block header from db: %w", err)
 	}
 
 	var header wire.BlockHeader
 
 	err = header.Deserialize(bytes.NewReader(headerBytes))
 	if err != nil {
-		return "", fmt.Errorf("failed to deserialize block header: %v", err)
+		return "", fmt.Errorf("failed to deserialize block header: %w", err)
 	}
 
 	// Get transaction hash list
 	txHashesBytes, err := db.Get([]byte("txhashes:"+blockHash.String()), nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to get tx hashes from db: %v", err)
+		return "", fmt.Errorf("failed to get tx hashes from db: %w", err)
 	}
 
 	var txHashes []chainhash.Hash
 
 	err = json.Unmarshal(txHashesBytes, &txHashes)
 	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal tx hashes: %v", err)
+		return "", fmt.Errorf("failed to unmarshal tx hashes: %w", err)
 	}
 
 	// Find the transaction's position in the block

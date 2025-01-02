@@ -21,6 +21,7 @@ func (w *WalletClient) Verify(reqId uint64, signDigest string, ExtraData []byte)
 	if !ok {
 		return fmt.Errorf("tx id %d is not found", reqId)
 	}
+
 	txCtx, is := ctx.(*TxContext)
 	if !is {
 		return fmt.Errorf("tx id %d is not TxContext", reqId)
@@ -63,6 +64,7 @@ func (w *WalletClient) signTx(ctx *TxContext) error {
 			SignData:   ctx.TxHash().Bytes(),
 			ExtraData:  nil,
 		}
+
 		err := w.tss.Sign(req)
 		if err != nil {
 			return err
@@ -79,15 +81,18 @@ func (w *WalletClient) signTx(ctx *TxContext) error {
 		if err != nil {
 			return err
 		}
+
 		ctx.sig = sig
 	default:
 		panic("unhandled default case")
 	}
+
 	return fmt.Errorf("unknown task:%d, type %d", ctx.SeqID(), ctx.dbTX.Type)
 }
 
 func (w *WalletClient) NewTxContext(dbTX *db.EvmTransaction) *TxContext {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+
 	return &TxContext{
 		dbTX:   dbTX,
 		sig:    nil,

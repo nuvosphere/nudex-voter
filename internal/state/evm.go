@@ -57,6 +57,7 @@ func (d *EvmWalletState) PendingBlockchainTransaction(tx *gorm.DB, txHash common
 		Where("tx_hash = ? AND status = ?", txHash, db.Pending).
 		Last(&bt).
 		Error
+
 	return bt, err
 }
 

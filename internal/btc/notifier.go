@@ -2,6 +2,7 @@ package btc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -34,7 +35,7 @@ func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller
 	var lastBlock db.BtcBlockData
 
 	result := cache.db.Order("block_height desc").First(&lastBlock)
-	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		log.Fatalf("Failed to get max block height from db, %v", result.Error)
 	}
 
@@ -51,7 +52,7 @@ func NewBTCNotifier(client *rpcclient.Client, cache *BTCCache, poller *BTCPoller
 	var syncStatus db.BtcSyncStatus
 
 	resultQuery := cache.db.First(&syncStatus)
-	if resultQuery.Error != nil && resultQuery.Error == gorm.ErrRecordNotFound {
+	if resultQuery.Error != nil && errors.Is(resultQuery.Error, gorm.ErrRecordNotFound) {
 		syncStatus.ConfirmedHeight = int64(config.AppConfig.BtcStartHeight - 1)
 		syncStatus.UnconfirmHeight = int64(config.AppConfig.BtcStartHeight - 1)
 		syncStatus.UpdatedAt = time.Now()
@@ -181,12 +182,12 @@ func (bn *BTCNotifier) checkConfirmations(ctx context.Context) {
 func (bn *BTCNotifier) getBlockAtHeight(height int64) (*wire.MsgBlock, error) {
 	blockHash, err := bn.client.GetBlockHash(height)
 	if err != nil {
-		return nil, fmt.Errorf("error getting block hash at height %d: %v", height, err)
+		return nil, fmt.Errorf("error getting block hash at height %d: %w", height, err)
 	}
 
 	block, err := bn.client.GetBlock(blockHash)
 	if err != nil {
-		return nil, fmt.Errorf("error getting block at height %d: %v", height, err)
+		return nil, fmt.Errorf("error getting block at height %d: %w", height, err)
 	}
 
 	return block, nil

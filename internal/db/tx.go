@@ -12,9 +12,9 @@ import (
 
 type EvmTransaction struct {
 	gorm.Model
-	TxHash     common.Hash     `gorm:"uniqueIndex;size:256"                   json:"txHash"`  // tx hash
-	TxJsonData []byte          `json:"tx"`                                                    // blockchain origin tx of json format
-	TxNonce    decimal.Decimal `gorm:"index:sender_nonce"                     json:"txNonce"` // tx nonce
+	TxHash     common.Hash     `gorm:"uniqueIndex;size:256" json:"txHash"`  // tx hash
+	TxJsonData []byte          `json:"tx"`                                  // blockchain origin tx of json format
+	TxNonce    decimal.Decimal `gorm:"index:sender_nonce"   json:"txNonce"` // tx nonce
 	Sender     common.Address  `json:"sender"`
 	Status     int             `json:"status"` // 0: new，1:booked
 	Error      string          `json:"error"`
@@ -30,5 +30,6 @@ func (e *EvmTransaction) Tx() *types.Transaction {
 	tx := new(types.Transaction)
 	err := json.Unmarshal(e.TxJsonData, tx)
 	utils.Assert(err)
+
 	return tx
 }

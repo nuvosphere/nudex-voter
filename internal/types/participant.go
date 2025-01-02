@@ -25,6 +25,7 @@ func (p Participants) Threshold() int {
 	if p.Len() <= 1 {
 		return 1
 	}
+
 	return CalculateThreshold(len(p))
 }
 

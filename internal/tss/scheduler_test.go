@@ -345,7 +345,7 @@ func TestSchedulerOfReGroupForRemoveAccount(t *testing.T) {
 	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
-// generate signature
+// generate signature.
 func TestSchedulerSignature(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)
@@ -424,7 +424,7 @@ func TestSchedulerSignature(t *testing.T) {
 	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
-// solana withdraw signature
+// solana withdraw signature.
 func TestSchedulerSolanaWithdrawSignature(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)
@@ -505,7 +505,7 @@ func TestSchedulerSolanaWithdrawSignature(t *testing.T) {
 	lo.ForEach(schedulerList, func(item *Scheduler, index int) { item.Stop() })
 }
 
-// sui withdraw signature
+// sui withdraw signature.
 func TestSchedulerSuiWithdrawSignature(t *testing.T) {
 	utils.SkipCI(t)
 	log.SetLevel(log.DebugLevel)

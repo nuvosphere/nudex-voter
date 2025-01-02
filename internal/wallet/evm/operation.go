@@ -67,6 +67,7 @@ func (w *WalletClient) Operation(detailTask pool.Task[uint64]) *contracts.TaskOp
 		operation.State = uint8(task.Task.State)
 	default:
 		log.Errorf("unhandled default case")
+
 		operation.State = db.Completed
 		// operation.OptData = nil // todo
 	}
@@ -97,17 +98,21 @@ const TopN = 20
 
 func (w *WalletClient) processOperation() {
 	log.Info("batch proposal")
+
 	tasks := w.submitTaskQueue.GetTopN(TopN)
+
 	operations := lo.Map(tasks, func(item pool.Task[uint64], index int) contracts.TaskOperation { return *w.Operation(item) })
 	if len(operations) == 0 {
 		log.Warnf("operationsQueue is empty")
 		return
 	}
+
 	nonce, dataHash, msg, err := w.VoterContract().GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
 		log.Errorf("batch task generate verify task unsign msg err:%v", err)
 		return
 	}
+
 	log.Infof("nonce: %v, dataHash: %v, msg: %v", nonce, dataHash, msg)
 
 	data := lo.Map(tasks, func(item pool.Task[uint64], index int) uint64 { return item.TaskID() })
@@ -128,6 +133,7 @@ func (w *WalletClient) processOperation() {
 		log.Errorf("batch task signTx err:%v", err)
 		return
 	}
+
 	w.saveOperations(nonce, operations, dataHash, msg)
 }
 
@@ -147,8 +153,10 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 	// 2. update status
 	if w.tss.IsProposer() {
 		log.Info("proposer submit signature")
+
 		calldata := w.VoterContract().EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
+
 		tx, err := w.BuildUnSignTx(
 			w.tss.LocalSubmitter(),
 			common.HexToAddress(config.AppConfig.VotingContract),
@@ -164,7 +172,9 @@ func (w *WalletClient) processOperationSignResult(operations *Operations) {
 
 		ctx := w.NewTxContext(tx)
 		w.pendingTx.Store(ctx.TxHash(), ctx)
+
 		defer w.pendingTx.Delete(ctx.TxHash())
+
 		err = w.signTx(ctx)
 		if err != nil {
 			log.Errorf("failed to signTx transaction: %v", err)
@@ -206,6 +216,7 @@ func (w *WalletClient) receiveSubmitTaskLoop() {
 				val, ok := detailTask.(db.DetailTask)
 				if ok {
 					w.submitTaskQueue.Add(val)
+
 					if w.submitTaskQueue.Len() >= TopN {
 						w.notify <- struct{}{}
 					}

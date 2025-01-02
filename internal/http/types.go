@@ -53,11 +53,11 @@ type TransactionDetails struct {
 	NetworkFee                    float64                  `json:"networkFee,omitempty"`
 
 	// NetworkRecords               []NetworkRecord               `json:"networkRecords,omitempty"`
-	// AuthorizationInfo            AuthorizationInfo             `json:"authorizationInfo"`
-	// AmlScreeningResult           AmlScreeningResult            `json:"amlScreeningResult"`
+	// AuthorizationInfo            `json:"authorizationInfo"`
+	// AmlScreeningResult           `json:"amlScreeningResult"`
 	// ExtraParameters              TransactionExtraParameters    `json:"extraParameters"`
 	// SignedMessages               []SignedMessage               `json:"signedMessages,omitempty"`
-	// RewardsInfo                  RewardsInfo                   `json:"rewardsInfo"`
+	// RewardsInfo                  `json:"rewardsInfo"`
 }
 
 type AmountInfo struct {
@@ -87,7 +87,7 @@ type DestinationsResponse struct {
 	DestinationAddressDescription string                   `json:"destinationAddressDescription,omitempty"`
 	CustomerRefID                 string                   `json:"customerRefId,omitempty"`
 
-	// AmlScreeningResult         AmlScreeningResult      `json:"amlScreeningResult"`
+	// AmlScreeningResult         `json:"amlScreeningResult"`
 }
 
 type SystemMessageInfo struct {

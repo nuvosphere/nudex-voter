@@ -32,7 +32,7 @@ func (o *Operations) Type() int {
 	return db.TaskTypeOperations
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOperation, error) {
 	operation := &contracts.TaskOperation{
 		TaskId: detailTask.TaskID(),
@@ -54,6 +54,7 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOper
 		if !needConfirm {
 			return nil, fmt.Errorf("task %d: hash:%s check failed, %w", task.TaskId, task.TxHash, err)
 		}
+
 		if err != nil || checkCode != db.TaskErrorCodeSuccess {
 			//taskResult := contracts.TaskPayloadContractWithdrawalResult{
 			//	Version:   uint8(db.TaskVersionV1),
@@ -64,7 +65,6 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOper
 			//if err != nil {
 			//	panic(fmt.Errorf("encode result failed for task %d: %w", task.TaskId, err))
 			//}
-
 			// data := m.voterContract.EncodeMarkTaskCompleted(new(big.Int).SetUint64(task.TaskId), taskBytes)
 			// operation.OptData = data
 			// operation.ManagerAddr = common.HexToAddress(config.AppConfig.DepositContract)
@@ -95,6 +95,7 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOper
 		operation.State = db.Pending
 	default:
 		log.Errorf("unhandled default case")
+
 		operation.State = db.Completed
 		// operation.OptData = nil // todo
 	}
@@ -102,7 +103,7 @@ func (m *Scheduler) operation(detailTask pool.Task[uint64]) (*contracts.TaskOper
 	return operation, nil
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.TaskOperation, dataHash, hash common.Hash) {
 	operations := &Operations{
 		Nonce:     nonce,
@@ -114,7 +115,7 @@ func (m *Scheduler) saveOperations(nonce *big.Int, ops []contracts.TaskOperation
 	m.currentVoterNonce.Store(nonce.Uint64())
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Proposal]) error {
 	log.Debugf("joinSignOperationSession: session id: %v, tss nonce(proposalID):%v", msg.SessionID, msg.ProposalID)
 
@@ -122,11 +123,13 @@ func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Prop
 	batchData.FromBytes(msg.Data)
 	tasks := m.taskQueue.BatchGet(batchData.Ids)
 	operations := make([]contracts.TaskOperation, 0, len(tasks))
+
 	for _, item := range tasks {
 		op, err := m.operation(item)
 		if err != nil {
 			return fmt.Errorf("failed to process task: %d, %w", item.TaskID(), err)
 		}
+
 		operations = append(operations, *op)
 	}
 
@@ -136,7 +139,7 @@ func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Prop
 
 	nonce, dataHash, unSignMsg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 	if err != nil {
-		return fmt.Errorf("batch task generate verify task unsign msg err:%v", err)
+		return fmt.Errorf("batch task generate verify task unsign msg err:%w", err)
 	}
 
 	if nonce.Uint64() != msg.SeqId {
@@ -160,15 +163,17 @@ func (m *Scheduler) joinSignOperationSession(msg SessionMessage[ProposalID, Prop
 	return nil
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) processOperationSignResult(operations *Operations) {
 	// 1. save db
 	// 2. update status
 	if m.IsProposer() {
 		log.Info("proposer submit signature")
+
 		w := wallet.NewWallet()
 		calldata := m.voterContract.EncodeVerifyAndCall(operations.Operation, operations.Signature)
 		log.Infof("calldata: %x, signature: %x,nonce: %v,DataHash: %v, hash: %v", calldata, operations.Signature, operations.Nonce, operations.DataHash, operations.Hash)
+
 		tx, err := w.BuildUnsignTx(
 			m.ctx,
 			m.LocalSubmitter(),
@@ -188,6 +193,7 @@ func (m *Scheduler) processOperationSignResult(operations *Operations) {
 			log.Errorf("failed to ChainID: %v", err)
 			return
 		}
+
 		signedTx, err := ethtypes.SignTx(tx, ethtypes.LatestSignerForChainID(chainId), config.L2PrivateKey)
 		if err != nil {
 			log.Errorf("failed to sign transaction: %v", err)

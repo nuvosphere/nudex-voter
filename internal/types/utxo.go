@@ -29,7 +29,7 @@ const (
 	SMALL_UTXO_DEFINE = 50000000 // 0.5 BTC
 )
 
-// MsgUtxoDeposit defines deposit UTXO broadcast to p2p which received in relayer rpc
+// MsgUtxoDeposit defines deposit UTXO broadcast to p2p which received in relayer rpc.
 type MsgUtxoDeposit struct {
 	RawTx       string `json:"raw_tx"`
 	TxId        string `json:"tx_id"`
@@ -45,7 +45,7 @@ type MsgSendOrderBroadcasted struct {
 	ExternalTxId string `json:"external_tx_id"`
 }
 
-// MsgUtxoWithdraw defines withdraw UTXO broadcast to p2p which received in relayer rpc
+// MsgUtxoWithdraw defines withdraw UTXO broadcast to p2p which received in relayer rpc.
 type MsgUtxoWithdraw struct {
 	TxId      string `json:"tx_id"`
 	EvmAddr   string `json:"evm_addr"`
@@ -84,23 +84,28 @@ func parseOpReturnGoatMagic(data []byte, magicBytes []byte) (common.Address, err
 	if len(data) < len(magicBytes)+1 {
 		return common.Address{}, fmt.Errorf("data is too short, expected at least %d bytes, got %d", len(magicBytes), len(data))
 	}
+
 	dataLen := uint32(data[0])
 	if dataLen != 24 {
 		return common.Address{}, fmt.Errorf("data length is not expected 24, got %d", dataLen)
 	}
+
 	data = data[1:]
 	// Check if the data starts with GOAT_MAGIC_BYTES
 	if !bytes.HasPrefix(data, magicBytes) {
 		return common.Address{}, errors.New("data does not start with magic bytes")
 	}
+
 	log.Debugf("Parsed OP_RETURN as GTT0: %v", data)
 	remainingBytes := data[len(magicBytes):]
 	// Check if the remaining bytes match the expected EVM address length (20 bytes)
 	if len(remainingBytes) != 20 {
 		return common.Address{}, fmt.Errorf("invalid data length for EVM address, expected 20 bytes, got %d", len(remainingBytes))
 	}
+
 	evmAddr := common.BytesToAddress(remainingBytes)
 	log.Debugf("Parsed OP_RETURN EVM address: %s", evmAddr.Hex())
+
 	return evmAddr, nil
 }
 
@@ -127,15 +132,19 @@ func IsUtxoGoatDepositV1(tx *wire.MsgTx, tssAddress []btcutil.Address, net *chai
 			// check if tx.TxOut[1] OP_RETURN rule: https://www.goat.network/docs/deposit/v1
 			// Process OP_RETURN to extract EVM address
 			data := tx.TxOut[1].PkScript[1:] // Assuming OP_RETURN opcode is at index 0
+
 			evmAddr, err := parseOpReturnGoatMagic(data, magicBytes)
 			if err != nil {
 				log.Debugf("Cannot parse OP_RETURN in TxOut[1]: %v", err)
 				return false, "", outIdxToAmount
 			}
+
 			outIdxToAmount[0] = tx.TxOut[0].Value
+
 			return true, evmAddr.Hex(), outIdxToAmount
 		}
 	}
+
 	return false, "", outIdxToAmount
 }
 
@@ -214,7 +223,7 @@ func GetDustAmount(txPrice int64) int64 {
 func GetAddressType(addressStr string, net *chaincfg.Params) (string, error) {
 	address, err := btcutil.DecodeAddress(addressStr, net)
 	if err != nil {
-		return "", fmt.Errorf("invalid Bitcoin address: %v", err)
+		return "", fmt.Errorf("invalid Bitcoin address: %w", err)
 	}
 
 	switch address.(type) {
@@ -233,7 +242,7 @@ func GetAddressType(addressStr string, net *chaincfg.Params) (string, error) {
 	}
 }
 
-// TransactionSizeEstimate estimates the size of a transaction in bytes
+// TransactionSizeEstimate estimates the size of a transaction in bytes.
 func TransactionSizeEstimate(numInputs int, receiverTypes []string, numOutputs int, utxoTypes []string) int64 {
 	var totalSize int64 = 10 // Base transaction size (version, locktime, etc.)
 
@@ -277,34 +286,41 @@ func TransactionSizeEstimate(numInputs int, receiverTypes []string, numOutputs i
 	return totalSize
 }
 
-// Deserialize transaction
+// Deserialize transaction.
 func DeserializeTransaction(data []byte) (*wire.MsgTx, error) {
 	var tx wire.MsgTx
+
 	buf := bytes.NewReader(data)
+
 	err := tx.Deserialize(buf)
 	if err != nil {
 		return nil, err
 	}
+
 	return &tx, nil
 }
 
-// Serialize transaction to bytes (with witness data)
+// Serialize transaction to bytes (with witness data).
 func SerializeTransaction(tx *wire.MsgTx) ([]byte, error) {
 	var buf bytes.Buffer
+
 	err := tx.Serialize(&buf)
 	if err != nil {
 		return nil, err
 	}
+
 	return buf.Bytes(), nil
 }
 
-// Serialize transaction to bytes (without witness data)
+// Serialize transaction to bytes (without witness data).
 func SerializeTransactionNoWitness(tx *wire.MsgTx) ([]byte, error) {
 	var buf bytes.Buffer
+
 	err := tx.SerializeNoWitness(&buf)
 	if err != nil {
 		return nil, err
 	}
+
 	return buf.Bytes(), nil
 }
 
@@ -317,6 +333,7 @@ func ConvertTxRawResultToMsgTx(txResult *btcjson.TxRawResult) (*wire.MsgTx, erro
 
 	// Deserialize the transaction
 	msgTx := wire.NewMsgTx(wire.TxVersion)
+
 	err = msgTx.Deserialize(bytes.NewReader(txBytes))
 	if err != nil {
 		return nil, err
@@ -330,6 +347,7 @@ func IsTargetP2PKHAddress(script []byte, targetAddress btcutil.Address, net *cha
 	if err != nil {
 		return false
 	}
+
 	return addressHash.EncodeAddress() == targetAddress.EncodeAddress()
 }
 
@@ -340,6 +358,7 @@ func IsTargetP2WPKHAddress(script []byte, targetAddress btcutil.Address, net *ch
 	}
 
 	pubKeyHash := script[2:22]
+
 	address, err := btcutil.NewAddressWitnessPubKeyHash(pubKeyHash, net)
 	if err != nil {
 		return false
@@ -355,6 +374,7 @@ func IsP2WSHAddress(script []byte, net *chaincfg.Params) (bool, string) {
 	}
 
 	witnessHash := script[2:34]
+
 	address, err := btcutil.NewAddressWitnessScriptHash(witnessHash, net)
 	if err != nil {
 		return false, ""
@@ -394,9 +414,10 @@ func GenerateV0P2WSHAddress(pubKey []byte, evmAddress string, net *chaincfg.Para
 	}
 
 	witnessProg := sha256.Sum256(subScript)
+
 	p2wsh, err := btcutil.NewAddressWitnessScriptHash(witnessProg[:], net)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create v0 p2wsh address: %v", err)
+		return nil, fmt.Errorf("failed to create v0 p2wsh address: %w", err)
 	}
 
 	return p2wsh, nil
@@ -405,6 +426,7 @@ func GenerateV0P2WSHAddress(pubKey []byte, evmAddress string, net *chaincfg.Para
 func GenerateSPVProof(txHash string, txHashes []string) ([]byte, []byte, int, error) {
 	// Find the transaction's position in the block
 	txIndex := -1
+
 	for i, hash := range txHashes {
 		if hash == txHash {
 			txIndex = i
@@ -418,13 +440,16 @@ func GenerateSPVProof(txHash string, txHashes []string) ([]byte, []byte, int, er
 
 	// Generate merkle root and proof
 	txHashesPtrs := make([]*chainhash.Hash, len(txHashes))
+
 	for i, hashStr := range txHashes {
 		hash, err := chainhash.NewHashFromStr(hashStr)
 		if err != nil {
-			return nil, nil, -1, fmt.Errorf("failed to parse transaction hash: %v", err)
+			return nil, nil, -1, fmt.Errorf("failed to parse transaction hash: %w", err)
 		}
+
 		txHashesPtrs[i] = hash
 	}
+
 	var proof []*chainhash.Hash
 	merkleRoot := ComputeMerkleRootAndProof(txHashesPtrs, txIndex, &proof)
 
@@ -443,10 +468,12 @@ func VerifyBlockSPV(btcBlock BtcBlockExt) error {
 
 	// generate actual merkle root from transactions
 	txHashes := make([]*chainhash.Hash, 0, len(btcBlock.Transactions))
+
 	for _, tx := range btcBlock.Transactions {
 		txHash := tx.TxHash()
 		txHashes = append(txHashes, &txHash)
 	}
+
 	actualMerkleRoot := buildMerkleRoot(txHashes)
 
 	// check merkle root is match
@@ -458,15 +485,17 @@ func VerifyBlockSPV(btcBlock BtcBlockExt) error {
 	// check header hash is match
 	headerHash := btcBlock.Header.BlockHash()
 	blockHash := btcBlock.BlockHash()
+
 	if !headerHash.IsEqual(&blockHash) {
 		return fmt.Errorf("block hash mismatch: expected %s, got %s", blockHash, headerHash)
 	}
 
 	log.Infof("Block %d SPV verification successful: Merkle root and block hash match", btcBlock.BlockNumber)
+
 	return nil
 }
 
-// buildMerkleRoot builds the Merkle tree and returns the root hash
+// buildMerkleRoot builds the Merkle tree and returns the root hash.
 func buildMerkleRoot(txHashes []*chainhash.Hash) *chainhash.Hash {
 	if len(txHashes) == 0 {
 		return nil
@@ -486,6 +515,7 @@ func buildMerkleRoot(txHashes []*chainhash.Hash) *chainhash.Hash {
 				// odd case: duplicate the last transaction hash
 				combined = append(txHashes[i][:], txHashes[i][:]...)
 			}
+
 			newHash := chainhash.DoubleHashH(combined)
 			newLevel = append(newLevel, &newHash)
 		}
@@ -501,9 +531,10 @@ func buildMerkleRoot(txHashes []*chainhash.Hash) *chainhash.Hash {
 func SerializeNoWitnessTx(rawTransaction []byte) ([]byte, error) {
 	// Parse the raw transaction
 	rawTx := wire.NewMsgTx(wire.TxVersion)
+
 	err := rawTx.Deserialize(bytes.NewReader(rawTransaction))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse raw transaction: %v", err)
+		return nil, fmt.Errorf("failed to parse raw transaction: %w", err)
 	}
 
 	// Create a new transaction without witness data
@@ -526,9 +557,10 @@ func SerializeNoWitnessTx(rawTransaction []byte) ([]byte, error) {
 
 	// Serialize the transaction without witness data
 	var buf bytes.Buffer
+
 	err = noWitnessTx.Serialize(&buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize transaction without witness data: %v", err)
+		return nil, fmt.Errorf("failed to serialize transaction without witness data: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -537,12 +569,14 @@ func SerializeNoWitnessTx(rawTransaction []byte) ([]byte, error) {
 func BuildSubScriptForP2WSH(evmAddress string, pubKey []byte) ([]byte, error) {
 	posPubkey, err := btcec.ParsePubKey(pubKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse public key: %v", err)
+		return nil, fmt.Errorf("failed to parse public key: %w", err)
 	}
+
 	evmAddress = strings.TrimPrefix(evmAddress, "0x")
+
 	addr, err := hex.DecodeString(evmAddress)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode evmAddress: %v", err)
+		return nil, fmt.Errorf("failed to decode evmAddress: %w", err)
 	}
 
 	subScript, err := txscript.NewScriptBuilder().
@@ -551,7 +585,8 @@ func BuildSubScriptForP2WSH(evmAddress string, pubKey []byte) ([]byte, error) {
 		AddData(posPubkey.SerializeCompressed()).
 		AddOp(txscript.OP_CHECKSIG).Script()
 	if err != nil {
-		return nil, fmt.Errorf("failed to build subscript: %v", err)
+		return nil, fmt.Errorf("failed to build subscript: %w", err)
 	}
+
 	return subScript, nil
 }

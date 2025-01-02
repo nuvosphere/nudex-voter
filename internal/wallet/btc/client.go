@@ -93,6 +93,7 @@ func (c *txClient) buildTxOut(addr string, amount int64) error {
 
 	// satoshis
 	c.tx.AddTxOut(wire.NewTxOut(amount, pkScript))
+
 	return nil
 }
 
@@ -119,6 +120,7 @@ func (c *txClient) buildTxIn(amount int64) error {
 		if totalInput > amount {
 			break
 		}
+
 		txHash, err := chainhash.NewHashFromStr(utxo.TxID)
 		if err != nil {
 			return err
@@ -126,17 +128,20 @@ func (c *txClient) buildTxIn(amount int64) error {
 
 		txIn := wire.NewTxIn(&wire.OutPoint{Hash: *txHash, Index: utxo.Vout}, nil, nil)
 		c.tx.AddTxIn(txIn)
+
 		totalInput += int64(utxo.Amount * precision)
 	}
 
 	// tx fee
 	fee := int64(c.tx.SerializeSize())
 	change := totalInput - amount
+
 	if change > fee {
 		changePkScript, err := txscript.PayToAddrScript(fromAddr)
 		if err != nil {
 			return err
 		}
+
 		txOut := wire.NewTxOut(change-fee, changePkScript)
 		c.tx.AddTxOut(txOut)
 	}
@@ -146,10 +151,12 @@ func (c *txClient) buildTxIn(amount int64) error {
 		if err != nil {
 			return err
 		}
+
 		txHash, err := chainhash.NewHashFromStr(utxos[i].TxID)
 		if err != nil {
 			return err
 		}
+
 		outPoint := wire.OutPoint{Hash: *txHash, Index: utxos[i].Vout}
 		prevOutputFetcher := txscript.NewMultiPrevOutFetcher(
 			map[wire.OutPoint]*wire.TxOut{outPoint: {Value: int64(utxos[i].Amount * precision), PkScript: prevOutputScript}},
@@ -160,18 +167,21 @@ func (c *txClient) buildTxIn(amount int64) error {
 		if err != nil {
 			return err
 		}
+
 		c.txInHash = append(c.txInHash, hash)
 		c.hashCounter.Add(1)
-
-		//signature, err := c.sign(hash) //todo
-		//if err != nil {
-		//	return err
-		//}
-		//txscript.SigHashAll, // https://www.btcstudy.org/2021/11/09/bitcoin-signature-types-sighash/
-		//signature = append(signature, byte(txscript.SigHashAll)) //todo
+		// signature, err := c.sign(hash) //todo
 		//
-		//txIn.Witness = wire.TxWitness{signature, c.publicKey.SerializeCompressed()}
+		//	if err != nil {
+		//		return err
+		//	}
+		//
+		// txscript.SigHashAll, // https://www.btcstudy.org/2021/11/09/bitcoin-signature-types-sighash/
+		// signature = append(signature, byte(txscript.SigHashAll)) //todo
+		//
+		// txIn.Witness = wire.TxWitness{signature, c.publicKey.SerializeCompressed()}
 	}
+
 	return nil
 }
 
@@ -184,6 +194,7 @@ func (c *txClient) AddWitnessSignature(hash, signature []byte) bool {
 			c.hashCounter.Add(-1)
 		}
 	}
+
 	return c.hashCounter.Load() == 0
 }
 
@@ -193,6 +204,7 @@ func (c *txClient) IsHaveWitnessSignature(hash []byte) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -205,6 +217,7 @@ func (c *txClient) rawTxInWitnessSignature(sigHashes *txscript.TxSigHashes, idx 
 	if err != nil {
 		return nil, err
 	}
+
 	signature, err := c.sign(hash)
 	if err != nil {
 		return nil, err
@@ -223,6 +236,7 @@ func (c *txClient) witnessSignature(sigHashes *txscript.TxSigHashes, idx int, am
 	if err != nil {
 		return nil, err
 	}
+
 	signature, err := c.sign(hash) ///todo
 	if err != nil {
 		return nil, err
@@ -250,6 +264,7 @@ func (c *txClient) sendTx(allowHighFees bool) (*chainhash.Hash, error) {
 	if err != nil {
 		return nil, fmt.Errorf("send raw transaction: %w", err)
 	}
+
 	return hash, nil
 }
 
@@ -264,7 +279,9 @@ type Receipt struct {
 
 func (c *txClient) BuildMultiTransfer(receipt []Receipt) error {
 	errs := make([]error, 0)
+
 	var amount uint64
+
 	for _, r := range receipt {
 		errs = append(errs, c.buildTxOut(r.To, int64(r.Amount)))
 		amount += r.Amount
@@ -301,6 +318,7 @@ func (c *txClient) NextSignTask() []byte {
 func (c *txClient) WaitTxSuccess() error {
 	h := c.tx.TxHash()
 	begin := time.Now()
+
 	defer func() {
 		log.Infof("waitTxSuccess, duration_ms: %v", time.Since(begin).Milliseconds())
 	}()
@@ -311,13 +329,16 @@ func (c *txClient) WaitTxSuccess() error {
 		if err != nil {
 			return fmt.Errorf("get raw transaction: %w", err)
 		}
+
 		if res == nil {
 			count--
+
 			time.Sleep(time.Second)
 		} else {
 			return nil
 		}
 	}
+
 	return fmt.Errorf("get raw transaction fail")
 }
 

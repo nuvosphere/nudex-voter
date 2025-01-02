@@ -66,6 +66,7 @@ type Service struct {
 
 func NewLibP2PService(state *state.State, localSubmitterPrivateKey *ecdsa.PrivateKey) *Service {
 	localSubmitter := ethCrypto.PubkeyToAddress(config.L2PrivateKey.PublicKey)
+
 	return &Service{
 		state:               state,
 		typeBindEvent:       sync.Map{},
@@ -269,18 +270,18 @@ func (lp *Service) connectToBootNodes(ctx context.Context, self host.Host) {
 
 func (lp *Service) connectToBootNode(ctx context.Context, self host.Host, peerInfo *peer.AddrInfo) error {
 	if err := self.Connect(ctx, *peerInfo); err != nil {
-		return fmt.Errorf("failed to connect to bootnode %s: %v", peerInfo, err)
+		return fmt.Errorf("failed to connect to bootnode %s: %w", peerInfo, err)
 	}
 
 	s, err := self.NewStream(ctx, peerInfo.ID, handshakeProtocol)
 	if err != nil {
-		return fmt.Errorf("failed to create handshake stream with %s: %v", peerInfo, err)
+		return fmt.Errorf("failed to create handshake stream with %s: %w", peerInfo, err)
 	}
 	defer s.Close()
 
 	err = lp.sendHandshake(s, self)
 	if err != nil {
-		return fmt.Errorf("failed to send handshake to %s: %v", peerInfo, err)
+		return fmt.Errorf("failed to send handshake to %s: %w", peerInfo, err)
 	}
 
 	return nil

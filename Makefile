@@ -49,14 +49,8 @@ docker-build:
 docker-build-x:
 	docker buildx build --platform linux/arm64 -t nuvosphere/nudex-voter:latest --load .
 
-.PHONY: fmt
-fmt: ## go fmt
-	go fmt ./...
-	gofumpt -l -w .
-	gci write  -s standard -s default .
-
 .PHONY: fix
-fix: fmt ## auto fix code
+fix: ## auto fix code
 	golangci-lint run --fix ./...
 
 .PHONY: dep
@@ -95,7 +89,7 @@ contract:
 	
 
 .PHONY: ci
-ci: abi fix fmt lint build test 
+ci: abi fix build test 
 	echo $? && echo "success!"
 
 .PHONY: lint

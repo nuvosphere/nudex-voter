@@ -18,6 +18,7 @@ func (w *WalletClient) receiveL2CreateAddressTaskLoop() {
 				log.Info("receiveL2CreateAddressTaskLoop evm wallet receive task event done")
 			case data := <-taskEvent: // from layer2 log scan
 				log.Debug("receiveL2CreateAddressTaskLoop received task from layer2 log scan: ", data)
+
 				switch v := data.(type) {
 				case *db.CreateWalletTask:
 					switch v.Status() {
@@ -42,6 +43,7 @@ func (w *WalletClient) receiveL2TaskLoop() {
 				log.Info("evm wallet receive task event done")
 			case data := <-taskEvent: // from layer2 log scan
 				log.Info("received task from layer2 log scan: ", data)
+
 				switch v := data.(type) {
 				case db.DetailTask:
 					if v.ChainType() == w.ChainType() {

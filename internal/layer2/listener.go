@@ -165,6 +165,7 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 	defer ticker.Stop()
 
 	log.Infof("Layer2Listener: begin scan log: begin height: %v", syncStatus.LastSyncBlock)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -190,7 +191,7 @@ func (l *Layer2Listener) Start(ctx context.Context) {
 func (l *Layer2Listener) scan(ctx context.Context, syncStatus *db.EVMSyncStatus) (isContinue bool, err error) {
 	latestBlock, err := l.ethClient.BlockNumber(ctx)
 	if err != nil {
-		return false, fmt.Errorf("error getting latest block number: %v", err)
+		return false, fmt.Errorf("error getting latest block number: %w", err)
 	}
 
 	var targetBlock uint64

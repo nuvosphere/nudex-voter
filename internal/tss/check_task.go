@@ -23,13 +23,16 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 		if err != nil {
 			return false, -1, err
 		}
+
 		if hashCheckStatus != "success" {
 			return true, db.TaskErrorCodeCheckTxFailed, err
 		}
+
 		inscriptionMintb, err := m.stateDB.GetInscriptionMintb(taskData.TxHash)
 		if err != nil || inscriptionMintb == nil {
 			return true, db.TaskErrorCodeCheckInscriptionFailed, err
 		}
+
 		if inscriptionMintb.Amount != taskData.Amount {
 			return true, db.TaskErrorCodeCheckAmountFailed, err
 		}
@@ -38,9 +41,11 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 		if err != nil || asset == nil {
 			return true, db.TaskErrorCodeCheckAssetFailed, err
 		}
+
 		if !asset.DepositEnabled {
 			return true, db.TaskErrorCodeDepositAssetNotEnabled, err
 		}
+
 		if taskData.Amount.Cmp(decimal.NewFromUint64(asset.MinDepositAmount)) == -1 {
 			return true, db.TaskErrorCodeDepositAmountTooLow, err
 		}
@@ -49,18 +54,22 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 		if err != nil || tokenInfo == nil {
 			return true, db.TaskErrorCodeDepositTokenNotSupported, err
 		}
+
 		if !tokenInfo.IsActive {
 			return true, db.TaskErrorCodeDepositTokenNotActive, err
 		}
+
 		return true, db.TaskErrorCodeSuccess, nil
 	case *db.WithdrawalTask:
 		hashCheckStatus, err := checkTxStatus(taskData.TxHash)
 		if err != nil {
 			return false, -1, err
 		}
+
 		if hashCheckStatus != "success" {
 			return true, db.TaskErrorCodeCheckTxFailed, err
 		}
+
 		inscriptionBurnb, err := m.stateDB.GetInscriptionBurnb(taskData.TxHash)
 		if err != nil || inscriptionBurnb == nil {
 			return true, db.TaskErrorCodeCheckInscriptionFailed, err
@@ -74,9 +83,11 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 		if err != nil || asset == nil {
 			return true, db.TaskErrorCodeCheckAssetFailed, err
 		}
+
 		if !asset.WithdrawalEnabled {
 			return true, db.TaskErrorCodeWithdrawalAssetNotEnabled, err
 		}
+
 		if taskData.Amount.Cmp(decimal.NewFromUint64(asset.MinWithdrawAmount)) == -1 {
 			return true, db.TaskErrorCodeWithdrawalAmountTooLow, err
 		}
@@ -85,6 +96,7 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 		if err != nil || tokenInfo == nil {
 			return true, db.TaskErrorCodeWithdrawalTokenNotSupported, err
 		}
+
 		if !tokenInfo.IsActive {
 			return true, db.TaskErrorCodeWithdrawalTokenNotActive, err
 		}
@@ -130,6 +142,7 @@ func (m *Scheduler) checkTask(task pool.Task[uint64]) (bool, int, error) {
 	default:
 		panic(fmt.Errorf("error pending task id: %v", task.TaskID()))
 	}
+
 	return false, db.TaskErrorCodePending, nil
 }
 

@@ -56,6 +56,7 @@ func (m *Scheduler) loopSigInToOut() {
 						if result.ChainType == types.ChainEthereum {
 							signature = secp256k1Signature(result.Data)
 						}
+
 						m.PostClient(result.ChainType, result.SeqId, result.ProposalID, signature)
 					default:
 						log.Infof("tss signature result: %v", result)
@@ -69,6 +70,7 @@ func (m *Scheduler) loopSigInToOut() {
 func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest string, signature []byte) {
 	defer m.crw.RUnlock()
 	m.crw.RLock()
+
 	c, ok := m.tssClients[chainType]
 	if ok {
 		c.ReceiveSignature(&suite.SignRes{
@@ -82,31 +84,39 @@ func (m *Scheduler) PostClient(chainType uint8, SeqId uint64, signDigest string,
 func (m *Scheduler) processTxSign(msg *SessionMessage[ProposalID, Proposal]) error {
 	defer m.crw.RUnlock()
 	m.crw.RLock()
+
 	c, ok := m.tssClients[msg.ChainType]
 	if ok {
 		return c.Verify(msg.SeqId, msg.ProposalID, msg.Data)
 	}
+
 	return nil
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	log.Debugf("processTxSign taskId: %v", task.TaskID())
+
 	sessionId := ZeroSessionID
 	seqId := task.TaskID()
+
 	var signer *SignerContext
+
 	proposalID := ""
+
 	var proposal *Proposal
 
 	switch taskData := task.(type) {
 	case *db.WithdrawalTask:
 		log.Debugf("processTxSign task: %v", taskData)
+
 		switch taskData.Chain {
 		case types.ChainBitcoin: // todo
 			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
 			if err != nil {
 				return
 			}
+
 			switch tokenInof.AssetType {
 			case types.AssetTypeMain:
 				// coinType := types.GetCoinTypeByChain(taskData.AddressType)
@@ -120,6 +130,7 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 				hotAddress := localData.Address(taskData.Chain)
 				// m.sigContext.Store(hotAddress, sigCtx)
 				signer = m.GetSigner(hotAddress)
+
 				go func() {
 					err := c.BuildTx(taskData.TargetAddress, taskData.Amount.BigInt().Int64())
 					if err != nil {
@@ -127,15 +138,18 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 						return
 					}
 				}()
+
 				hash := c.NextSignTask()
 				if hash == nil {
 					log.Errorf("failed to next sign ")
 					return
 				}
+
 				proposal.SetBytes(hash)
 
 				if msg != nil {
 					sessionId = msg.SessionID
+
 					if proposal.Cmp(&msg.Proposal) != 0 {
 						log.Errorf("the proposal is incorrect of btc")
 					}
@@ -150,12 +164,16 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 			hotAddress := w.HotAddressOfCoin(types.CoinTypeEVM)
 			signer = m.GetSigner(hotAddress.String())
 			to := common.HexToAddress(taskData.TargetAddress)
+
 			var tx *ethtypes.Transaction
+
 			var err error
+
 			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
 			if err != nil {
 				return
 			}
+
 			switch tokenInof.AssetType {
 			case types.AssetTypeMain:
 				tx, err = w.BuildUnsignTx(
@@ -181,16 +199,19 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 				log.Errorf("unknown asset type: %v", tokenInof.AssetType)
 				return
 			}
+
 			if err != nil {
 				log.Errorf("failed to build unsign tx: %v", err)
 				return
 			}
+
 			hash := tx.Hash()
 			if msg != nil {
 				if msg.Proposal.Cmp(hash.Big()) != 0 {
 					log.Errorf("the proposal is incorrect of evm")
 					return
 				}
+
 				sessionId = msg.SessionID
 			} else {
 				m.txContext.Store(task.TaskID(), &EvmTxContext{
@@ -207,17 +228,21 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 			} else {
 				c = solana.NewDevSolClient()
 			}
+
 			hotAddress := address.HotAddressOfSolana(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			signer = m.GetSigner(hotAddress)
+
 			var (
 				tx  *solana.UnSignTx
 				err error
 			)
+
 			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
 			if err != nil {
 				return
 			}
+
 			switch tokenInof.AssetType {
 			case types.AssetTypeMain:
 				tx, err = c.BuildSolTransferWithAddress(hotAddress, taskData.TargetAddress, taskData.Amount.BigInt().Uint64())
@@ -227,16 +252,20 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 				log.Errorf("unknown asset type: %v", tokenInof.AssetType)
 				return
 			}
+
 			if err != nil {
 				log.Errorf("failed to build unsign tx: %v", err)
 				return
 			}
+
 			raw, err := tx.RawData()
 			if err != nil {
 				log.Errorf("failed to build unsign tx: %v", err)
 				return
 			}
+
 			log.Infof("raw: %x", raw)
+
 			proposal = new(big.Int).SetBytes(raw)
 			if msg != nil {
 				log.Infof("msg.proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
@@ -263,13 +292,16 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 			} else {
 				c = sui.NewDevClient()
 			}
+
 			tokenInof, err := m.stateDB.GetTokenInfo(taskData.Ticker)
 			if err != nil {
 				return
 			}
+
 			hotAddress := address.HotAddressOfSui(m.partyData.GetData(crypto.EDDSA).ECPoint())
 			log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, taskData.TargetAddress, taskData.Amount)
 			signer = m.GetSigner(hotAddress)
+
 			unSignTx, err := c.BuildPaySuiTx(sui.CoinType(tokenInof.ContractAddress, taskData.Ticker.String()), hotAddress, []sui.Recipient{
 				{
 					Recipient: taskData.TargetAddress,
@@ -280,7 +312,9 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 				log.Errorf("failed to build unsign tx: %v", err)
 				return
 			}
+
 			localData, _ := m.GenerateDerivationWalletProposal(types.CoinTypeSUI, 0, 0)
+
 			proposal = new(big.Int).SetBytes(unSignTx.Blake2bHash())
 			if msg != nil {
 				log.Infof("msg.proposal: %v, proposal: %v", msg.Proposal.String(), proposal.String())
@@ -306,9 +340,11 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 		log.Errorf("error pending task id: %v", task.TaskID())
 		return
 	}
+
 	if proposalID == "" {
 		proposalID = proposal.String()
 	}
+
 	m.NewTxSignSession(
 		sessionId,
 		seqId,
@@ -318,14 +354,16 @@ func (m *Scheduler) processTxSignForTest(msg *SessionMessage[ProposalID, Proposa
 	)
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.SignatureData) {
 	txCtx, ok := m.txContext.Load(taskID)
 	defer m.txContext.Delete(taskID)
+
 	if ok {
 		switch ctx := txCtx.(type) {
 		case *EvmTxContext:
 			hash := ctx.tx.Hash()
+
 			err := ctx.w.SendTransactionWithSignature(m.ctx, ctx.tx, secp256k1Signature(data))
 			if err != nil {
 				log.Errorf("send transaction err: %v", err)
@@ -337,6 +375,7 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 				log.Errorf("failed to wait transaction success: %v", err)
 				return
 			}
+
 			if receipt.Status == 0 {
 				// updated status to fail
 				log.Errorf("failed to submit transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), hash)
@@ -348,16 +387,19 @@ func (m *Scheduler) processTxSignResult(taskID uint64, data *tsscommon.Signature
 		case *SolTxContext:
 			unSignRawData, _ := ctx.tx.RawData()
 			log.Debugf("SolTxContext: unSignRawData: %x, signature: %x", unSignRawData, data.Signature)
+
 			sig, err := ctx.c.SyncSendTransaction(m.ctx, (*soltypes.Transaction)(ctx.tx.BuildSolTransaction(data.Signature)))
 			if err != nil {
 				log.Errorf("send transaction err: %v", err)
 				return
 			}
+
 			log.Infof("successfully submitted transaction for taskId: %d,txHash: %v", ctx.task.TaskID(), sig)
 
 		case *SuiTxContext:
 			signTx := ctx.tx.SerializedSigWith(data.Signature, ctx.signerPubKey)
 			log.Debugf("SuiTxContext: signTx: %v, signature: %x", signTx, data.Signature)
+
 			digest, err := ctx.c.SendTx((*sui.SignedTx)(signTx))
 			if err != nil {
 				log.Errorf("send transaction err: %v", err)
@@ -380,6 +422,7 @@ func (m *Scheduler) Sign(req *suite.SignReq) error {
 	if signerCtx == nil {
 		return fmt.Errorf("signer not found in context")
 	}
+
 	if m.isCanProposal() {
 		m.NewSignSessionWitKey(
 			ZeroSessionID,
@@ -391,5 +434,6 @@ func (m *Scheduler) Sign(req *suite.SignReq) error {
 			signerCtx,
 		)
 	}
+
 	return nil
 }

@@ -20,6 +20,7 @@ func init() {
 	// P2PKH (Testnet) - n
 	// P2SH (Testnet) - 2
 	MainNetParams.PubKeyHashAddrID = 0x1e
+
 	address.RegisterAddress(types.CoinTypeDOG, GenerateP2PKHAddress)
 }
 
@@ -28,11 +29,13 @@ func DogAddress(serializedPubKey []byte) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid public key: %w", err)
 	}
+
 	return addr.EncodeAddress(), nil
 }
 
 func GenerateP2PKHAddress(p *crypto.ECPoint) string {
 	address, err := DogAddress(btc.NewPublicKeyOfBtc(p).SerializeCompressed())
 	utils.Assert(err)
+
 	return address
 }

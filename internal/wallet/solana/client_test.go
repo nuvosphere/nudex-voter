@@ -85,6 +85,7 @@ func TestSolTransfer(t *testing.T) {
 	pk, pubKey := edwards.PrivKeyFromBytes(data)
 	assert.NotNil(t, pk)
 	assert.NotNil(t, pubKey)
+
 	c := NewDevSolClient()
 
 	p := common.PublicKeyFromBytes(pubKey.Serialize())
@@ -93,6 +94,7 @@ func TestSolTransfer(t *testing.T) {
 	pubkey := common.PublicKeyFromString("2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59")
 	// pubkey := common.PublicKeyFromString("jxK4DrMrDevCn7UXGhiJPjT36e4XP12cJLFDvP9uvxX")
 	to := common.PublicKeyFromString("xJW6cfu7atWKje4bzcxr83Aqpb8aKt3w271pv3jKTPN")
+
 	t.Log(pubkey.String())
 	out, err := c.GetBalanceOfSol(context.Background(), pubkey)
 	assert.Nil(t, err)
@@ -133,6 +135,7 @@ func TestSolTransfer1(t *testing.T) {
 	pk, pubKey := edwards.PrivKeyFromBytes(data)
 	assert.NotNil(t, pk)
 	assert.NotNil(t, pubKey)
+
 	pubkey := common.PublicKeyFromString("2cz1TgTjQSdmGSjUiL9Z1QupEAUD3S46AX4KB4Uefr59")
 	// pubkey := common.PublicKeyFromString("jxK4DrMrDevCn7UXGhiJPjT36e4XP12cJLFDvP9uvxX")
 	to := common.PublicKeyFromString("xJW6cfu7atWKje4bzcxr83Aqpb8aKt3w271pv3jKTPN")
@@ -178,6 +181,7 @@ func TestSolTransfer1(t *testing.T) {
 
 func TestBalanceOfSol(t *testing.T) {
 	utils.SkipCI(t)
+
 	hotAddress := "ATFdx2yY8uAA345ZPyWYcCcr7Avk6ThUoqTG1jSJDebU"
 	c := NewDevSolClient()
 

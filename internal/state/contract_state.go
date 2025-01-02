@@ -26,6 +26,7 @@ func (s *ContractState) AccountByChainAndAddress(chain uint8, address string) (*
 		Where("chain = ? AND address = ?", chain, address).
 		Last(account).
 		Error
+
 	return account, err
 }
 
@@ -36,6 +37,7 @@ func (s *ContractState) AccountByChain(chain uint8) ([]db.Account, error) {
 		Where("chain = ?", chain).
 		Last(accounts).
 		Error
+
 	return accounts, err
 }
 
@@ -47,6 +49,7 @@ func (s *ContractState) GetAddressBalance(address, token string) (decimal.Decima
 		Select("SUM(amount)").
 		Scan(&balance).
 		Error
+
 	return balance, err
 }
 
@@ -57,6 +60,7 @@ func (s *ContractState) GetAddressBalanceByCondition(chainId uint64, minAmount u
 		Where("chain_id = ? AND amount >= ?", chainId, decimal.NewFromUint64(minAmount)).
 		Find(&balances).
 		Error
+
 	return balances, err
 }
 
@@ -67,6 +71,7 @@ func (s *ContractState) Account(address string) (*db.Account, error) {
 		Where("address = ?", address).
 		Last(account).
 		Error
+
 	return account, err
 }
 
@@ -77,6 +82,7 @@ func (s *ContractState) GetUnCompletedTask(taskID uint64) (*db.Task, error) {
 		Where("task_id = ? and state in ?", taskID, []int{db.Created, db.Pending}).
 		Last(task).
 		Error
+
 	return task, err
 }
 
@@ -86,6 +92,7 @@ func (s *ContractState) GetUnCompletedTasks() (tasks []db.Task, err error) {
 		Where("state in ?", []int{db.Created, db.Pending}).
 		Last(&db.Task{}).
 		Error
+
 	return tasks, err
 }
 
@@ -103,6 +110,7 @@ func (s *ContractState) GetTaskByStatus(status int) (tasks []db.Task, err error)
 		Where("status = ?", status).
 		First(tasks).
 		Error
+
 	return tasks, err
 }
 

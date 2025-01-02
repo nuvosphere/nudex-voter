@@ -27,21 +27,24 @@ func SpentP2wsh(netwk *chaincfg.Params, tssGroupKey *btcec.PrivateKey, evmAddres
 	for _, amount := range amounts {
 		totalInputAmount += amount
 	}
+
 	tssGroupAddress, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(tssGroupKey.PubKey().SerializeCompressed()), netwk)
 	if err != nil {
-		return "", fmt.Errorf("failed to build tssGroupAddress: %v", err)
+		return "", fmt.Errorf("failed to build tssGroupAddress: %w", err)
 	}
+
 	outputAddress, err := txscript.PayToAddrScript(tssGroupAddress)
 	if err != nil {
-		return "", fmt.Errorf("failed to build outputAddress: %v", err)
+		return "", fmt.Errorf("failed to build outputAddress: %w", err)
 	}
+
 	txout := wire.NewTxOut(totalInputAmount-fee, outputAddress)
 	newtx.AddTxOut(txout)
 
 	for i, prevTxout := range prevTxouts {
 		prevTxid, err := chainhash.NewHashFromStr(prevTxIds[i])
 		if err != nil {
-			return "", fmt.Errorf("failed to build prevTxid: %v", err)
+			return "", fmt.Errorf("failed to build prevTxid: %w", err)
 		}
 
 		txin := wire.NewTxIn(wire.NewOutPoint(prevTxid, uint32(prevTxout)), nil, nil)
@@ -55,15 +58,16 @@ func SpentP2wsh(netwk *chaincfg.Params, tssGroupKey *btcec.PrivateKey, evmAddres
 			AddData(tssGroupKey.PubKey().SerializeCompressed()).
 			AddOp(txscript.OP_CHECKSIG).Script()
 		if err != nil {
-			return "", fmt.Errorf("failed to build subScript: %v", err)
+			return "", fmt.Errorf("failed to build subScript: %w", err)
 		}
 
 		witnessProg := sha256.Sum256(subScript)
 
 		prevPkScript, err := txscript.NewScriptBuilder().AddOp(txscript.OP_0).AddData(witnessProg[:]).Script()
 		if err != nil {
-			return "", fmt.Errorf("failed to build prevPkScript: %v", err)
+			return "", fmt.Errorf("failed to build prevPkScript: %w", err)
 		}
+
 		sigHashes := txscript.NewTxSigHashes(newtx,
 			txscript.NewCannedPrevOutputFetcher(prevPkScript, amounts[i]))
 
@@ -73,14 +77,16 @@ func SpentP2wsh(netwk *chaincfg.Params, tssGroupKey *btcec.PrivateKey, evmAddres
 			txscript.SigHashAll, tssGroupKey,
 		)
 		if err != nil {
-			return "", fmt.Errorf("failed to build witSig: %v", err)
+			return "", fmt.Errorf("failed to build witSig: %w", err)
 		}
+
 		newtx.TxIn[i].Witness = wire.TxWitness{witSig, subScript}
 	}
 
 	txbuf := bytes.NewBuffer(nil)
 	if err := newtx.Serialize(txbuf); err != nil {
-		return "", fmt.Errorf("failed to build txbuf: %v", err)
+		return "", fmt.Errorf("failed to build txbuf: %w", err)
 	}
+
 	return hex.EncodeToString(txbuf.Bytes()), nil
 }

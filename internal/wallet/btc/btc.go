@@ -29,6 +29,7 @@ func btcAddress(serializedPubKey []byte) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid public key: %w", err)
 	}
+
 	return addr.EncodeAddress(), nil
 }
 
@@ -37,15 +38,18 @@ func NewPublicKeyOfBtc(p *crypto.ECPoint) *btcec.PublicKey {
 		x = &btcec.FieldVal{}
 		y = &btcec.FieldVal{}
 	)
+
 	x.SetByteSlice(p.X().Bytes())
 	y.SetByteSlice(p.Y().Bytes())
+
 	return btcec.NewPublicKey(x, y)
 }
 
-// GenerateP2WPKHBTCAddress P2WPKH(pay to witness public key hash) address
+// GenerateP2WPKHBTCAddress P2WPKH(pay to witness public key hash) address.
 func GenerateP2WPKHBTCAddress(p *crypto.ECPoint) string {
 	address, err := P2WPKHAddress(NewPublicKeyOfBtc(p).SerializeCompressed())
 	utils.Assert(err)
+
 	return address
 }
 
@@ -54,5 +58,6 @@ func P2WPKHAddress(serializedPubKey []byte) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid public key: %w", err)
 	}
+
 	return addr.EncodeAddress(), nil
 }

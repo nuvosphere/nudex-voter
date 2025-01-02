@@ -108,10 +108,12 @@ func (c *Contract) MethodID(method string) string {
 
 func (c *Contract) UnPackInput(method string, input any, data []byte) error {
 	m := c.ABI.Methods[method]
+
 	unpacked, err := m.Inputs.Unpack(data)
 	if err != nil {
 		return err
 	}
+
 	return m.Inputs.Copy(input, unpacked)
 }
 
@@ -192,10 +194,12 @@ func EventTopic(meta *bind.MetaData, eventName string) common.Hash {
 	if err != nil {
 		panic(err)
 	}
+
 	ev, ok := abi.Events[eventName]
 	if !ok {
 		panic(fmt.Errorf("ethcontract: event '%s' not found in contract abi", eventName))
 	}
+
 	return crypto.Keccak256Hash([]byte(ev.Sig))
 }
 
@@ -204,9 +208,11 @@ func MethodID(meta *bind.MetaData, method string) string {
 	if err != nil {
 		panic(err)
 	}
+
 	ev, ok := abi.Methods[method]
 	if !ok {
 		panic(fmt.Errorf("ethcontract: event '%s' not found in contract abi", method))
 	}
+
 	return hex.EncodeToString(ev.ID)
 }

@@ -15,7 +15,7 @@ import (
 
 // Lengths of hashes and addresses in bytes.
 const (
-	// Byte32Length is the expected length of the hash
+	// Byte32Length is the expected length of the hash.
 	Byte32Length = 32
 )
 
@@ -28,7 +28,9 @@ type Byte32 [32]byte
 // If b is larger than len(h), b will be cropped from the left.
 func BytesToByte32(b []byte) Byte32 {
 	var h Byte32
+
 	h.SetBytes(b)
+
 	return h
 }
 
@@ -78,9 +80,11 @@ func (h Byte32) Format(s fmt.State, c rune) {
 		if !s.Flag('#') {
 			hexb = hexb[2:]
 		}
+
 		if c == 'X' {
 			hexb = bytes.ToUpper(hexb)
 		}
+
 		fallthrough
 	case 'v', 's':
 		_, _ = s.Write(hexb)
@@ -127,6 +131,7 @@ func (h Byte32) Generate(rand *rand.Rand, size int) reflect.Value {
 	for i := len(h) - 1; i > m; i-- {
 		h[i] = byte(rand.Uint32())
 	}
+
 	return reflect.ValueOf(h)
 }
 
@@ -136,10 +141,13 @@ func (h *Byte32) Scan(src interface{}) error {
 	if !ok {
 		return fmt.Errorf("can't scan %T into Byte32", src)
 	}
+
 	if len(srcB) != Byte32Length {
 		return fmt.Errorf("can't scan []byte of len %d into Byte32, want %d", len(srcB), Byte32Length)
 	}
+
 	copy(h[:], srcB)
+
 	return nil
 }
 
@@ -160,5 +168,6 @@ func (h *Byte32) UnmarshalGraphQL(input interface{}) error {
 	default:
 		err = fmt.Errorf("unexpected type %T for Byte32", input)
 	}
+
 	return err
 }

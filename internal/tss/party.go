@@ -62,6 +62,7 @@ func (p *PartyData) GetData(ec crypto.CurveType) *LocalPartySaveData {
 	p.rw.Lock()
 	data, err := p.loadTSSData(ec)
 	utils.Assert(err)
+
 	p.datas[ec] = data
 	p.rw.Unlock()
 
@@ -151,21 +152,21 @@ func (p *PartyData) loadTSSData(ec crypto.CurveType) (*LocalPartySaveData, error
 
 	dataBytes, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read TSS data file: %v", err)
+		return nil, fmt.Errorf("unable to read TSS data file: %w", err)
 	}
 
 	switch ec {
 	case crypto.ECDSA:
 		var data ecdsaKeygen.LocalPartySaveData
 		if err := json.Unmarshal(dataBytes, &data); err != nil {
-			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
+			return nil, fmt.Errorf("unable to deserialize TSS data: %w", err)
 		}
 
 		return BuildECDSALocalPartySaveData().SetData(&data), nil
 	case crypto.EDDSA:
 		var data eddsaKeygen.LocalPartySaveData
 		if err := json.Unmarshal(dataBytes, &data); err != nil {
-			return nil, fmt.Errorf("unable to deserialize TSS data: %v", err)
+			return nil, fmt.Errorf("unable to deserialize TSS data: %w", err)
 		}
 
 		return BuildEDDSALocalPartySaveData().SetData(&data), nil
@@ -292,10 +293,12 @@ func (d *LocalPartySaveData) PublicKeyBase58() string {
 	case crypto.ECDSA:
 		pubKey := d.ECDSAData().ECDSAPub.ToECDSAPubKey()
 		pubKeyBytes := ethCrypto.FromECDSAPub(pubKey)
+
 		return base58.Encode(pubKeyBytes)
 	case crypto.EDDSA:
 		pubKey := d.EDDSAData().EDDSAPub.ToECDSAPubKey()
 		pubKeyBytes := ethCrypto.FromECDSAPub(pubKey)
+
 		return base58.Encode(pubKeyBytes)
 	default:
 		panic("implement me")
@@ -308,14 +311,17 @@ func (d *LocalPartySaveData) CompressedPublicKey() string {
 
 func (d *LocalPartySaveData) PublicKey() crypto.PublicKey {
 	p := d.ECPoint()
+
 	switch d.ty {
 	case crypto.ECDSA:
 		var (
 			x = &btcec.FieldVal{}
 			y = &btcec.FieldVal{}
 		)
+
 		x.SetByteSlice(p.X().Bytes())
 		y.SetByteSlice(p.Y().Bytes())
+
 		return secp256k1.NewPublicKey(x, y)
 	case crypto.EDDSA:
 		return edwards.NewPublicKey(p.X(), p.Y())

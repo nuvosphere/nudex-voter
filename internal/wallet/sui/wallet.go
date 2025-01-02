@@ -31,6 +31,7 @@ func NewWallet(
 	voterContract layer2.VoterContract,
 ) *WalletClient {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	return &WalletClient{
 		BaseWallet: wallet.NewBaseWallet(stateDB, voterContract),
 		ctx:        ctx,

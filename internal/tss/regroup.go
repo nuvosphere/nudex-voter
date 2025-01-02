@@ -67,6 +67,7 @@ func (m *Scheduler) processReGroupProposal(v *db.ParticipantEvent) {
 				if m.p2p.IsOnline(strings.ToLower(joinAddress.String())) {
 					break
 				}
+
 				time.Sleep(1 * time.Second)
 			}
 

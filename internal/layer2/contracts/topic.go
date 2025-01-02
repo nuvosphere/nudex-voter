@@ -26,9 +26,9 @@ import (
 
 // FilterTaskUpdated is a free log retrieval operation binding the contract event 0x30a99b2ffff1813c032a6b15bb8a15c2c3d1e9bc6dcb5f5cd80238514e86f364.
 //
-// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint8 indexed state, uint256 updateTime, bytes32 txHash, bytes result)
+// Solidity: event TaskUpdated(uint64 indexed taskId, address indexed submitter, uint8 indexed state, uint256 updateTime, bytes32 txHash, bytes result).
 var (
-	// SubmitterRotationRequestedTopic = crypto.Keccak256Hash([]byte(`SubmitterRotationRequested(address,address)`))             // VotingManagerUpgradeable
+	// SubmitterRotationRequestedTopic = crypto.Keccak256Hash([]byte(`SubmitterRotationRequested(address,address)`))             // VotingManagerUpgradeable.
 	SubmitterRotationRequestedTopic = EventTopic(VotingManagerContractMetaData, "SubmitterRotationRequested") // VotingManagerUpgradeable
 	SubmitterChosenTopic            = EventTopic(VotingManagerContractMetaData, "SubmitterChosen")            // VotingManagerUpgradeable
 	TaskSubmittedTopic              = EventTopic(TaskManagerContractMetaData, "TaskSubmitted")                // TaskManager

@@ -97,7 +97,9 @@ func (m *Scheduler) GetPublicKey(address string) crypto.PublicKey {
 	if signer == nil {
 		return nil
 	}
+
 	localData := signer.LocalData()
+
 	return localData.PublicKey()
 }
 
@@ -126,15 +128,19 @@ func NewScheduler(isProd bool, p p2p.P2PService, bus eventbus.Bus, stateDB *stat
 	partners, err := voterContract.Participants()
 	if err != nil {
 		log.Warnf("get partners error, %s", err.Error())
+
 		partners = lo.Map(config.TssPublicKeys, func(item *ecdsa.PublicKey, _ int) common.Address { return ethcrypto.PubkeyToAddress(*item) })
 		ps.Store(partners)
 	} else {
 		ps.Store(partners)
 	}
+
 	log.Infof("partners: %v", partners)
 	p.UpdateParticipants(partners)
+
 	currentNonce := &atomic.Uint64{}
 	nonce, _ := voterContract.TssNonce()
+
 	if nonce != nil {
 		currentNonce.Store(nonce.Uint64())
 	}
@@ -364,6 +370,7 @@ func (m *Scheduler) AddSession(session Session[ProposalID]) bool {
 	//}
 	m.srw.Lock()
 	defer m.srw.Unlock()
+
 	if _, ok := m.proposalSession[session.ProposalID()]; ok {
 		return false
 	}
@@ -455,15 +462,18 @@ func (m *Scheduler) loopApproveProposal() {
 func (m *Scheduler) ProcessOperation() {
 	if m.isCanProposal() && m.isCanNextOperation() {
 		log.Info("batch proposal")
+
 		tasks := m.taskQueue.GetTopN(TopN)
 
 		operations := make([]contracts.TaskOperation, 0, len(tasks))
+
 		for _, item := range tasks {
 			op, err := m.operation(item)
 			if err != nil {
 				log.Errorf("failed to process task: %v", err)
 				return
 			}
+
 			operations = append(operations, *op)
 		}
 
@@ -471,11 +481,13 @@ func (m *Scheduler) ProcessOperation() {
 			log.Warnf("operationsQueue is empty")
 			return
 		}
+
 		nonce, dataHash, msg, err := m.voterContract.GenerateVerifyTaskUnSignMsg(operations)
 		if err != nil {
 			log.Errorf("batch task generate verify task unsign msg err:%v", err)
 			return
 		}
+
 		log.Infof("nonce: %v, dataHash: %v, msg: %v", nonce, dataHash, msg)
 
 		data := lo.Map(tasks, func(item pool.Task[uint64], index int) uint64 { return item.TaskID() })
@@ -498,9 +510,11 @@ func (m *Scheduler) isCanNextOperation() bool {
 	if op == nil {
 		return true
 	}
+
 	if op.(*Operations).Signature != nil {
 		return true
 	}
+
 	return false
 }
 
@@ -528,10 +542,12 @@ func (m *Scheduler) Proposer() common.Address {
 	if p != nil {
 		return p.(common.Address)
 	}
+
 	proposer, err := m.voterContract.Proposer()
 	if proposer != zeroAddress && err == nil {
 		m.proposer.Store(proposer)
 	}
+
 	return proposer
 }
 
@@ -573,10 +589,11 @@ func (m *Scheduler) p2pLoop() {
 	log.Info("p2p loop started")
 }
 
-// from layer2 log event
+// from layer2 log event.
 func (m *Scheduler) systemProposalLoop() {
 	go func() {
 		pendingTask := m.bus.Subscribe(eventbus.EventTask{})
+
 		for {
 			select {
 			case <-m.ctx.Done():
@@ -605,6 +622,7 @@ const TopN = 20
 func (m *Scheduler) proposalLoop() {
 	go func() {
 		pendingTask := m.bus.Subscribe(eventbus.EventTask{})
+
 		for {
 			select {
 			case <-m.ctx.Done():
@@ -638,11 +656,13 @@ func (m *Scheduler) proposalLoop() {
 							log.Errorf("received task from layer2 is discussed : %v", v.TaskID())
 						} else {
 							m.taskQueue.Add(v)
+
 							if m.taskQueue.Len() >= TopN {
 								m.notify <- struct{}{}
 							}
 						}
 					}
+
 					log.Infof("taskID: %d completed on blockchain", v.TaskID())
 				}
 			}
@@ -654,9 +674,10 @@ func (m *Scheduler) proposalLoop() {
 	log.Info("proposal loop started")
 }
 
-// only test
+// only test.
 func (m *Scheduler) proposalLoopForTest() {
 	testPendingTask := m.bus.Subscribe(eventbus.EventTestTask{})
+
 	for {
 		select {
 		case <-m.ctx.Done():
@@ -681,6 +702,7 @@ func (m *Scheduler) proposalLoopForTest() {
 				} else {
 					// m.taskQueue.Add(v)
 					m.pendingStateTasks.Add(v)
+
 					if m.isCanProposal() {
 						log.Info("proposal task", v)
 						m.processTaskProposal(v)
@@ -693,6 +715,7 @@ func (m *Scheduler) proposalLoopForTest() {
 
 func (m *Scheduler) loopDetectionCondition() {
 	ticker := time.NewTicker(20 * time.Second)
+
 	go func() {
 		for {
 			select {
@@ -718,16 +741,19 @@ func (m *Scheduler) GetDiscussedOperation(id uint64) *Operations {
 	if ops == nil {
 		return nil
 	}
+
 	return ops.(*Operations)
 }
 
 func (m *Scheduler) isCanProposal() bool {
 	m.BlockDetectionThreshold()
 	m.BlockDetectionLatestState()
+
 	proposer, err := m.voterContract.Proposer()
 	if err != nil || proposer == zeroAddress {
 		proposer = m.Proposer()
 	}
+
 	return m.LocalSubmitter() == proposer && m.isJoined()
 }
 
@@ -743,6 +769,7 @@ func (m *Scheduler) Participants() types.Participants {
 	if val := m.partners.Load(); val != nil {
 		return val.(types.Participants)
 	}
+
 	return types.Participants{}
 }
 
@@ -751,6 +778,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account, index ui
 	path := bip44.Bip44DerivationPath(coinType, account, index)
 	param, err := path.ToParams()
 	utils.Assert(err)
+
 	ec := types.GetCurveTypeByCoinType(int(coinType))
 	localPartySaveData := m.partyData.GetData(ec)
 	l := *localPartySaveData
@@ -758,6 +786,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account, index ui
 	chainCode := big.NewInt(int64(coinType)).Bytes() // todo
 	keyDerivationDelta, extendedChildPk, err := ckd.DerivingPubkeyFromPath(l.ECPoint(), chainCode, param.Indexes(), ec.EC())
 	utils.Assert(err)
+
 	switch ec {
 	case crypto.ECDSA:
 		data := []ecdsaKeygen.LocalPartySaveData{*l.ECDSAData()}
@@ -769,6 +798,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account, index ui
 		)
 		utils.Assert(err)
 		l.SetData(&data[0])
+
 		return l, keyDerivationDelta
 	case crypto.EDDSA:
 		data := []eddsaKeygen.LocalPartySaveData{*l.EDDSAData()}
@@ -780,6 +810,7 @@ func (m *Scheduler) GenerateDerivationWalletProposal(coinType, account, index ui
 		)
 		utils.Assert(err)
 		l.SetData(&data[0])
+
 		return l, keyDerivationDelta
 
 	default:

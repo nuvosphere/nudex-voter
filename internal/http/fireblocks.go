@@ -225,7 +225,7 @@ func (s *HTTPServer) parseRSAPublicKeyFromPEM(pubKeyPEM string) (*rsa.PublicKey,
 
 	parsedKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse public key: %v", err)
+		return nil, fmt.Errorf("failed to parse public key: %w", err)
 	}
 
 	pubKey, ok := parsedKey.(*rsa.PublicKey)
@@ -253,7 +253,7 @@ func (s *HTTPServer) parseRSAPrivateKeyFromPEM(privKeyPEM string) (*rsa.PrivateK
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key: %v", err)
+		return nil, fmt.Errorf("failed to parse private key: %w", err)
 	}
 
 	privKey, ok := parsedKey.(*rsa.PrivateKey)

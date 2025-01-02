@@ -15,22 +15,26 @@ var (
 
 func DecodeTask(taskId uint64, context []byte) db.DetailTask {
 	context = context[4:]
+
 	contextHex := hexutil.Encode(context)
 	switch contextHex {
 	case WalletCreationReq:
 		request := &db.WalletCreationRequest{}
 		err := contracts.NewContract(contracts.AccountManagerContractMetaData).UnPackInput("registerNewAddress", request, context)
 		utils.Assert(err)
+
 		return db.NewCreateWalletTask(taskId, request)
 	case DepositReq:
 		request := &db.DepositRequest{}
 		err := contracts.NewContract(contracts.DepositManagerContractMetaData).UnPackInput("recordDeposit", request, context)
 		utils.Assert(err)
+
 		return db.NewDepositTask(taskId, request)
 	case WithdrawalReq:
 		request := &db.WithdrawalRequest{}
 		err := contracts.NewContract(contracts.DepositManagerContractMetaData).UnPackInput("recordWithdrawal", request, context)
 		utils.Assert(err)
+
 		return db.NewWithdrawalTask(taskId, request)
 	}
 

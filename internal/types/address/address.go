@@ -25,6 +25,7 @@ func GenerateAddressByECPoint(point *tssCrypto.ECPoint, coinType int) string {
 	if ok {
 		return m(point)
 	}
+
 	panic("invalid coin type")
 }
 
@@ -38,6 +39,7 @@ func GenerateSignerByPath(masterPubKey *tssCrypto.ECPoint, coinType, account, in
 
 	p, err := bip44Path.ToParams()
 	utils.Assert(err)
+
 	indexes := p.Indexes()
 
 	chainCode := big.NewInt(int64(coinType)).Bytes() // todo

@@ -35,6 +35,7 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 
 	hotAddress := address.HotAddressOfSui(w.tss.ECPoint(w.ChainType()))
 	log.Infof("hotAddress: %v,targetAddress: %v, amount: %v", hotAddress, task.TargetAddress, task.Amount)
+
 	unSignTx, err := c.BuildPaySuiTx(CoinType(tokenInfo.ContractAddress, task.Ticker.String()), hotAddress, []Recipient{
 		{
 			Recipient: task.TargetAddress,
@@ -45,6 +46,7 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		log.Errorf("failed to build unsign tx: %v", err)
 		return
 	}
+
 	proposal := new(big.Int).SetBytes(unSignTx.Blake2bHash())
 	w.txContext.Store(task.TaskID(), &TxContext{
 		signerPubKey: w.tss.GetPublicKey(hotAddress).SerializeCompressed(),
@@ -52,6 +54,7 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 		tx:           unSignTx,
 		task:         task,
 	})
+
 	req := &suite.SignReq{
 		SeqId:      task.TaskID(),
 		Type:       types.SignTxSessionType,
@@ -71,12 +74,15 @@ func (w *WalletClient) processWithdrawTxSign(task *db.WithdrawalTask) {
 func (w *WalletClient) processTxSignResult(res *suite.SignRes) {
 	taskID := res.SeqId
 	txCtx, ok := w.txContext.Load(taskID)
+
 	defer w.txContext.Delete(taskID)
+
 	if ok {
 		switch ctx := txCtx.(type) {
 		case *TxContext:
 			signTx := ctx.tx.SerializedSigWith(res.Signature, ctx.signerPubKey)
 			log.Debugf("SuiTxContext: signTx: %v, signature: %x", signTx, res.Signature)
+
 			digest, err := ctx.c.SendTx((*SignedTx)(signTx))
 			if err != nil {
 				log.Errorf("send transaction err: %v", err)

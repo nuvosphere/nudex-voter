@@ -59,6 +59,7 @@ func TestSolanaAddress(t *testing.T) {
 
 func TestGenerateSolAddress(t *testing.T) {
 	utils.SkipCI(t)
+
 	data := base58.Decode("5ZnCSBuoktAiv1titQWUzHd9iqvy9sD8vQNMrHxZMR8KMzjwkM3GQyX7qfoZJ6cYU1HLEX6bT25B2rtRhKiM8MVc")
 	pk, pubKey := edwards.PrivKeyFromBytes(data)
 	assert.NotNil(t, pk)
@@ -70,6 +71,7 @@ func TestGenerateSolAddress(t *testing.T) {
 
 	client := rpc.New(rpc.DevNet_RPC)
 	pubkey := solana.MustPublicKeyFromBase58(address)
+
 	out, err := client.GetBalance(
 		context.Background(),
 		pubkey,
@@ -78,6 +80,7 @@ func TestGenerateSolAddress(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
 	spew.Dump(out)
 	spew.Dump(out.Value) // total lamports on the account; 1 sol = 1000000000 lamports
 
@@ -124,6 +127,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
 	assert.Nil(t, err)
 	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
+
 	hotAddress = address.HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))
@@ -137,6 +141,7 @@ func TestSoMasterAddress(t *testing.T) {
 	point, err = crypto.NewECPoint(tss.Edwards(), pp.X, pp.Y)
 	assert.Nil(t, err)
 	t.Logf("x: %v, y:%v", pp.X.String(), pp.Y.String())
+
 	hotAddress = address.HotAddressOfSolana(point)
 	t.Log("hotAddress", hotAddress)
 	t.Logf("hotAddress pubkey: %x", base58.Decode(hotAddress))

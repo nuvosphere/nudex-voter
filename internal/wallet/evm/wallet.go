@@ -71,6 +71,7 @@ func NewWallet(event eventbus.Bus, tss suite.TssService, voterContract layer2.Vo
 
 	currentNonce := &atomic.Uint64{}
 	nonce, _ := voterContract.TssNonce()
+
 	if nonce != nil {
 		currentNonce.Store(nonce.Uint64())
 	}
@@ -230,7 +231,9 @@ func (w *WalletClient) BuildUnSignTx(
 
 	// extend gas limit 20%
 	gasLimit := decimal.NewFromUint64(gas).Mul(decimal.NewFromFloat(1.2))
+
 	var nextNonce uint64 = 0
+
 	for {
 		nextNonce, err = w.client.PendingNonceAt(w.ctx, account)
 		if err != nil {
@@ -245,6 +248,7 @@ func (w *WalletClient) BuildUnSignTx(
 		if nextNonce > latestNonce.BigInt().Uint64() {
 			break
 		}
+
 		time.Sleep(200 * time.Millisecond)
 	}
 
@@ -313,14 +317,17 @@ func (w *WalletClient) sendTransaction(ctx *TxContext) error {
 	if err != nil {
 		return err
 	}
+
 	err = w.client.SendTransaction(w.ctx, tx)
 	if err != nil {
 		err = errors.Join(ErrSendTransaction, wrapError(err))
 		_, is := lo.Find(failErrorList, func(item error) bool { return errors.Is(err, item) })
+
 		if is {
 			dbErr := w.walletState.UpdateFailTx(tx.Hash(), err)
 			err = errors.Join(err, dbErr)
 		}
+
 		return err
 	}
 
@@ -335,6 +342,7 @@ func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
 	unSignedTx := w.ExtendTxGas(oldOrderTx)
 	jsonData, err := unSignedTx.MarshalJSON()
 	utils.Assert(err)
+
 	dbTX, err := w.walletState.CreateTx(nil,
 		unSignedTx.Hash(),
 		jsonData,
@@ -346,13 +354,17 @@ func (w *WalletClient) SpeedSendTx(ctx *TxContext) error {
 	if err != nil {
 		return err
 	}
+
 	ctx.dbTX = dbTX
+
 	w.pendingTx.Delete(oldOrderTx.TxHash)
 	w.pendingTx.Store(unSignedTx.Hash(), ctx)
+
 	err = w.signTx(ctx) // todo
 	if err != nil {
 		return wrapError(err)
 	}
+
 	w.pendingTx.Store(unSignedTx.Hash(), ctx)
 
 	return w.SendSingedTx(ctx)
@@ -362,11 +374,14 @@ func (w *WalletClient) SendUnSignTx(ctx *TxContext) error {
 	oldTx := ctx.dbTX
 	tx := oldTx.Tx()
 	sender := w.From(tx)
+
 	var err error
+
 	ctx.dbTX, err = w.BuildUnSignTx(sender, *tx.To(), tx.Value(), tx.Data(), ctx.dbTX.Type, ctx.SeqID())
 	if err != nil {
 		return err
 	}
+
 	w.pendingTx.Delete(oldTx.TxHash)
 	w.pendingTx.Store(ctx.TxHash(), ctx)
 
@@ -386,7 +401,9 @@ func (w *WalletClient) RawTxBytes(tx *types.Transaction) []byte {
 func (w *WalletClient) Signer() types.Signer {
 	chainID, err := w.ChainID()
 	utils.Assert(err)
+
 	signer := types.LatestSignerForChainID(chainID)
+
 	return signer
 }
 
@@ -394,6 +411,7 @@ func (w *WalletClient) From(tx *types.Transaction) common.Address {
 	signer := w.Signer()
 	address, err := signer.Sender(tx)
 	utils.Assert(err)
+
 	return address
 }
 
@@ -478,6 +496,7 @@ func wrapError(err error) error {
 
 func (w *WalletClient) tickerRetrySendTx() {
 	ticker := time.NewTicker(10 * time.Second)
+
 	go func() {
 		for {
 			select {
@@ -494,24 +513,31 @@ func (w *WalletClient) tickerRetrySendTx() {
 func (w *WalletClient) tickerRetryUpdateTx() {
 	txs, _ := w.walletState.PendingBlockchainTransactions(nil)
 	group := sync.WaitGroup{}
+
 	for _, tx := range txs {
 		group.Add(1)
+
 		go func() {
 			if w.IsCanProcess(tx.TxHash) {
 				ctx := w.NewTxContext(&tx)
 				w.pendingTx.Store(ctx.TxHash(), ctx)
+
 				defer w.pendingTx.Delete(ctx.TxHash())
+
 				err := w.SendUnSignTx(ctx)
 				if err != nil {
 					log.Infof("evm wallet SendUnSignTx: tx hash:%v, err:%v", ctx.TxHash(), err)
 				}
+
 				_, err = w.WaitTxSuccess(ctx.TxHash())
 				if err != nil {
 					log.Infof("evm wallet WaitTxSuccess: err:%v", err)
 				}
 			}
+
 			group.Done()
 		}()
 	}
+
 	group.Wait()
 }

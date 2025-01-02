@@ -14,8 +14,8 @@ import (
 )
 
 type DatabaseManager struct {
-	l2SyncDb   *gorm.DB
-	l2InfoDb   *gorm.DB
+	l2SyncDB   *gorm.DB
+	l2InfoDB   *gorm.DB
 	btcLightDb *gorm.DB
 	btcCacheDb *gorm.DB
 	walletDb   *gorm.DB
@@ -50,8 +50,8 @@ func (dm *DatabaseManager) initDB() {
 		dbRef  **gorm.DB
 		dbName string
 	}{
-		{filepath.Join(dbDir, "l2_sync.db"), &dm.l2SyncDb, "Database l2_sync"},
-		{filepath.Join(dbDir, "l2_info.db"), &dm.l2InfoDb, "Database l2_info"},
+		{filepath.Join(dbDir, "l2_sync.db"), &dm.l2SyncDB, "Database l2_sync"},
+		{filepath.Join(dbDir, "l2_info.db"), &dm.l2InfoDB, "Database l2_info"},
 		{filepath.Join(dbDir, "btc_light.db"), &dm.btcLightDb, "Database btc_light"},
 		{filepath.Join(dbDir, "wallet.db"), &dm.walletDb, "Database wallet"},
 		{filepath.Join(dbDir, "btc_cache.db"), &dm.btcCacheDb, "Database btc_cache"},
@@ -68,7 +68,7 @@ func (dm *DatabaseManager) initDB() {
 }
 
 func (dm *DatabaseManager) GetL2InfoDB() *gorm.DB {
-	return dm.l2InfoDb
+	return dm.l2InfoDB
 }
 
 func (dm *DatabaseManager) GetBtcLightDB() *gorm.DB {
@@ -83,7 +83,7 @@ func (dm *DatabaseManager) GetWalletDB() *gorm.DB {
 	return dm.walletDb
 }
 
-func (dm *DatabaseManager) GetL2SyncDB() *gorm.DB { return dm.l2SyncDb }
+func (dm *DatabaseManager) GetL2SyncDB() *gorm.DB { return dm.l2SyncDB }
 
 func (dm *DatabaseManager) connectDatabase(dbPath string, dbRef **gorm.DB, dbName string) error {
 	// open database and set WAL mode
@@ -94,14 +94,17 @@ func (dm *DatabaseManager) connectDatabase(dbPath string, dbRef **gorm.DB, dbNam
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", dbName, err)
 	}
+
 	SetConnParam(db)
 	*dbRef = db
+
 	log.Debugf("%s connected successfully in WAL mode, path: %s", dbName, dbPath)
+
 	return nil
 }
 
 func (dm *DatabaseManager) autoMigrate() {
-	if err := dm.l2SyncDb.AutoMigrate(
+	if err := dm.l2SyncDB.AutoMigrate(
 		&LogIndex{},
 		&BTCTransaction{},
 		&EVMSyncStatus{},
@@ -133,6 +136,7 @@ func (dm *DatabaseManager) autoMigrate() {
 	if err := dm.walletDb.AutoMigrate(&Utxo{}, &Withdraw{}, &SendOrder{}, &Vin{}, &Vout{}, &DepositResult{}); err != nil {
 		log.Fatalf("Failed to migrate database 4: %v", err)
 	}
+
 	if err := dm.btcCacheDb.AutoMigrate(&BtcSyncStatus{}, &BtcBlockData{}, &BtcTXOutput{}, &Deposit{}); err != nil {
 		log.Fatalf("Failed to migrate database 5: %v", err)
 	}

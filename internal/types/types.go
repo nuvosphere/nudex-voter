@@ -63,6 +63,7 @@ type BatchData struct {
 func (b *BatchData) Bytes() []byte {
 	data, err := json.Marshal(b)
 	utils.Assert(err)
+
 	return data
 }
 

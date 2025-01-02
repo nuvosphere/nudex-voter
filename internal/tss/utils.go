@@ -306,6 +306,7 @@ func secp256k1Signature(data *tsscommon.SignatureData) []byte {
 	if first < 27 {
 		first += 27
 	}
+
 	return append(data.Signature, first)
 }
 

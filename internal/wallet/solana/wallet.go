@@ -32,6 +32,7 @@ func NewWallet(
 ) *WalletClient {
 	client := NewSolClient()
 	ctx, cancel := context.WithCancel(context.Background())
+
 	return &WalletClient{
 		BaseWallet: wallet.NewBaseWallet(stateDB, voterContract),
 		ctx:        ctx,

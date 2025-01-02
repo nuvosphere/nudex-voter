@@ -29,15 +29,18 @@ func (t *Pool[E]) First() Task[E] {
 	if len(items) == 0 {
 		return nil
 	}
+
 	return items[0]
 }
 
 func (t *Pool[E]) Last() Task[E] {
 	l := t.Len()
+
 	items := t.GetTopN(int64(l))
 	if len(items) == 0 {
 		return nil
 	}
+
 	return items[l-1]
 }
 

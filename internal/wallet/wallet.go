@@ -403,6 +403,7 @@ func (s *Wallet) TransactionWithSignature(ctx context.Context, tx *types.Transac
 	if err != nil {
 		return nil, err
 	}
+
 	signer := types.LatestSignerForChainID(chainID)
 
 	return tx.WithSignature(signer, signature)
@@ -413,6 +414,7 @@ func (s *Wallet) SendTransactionWithSignature(ctx context.Context, tx *types.Tra
 	if err != nil {
 		return err
 	}
+
 	signer := types.LatestSignerForChainID(chainID)
 
 	tx, err = tx.WithSignature(signer, signature)

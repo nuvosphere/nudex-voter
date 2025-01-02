@@ -37,5 +37,6 @@ func Ed25519PublicKeyToSuiAddress(pubKey []byte) string {
 	newPubkey = append(newPubkey, pubKey...)
 
 	addrBytes := blake2b.Sum256(newPubkey)
+
 	return fmt.Sprintf("0x%s", hex.EncodeToString(addrBytes[:])[:64])
 }

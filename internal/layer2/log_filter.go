@@ -133,6 +133,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			Amount:    decimal.NewFromBigInt(mintb.Amount, 0),
 			LogIndex:  l.LogIndex(NIP20TokenMintbEvent, vLog),
 		}
+
 		err := l.db.GetL2InfoDB().Create(mintbEvent)
 		if err != nil {
 			return err.Error
@@ -147,6 +148,7 @@ func (l *Layer2Listener) processTaskLog(vLog types.Log) error {
 			Amount:   decimal.NewFromBigInt(burnb.Amount, 0),
 			LogIndex: l.LogIndex(NIP20TokenBurnbEvent, vLog),
 		}
+
 		err := l.db.GetL2InfoDB().Create(burnbEvent)
 		if err != nil {
 			return err.Error
@@ -262,6 +264,7 @@ func (l *Layer2Listener) processDepositLog(vLog types.Log) error {
 	case contracts.DepositRecordedTopic:
 		depositRecorded := contracts.DepositManagerContractDepositRecorded{}
 		contracts.UnpackEventLog(contracts.DepositManagerContractMetaData, &depositRecorded, DepositRecorded, vLog)
+
 		err := l.db.GetL2InfoDB().Transaction(func(tx *gorm.DB) error {
 			depositRecord := db.DepositRecord{
 				TargetAddress: strings.ToLower(depositRecorded.DepositAddress),
@@ -334,12 +337,14 @@ func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
 			MinWithdrawAmount: event.AssetParam.MinWithdrawAmount.Uint64(),
 			AssetAlias:        event.AssetParam.AssetAlias,
 		}
+
 		return l.db.GetL2SyncDB().Save(asset).Error
 	case contracts.AssetUpdatedTopic:
 		event := contracts.AssetHandlerContractAssetUpdated{}
 		contracts.UnpackEventLog(contracts.AssetHandlerContractMetaData, &event, AssetUpdated, vLog)
 
 		var existingAsset db.Asset
+
 		result := l.db.GetL2SyncDB().Where("ticker = ?", event.Ticker).First(&existingAsset)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -352,8 +357,10 @@ func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
 					MinWithdrawAmount: event.AssetParam.MinWithdrawAmount.Uint64(),
 					AssetAlias:        event.AssetParam.AssetAlias,
 				}
+
 				return l.db.GetL2SyncDB().Save(newAsset).Error
 			}
+
 			return fmt.Errorf("failed to query asset by ticker:%s, %w", event.Ticker, result.Error)
 		}
 
@@ -378,6 +385,7 @@ func (l *Layer2Listener) processAssetLog(vLog types.Log) error {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				return nil
 			}
+
 			return fmt.Errorf("failed to query asset by ticker:%s, %w", ticker, result.Error)
 		}
 

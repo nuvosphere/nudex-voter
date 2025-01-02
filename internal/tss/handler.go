@@ -173,6 +173,7 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 		if errTask != nil {
 			return errTask
 		}
+
 		err = m.joinSignTaskSession(msg, task)
 	default:
 		err = fmt.Errorf("unknown msg type: %v, msg: %v", msg.Type, msg)
@@ -187,12 +188,12 @@ func (m *Scheduler) processReceivedProposal(msg SessionMessage[ProposalID, Propo
 	return nil
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) joinTxSignatureSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) {
 	m.processTxSignForTest(&msg, task)
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) createUserAddressProposal(task *db.CreateWalletTask) (LocalPartySaveData, *big.Int) {
 	coinType := types.GetCoinTypeByChain(task.Chain)
 
@@ -204,13 +205,14 @@ func (m *Scheduler) createUserAddressProposal(task *db.CreateWalletTask) (LocalP
 		userAddress := address.GenerateAddressByPath(localPartySaveData.ECPoint(), uint32(coinType), task.Account, task.Index)
 		msg := m.voterContract.EncodeRegisterNewAddress(task.Account, task.Chain, task.Index, strings.ToLower(userAddress))
 		hash := ethCrypto.Keccak256Hash(msg)
+
 		return *localPartySaveData, hash.Big()
 	default:
 		panic(fmt.Errorf("unknown EC type: %v", ec))
 	}
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) joinSignTaskSession(msg SessionMessage[ProposalID, Proposal], task pool.Task[uint64]) error {
 	log.Debugf("JoinSignTaskSession: session id: %v, task id:%v, task type: %v", msg.SessionID, task.TaskID(), task.Type())
 
@@ -238,7 +240,7 @@ func (m *Scheduler) joinSignTaskSession(msg SessionMessage[ProposalID, Proposal]
 	return nil
 }
 
-// only used test
+// only used test.
 func (m *Scheduler) processTaskProposal(task pool.Task[uint64]) {
 	switch taskData := task.(type) {
 	case *db.CreateWalletTask:
